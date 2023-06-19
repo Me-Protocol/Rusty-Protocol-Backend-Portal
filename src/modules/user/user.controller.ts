@@ -175,19 +175,6 @@ export class UserController {
   }
 
   @UseGuards(AuthGuard())
-  @Put("me")
-  async updateMe(
-    @Req() req: any,
-    @Body(ValidationPipe) body: UpdateUserDto
-  ): Promise<any> {
-    const user = req.user as User;
-
-    await this.userService.updateUser(user, body);
-
-    return "ok";
-  }
-
-  @UseGuards(AuthGuard())
   @Post("logout")
   async logout(
     @Req() req: any,
@@ -428,39 +415,5 @@ export class UserController {
     const user = req.user as User;
 
     return await this.userService.updateDeviceToken(user.id, id, body);
-  }
-
-  @UseGuards(AuthGuard())
-  @Get("/:id")
-  async getUser(@Req() req: any, @Param() params: any): Promise<any> {
-    const user = await this.userService.getUserById(params.id);
-
-    if (!user) {
-      throw new NotFoundException("User not found");
-    }
-
-    const {
-      password,
-      emailVerified,
-      phoneVerified,
-      createdAt,
-      updatedAt,
-      accountVerificationCode,
-      passwordResetCode,
-      salt,
-      banned,
-      suspended,
-      last_login,
-      twitterAuth,
-      facebookAuth,
-      googleAuth,
-      countryCode,
-      countryAbbr,
-      ...userWithoutPassword
-    } = user;
-
-    return {
-      ...userWithoutPassword,
-    };
   }
 }

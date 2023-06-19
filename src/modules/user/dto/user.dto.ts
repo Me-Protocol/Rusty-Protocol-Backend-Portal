@@ -41,6 +41,14 @@ export class PhoneSignupDto {
     message: "Password is too short",
   })
   confirmPassword: string;
+
+  @IsString()
+  name: string;
+
+  @IsEnum(UserAppType, {
+    message: "User type is invalid",
+  })
+  userType: UserAppType;
 }
 
 export class PhoneVerifyDto {
@@ -77,6 +85,14 @@ export class EmailSignupDto {
     message: "Password is too short",
   })
   confirmPassword: string;
+
+  @IsString()
+  name: string;
+
+  @IsEnum(UserAppType, {
+    message: "User type is invalid",
+  })
+  userType: UserAppType;
 }
 
 export class EmailVerifyDto {
@@ -157,80 +173,8 @@ export class LoginDto {
 }
 
 export class UpdateUserDto {
-  @IsOptional()
   @IsString()
-  firstName: string;
-
-  @IsOptional()
-  @IsString()
-  lastName: string;
-
-  @IsOptional()
-  @IsString()
-  profileImage: string;
-
-  @IsOptional()
-  @IsString()
-  coverImage: string;
-
-  @IsOptional()
-  @MinLength(3, {
-    message: "Bio is too short",
-  })
-  @MaxLength(160, {
-    message: "Bio is too long",
-  })
-  bio: string;
-
-  @IsOptional()
-  @IsString()
-  location: string;
-
-  @IsOptional()
-  @IsUrl({
-    require_protocol: false,
-  })
-  website: string;
-
-  @IsOptional()
-  @IsString()
-  dob: string;
-
   username: string;
-
-  @IsOptional()
-  @IsBoolean()
-  is2faEnabled: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  private: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  showActivity: boolean;
-
-  @IsOptional()
-  @IsEnum(TwoFAType)
-  twoFAType: TwoFAType;
-
-  allow_contact_sync: boolean;
-
-  allow_notification: boolean;
-
-  allow_location: boolean;
-
-  appType: UserAppType;
-
-  location_lat: number;
-
-  location_lng: number;
-
-  completedOnboarding: boolean;
-
-  @IsOptional()
-  @IsEnum(Gender)
-  gender: Gender;
 }
 
 export class Verify2FADto {

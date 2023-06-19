@@ -133,7 +133,7 @@ export class User extends BaseEntity {
     default: UserAppType.USER,
     nullable: true,
   })
-  appType: UserAppType;
+  userType: UserAppType;
 
   @Column({
     nullable: true,
