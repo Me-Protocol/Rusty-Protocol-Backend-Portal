@@ -1,11 +1,11 @@
-import { HttpException, Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { In, Repository } from "typeorm";
-import * as bcrypt from "bcrypt";
-import { User } from "./entities/user.entity";
-import { MailService } from "../mail/mail.service";
-import { JwtService } from "@nestjs/jwt";
-import { SmsService } from "../sms/sms.service";
+import { HttpException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { User } from './entities/user.entity';
+import { MailService } from '../mail/mail.service';
+import { JwtService } from '@nestjs/jwt';
+import { SmsService } from '../sms/sms.service';
 import {
   ChangeEmailDto,
   ChangePhoneDto,
@@ -18,22 +18,21 @@ import {
   UpdateDeviceTokenDto,
   UpdateUserDto,
   Verify2FADto,
-} from "./dto/user.dto";
-import { JwtPayload, jwtConfigurations } from "@src/config/jwt.config";
-import { Device } from "./entities/device.entity";
-import axios from "axios";
-import { ElasticIndex } from "../search/index/search.index";
-import { userIndex } from "../search/interface/search.interface";
-import { isNumber } from "@src/utils/helpers/isNumber";
-import { selectUser } from "@src/utils/helpers/selectUser";
-import { TwoFAType } from "@src/utils/enums/TwoFAType";
-import { LoginType } from "@src/utils/enums/LoginType";
+} from './dto/user.dto';
+import { JwtPayload, jwtConfigurations } from '@src/config/jwt.config';
+import { Device } from './entities/device.entity';
+import { ElasticIndex } from '../search/index/search.index';
+import { userIndex } from '../search/interface/search.interface';
+import { isNumber } from '@src/utils/helpers/isNumber';
+import { selectUser } from '@src/utils/helpers/selectUser';
+import { TwoFAType } from '@src/utils/enums/TwoFAType';
+import { LoginType } from '@src/utils/enums/LoginType';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const geoip = require("geoip-lite");
+const geoip = require('geoip-lite');
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const DeviceDetector = require("node-device-detector");
+const DeviceDetector = require('node-device-detector');
 
 const deviceDetector = new DeviceDetector();
 
@@ -48,7 +47,7 @@ export class UserService {
     private readonly mailService: MailService,
     private jwtService: JwtService,
     private smsService: SmsService,
-    private readonly elasticIndex: ElasticIndex
+    private readonly elasticIndex: ElasticIndex,
   ) {}
 
   // Signs a token
@@ -65,10 +64,10 @@ export class UserService {
   async registerDevice(
     user: User,
     userAgent: string,
-    clientIp: string
+    clientIp: string,
   ): Promise<any> {
     const deviceData = deviceDetector.detect(userAgent);
-    const location = "Lagos, NG"; //TODO:: please remove the hard coded location
+    const location = 'Lagos, NG'; //TODO:: please remove the hard coded location
 
     const device = await this.deviceRepository.create({
       name: deviceData?.device?.model,
@@ -116,14 +115,14 @@ export class UserService {
         userId,
       },
       select: [
-        "id",
-        "name",
-        "type",
-        "agent",
-        "ip",
-        "location",
-        "createdAt",
-        "device_token",
+        'id',
+        'name',
+        'type',
+        'agent',
+        'ip',
+        'location',
+        'createdAt',
+        'device_token',
       ],
     });
     return devices;
@@ -133,7 +132,7 @@ export class UserService {
   async updateDeviceToken(
     userId: string,
     id: string,
-    { device_token }: UpdateDeviceTokenDto
+    { device_token }: UpdateDeviceTokenDto,
   ): Promise<any> {
     const device = await this.deviceRepository.findOne({
       where: {
@@ -142,12 +141,12 @@ export class UserService {
       },
     });
 
-    if (!device) throw new HttpException("Device not found", 404);
+    if (!device) throw new HttpException('Device not found', 404);
 
     device.device_token = device_token;
     await this.deviceRepository.save(device);
 
-    return "ok";
+    return 'ok';
   }
 
   async getUserById(id: string): Promise<User> {
@@ -203,15 +202,15 @@ export class UserService {
     try {
       const user = await this.getUserByEmail(email);
 
-      if (!user) throw new HttpException("User not found", 404);
+      if (!user) throw new HttpException('User not found', 404);
 
       user.accountVerificationCode = Math.floor(1000 + Math.random() * 9000);
       await this.saveUser(user);
 
       await this.mailService.sendMail({
         to: email,
-        subject: "Verify your email address",
-        text: "Verify your email address",
+        subject: 'Verify your email address',
+        text: 'Verify your email address',
         html: `
         <p>Hello 👋🏻,</p>
         <p>Use the code below to verify your email address.</p>
@@ -225,11 +224,11 @@ export class UserService {
 
   async sendPhoneVerificationCode(phoneNumber: string): Promise<any> {
     try {
-      const phone = phoneNumber.replace(/\D/g, "");
+      const phone = phoneNumber.replace(/\D/g, '');
 
       const user = await this.getUserByPhone(phone);
 
-      if (!user) throw new HttpException("User not found", 404);
+      if (!user) throw new HttpException('User not found', 404);
 
       user.accountVerificationCode = Math.floor(1000 + Math.random() * 9000);
       await this.saveUser(user);
@@ -252,16 +251,16 @@ export class UserService {
     try {
       const user = await this.getUserByEmail(email);
       if (user) {
-        throw new HttpException("Email already exists", 400);
+        throw new HttpException('Email already exists', 400);
       }
 
       const newUser = new User();
       newUser.email = email?.toLowerCase();
-      newUser.username = email.split("@")[0].toLowerCase();
+      newUser.username = email.split('@')[0].toLowerCase();
       newUser.twoFAType = TwoFAType.EMAIL;
 
       if (password !== confirmPassword) {
-        throw new HttpException("Passwords do not match", 400);
+        throw new HttpException('Passwords do not match', 400);
       }
 
       const salt = await bcrypt.genSalt();
@@ -292,21 +291,21 @@ export class UserService {
     code: number,
     userAgent: string,
     clientIp: string,
-    is2Fa?: boolean
+    is2Fa?: boolean,
   ): Promise<any> {
     try {
       console.log(user);
 
       if (!user) {
-        throw new HttpException("User not found", 404);
+        throw new HttpException('User not found', 404);
       }
 
       if (user.emailVerified && !is2Fa) {
-        throw new HttpException("Email already verified", 400);
+        throw new HttpException('Email already verified', 400);
       }
 
       if (user.accountVerificationCode !== Number(code)) {
-        throw new HttpException("Invalid code", 400);
+        throw new HttpException('Invalid code', 400);
       }
 
       user.emailVerified = true;
@@ -323,8 +322,8 @@ export class UserService {
       if (user.email) {
         await this.mailService.sendMail({
           to: user.email,
-          subject: "Welcome to Me Protocol",
-          text: "Welcome to Me Protocol",
+          subject: 'Welcome to Me Protocol',
+          text: 'Welcome to Me Protocol',
           html: `
         <p>Thanks for signing up to Me Protocol. We're excited to have you on board!</p>
         `,
@@ -346,22 +345,22 @@ export class UserService {
     confirmPassword,
   }: PhoneSignupDto): Promise<any> {
     try {
-      phone = phone.replace(/\D/g, "");
+      phone = phone.replace(/\D/g, '');
 
       const user = await this.getUserByPhone(phone);
       if (user) {
-        throw new HttpException("Phone already exists", 400);
+        throw new HttpException('Phone already exists', 400);
       }
 
       const newUser = new User();
-      newUser.phone = phone.replace(/\D/g, "").replace(countryCode, "");
+      newUser.phone = phone.replace(/\D/g, '').replace(countryCode, '');
       newUser.countryCode = countryCode;
       newUser.countryAbbr = countryAbbr;
       newUser.username = Math.random().toString(36).substring(7);
       newUser.twoFAType = TwoFAType.SMS;
 
       if (password !== confirmPassword) {
-        throw new HttpException("Passwords do not match", 400);
+        throw new HttpException('Passwords do not match', 400);
       }
 
       const salt = await bcrypt.genSalt();
@@ -392,19 +391,19 @@ export class UserService {
     code: number,
     userAgent: string,
     clientIp: string,
-    is2Fa?: boolean
+    is2Fa?: boolean,
   ): Promise<any> {
     try {
       if (!user) {
-        throw new HttpException("User not found", 404);
+        throw new HttpException('User not found', 404);
       }
 
       if (user.phoneVerified && !is2Fa) {
-        throw new HttpException("Phone already verified", 400);
+        throw new HttpException('Phone already verified', 400);
       }
 
       if (user.accountVerificationCode !== Number(code)) {
-        throw new HttpException("Invalid code", 400);
+        throw new HttpException('Invalid code', 400);
       }
 
       user.phoneVerified = true;
@@ -427,63 +426,63 @@ export class UserService {
   async login(
     { identifier, password }: LoginDto,
     userAgent: string,
-    clientIp: string
+    clientIp: string,
   ): Promise<any> {
     try {
       let user: User;
       identifier = identifier.trim().toLocaleLowerCase();
 
-      if (identifier.includes("@")) {
+      if (identifier.includes('@')) {
         user = await this.getUserByEmail(identifier);
 
         if (!user) {
-          throw new HttpException("Invalid login details", 404);
+          throw new HttpException('Invalid login details', 404);
         }
 
         if (!user.emailVerified) {
-          throw new HttpException("Email not verified", 400);
+          throw new HttpException('Email not verified', 400);
         }
       } else if (isNumber(identifier)) {
         user = await this.getUserByPhone(identifier);
 
         if (!user) {
-          throw new HttpException("Invalid login details", 404);
+          throw new HttpException('Invalid login details', 404);
         }
 
         if (!user.phoneVerified) {
-          throw new HttpException("Phone not verified", 400);
+          throw new HttpException('Phone not verified', 400);
         }
       } else {
         user = await this.getUserByUsername(identifier);
 
         if (!user) {
-          throw new HttpException("Invalid login details", 404);
+          throw new HttpException('Invalid login details', 404);
         }
 
         if (user.email && !user.emailVerified) {
-          throw new HttpException("Email not verified", 400);
+          throw new HttpException('Email not verified', 400);
         }
 
         if (user.phone && !user.phoneVerified) {
-          throw new HttpException("Phone not verified", 400);
+          throw new HttpException('Phone not verified', 400);
         }
       }
 
       if (!user) {
-        throw new HttpException("Invalid login details", 404);
+        throw new HttpException('Invalid login details', 404);
       }
 
       if (!user.password) {
         throw new HttpException(
-          "Please use the forgot password button to create a password",
-          400
+          'Please use the forgot password button to create a password',
+          400,
         );
       }
 
       const isPasswordValid = await bcrypt.compare(password, user.password);
 
       if (!isPasswordValid) {
-        throw new HttpException("Invalid login details", 400);
+        throw new HttpException('Invalid login details', 400);
       }
 
       if (user.is2faEnabled) {
@@ -492,7 +491,7 @@ export class UserService {
         } else if (user.twoFAType === TwoFAType.SMS) {
           await await this.sendPhoneVerificationCode(user.phone);
         } else {
-          throw new HttpException("Invalid 2FA type", 400);
+          throw new HttpException('Invalid 2FA type', 400);
         }
 
         return {
@@ -513,11 +512,11 @@ export class UserService {
   async verify2FALogin(
     { code, userId }: Verify2FADto,
     userAgent: string,
-    ip: string
+    ip: string,
   ): Promise<any> {
     const user = await this.getUserById(userId);
 
-    if (!user) throw new HttpException("User not found.", 404);
+    if (!user) throw new HttpException('User not found.', 404);
 
     let token: Promise<any>;
 
@@ -559,14 +558,14 @@ export class UserService {
     try {
       const device = await this.getDeviceById(userId, deviceId);
       if (!device) {
-        return "Logged out! See you soon :)";
+        return 'Logged out! See you soon :)';
       }
 
       await this.deviceRepository.delete({
         id: device.id,
       });
 
-      return "Logged out! See you soon :)";
+      return 'Logged out! See you soon :)';
     } catch (error) {
       console.log(error);
       throw new HttpException(error, 500);
@@ -578,7 +577,7 @@ export class UserService {
       const existingUser = await this.getUserByUsername(username);
 
       if (existingUser && existingUser.id !== user.id) {
-        throw new HttpException("Username already exists", 400);
+        throw new HttpException('Username already exists', 400);
       }
 
       user.username = username.toLocaleLowerCase();
@@ -594,24 +593,24 @@ export class UserService {
 
   async changePassword(
     user: User,
-    { password, confirmPassword, currentPassword }: PasswordDto
+    { password, confirmPassword, currentPassword }: PasswordDto,
   ): Promise<any> {
     try {
       if (!user.password && user.loginType !== LoginType.DEFAULT) {
-        throw new HttpException("Please create a password", 400);
+        throw new HttpException('Please create a password', 400);
       }
 
       const isPasswordValid = await bcrypt.compare(
         currentPassword,
-        user.password
+        user.password,
       );
 
       if (!isPasswordValid) {
-        throw new HttpException("Invalid password", 400);
+        throw new HttpException('Invalid password', 400);
       }
 
       if (password !== confirmPassword) {
-        throw new HttpException("Passwords do not match", 400);
+        throw new HttpException('Passwords do not match', 400);
       }
 
       const salt = await bcrypt.genSalt();
@@ -622,7 +621,7 @@ export class UserService {
 
       await this.saveUser(user);
 
-      return "Password changed";
+      return 'Password changed';
     } catch (error) {
       console.log(error);
       throw new HttpException(error, 500);
@@ -634,22 +633,22 @@ export class UserService {
       const existingUser = await this.getUserByEmail(email);
 
       if (existingUser && existingUser.id !== user.id) {
-        throw new HttpException("Email already exists", 400);
+        throw new HttpException('Email already exists', 400);
       }
 
       if (!user.email) {
         await this.sendEmailVerificationCode(email);
 
-        return "Please verify your new email";
+        return 'Please verify your new email';
       }
 
       if (user.email === email) {
-        throw new HttpException("Email already exists", 400);
+        throw new HttpException('Email already exists', 400);
       }
 
       await this.sendEmailVerificationCode(user.email);
 
-      return "Please verify your current email";
+      return 'Please verify your current email';
     } catch (error) {
       console.log(error);
       throw new HttpException(error, 500);
@@ -658,16 +657,16 @@ export class UserService {
 
   async verifyAndChangeEmail(
     user: User,
-    { email, code }: ChangeEmailDto
+    { email, code }: ChangeEmailDto,
   ): Promise<any> {
     try {
       const existingUser = await this.getUserByEmail(email);
       if (existingUser) {
-        throw new HttpException("Email already exists", 400);
+        throw new HttpException('Email already exists', 400);
       }
 
       if (Number(code) !== user.accountVerificationCode) {
-        throw new HttpException("Code is invalid", 400);
+        throw new HttpException('Code is invalid', 400);
       }
 
       user.email = email;
@@ -676,7 +675,7 @@ export class UserService {
 
       await this.saveUser(user);
 
-      return "Email changed";
+      return 'Email changed';
     } catch (error) {
       console.log(error);
       throw new HttpException(error, 500);
@@ -685,30 +684,30 @@ export class UserService {
 
   async changePhone(
     user: User,
-    { phone, countryCode }: PhoneSignupDto
+    { phone, countryCode }: PhoneSignupDto,
   ): Promise<any> {
     try {
-      const phoneNumber = phone.replace(/\D/g, "").replace(countryCode, "");
+      const phoneNumber = phone.replace(/\D/g, '').replace(countryCode, '');
 
       const existingUser = await this.getUserByPhone(phoneNumber);
 
       if (existingUser && existingUser.id !== user.id) {
-        throw new HttpException("Phone number already exists", 400);
+        throw new HttpException('Phone number already exists', 400);
       }
 
       if (!user.phone) {
         await this.sendPhoneVerificationCode(phone);
 
-        return "Please verify your new phone number";
+        return 'Please verify your new phone number';
       }
 
       if (user.phone === phoneNumber) {
-        throw new HttpException("Phone number already exists", 400);
+        throw new HttpException('Phone number already exists', 400);
       }
 
       await this.sendPhoneVerificationCode(user.phone);
 
-      return "Please verify your current phone number";
+      return 'Please verify your current phone number';
     } catch (error) {
       console.log(error);
       throw new HttpException(error, 500);
@@ -717,21 +716,21 @@ export class UserService {
 
   async verifyAndChangePhone(
     user: User,
-    { phone, code, countryAbbr, countryCode }: ChangePhoneDto
+    { phone, code, countryAbbr, countryCode }: ChangePhoneDto,
   ): Promise<any> {
     try {
-      const phoneNumber = phone.replace(/\D/g, "");
+      const phoneNumber = phone.replace(/\D/g, '');
 
       const existingUser = await this.getUserByPhone(phoneNumber);
       if (existingUser) {
-        throw new HttpException("Phone number already exists", 400);
+        throw new HttpException('Phone number already exists', 400);
       }
 
       if (Number(code) !== user.accountVerificationCode) {
-        throw new HttpException("Code is invalid", 400);
+        throw new HttpException('Code is invalid', 400);
       }
 
-      user.phone = phoneNumber.replace(/\D/g, "").replace(countryCode, "");
+      user.phone = phoneNumber.replace(/\D/g, '').replace(countryCode, '');
       user.countryAbbr = countryAbbr;
       user.countryCode = countryCode;
       user.phoneVerified = true;
@@ -739,7 +738,7 @@ export class UserService {
 
       await this.saveUser(user);
 
-      return "Phone number changed";
+      return 'Phone number changed';
     } catch (error) {
       console.log(error);
       throw new HttpException(error, 500);
@@ -854,8 +853,8 @@ export class UserService {
 
     await this.mailService.sendMail({
       to: email,
-      subject: "Welcome to Me Protocol",
-      text: "Welcome to Me Protocol",
+      subject: 'Welcome to Me Protocol',
+      text: 'Welcome to Me Protocol',
       html: `
         <p>Thanks for signing up to Me Protocol. We're excited to have you on board!</p>
         `,
@@ -872,32 +871,32 @@ export class UserService {
   async forgotPassword({ identifier }: ForgotPasswordDto): Promise<any> {
     let user: User;
 
-    if (identifier.includes("@")) {
+    if (identifier.includes('@')) {
       user = await this.getUserByEmail(identifier);
 
       if (!user.emailVerified) {
-        throw new HttpException("Email not verified", 400);
+        throw new HttpException('Email not verified', 400);
       }
     } else if (isNumber(identifier)) {
       user = await this.getUserByPhone(identifier);
 
       if (!user.phoneVerified) {
-        throw new HttpException("Phone not verified", 400);
+        throw new HttpException('Phone not verified', 400);
       }
     } else {
       user = await this.getUserByUsername(identifier);
 
       if (user.email && !user.emailVerified) {
-        throw new HttpException("Email not verified", 400);
+        throw new HttpException('Email not verified', 400);
       }
 
       if (user.phone && !user.phoneVerified) {
-        throw new HttpException("Phone not verified", 400);
+        throw new HttpException('Phone not verified', 400);
       }
     }
 
     if (!user) {
-      throw new HttpException("User not found", 404);
+      throw new HttpException('User not found', 404);
     }
 
     if (isNumber(identifier)) {
@@ -907,7 +906,7 @@ export class UserService {
     }
 
     return {
-      message: `Please verify your ${isNumber(identifier) ? "phone" : "email"}`,
+      message: `Please verify your ${isNumber(identifier) ? 'phone' : 'email'}`,
       userId: user.id,
     };
   }
@@ -921,15 +920,15 @@ export class UserService {
     const user = await this.getUserById(userId);
 
     if (Number(code) !== user.accountVerificationCode) {
-      throw new HttpException("Code is invalid", 400);
+      throw new HttpException('Code is invalid', 400);
     }
 
     if (password !== confirmPassword) {
-      throw new HttpException("Passwords do not match", 400);
+      throw new HttpException('Passwords do not match', 400);
     }
 
     if (password !== confirmPassword) {
-      throw new HttpException("Passwords do not match", 400);
+      throw new HttpException('Passwords do not match', 400);
     }
 
     const salt = await bcrypt.genSalt();
@@ -941,6 +940,6 @@ export class UserService {
 
     await this.saveUser(user);
 
-    return "Password changed";
+    return 'Password changed';
   }
 }

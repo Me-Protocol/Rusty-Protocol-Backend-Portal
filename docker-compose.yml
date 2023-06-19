@@ -1,35 +1,69 @@
-version: '2'
-
+version: '3.9'
 services:
-  postgresql-master:
-    image: docker.io/bitnami/postgresql:15
+  db:
+    image: postgres
+    restart: always
     ports:
-      - '5432:5432'
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: postgres
+
+  dbadmin:
+    image: dpage/pgadmin4
+    restart: always
+    ports:
+      - 5050:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: pgadmin4
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.1
+    container_name: elasticsearch
+    restart: always
+    environment:
+      - xpack.security.http.ssl=false
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
     volumes:
-      - 'postgresql_master_data:/bitnami/postgresql'
-    environment:
-      - POSTGRESQL_REPLICATION_MODE=master
-      - POSTGRESQL_REPLICATION_USER=repl_user
-      - POSTGRESQL_REPLICATION_PASSWORD=repl_password
-      - POSTGRESQL_USERNAME=postgres
-      - POSTGRESQL_PASSWORD=my_password
-      - POSTGRESQL_DATABASE=my_database
-      - ALLOW_EMPTY_PASSWORD=yes
-  postgresql-slave:
-    image: docker.io/bitnami/postgresql:15
+      - elasticsearch-data-volume:/usr/share/elasticsearch/data
     ports:
-      - '5432:5432'
-    depends_on:
-      - postgresql-master
+      - 9200:9200
+      - 9300:9300
+
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:7.4.0
+    restart: always
     environment:
-      - POSTGRESQL_REPLICATION_MODE=slave
-      - POSTGRESQL_REPLICATION_USER=repl_user
-      - POSTGRESQL_REPLICATION_PASSWORD=repl_password
-      - POSTGRESQL_MASTER_HOST=postgresql-master
-      - POSTGRESQL_PASSWORD=my_password
-      - POSTGRESQL_MASTER_PORT_NUMBER=5432
-      - ALLOW_EMPTY_PASSWORD=yes
+      - ELASTICSEARCH_HOSTS=http://localhost:9200
+    ports:
+      - 5601:5601
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    ports:
+      - 3007:3007
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      - db
 
 volumes:
-  postgresql_master_data:
+  elasticsearch-data-volume:
     driver: local
+
+networks:
+  my-net:
