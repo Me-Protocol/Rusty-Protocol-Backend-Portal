@@ -1,32 +1,32 @@
-import { Module } from "@nestjs/common";
-import { PassportModule } from "@nestjs/passport";
-import { AppController } from "./app.controller";
-import { AppService } from "./app.service";
-import { UserService } from "./modules/user/user.service";
-import { UserController } from "./modules/user/user.controller";
-import { UserModule } from "./modules/user/user.module";
-import { ConfigModule } from "@nestjs/config";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { typeOrmConfig } from "./config/typeorm.config";
-import { MailModule } from "./modules/mail/mail.module";
-import { SmsModule } from "./modules/sms/sms.module";
-import { jwtConfigurations } from "./config/jwt.config";
-import { JwtModule } from "@nestjs/jwt";
-import { ElasticsearchModule } from "@nestjs/elasticsearch";
-import { JwtStrategy } from "./middlewares/jwt-strategy.middleware";
-import { SearchService } from "./modules/search/search.service";
-import { SearchModule } from "./modules/search/search.module";
-import { SearchController } from "./modules/search/search.controller";
-import { SmsService } from "./modules/sms/sms.service";
-import { MailService } from "./modules/mail/mail.service";
-import { TwitterStrategy } from "./middlewares/twitter-strategy.middleware";
-import { GoogleStrategy } from "./middlewares/google-strategy.middleware";
-import { FacebookStrategy } from "./middlewares/facebook-strategy.middleware";
-import { ElasticIndex } from "./modules/search/index/search.index";
+import { Module } from '@nestjs/common';
+import { PassportModule } from '@nestjs/passport';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { UserService } from './modules/user/user.service';
+import { UserController } from './modules/user/user.controller';
+import { UserModule } from './modules/user/user.module';
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { typeOrmConfig } from './config/typeorm.config';
+import { MailModule } from './modules/mail/mail.module';
+import { SmsModule } from './modules/sms/sms.module';
+import { jwtConfigurations } from './config/jwt.config';
+import { JwtModule } from '@nestjs/jwt';
+import { ElasticsearchModule } from '@nestjs/elasticsearch';
+import { JwtStrategy } from './middlewares/jwt-strategy.middleware';
+import { SearchService } from './modules/search/search.service';
+import { SearchModule } from './modules/search/search.module';
+import { SearchController } from './modules/search/search.controller';
+import { SmsService } from './modules/sms/sms.service';
+import { MailService } from './modules/mail/mail.service';
+import { TwitterStrategy } from './middlewares/twitter-strategy.middleware';
+import { GoogleStrategy } from './middlewares/google-strategy.middleware';
+import { FacebookStrategy } from './middlewares/facebook-strategy.middleware';
+import { ElasticIndex } from './modules/search/index/search.index';
 import { RewardsModule } from './modules/rewards/rewards.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
-import * as Joi from "joi";
+import * as Joi from 'joi';
 
 @Module({
   imports: [
@@ -79,10 +79,10 @@ import * as Joi from "joi";
         DFNS_ACCESS_TOKEN: Joi.string().required(),
         DFNS_PRIVATE_ACCESS_TOKEN: Joi.string().required(),
       }),
-      envFilePath: "./.env",
+      envFilePath: './.env',
     }),
     TypeOrmModule.forRoot(typeOrmConfig),
-    PassportModule.register({ defaultStrategy: "jwt", session: false }),
+    PassportModule.register({ defaultStrategy: 'jwt', session: false }),
     JwtModule.register(jwtConfigurations),
     ElasticsearchModule.register({
       node: process.env.ELASTIC_NODE,
@@ -95,8 +95,8 @@ import * as Joi from "joi";
         rejectUnauthorized: false,
       },
       headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
       },
       requestTimeout: 30000,
     }),
@@ -112,7 +112,7 @@ import * as Joi from "joi";
   providers: [
     ElasticIndex,
     {
-      provide: "SearchServiceInterface",
+      provide: 'SearchServiceInterface',
       useClass: SearchService,
     },
     AppService,
