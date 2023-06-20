@@ -16,7 +16,7 @@ import { ConfigService } from '@nestjs/config';
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 @Injectable()
-export class WalletService {
+export class PaymentService {
   constructor(
     @InjectRepository(WalletEntity)
     private readonly walletRepository: Repository<WalletEntity>,
@@ -340,6 +340,7 @@ export class WalletService {
     const paymentMethods = await stripe.paymentMethods.detach(cardId);
     return paymentMethods;
   }
+
   async createBankLinkToken(userId: string) {
     const wallet = await this.walletRepository.findOne({
       where: {
@@ -358,6 +359,7 @@ export class WalletService {
     });
     return accountLink;
   }
+
   async createDebitCardLinkToken(userId: string) {
     const wallet = await this.walletRepository.findOne({
       where: {
@@ -369,6 +371,7 @@ export class WalletService {
     );
     return linkToken;
   }
+
   async getLinkedAccounts(userId: string) {
     const wallet = await this.walletRepository.findOne({
       where: {
@@ -381,6 +384,7 @@ export class WalletService {
     });
     return account;
   }
+
   async requestWithdrawal(user: User, amount: number, linkedAccountId: string) {
     const { email, id: userId } = user;
     const wallet = await this.walletRepository.findOne({
@@ -484,6 +488,7 @@ export class WalletService {
     await this.transactionRepo.save(transaction);
     return await this.walletRepository.save(wallet);
   }
+
   async minusWalletBalance(
     userId: string,
     amount: number,

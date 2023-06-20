@@ -25,8 +25,8 @@ import { FacebookStrategy } from './middlewares/facebook-strategy.middleware';
 import { ElasticIndex } from './modules/search/index/search.index';
 import { RewardsModule } from './modules/rewards/rewards.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
-import { WalletModule } from './modules/wallet/wallet.module';
 import * as Joi from 'joi';
+import { PaymentModule } from './modules/payment/payment.module';
 
 @Module({
   imports: [
@@ -103,7 +103,7 @@ import * as Joi from 'joi';
     SearchModule,
     RewardsModule,
     AnalyticsModule,
-    WalletModule,
+    PaymentModule,
   ],
   controllers: [AppController, UserController, SearchController],
   providers: [

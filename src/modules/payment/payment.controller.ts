@@ -10,7 +10,6 @@ import {
   Delete,
   ValidationPipe,
 } from '@nestjs/common';
-import { WalletService } from './wallet.service';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -20,18 +19,19 @@ import {
   confirmWithdrawalDto,
 } from './dto/wallet.dto';
 import { User } from '../user/entities/user.entity';
+import { PaymentService } from './payment.service';
 
 @UseInterceptors(ResponseInterceptor)
 @Controller('wallet')
-export class WalletController {
-  constructor(private readonly walletService: WalletService) {}
+export class PaymentController {
+  constructor(private readonly paymentService: PaymentService) {}
 
   @UseGuards(AuthGuard())
   @Post('pay')
   createIntent(@Body() createIntentDto: CreateIntentDto, @Req() req: any) {
     const user = req.user as User;
     createIntentDto.userId = user.id;
-    return this.walletService.createStripePaymentIntent(
+    return this.paymentService.createStripePaymentIntent(
       createIntentDto.amount,
       createIntentDto.userId,
     );
@@ -41,14 +41,14 @@ export class WalletController {
   @Post('fund')
   fundWallet(@Body() fundDto: FundDto, @Req() req: any) {
     const user = req.user as User;
-    return this.walletService.fundWallet(fundDto.paymentIntent, user.id);
+    return this.paymentService.fundWallet(fundDto.paymentIntent, user.id);
   }
 
   @UseGuards(AuthGuard())
   @Get('cards')
   getPaymentCard(@Req() req: any) {
     const user = req.user as User;
-    return this.walletService.getPaymentCards(user.id);
+    return this.paymentService.getPaymentCards(user.id);
   }
 
   @UseGuards(AuthGuard())
@@ -56,9 +56,9 @@ export class WalletController {
   linkAccount(@Req() req: any, @Body() { type }: { type: string }) {
     const user = req.user as User;
     if (type === 'bank') {
-      return this.walletService.createBankLinkToken(user.id);
+      return this.paymentService.createBankLinkToken(user.id);
     } else {
-      return this.walletService.createDebitCardLinkToken(user.id);
+      return this.paymentService.createDebitCardLinkToken(user.id);
     }
   }
 
@@ -66,14 +66,14 @@ export class WalletController {
   @Get('linked-accounts')
   getLinkedAccounts(@Req() req: any) {
     const user = req.user as User;
-    return this.walletService.getLinkedAccounts(user.id);
+    return this.paymentService.getLinkedAccounts(user.id);
   }
 
   @UseGuards(AuthGuard())
   @Delete('cards')
   deletePaymentCard(@Req() req: any, @Body() { id }: { id: string }) {
     const user = req.user as User;
-    return this.walletService.removePaymentCard(user.id, id);
+    return this.paymentService.removePaymentCard(user.id, id);
   }
 
   @UseGuards(AuthGuard())
@@ -96,7 +96,7 @@ export class WalletController {
     },
   ) {
     const user = req.user as User;
-    return this.walletService.getHistory(
+    return this.paymentService.getHistory(
       user.id,
       page,
       limit,
@@ -114,7 +114,7 @@ export class WalletController {
     { verificationCode }: confirmWithdrawalDto,
   ) {
     const user = req.user as User;
-    return this.walletService.confirmWithdrawal(user, verificationCode);
+    return this.paymentService.confirmWithdrawal(user, verificationCode);
   }
 
   @UseGuards(AuthGuard())
@@ -125,6 +125,6 @@ export class WalletController {
     { amount, linkedAccountId }: WithdrawalDto,
   ) {
     const user = req.user as User;
-    return this.walletService.requestWithdrawal(user, amount, linkedAccountId);
+    return this.paymentService.requestWithdrawal(user, amount, linkedAccountId);
   }
 }

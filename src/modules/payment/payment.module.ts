@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common';
 import { TransactionEntity } from './entities/transaction.entity';
 import { WalletEntity } from './entities/wallet.entity';
-import { WalletController } from './wallet.controller';
-import { WalletService } from './wallet.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WithdrawalMethodsEntity } from './entities/withdrawalMethods.entity';
 import { WithdrawalRequestEntity } from './entities/withdrawalRequest.entity';
+import { PaymentController } from './payment.controller';
+import { PaymentService } from './payment.service';
 
 @Module({
-  controllers: [WalletController],
-  providers: [WalletService],
+  controllers: [PaymentController],
+  providers: [PaymentService],
   imports: [
     TypeOrmModule.forFeature([
       WalletEntity,
@@ -19,4 +19,4 @@ import { WithdrawalRequestEntity } from './entities/withdrawalRequest.entity';
     ]),
   ],
 })
-export class WalletModule {}
+export class PaymentModule {}
