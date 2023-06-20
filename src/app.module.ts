@@ -27,6 +27,8 @@ import { RewardsModule } from './modules/rewards/rewards.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import * as Joi from 'joi';
 import { PaymentModule } from './modules/payment/payment.module';
+import { CustomerService } from './modules/customer/customer.service';
+import { CustomerModule } from './modules/customer/customer.module';
 
 @Module({
   imports: [
@@ -104,6 +106,7 @@ import { PaymentModule } from './modules/payment/payment.module';
     RewardsModule,
     AnalyticsModule,
     PaymentModule,
+    CustomerModule,
   ],
   controllers: [AppController, UserController, SearchController],
   providers: [

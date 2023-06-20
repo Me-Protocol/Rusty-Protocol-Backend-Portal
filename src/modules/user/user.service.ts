@@ -22,11 +22,11 @@ import {
 import { JwtPayload, jwtConfigurations } from '@src/config/jwt.config';
 import { Device } from './entities/device.entity';
 import { ElasticIndex } from '../search/index/search.index';
-import { userIndex } from '../search/interface/search.interface';
 import { isNumber } from '@src/utils/helpers/isNumber';
 import { selectUser } from '@src/utils/helpers/selectUser';
 import { TwoFAType } from '@src/utils/enums/TwoFAType';
 import { LoginType } from '@src/utils/enums/LoginType';
+import { CustomerService } from '../customer/customer.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -43,11 +43,11 @@ export class UserService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Device)
     private readonly deviceRepository: Repository<Device>,
-
     private readonly mailService: MailService,
     private jwtService: JwtService,
     private smsService: SmsService,
     private readonly elasticIndex: ElasticIndex,
+    private customerService: CustomerService,
   ) {}
 
   // Signs a token
@@ -69,7 +69,7 @@ export class UserService {
     const deviceData = deviceDetector.detect(userAgent);
     const location = 'Lagos, NG'; //TODO:: please remove the hard coded location
 
-    const device = await this.deviceRepository.create({
+    const device = this.deviceRepository.create({
       name: deviceData?.device?.model,
       type: deviceData?.device?.type,
       agent: deviceData?.client?.name,
@@ -154,6 +154,7 @@ export class UserService {
       where: {
         id,
       },
+      relations: ['customer', 'brand'],
     });
   }
 
@@ -179,12 +180,6 @@ export class UserService {
   }
 
   async saveUser(user: User): Promise<User> {
-    const indexUser = new User();
-    indexUser.id = user.id;
-    indexUser.username = user.username;
-
-    this.elasticIndex.insertDocument(indexUser, userIndex);
-
     return await this.userRepository.save(user);
   }
 
@@ -246,6 +241,8 @@ export class UserService {
     email,
     password,
     confirmPassword,
+    name,
+    userType,
   }: EmailSignupDto): Promise<any> {
     email = email.toLowerCase();
     try {
@@ -268,13 +265,18 @@ export class UserService {
 
       newUser.password = hashedPassword;
       newUser.salt = salt;
+      newUser.userType = userType;
 
-      await this.saveUser(newUser);
+      const saveUser = await this.saveUser(newUser);
       await this.sendEmailVerificationCode(email);
+      await this.customerService.create({
+        name,
+        userId: saveUser.id,
+      });
 
       const token = await this.signToken({
         email: newUser.email,
-        id: newUser.id,
+        id: saveUser.id,
         phone: newUser.phone,
         username: newUser.username,
         device: null,
@@ -343,6 +345,8 @@ export class UserService {
     countryAbbr,
     password,
     confirmPassword,
+    name,
+    userType,
   }: PhoneSignupDto): Promise<any> {
     try {
       phone = phone.replace(/\D/g, '');
@@ -368,9 +372,15 @@ export class UserService {
 
       newUser.password = hashedPassword;
       newUser.salt = salt;
+      newUser.userType = userType;
 
       await this.saveUser(newUser);
       await this.sendPhoneVerificationCode(phone);
+      const saveUser = await this.saveUser(newUser);
+      await this.customerService.create({
+        name,
+        userId: saveUser.id,
+      });
 
       const token = await this.signToken({
         email: newUser.email,
@@ -527,31 +537,6 @@ export class UserService {
     }
 
     return token;
-  }
-
-  async updateUser(user: User, body: UpdateUserDto): Promise<any> {
-    // user.firstName = body.firstName;
-    // user.lastName = body.lastName;
-    // user.profileImage = body.profileImage;
-    // user.coverImage = body.coverImage;
-    // user.bio = body.bio;
-    // user.location = body.location;
-    // user.website = body.website;
-    // user.dob = body.dob;
-    // user.private = body.private;
-    // user.is2faEnabled = body.is2faEnabled;
-    // user.showActivity = body.showActivity;
-    // user.twoFAType = body.twoFAType;
-    // user.location_lat = body.location_lat;
-    // user.location_lng = body.location_lng;
-    // user.completedOnboarding = body.completedOnboarding;
-    // user.gender = body.gender;
-    // user.allow_contact_sync = body.allow_contact_sync;
-    // user.allow_notification = body.allow_notification;
-    // user.allow_location = body.allow_location;
-    user.appType = body.appType;
-
-    return await this.saveUser(user);
   }
 
   async logout(userId: string, deviceId: string): Promise<any> {
@@ -819,16 +804,6 @@ export class UserService {
     const newUser = new User();
     newUser.email = email;
     newUser.emailVerified = true;
-    // newUser.firstName = name?.split(' ')[0];
-    // newUser.lastName = name?.split(' ')[1];
-    // newUser.profileImage = profileImage;
-    // newUser.coverImage = coverImage;
-    // newUser.bio = bio;
-    // newUser.location = location;
-    // newUser.website = website;
-    // newUser.username = email.split('@')[0];
-    // newUser.loginType = provider;
-    // newUser.password = Math.random().toString(36).slice(-8);
 
     if (provider === LoginType.FACEBOOK) {
       newUser.facebookAuth = {
@@ -848,6 +823,11 @@ export class UserService {
     }
 
     const savedUser = await this.saveUser(newUser);
+
+    await this.customerService.create({
+      name,
+      userId: savedUser.id,
+    });
 
     // TODO CREATE WALLET
 

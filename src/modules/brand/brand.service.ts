@@ -1,26 +1,48 @@
-import { Injectable } from '@nestjs/common';
-import { CreateBrandDto } from './dto/create-brand.dto';
-import { UpdateBrandDto } from './dto/update-brand.dto';
+import { HttpException, Injectable } from "@nestjs/common";
+import { CreateBrandDto, UpdateBrandDto } from "./dto/brand.dto";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Brand } from "./entities/brand.entity";
+import { Repository } from "typeorm";
+import { ElasticIndex } from "../search/index/search.index";
+import { brandIndex } from "../search/interface/search.interface";
 
 @Injectable()
 export class BrandService {
+  constructor(
+    @InjectRepository(Brand)
+    private readonly brandRepo: Repository<Brand>,
+
+    private readonly elasticIndex: ElasticIndex
+  ) {}
+
   create(createBrandDto: CreateBrandDto) {
-    return 'This action adds a new brand';
+    const brand = this.brandRepo.create(createBrandDto);
+
+    this.elasticIndex.insertDocument(brand, brandIndex);
+
+    return this.brandRepo.save(brand);
   }
 
-  findAll() {
-    return `This action returns all brand`;
+  save(brand: Brand) {
+    return this.brandRepo.save(brand);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} brand`;
-  }
+  async update(body: UpdateBrandDto, id: string) {
+    if (body.name) {
+      body.slug = body.name.toLowerCase().replace(/\s/g, "-");
 
-  update(id: number, updateBrandDto: UpdateBrandDto) {
-    return `This action updates a #${id} brand`;
-  }
+      const checkSlug = await this.brandRepo.findOneBy({ slug: body.slug });
+      if (checkSlug) {
+        throw new HttpException("Name/Slug already exists", 400);
+      }
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} brand`;
+    await this.brandRepo.update({ userId: id }, body);
+
+    const brand = await this.brandRepo.findOneBy({ userId: id });
+
+    this.elasticIndex.updateDocument(brand, brandIndex);
+
+    return brand;
   }
 }
