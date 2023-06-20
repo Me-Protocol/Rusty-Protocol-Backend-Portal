@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-console.log('sama');
 
 @Injectable()
 export class AppService {

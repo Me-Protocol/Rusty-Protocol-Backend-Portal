@@ -24,8 +24,8 @@ import { GoogleStrategy } from './middlewares/google-strategy.middleware';
 import { FacebookStrategy } from './middlewares/facebook-strategy.middleware';
 import { ElasticIndex } from './modules/search/index/search.index';
 import { RewardsModule } from './modules/rewards/rewards.module';
-import { PaymentsModule } from './modules/payments/payments.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { WalletModule } from './modules/wallet/wallet.module';
 import * as Joi from 'joi';
 
 @Module({
@@ -68,10 +68,10 @@ import * as Joi from 'joi';
         CLOUDINARY_CLOUD_NAME: Joi.string().required(),
         CLOUDINARY_API_KEY: Joi.string().required(),
         CLOUDINARY_API_SECRET: Joi.string().required(),
-        // STRIPE_SECRET_KEY: Joi.string().required(),
-        // STRIPE_PUBLISHABLE_KEY: Joi.string().required(),
-        // STRIPE_API_VERSION: Joi.string().required(),
-        // STRIPE_REFRESH_URL: Joi.string().required(),
+        STRIPE_SECRET_KEY: Joi.string().required(),
+        STRIPE_PUBLISHABLE_KEY: Joi.string().required(),
+        STRIPE_API_VERSION: Joi.string().required(),
+        STRIPE_REFRESH_URL: Joi.string().required(),
         NODE_ENV: Joi.string().required(),
         DFNS_ACCESS_TOKEN: Joi.string().required(),
         DFNS_PRIVATE_ACCESS_TOKEN: Joi.string().required(),
@@ -102,8 +102,8 @@ import * as Joi from 'joi';
     SmsModule,
     SearchModule,
     RewardsModule,
-    PaymentsModule,
     AnalyticsModule,
+    WalletModule,
   ],
   controllers: [AppController, UserController, SearchController],
   providers: [
