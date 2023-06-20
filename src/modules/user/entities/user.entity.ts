@@ -6,6 +6,7 @@ import { LoginType } from "@src/utils/enums/LoginType";
 import { Role } from "@src/utils/enums/Role";
 import { TwoFAType } from "@src/utils/enums/TwoFAType";
 import { UserAppType } from "@src/utils/enums/UserAppType";
+import { Brand } from "@src/modules/brand/entities/brand.entity";
 
 @Entity("user")
 export class User extends BaseEntity {
@@ -147,4 +148,7 @@ export class User extends BaseEntity {
 
   @OneToOne(() => Customer, (customer) => customer.user)
   customer: Customer;
+
+  @OneToOne(() => Brand, (brand) => brand.user)
+  brand: Brand;
 }

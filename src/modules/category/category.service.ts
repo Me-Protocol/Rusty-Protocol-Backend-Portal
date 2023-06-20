@@ -1,26 +1,68 @@
-import { Injectable } from '@nestjs/common';
-import { CreateCategoryDto } from './dto/create-category.dto';
-import { UpdateCategoryDto } from './dto/update-category.dto';
+import { Injectable } from "@nestjs/common";
+import {
+  CreateCategoryDto,
+  FilterCategoryDto,
+  UpdateCategoryDto,
+} from "./dto/category.dto";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Category } from "./entities/category.entity";
+import { Repository } from "typeorm";
+import { ElasticIndex } from "../search/index/search.index";
+import { categoryIndex } from "../search/interface/search.interface";
 
 @Injectable()
 export class CategoryService {
+  constructor(
+    @InjectRepository(Category)
+    private readonly categoryRepo: Repository<Category>,
+
+    private readonly elasticIndex: ElasticIndex
+  ) {}
+
   create(createCategoryDto: CreateCategoryDto) {
-    return 'This action adds a new category';
+    const category = this.categoryRepo.create(createCategoryDto);
+
+    this.elasticIndex.insertDocument(category, categoryIndex);
+
+    return this.categoryRepo.save(category);
   }
 
-  findAll() {
-    return `This action returns all category`;
+  update(id: string, updateCategoryDto: UpdateCategoryDto) {
+    const category = this.categoryRepo.create(updateCategoryDto);
+
+    this.elasticIndex.updateDocument(category, categoryIndex);
+
+    return this.categoryRepo.update({ id }, category);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} category`;
+  async findAll(query: FilterCategoryDto) {
+    const { page, limit, type } = query;
+
+    const categoryQuery = this.categoryRepo
+      .createQueryBuilder("category")
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    if (type) {
+      categoryQuery.andWhere("category.type = :type", { type: query.type });
+    }
+
+    const total = await categoryQuery.getCount();
+    const categories = await categoryQuery.getMany();
+
+    return {
+      total,
+      categories,
+      nextPage: total > page * limit ? page + 1 : null,
+      previousPage: page > 1 ? page - 1 : null,
+    };
   }
 
-  update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    return `This action updates a #${id} category`;
+  findOne(id: string) {
+    return this.categoryRepo.findOneBy({ id });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} category`;
+  remove(id: string) {
+    return this.categoryRepo.softDelete({ id });
   }
 }

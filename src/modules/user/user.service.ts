@@ -153,6 +153,7 @@ export class UserService {
       where: {
         id,
       },
+      relations: ["customer", "brand"],
     });
   }
 
