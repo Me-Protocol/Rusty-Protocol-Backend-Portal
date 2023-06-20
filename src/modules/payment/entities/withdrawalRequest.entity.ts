@@ -1,7 +1,7 @@
 import { Entity, Column, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { BaseEntity } from '@src/models/base.entity';
 import { User } from '@src/modules/user/entities/user.entity';
-import { WalletEntity } from './wallet.entity';
+import { WalletEntity } from './payment.entity';
 import { WithdrawalMethodsEntity } from './withdrawalMethods.entity';
 import { StatusType } from '@src/utils/enums/Transactions';
 // import { StatusType } from '@src/utils/enums';

@@ -3,7 +3,7 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from '@src/models/base.entity';
 import { User } from '@src/modules/user/entities/user.entity';
-import { WalletEntity } from './wallet.entity';
+import { WalletEntity } from './payment.entity';
 import { StatusType, TransactionsType } from '@src/utils/enums/Transactions';
 // import { StatusType, TransactionType } from '@src/utils/enums';
 

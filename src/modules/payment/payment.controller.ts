@@ -22,7 +22,7 @@ import { User } from '../user/entities/user.entity';
 import { PaymentService } from './payment.service';
 
 @UseInterceptors(ResponseInterceptor)
-@Controller('wallet')
+@Controller('payment')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 

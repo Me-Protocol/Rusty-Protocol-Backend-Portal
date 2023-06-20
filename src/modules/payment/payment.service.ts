@@ -5,7 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 // import { PaginationService } from '@src/utils/pagination';
 import { MailService } from '../mail/mail.service';
 import { User } from '../user/entities/user.entity';
-import { WalletEntity } from './entities/wallet.entity';
+import { WalletEntity } from './entities/payment.entity';
 import { TransactionEntity } from './entities/transaction.entity';
 import { WithdrawalMethodsEntity } from './entities/withdrawalMethods.entity';
 import { WithdrawalRequestEntity } from './entities/withdrawalRequest.entity';

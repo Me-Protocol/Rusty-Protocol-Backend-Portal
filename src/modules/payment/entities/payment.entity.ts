@@ -4,7 +4,7 @@ import { Entity, Column, OneToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from '@src/models/base.entity';
 import { User } from '@src/modules/user/entities/user.entity';
 
-@Entity('wallet')
+@Entity('payment')
 export class WalletEntity extends BaseEntity {
   @Column()
   userId: string;
