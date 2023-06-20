@@ -5,7 +5,7 @@ import { BaseEntity } from '@src/models/base.entity';
 import { User } from '@src/modules/user/entities/user.entity';
 
 @Entity('payment')
-export class WalletEntity extends BaseEntity {
+export class PaymentEntity extends BaseEntity {
   @Column()
   userId: string;
 

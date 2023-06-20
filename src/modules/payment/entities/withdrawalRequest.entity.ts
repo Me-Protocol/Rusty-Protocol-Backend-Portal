@@ -1,7 +1,7 @@
 import { Entity, Column, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { BaseEntity } from '@src/models/base.entity';
 import { User } from '@src/modules/user/entities/user.entity';
-import { WalletEntity } from './payment.entity';
+import { PaymentEntity } from './payment.entity';
 import { WithdrawalMethodsEntity } from './withdrawalMethods.entity';
 import { StatusType } from '@src/utils/enums/Transactions';
 // import { StatusType } from '@src/utils/enums';
@@ -32,9 +32,9 @@ export class WithdrawalRequestEntity extends BaseEntity {
   @Column()
   walletId: string;
 
-  @ManyToOne(() => WalletEntity, (wallet) => wallet.id)
+  @ManyToOne(() => PaymentEntity, (wallet) => wallet.id)
   @JoinColumn({ name: 'walletId' })
-  wallet: WalletEntity;
+  wallet: PaymentEntity;
 
   @Column({
     nullable: true,

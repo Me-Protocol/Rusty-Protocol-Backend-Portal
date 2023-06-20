@@ -5,7 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 // import { PaginationService } from '@src/utils/pagination';
 import { MailService } from '../mail/mail.service';
 import { User } from '../user/entities/user.entity';
-import { WalletEntity } from './entities/payment.entity';
+import { PaymentEntity } from './entities/payment.entity';
 import { TransactionEntity } from './entities/transaction.entity';
 import { WithdrawalMethodsEntity } from './entities/withdrawalMethods.entity';
 import { WithdrawalRequestEntity } from './entities/withdrawalRequest.entity';
@@ -18,8 +18,8 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 @Injectable()
 export class PaymentService {
   constructor(
-    @InjectRepository(WalletEntity)
-    private readonly walletRepository: Repository<WalletEntity>,
+    @InjectRepository(PaymentEntity)
+    private readonly walletRepository: Repository<PaymentEntity>,
     @InjectRepository(TransactionEntity)
     private readonly transactionRepo: Repository<TransactionEntity>,
     @InjectRepository(WithdrawalMethodsEntity)
@@ -32,7 +32,7 @@ export class PaymentService {
   ) {}
 
   async create(createWalletDto: CreateWalletDto) {
-    const newWallet = new WalletEntity();
+    const newWallet = new PaymentEntity();
     const customer = await stripe.customers.create();
     const account = await stripe.accounts.create({
       type: 'express',
