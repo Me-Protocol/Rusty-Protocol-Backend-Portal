@@ -27,7 +27,15 @@ import { RewardsModule } from './modules/rewards/rewards.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import * as Joi from 'joi';
 import { PaymentModule } from './modules/payment/payment.module';
+import { CustomerService } from './modules/customer/customer.service';
+import { BrandService } from './modules/brand/brand.service';
+import { CategoryService } from './modules/category/category.service';
 import { CustomerModule } from './modules/customer/customer.module';
+import { BrandModule } from './modules/brand/brand.module';
+import { CategoryModule } from './modules/category/category.module';
+import { CustomerController } from './modules/customer/customer.controller';
+import { BrandController } from './modules/brand/brand.controller';
+import { CategoryController } from './modules/category/category.controller';
 
 @Module({
   imports: [
@@ -106,8 +114,18 @@ import { CustomerModule } from './modules/customer/customer.module';
     AnalyticsModule,
     PaymentModule,
     CustomerModule,
+    CustomerModule,
+    BrandModule,
+    CategoryModule,
   ],
-  controllers: [AppController, UserController, SearchController],
+  controllers: [
+    AppController,
+    UserController,
+    SearchController,
+    CustomerController,
+    BrandController,
+    CategoryController,
+  ],
   providers: [
     ElasticIndex,
     {
@@ -123,6 +141,9 @@ import { CustomerModule } from './modules/customer/customer.module';
     SmsService,
     MailService,
     SearchService,
+    CustomerService,
+    BrandService,
+    CategoryService,
   ],
   exports: [JwtStrategy, PassportModule],
 })
