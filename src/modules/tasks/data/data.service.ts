@@ -1,10 +1,32 @@
-import { HttpException } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import moment from 'moment';
+import { Between, LessThan, Repository } from 'typeorm';
+import { TaskResponseEntity } from '../model/taskResponse.entity';
+import {
+  InApp_TaskType,
+  Out_TaskType,
+  TaskStatus,
+} from '@src/utils/enums/TasksTypes';
+import { TaskDataEntity } from '../model/tasks.entity';
+import {
+  CreateTaskDto,
+  FilterTaskDto,
+  JobResponseDto,
+  UpdateReportDto,
+  UpdateStatusDto,
+  UpdateTaskDto,
+  UpdateTaskResponseDto,
+} from '../dto/tasks.dto';
+import { JobResponseEntity } from '../model/jobResponse.entity';
+import { TaskResponderEntity } from '../model/taskResponder.entity';
+import { readFile, writeFile } from 'fs/promises';
 
 @Injectable()
-export class TasksService {
+export class TaskDataService {
   constructor(
-    @InjectRepository(TaskEntity)
-    private taskRepository: Repository<TaskEntity>,
+    @InjectRepository(TaskDataEntity)
+    private taskRepository: Repository<TaskDataEntity>,
 
     @InjectRepository(TaskResponseEntity)
     private taskResponseRepository: Repository<TaskResponseEntity>,
@@ -34,7 +56,6 @@ export class TasksService {
     private readonly notificationService: NotificationService,
     private readonly userService: UserService,
 
-    @Inject(forwardRef(() => TasksResultService))
     private readonly tasksResultService: TasksResultService,
   ) {}
 
@@ -227,7 +248,7 @@ export class TasksService {
       };
 
       return {
-        tasks: tasks as TaskEntity[],
+        tasks: tasks as TaskDataEntity[],
         pagination,
       };
     } catch (error) {
@@ -363,10 +384,10 @@ export class TasksService {
       }
 
       const availableTaskTypes = [
-        TaskType.OUT_BRAND_TAGGING,
-        TaskType.OUT_SM_FOLLOW,
-        TaskType.OUT_LIKE_POST,
-        TaskType.OUT_REPOST,
+        Out_TaskType.OUT_BRAND_TAGGING,
+        Out_TaskType.OUT_SM_FOLLOW,
+        Out_TaskType.OUT_LIKE_POST,
+        Out_TaskType.OUT_REPOST,
       ];
 
       const user = await this.userService.findOneByid(user_id as any);
@@ -659,7 +680,7 @@ export class TasksService {
     }
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  // @Cron(CronExpression.EVERY_MINUTE)
   async sendResponseToJobLauncher() {
     try {
       // send response and close task
@@ -794,7 +815,7 @@ export class TasksService {
     }
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  // @Cron(CronExpression.EVERY_MINUTE)
   async checkJobStatus() {
     // get one record with no escrow address
     const record = await this.taskResponseRecordRepo.findOne({
@@ -839,7 +860,7 @@ export class TasksService {
     }
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  // @Cron(CronExpression.EVERY_MINUTE)
   async fundJob() {
     // get one record with no escrow address
     const record = await this.taskResponseRecordRepo.findOne({
@@ -1069,7 +1090,7 @@ export class TasksService {
     }
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_10PM)
+  // @Cron(CronExpression.EVERY_DAY_AT_10PM)
   async checkTaskForBountyRecords() {
     try {
       const bounties = await this.bountyRecordRepo.find({
@@ -1121,7 +1142,7 @@ export class TasksService {
   }
 
   // CRON JOB TO SELECT WINNERS FOR A TASK
-  @Cron(CronExpression.EVERY_MINUTE)
+  // @Cron(CronExpression.EVERY_MINUTE)
   async completeTask() {
     try {
       // send response and close task
@@ -1200,23 +1221,23 @@ export class TasksService {
   }
 
   private async validateResponse(
-    activeTask: TaskEntity,
+    activeTask: TaskDataEntity,
     response: TaskResponderEntity,
   ) {
     const availableTaskTypes = [
-      TaskType.ME_COLLECTION,
-      TaskType.ME_FOLLOW,
-      TaskType.ME_PRODUCT_LIKE,
-      TaskType.ME_SHARE,
-      TaskType.OUT_SM_FOLLOW,
-      TaskType.OUT_BRAND_TAGGING,
-      TaskType.OUT_LIKE_POST,
-      TaskType.OUT_REPOST,
+      InApp_TaskType.IN_APP_COLLECTION,
+      InApp_TaskType.IN_APP_FOLLOW,
+      InApp_TaskType.IN_APP_PRODUCT_LIKE,
+      InApp_TaskType.IN_APP_SHARE,
+      Out_TaskType.OUT_SM_FOLLOW,
+      Out_TaskType.OUT_BRAND_TAGGING,
+      Out_TaskType.OUT_LIKE_POST,
+      Out_TaskType.OUT_REPOST,
     ];
 
     if (availableTaskTypes.includes(activeTask.task_type)) {
       // validate response
-      if (activeTask.task_type === TaskType.ME_COLLECTION) {
+      if (activeTask.task_type === InApp_TaskType.IN_APP_COLLECTION) {
         const check = await this.tasksResultService.verifyUserCollectedAnOffer(
           activeTask.offer_id,
           response.user_id,
@@ -1232,7 +1253,7 @@ export class TasksService {
         }
       }
 
-      if (activeTask.task_type === TaskType.ME_FOLLOW) {
+      if (activeTask.task_type === InApp_TaskType.IN_APP_FOLLOW) {
         const check = await this.tasksResultService.verifyUserFollowsBrand(
           activeTask.brand_id,
           response.user_id,
@@ -1248,7 +1269,7 @@ export class TasksService {
         }
       }
 
-      if (activeTask.task_type === TaskType.ME_PRODUCT_LIKE) {
+      if (activeTask.task_type === InApp_TaskType.IN_APP_PRODUCT_LIKE) {
         const check = await this.tasksResultService.verifyUserLikedAnOffer(
           activeTask.offer_id,
           response.user_id,
@@ -1264,7 +1285,7 @@ export class TasksService {
         }
       }
 
-      if (activeTask.task_type === TaskType.ME_SHARE) {
+      if (activeTask.task_type === InApp_TaskType.IN_APP_SHARE) {
         const check = await this.tasksResultService.verifyUserSharedAnOffer(
           activeTask.offer_id,
           response.user_id,
@@ -1280,7 +1301,7 @@ export class TasksService {
         }
       }
 
-      if (activeTask.task_type === TaskType.OUT_SM_FOLLOW) {
+      if (activeTask.task_type === Out_TaskType.OUT_SM_FOLLOW) {
         const check =
           await this.tasksResultService.checkIfUserIsFollowingBrandOnTwitter(
             response.user.twitterUsername,
@@ -1297,7 +1318,7 @@ export class TasksService {
         }
       }
 
-      if (activeTask.task_type === TaskType.OUT_BRAND_TAGGING) {
+      if (activeTask.task_type === Out_TaskType.OUT_BRAND_TAGGING) {
         const responseData = await this.taskResponseRepository.findOne({
           where: {
             user_id: response.user_id,
@@ -1325,7 +1346,7 @@ export class TasksService {
         }
       }
 
-      if (activeTask.task_type === TaskType.OUT_LIKE_POST) {
+      if (activeTask.task_type === Out_TaskType.OUT_LIKE_POST) {
         const tweetId = activeTask.social_post?.split('/').pop();
 
         const check =
@@ -1344,7 +1365,7 @@ export class TasksService {
         }
       }
 
-      if (activeTask.task_type === TaskType.OUT_REPOST) {
+      if (activeTask.task_type === Out_TaskType.OUT_REPOST) {
         const tweetId = activeTask.social_post?.split('/').pop();
 
         const check =
@@ -1366,7 +1387,7 @@ export class TasksService {
   }
 
   // Select winners
-  @Cron(CronExpression.EVERY_MINUTE)
+  // @Cron(CronExpression.EVERY_MINUTE)
   async selectWinners() {
     // get all responders who performed task
 
@@ -1426,7 +1447,7 @@ export class TasksService {
     }
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  // @Cron(CronExpression.EVERY_DAY_AT_10AM)
   async checkAvailableBounty() {
     // call blockchain to check available bounty
     //   const lastBountyRecord = await this.bountyRecordRepo.findOne({
@@ -1467,86 +1488,75 @@ export class TasksService {
   // }
 
   // expire tasks that the time frame has elapsed
-  @Cron(CronExpression.EVERY_MINUTE)
+  // @Cron(CronExpression.EVERY_MINUTE)
   async expireTasks() {
-    const activeTasks = await this.taskRepository.find({
-      relations: ['brand', 'token'],
-      where: { status: TaskStatus.ACTIVE },
-    });
-
-    for (let index = 0; index < activeTasks.length; index++) {
-      const activeTask = activeTasks[index];
-
-      if (activeTask) {
-        // check if time frame has elapsed
-        const isValid = moment().isBetween(
-          moment(activeTask.created_at).subtract(1, 'hours'),
-          moment(activeTask.created_at).add(
-            activeTask.time_frame_in_hours,
-            'hours',
-          ),
-        );
-
-        if (!isValid) {
-          // send response to job launcher
-          activeTask.expired = true;
-          await this.taskRepository.save(activeTask);
-        }
-      }
-    }
+    // const activeTasks = await this.taskRepository.find({
+    //   relations: ['brand', 'token'],
+    //   where: { status: TaskStatus.ACTIVE },
+    // });
+    // for (let index = 0; index < activeTasks.length; index++) {
+    //   const activeTask = activeTasks[index];
+    //   if (activeTask) {
+    //     // check if time frame has elapsed
+    //     const isValid = moment().isBetween(
+    //       moment(activeTask.created_at).subtract(1, 'hours'),
+    //       moment(activeTask.created_at).add(
+    //         activeTask.time_frame_in_hours,
+    //         'hours',
+    //       ),
+    //     );
+    //     if (!isValid) {
+    //       // send response to job launcher
+    //       activeTask.expired = true;
+    //       await this.taskRepository.save(activeTask);
+    //     }
+    //   }
+    // }
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  // @Cron(CronExpression.EVERY_DAY_AT_10AM)
   async sendNotificationOfNewActiveTasks() {
-    const tasks = await this.taskRepository.find({
-      relations: ['brand', 'token', 'token.reward'],
-      where: {
-        status: TaskStatus.ACTIVE,
-        notification_sent: false,
-      },
-    });
-
-    if (tasks.length > 0) {
-      for (let index = 0; index < tasks.length; index++) {
-        const task = tasks[index];
-
-        const brand = await this.brandService.findOneByBrandId(task.brand.id);
-
-        if (brand) {
-          // find brand followers
-          const followers = await this.followService.getBrandsFollowers(
-            brand.id as any,
-          );
-
-          if (followers.length > 0) {
-            for (let index = 0; index < followers.length; index++) {
-              const follower = followers[index];
-
-              const notification = new NotificationEntity();
-              notification.user_id = follower.follower_id as any;
-              notification.message = `New task available for ${task.token.symbol}. Join now to earn`;
-              notification.type = NotificationType.POINT;
-              notification.rewards = [task.token.reward];
-              notification.title = 'New task available';
-
-              notification.emailMessage = `
-              <p>Hi ${follower.follower.firstName},</p>
-              <p>There is a new task available for ${task.token.symbol}.</p>
-              <p>Join now to earn.</p>
-              <p>Regards,</p>
-              `;
-
-              if (notification) {
-                await this.notificationService.createNotification(notification);
-              }
-            }
-
-            await this.taskRepository.update(task.id, {
-              notification_sent: true,
-            });
-          }
-        }
-      }
-    }
+    // const tasks = await this.taskRepository.find({
+    //   relations: ['brand', 'token', 'token.reward'],
+    //   where: {
+    //     status: TaskStatus.ACTIVE,
+    //     notification_sent: false,
+    //   },
+    // });
+    // if (tasks.length > 0) {
+    //   for (let index = 0; index < tasks.length; index++) {
+    //     const task = tasks[index];
+    //     const brand = await this.brandService.findOneByBrandId(task.brand.id);
+    //     if (brand) {
+    //       // find brand followers
+    //       const followers = await this.followService.getBrandsFollowers(
+    //         brand.id as any,
+    //       );
+    //       if (followers.length > 0) {
+    //         for (let index = 0; index < followers.length; index++) {
+    //           const follower = followers[index];
+    //           const notification = new NotificationEntity();
+    //           notification.user_id = follower.follower_id as any;
+    //           notification.message = `New task available for ${task.token.symbol}. Join now to earn`;
+    //           notification.type = NotificationType.POINT;
+    //           notification.rewards = [task.token.reward];
+    //           notification.title = 'New task available';
+    //           notification.emailMessage = `
+    //           <p>Hi ${follower.follower.firstName},</p>
+    //           <p>There is a new task available for ${task.token.symbol}.</p>
+    //           <p>Join now to earn.</p>
+    //           <p>Regards,</p>
+    //           `;
+    //           if (notification) {
+    //             await this.notificationService.createNotification(notification);
+    //           }
+    //         }
+    //         await this.taskRepository.update(task.id, {
+    //           notification_sent: true,
+    //         });
+    //       }
+    //     }
+    //   }
+    // }
   }
 }

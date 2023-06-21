@@ -6,9 +6,9 @@ import {
   OneToOne,
   OneToMany,
 } from 'typeorm';
-import { TaskEntity } from './tasks.entity';
-import { AuditFields } from '@/config/inheritance.entity';
 import { JobResponseEntity } from './jobResponse.entity';
+import { AuditFields } from '@src/models/base.entity';
+import { TaskDataEntity } from './tasks.entity';
 
 @Entity()
 export class TaskResponseRecord extends AuditFields {
@@ -47,9 +47,9 @@ export class TaskResponseRecord extends AuditFields {
   @Column()
   task_id: number;
 
-  @OneToOne(() => TaskEntity, (task) => task.taskResponseRecord)
+  @OneToOne(() => TaskDataEntity, (task) => task.taskResponseRecord)
   @JoinColumn({ name: 'task_id' })
-  task: TaskEntity;
+  task: TaskDataEntity;
 
   @OneToMany(() => JobResponseEntity, (jobResponse) => jobResponse.task_record)
   jobResponses: JobResponseEntity[];

@@ -1,4 +1,3 @@
-import { AuditFields } from '@/config/inheritance.entity';
 import { UserEntity } from '@modules/user/models/user.entity';
 import {
   Column,
@@ -7,10 +6,11 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { TaskEntity } from '../model/tasks.entity';
+import { TaskDataEntity } from './tasks.entity';
+import { AuditFields } from '@src/models/base.entity';
 
-@Entity('task_response')
-export class TaskResponseEntity extends AuditFields {
+@Entity('task_request')
+export class TaskRequest extends AuditFields {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -32,9 +32,9 @@ export class TaskResponseEntity extends AuditFields {
   @Column({ nullable: true })
   wallet_address: string;
 
-  @ManyToOne(() => TaskEntity, (task) => task.taskResponses)
+  @ManyToOne(() => TaskDataEntity, (task) => task.taskResponses)
   @JoinColumn({ name: 'task_id' })
-  task: TaskEntity;
+  task: TaskDataEntity;
 
   @ManyToOne(() => UserEntity, (user) => user.taskResponses)
   @JoinColumn({ name: 'user_id' })

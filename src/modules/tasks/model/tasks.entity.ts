@@ -1,3 +1,4 @@
+import { TaskStatus, TaskType } from '@src/utils/enums/TasksTypes';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -7,16 +8,9 @@ import {
   OneToOne,
   OneToMany,
 } from 'typeorm';
-import { AuditFields } from '@/config/inheritance.entity';
-import { BrandEntity } from '@modules/brands/model/brand.entity';
-import { TaskStatus, TaskType } from '@middleware/enums/task.enum';
-import { TaskResponseEntity } from './taskResponse.entity';
-import { TokenReward } from '@modules/tokenreward/models/tokenreward.entity';
-import { TaskResponseRecord } from './taskResponseRecord.entity';
-import { OffersEntity } from '@/modules/offers/model/offers.entity';
 
 @Entity('tasks')
-export class TaskEntity extends AuditFields {
+export class TaskDataEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -55,9 +49,9 @@ export class TaskEntity extends AuditFields {
   @Column()
   brand_id: number;
 
-  @ManyToOne(() => BrandEntity, (brand) => brand.tasks)
-  @JoinColumn({ name: 'brand_id' })
-  brand: BrandEntity;
+  // @ManyToOne(() => BrandEntity, (brand) => brand.tasks)
+  // @JoinColumn({ name: 'brand_id' })
+  // brand: BrandEntity;
 
   @Column({ nullable: true })
   report: string;

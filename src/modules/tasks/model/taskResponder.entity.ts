@@ -1,5 +1,4 @@
 // task responder entity
-
 import { AuditFields } from '@/config/inheritance.entity';
 import { UserEntity } from '@modules/user/models/user.entity';
 import {
