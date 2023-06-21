@@ -36,6 +36,7 @@ import { CategoryModule } from './modules/category/category.module';
 import { CustomerController } from './modules/customer/customer.controller';
 import { BrandController } from './modules/brand/brand.controller';
 import { CategoryController } from './modules/category/category.controller';
+import { TasksModule } from './modules/tasks/tasks.module';
 
 @Module({
   imports: [
@@ -117,6 +118,7 @@ import { CategoryController } from './modules/category/category.controller';
     CustomerModule,
     BrandModule,
     CategoryModule,
+    TasksModule,
   ],
   controllers: [
     AppController,
