@@ -23,6 +23,15 @@ import { TwitterStrategy } from "./middlewares/twitter-strategy.middleware";
 import { GoogleStrategy } from "./middlewares/google-strategy.middleware";
 import { FacebookStrategy } from "./middlewares/facebook-strategy.middleware";
 import { ElasticIndex } from "./modules/search/index/search.index";
+import { CustomerService } from "./modules/customer/customer.service";
+import { BrandService } from "./modules/brand/brand.service";
+import { CategoryService } from "./modules/category/category.service";
+import { CustomerModule } from "./modules/customer/customer.module";
+import { BrandModule } from "./modules/brand/brand.module";
+import { CategoryModule } from "./modules/category/category.module";
+import { CustomerController } from "./modules/customer/customer.controller";
+import { BrandController } from "./modules/brand/brand.controller";
+import { CategoryController } from "./modules/category/category.controller";
 
 @Module({
   imports: [
@@ -50,8 +59,18 @@ import { ElasticIndex } from "./modules/search/index/search.index";
     MailModule,
     SmsModule,
     SearchModule,
+    CustomerModule,
+    BrandModule,
+    CategoryModule,
   ],
-  controllers: [AppController, UserController, SearchController],
+  controllers: [
+    AppController,
+    UserController,
+    SearchController,
+    CustomerController,
+    BrandController,
+    CategoryController,
+  ],
   providers: [
     ElasticIndex,
     {
@@ -67,6 +86,9 @@ import { ElasticIndex } from "./modules/search/index/search.index";
     SmsService,
     MailService,
     SearchService,
+    CustomerService,
+    BrandService,
+    CategoryService,
   ],
   exports: [JwtStrategy, PassportModule],
 })
