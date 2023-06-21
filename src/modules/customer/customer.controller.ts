@@ -6,14 +6,14 @@ import {
   UseGuards,
   UseInterceptors,
   ValidationPipe,
-} from "@nestjs/common";
-import { CustomerService } from "./customer.service";
-import { ResponseInterceptor } from "@src/interceptors/response.interceptor";
-import { AuthGuard } from "@nestjs/passport";
-import { UpdateCustomerDto } from "./dto/customer.dto";
+} from '@nestjs/common';
+import { CustomerService } from './customer.service';
+import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
+import { AuthGuard } from '@nestjs/passport';
+import { UpdateCustomerDto } from './dto/customer.dto';
 
 @UseInterceptors(ResponseInterceptor)
-@Controller("customer")
+@Controller('customer')
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
