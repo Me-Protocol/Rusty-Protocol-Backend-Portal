@@ -1,11 +1,11 @@
+import { AllTaskTypes, TaskStatus } from '@src/utils/enums/TasksTypes';
 import { IsArray } from 'class-validator';
-import { TaskStatus, TaskType } from 'src/middleware/enums/task.enum';
 import { FindOptionsOrderValue } from 'typeorm';
 
 export class CreateTaskDto {
   title: string;
   description: string;
-  task_type: TaskType;
+  task_type: AllTaskTypes;
   validation: string;
   time_frame_in_hours: number;
   number_of_winners: number;
@@ -26,7 +26,7 @@ export class CreateTaskDto {
 export class UpdateTaskDto {
   title: string;
   description: string;
-  task_type: TaskType;
+  task_type: AllTaskTypes;
   validation: string;
   time_frame_in_hours: number;
   number_of_winners: number;
@@ -76,7 +76,7 @@ export class JobResponseDto {
 export class FilterTaskDto {
   page: number;
   limit: number;
-  type: TaskType;
+  type: AllTaskTypes;
   sort: {
     order: FindOptionsOrderValue;
     trending: boolean;

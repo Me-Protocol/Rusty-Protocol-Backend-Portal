@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class InAppService {
+  constructor() {}
+
   // INAPP_PRODUCT_LIKE
   async verifyUserFollowsBrand(brandId: number, userId: number) {
     const check = await this.followService.checkIfFollowing(brandId, userId);

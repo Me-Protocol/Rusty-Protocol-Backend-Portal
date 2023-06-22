@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class OutAppService {
+  constructor() {}
   // OUTAPP_SM_FOLLOW
   async checkIfUserIsFollowingBrandOnTwitter(
     user_twitter_name: string,
