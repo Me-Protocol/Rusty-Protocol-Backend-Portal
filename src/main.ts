@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { jwtConfigurations } from './config/jwt.config';
 import * as session from 'express-session';
-import { logger } from './modules/logger/logger.service';
+import { logger } from './globalServices/logger/logger.service';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const cloudinary_1 = require('cloudinary');

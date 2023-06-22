@@ -2,14 +2,11 @@ import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UserService } from './modules/user/user.service';
-import { UserController } from './modules/user/user.controller';
-import { UserModule } from './modules/user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmConfig } from './config/typeorm.config';
-import { MailModule } from './modules/mail/mail.module';
-import { SmsModule } from './modules/sms/sms.module';
+import { MailModule } from './globalServices/mail/mail.module';
+import { SmsModule } from './globalServices/sms/sms.module';
 import { jwtConfigurations } from './config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
@@ -17,26 +14,30 @@ import { JwtStrategy } from './middlewares/jwt-strategy.middleware';
 import { SearchService } from './modules/search/search.service';
 import { SearchModule } from './modules/search/search.module';
 import { SearchController } from './modules/search/search.controller';
-import { SmsService } from './modules/sms/sms.service';
-import { MailService } from './modules/mail/mail.service';
+import { SmsService } from './globalServices/sms/sms.service';
+import { MailService } from './globalServices/mail/mail.service';
 import { TwitterStrategy } from './middlewares/twitter-strategy.middleware';
 import { GoogleStrategy } from './middlewares/google-strategy.middleware';
 import { FacebookStrategy } from './middlewares/facebook-strategy.middleware';
 import { ElasticIndex } from './modules/search/index/search.index';
+import { Customer } from './globalServices/customer/entities/customer.entity';
+import { User } from './globalServices/user/entities/user.entity';
+import { Brand } from './globalServices/brand/entities/brand.entity';
+import { Category } from './globalServices/category/entities/category.entity';
+import { Device } from './globalServices/user/entities/device.entity';
+import { UserService } from './globalServices/user/user.service';
+import { CustomerService } from './globalServices/customer/customer.service';
+import { BrandService } from './globalServices/brand/brand.service';
+import { AuthenticationModule } from './modules/authentication/module';
+import { AuthenticationController } from './modules/authentication/controller';
+import { AuthenticationService } from './modules/authentication/service';
 import { RewardsModule } from './modules/rewards/rewards.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import * as Joi from 'joi';
 import { PaymentModule } from './modules/payment/payment.module';
-import { CustomerService } from './modules/customer/customer.service';
-import { BrandService } from './modules/brand/brand.service';
-import { CategoryService } from './modules/category/category.service';
-import { CustomerModule } from './modules/customer/customer.module';
-import { BrandModule } from './modules/brand/brand.module';
-import { CategoryModule } from './modules/category/category.module';
-import { CustomerController } from './modules/customer/customer.controller';
-import { BrandController } from './modules/brand/brand.controller';
-import { CategoryController } from './modules/category/category.controller';
 import { TasksModule } from './modules/tasks/tasks.module';
+import { CustomerModule } from './modules/customer/customer.module';
+import { CustomerController } from './modules/customer/customer.controller';
 
 @Module({
   imports: [
@@ -88,6 +89,8 @@ import { TasksModule } from './modules/tasks/tasks.module';
       }),
       envFilePath: './.env',
     }),
+    TypeOrmModule.forFeature([User, Customer, Brand, Category, Device]),
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
     JwtModule.register(jwtConfigurations),
@@ -107,7 +110,6 @@ import { TasksModule } from './modules/tasks/tasks.module';
       },
       requestTimeout: 30000,
     }),
-    UserModule,
     MailModule,
     SmsModule,
     SearchModule,
@@ -116,17 +118,14 @@ import { TasksModule } from './modules/tasks/tasks.module';
     PaymentModule,
     CustomerModule,
     CustomerModule,
-    BrandModule,
-    CategoryModule,
     TasksModule,
   ],
   controllers: [
     AppController,
-    UserController,
     SearchController,
     CustomerController,
-    BrandController,
-    CategoryController,
+    AuthenticationModule,
+    AuthenticationController,
   ],
   providers: [
     ElasticIndex,
@@ -135,7 +134,6 @@ import { TasksModule } from './modules/tasks/tasks.module';
       useClass: SearchService,
     },
     AppService,
-    UserService,
     JwtStrategy,
     TwitterStrategy,
     GoogleStrategy,
@@ -143,9 +141,10 @@ import { TasksModule } from './modules/tasks/tasks.module';
     SmsService,
     MailService,
     SearchService,
+    UserService,
     CustomerService,
     BrandService,
-    CategoryService,
+    AuthenticationService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

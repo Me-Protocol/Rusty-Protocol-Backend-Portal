@@ -1,6 +1,6 @@
-import { Brand } from "@src/modules/brand/entities/brand.entity";
-import { Category } from "@src/modules/category/entities/category.entity";
-import { User } from "@src/modules/user/entities/user.entity";
+import { Brand } from "@src/globalServices/brand/entities/brand.entity";
+import { Category } from "@src/globalServices/category/entities/category.entity";
+import { User } from "@src/globalServices/user/entities/user.entity";
 
 export interface SearchServiceInterface<T> {
   insertIndex(bulkData: T): Promise<T>;
