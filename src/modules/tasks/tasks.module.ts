@@ -1,4 +1,6 @@
 @Module({
+import { InappService } from './data/inapp/inapp.service';
+import { OutappService } from './data/outapp/outapp.service';
   imports: [
     TypeOrmModule.forFeature([
       TaskEntity,
@@ -14,7 +16,7 @@
     HttpModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [InappService, OutappService],
   exports: [TypeOrmModule],
 })
 export class TasksModule {}

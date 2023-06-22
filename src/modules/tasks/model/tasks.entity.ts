@@ -1,4 +1,5 @@
-import { TaskStatus, TaskType } from '@src/utils/enums/TasksTypes';
+import { BaseEntity } from '@src/models/base.entity';
+import { AllTaskTypes, TaskStatus } from '@src/utils/enums/TasksTypes';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -10,18 +11,15 @@ import {
 } from 'typeorm';
 
 @Entity('tasks')
-export class TaskDataEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class TaskDataEntity extends BaseEntity {
   @Column()
   title: string;
 
   @Column()
   description: string;
 
-  @Column({ type: 'enum', enum: TaskType })
-  task_type: TaskType;
+  @Column({ type: 'enum', enum: AllTaskTypes })
+  task_type: AllTaskTypes;
 
   // validation for task type
   @Column()

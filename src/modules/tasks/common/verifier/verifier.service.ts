@@ -1,4 +1,5 @@
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { map } from 'rxjs/operators';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { Client } = require('twitter-api-sdk');
@@ -15,6 +16,7 @@ export class TasksResultService {
     private readonly shareService: SharesService,
     private readonly collectionService: CollectionsService,
     private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
   ) {}
 
   // INAPP_PRODUCT_LIKE

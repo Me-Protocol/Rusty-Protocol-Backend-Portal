@@ -12,7 +12,15 @@ import {
 } from '@nestjs/common';
 import { TaskDataService } from './data/data.service';
 import { ApiTags } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
+import {
+  CreateTaskDto,
+  FilterTaskDto,
+  JobResponseDto,
+  UpdateReportDto,
+  UpdateStatusDto,
+  UpdateTaskDto,
+  UpdateTaskResponseDto,
+} from './dtos/tasks.dto';
 
 @ApiTags('tasks')
 @Controller('tasks')

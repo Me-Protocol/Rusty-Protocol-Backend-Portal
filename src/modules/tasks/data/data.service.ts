@@ -3,11 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import moment from 'moment';
 import { Between, LessThan, Repository } from 'typeorm';
 import { TaskResponseEntity } from '../model/taskResponse.entity';
-import {
-  InApp_TaskType,
-  Out_TaskType,
-  TaskStatus,
-} from '@src/utils/enums/TasksTypes';
+import { AllTaskTypes, TaskStatus } from '@src/utils/enums/TasksTypes';
 import { TaskDataEntity } from '../model/tasks.entity';
 import {
   CreateTaskDto,
@@ -17,10 +13,13 @@ import {
   UpdateStatusDto,
   UpdateTaskDto,
   UpdateTaskResponseDto,
-} from '../dto/tasks.dto';
+} from '../dtos/tasks.dto';
 import { JobResponseEntity } from '../model/jobResponse.entity';
 import { TaskResponderEntity } from '../model/taskResponder.entity';
 import { readFile, writeFile } from 'fs/promises';
+import { v4 as uuidV4 } from 'uuid';
+import { ConfigService } from '@nestjs/config';
+import { TasksResultService } from '../common/verifier/verifier.service';
 
 @Injectable()
 export class TaskDataService {
@@ -48,14 +47,13 @@ export class TaskDataService {
 
     @InjectRepository(TaskResponderEntity)
     private taskResponder: Repository<TaskResponderEntity>,
-
+    private configService: ConfigService,
     private readonly httpService: HttpService,
     private readonly rewardService: RewardsService,
     private readonly brandService: BrandsService,
     private readonly followService: FollowerService,
     private readonly notificationService: NotificationService,
     private readonly userService: UserService,
-
     private readonly tasksResultService: TasksResultService,
   ) {}
 
@@ -384,10 +382,10 @@ export class TaskDataService {
       }
 
       const availableTaskTypes = [
-        Out_TaskType.OUT_BRAND_TAGGING,
-        Out_TaskType.OUT_SM_FOLLOW,
-        Out_TaskType.OUT_LIKE_POST,
-        Out_TaskType.OUT_REPOST,
+        AllTaskTypes.OUT_BRAND_TAGGING,
+        AllTaskTypes.OUT_SM_FOLLOW,
+        AllTaskTypes.OUT_LIKE_POST,
+        AllTaskTypes.OUT_REPOST,
       ];
 
       const user = await this.userService.findOneByid(user_id as any);
@@ -706,11 +704,11 @@ export class TaskDataService {
         });
 
         const availableTaskTypes = [
-          TaskType.OUT_PRODUCT_TAGGING,
-          TaskType.OUT_REFERRAL_SIGNUP,
-          TaskType.OUT_OTHER_REFERRAL,
-          TaskType.OUT_WEBSITE_VISIT,
-          TaskType.OUT_SHARING,
+          AllTaskTypes.OUT_PRODUCT_TAGGING,
+          AllTaskTypes.OUT_REFERRAL_SIGNUP,
+          AllTaskTypes.OUT_OTHER_REFERRAL,
+          AllTaskTypes.OUT_WEBSITE_VISIT,
+          AllTaskTypes.OUT_SHARING,
         ];
 
         if (availableTaskTypes.includes(activeTask.task_type)) {
@@ -1225,19 +1223,19 @@ export class TaskDataService {
     response: TaskResponderEntity,
   ) {
     const availableTaskTypes = [
-      InApp_TaskType.IN_APP_COLLECTION,
-      InApp_TaskType.IN_APP_FOLLOW,
-      InApp_TaskType.IN_APP_PRODUCT_LIKE,
-      InApp_TaskType.IN_APP_SHARE,
-      Out_TaskType.OUT_SM_FOLLOW,
-      Out_TaskType.OUT_BRAND_TAGGING,
-      Out_TaskType.OUT_LIKE_POST,
-      Out_TaskType.OUT_REPOST,
+      AllTaskTypes.IN_APP_COLLECTION,
+      AllTaskTypes.IN_APP_FOLLOW,
+      AllTaskTypes.IN_APP_PRODUCT_LIKE,
+      AllTaskTypes.IN_APP_SHARE,
+      AllTaskTypes.OUT_SM_FOLLOW,
+      AllTaskTypes.OUT_BRAND_TAGGING,
+      AllTaskTypes.OUT_LIKE_POST,
+      AllTaskTypes.OUT_REPOST,
     ];
 
     if (availableTaskTypes.includes(activeTask.task_type)) {
       // validate response
-      if (activeTask.task_type === InApp_TaskType.IN_APP_COLLECTION) {
+      if (activeTask.task_type === AllTaskTypes.IN_APP_COLLECTION) {
         const check = await this.tasksResultService.verifyUserCollectedAnOffer(
           activeTask.offer_id,
           response.user_id,
@@ -1253,7 +1251,7 @@ export class TaskDataService {
         }
       }
 
-      if (activeTask.task_type === InApp_TaskType.IN_APP_FOLLOW) {
+      if (activeTask.task_type === AllTaskTypes.IN_APP_FOLLOW) {
         const check = await this.tasksResultService.verifyUserFollowsBrand(
           activeTask.brand_id,
           response.user_id,
@@ -1269,7 +1267,7 @@ export class TaskDataService {
         }
       }
 
-      if (activeTask.task_type === InApp_TaskType.IN_APP_PRODUCT_LIKE) {
+      if (activeTask.task_type === AllTaskTypes.IN_APP_PRODUCT_LIKE) {
         const check = await this.tasksResultService.verifyUserLikedAnOffer(
           activeTask.offer_id,
           response.user_id,
@@ -1285,7 +1283,7 @@ export class TaskDataService {
         }
       }
 
-      if (activeTask.task_type === InApp_TaskType.IN_APP_SHARE) {
+      if (activeTask.task_type === AllTaskTypes.IN_APP_SHARE) {
         const check = await this.tasksResultService.verifyUserSharedAnOffer(
           activeTask.offer_id,
           response.user_id,
@@ -1301,7 +1299,7 @@ export class TaskDataService {
         }
       }
 
-      if (activeTask.task_type === Out_TaskType.OUT_SM_FOLLOW) {
+      if (activeTask.task_type === AllTaskTypes.OUT_SM_FOLLOW) {
         const check =
           await this.tasksResultService.checkIfUserIsFollowingBrandOnTwitter(
             response.user.twitterUsername,
@@ -1318,7 +1316,7 @@ export class TaskDataService {
         }
       }
 
-      if (activeTask.task_type === Out_TaskType.OUT_BRAND_TAGGING) {
+      if (activeTask.task_type === AllTaskTypes.OUT_BRAND_TAGGING) {
         const responseData = await this.taskResponseRepository.findOne({
           where: {
             user_id: response.user_id,
@@ -1346,7 +1344,7 @@ export class TaskDataService {
         }
       }
 
-      if (activeTask.task_type === Out_TaskType.OUT_LIKE_POST) {
+      if (activeTask.task_type === AllTaskTypes.OUT_LIKE_POST) {
         const tweetId = activeTask.social_post?.split('/').pop();
 
         const check =
@@ -1365,7 +1363,7 @@ export class TaskDataService {
         }
       }
 
-      if (activeTask.task_type === Out_TaskType.OUT_REPOST) {
+      if (activeTask.task_type === AllTaskTypes.OUT_REPOST) {
         const tweetId = activeTask.social_post?.split('/').pop();
 
         const check =
