@@ -1,9 +1,9 @@
 import { TypeOrmModuleOptions } from "@nestjs/typeorm";
-import { Brand } from "@src/modules/brand/entities/brand.entity";
-import { Category } from "@src/modules/category/entities/category.entity";
-import { Customer } from "@src/modules/customer/entities/customer.entity";
-import { Device } from "@src/modules/user/entities/device.entity";
-import { User } from "@src/modules/user/entities/user.entity";
+import { Brand } from "@src/globalServices/brand/entities/brand.entity";
+import { Category } from "@src/globalServices/category/entities/category.entity";
+import { Customer } from "@src/globalServices/customer/entities/customer.entity";
+import { Device } from "@src/globalServices/user/entities/device.entity";
+import { User } from "@src/globalServices/user/entities/user.entity";
 
 export const typeOrmConfig: TypeOrmModuleOptions = {
   type: "postgres",
