@@ -3,14 +3,13 @@ import { CreateWalletDto } from './dto/wallet.dto';
 import { Between, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 // import { PaginationService } from '@src/utils/pagination';
-import { MailService } from '../mail/mail.service';
-import { User } from '../user/entities/user.entity';
 import { PaymentEntity } from './entities/payment.entity';
 import { TransactionEntity } from './entities/transaction.entity';
 import { WithdrawalMethodsEntity } from './entities/withdrawalMethods.entity';
 import { WithdrawalRequestEntity } from './entities/withdrawalRequest.entity';
 import { TransactionsType, StatusType } from '@src/utils/enums/Transactions';
 import { ConfigService } from '@nestjs/config';
+import { MailService } from '@src/globalServices/mail/mail.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -385,86 +384,86 @@ export class PaymentService {
     return account;
   }
 
-  async requestWithdrawal(user: User, amount: number, linkedAccountId: string) {
-    const { email, id: userId } = user;
-    const wallet = await this.walletRepository.findOne({
-      where: {
-        userId,
-      },
-    });
-    if (amount > wallet.balance) {
-      throw new HttpException('Insufficient balance', 400);
-    }
-    // generate reference code
-    const referenceCode = 'WL_' + Math.floor(1000 + Math.random() * 9000);
-    const withdrawalRequest = new WithdrawalRequestEntity();
-    withdrawalRequest.amount = amount;
-    withdrawalRequest.balance = wallet.balance;
-    withdrawalRequest.userId = userId;
-    withdrawalRequest.walletId = wallet.id;
-    withdrawalRequest.stripeLinkedAccountId = linkedAccountId;
-    withdrawalRequest.verificationCode = Math.floor(
-      1000 + Math.random() * 9000,
-    );
-    withdrawalRequest.reference = referenceCode;
-    await this.withdrawalRequestRepo.save(withdrawalRequest);
-    const transaction = new TransactionEntity();
-    transaction.amount = amount;
-    transaction.balance = wallet.balance;
-    transaction.userId = userId;
-    transaction.walletId = wallet.id;
-    transaction.status = StatusType.PROCESSING;
-    transaction.transactionType = TransactionsType.PAYOUTS;
-    transaction.paymentRef = referenceCode;
-    await this.mailService.sendMail({
-      to: email,
-      subject: 'Confirm your withdrawal request',
-      text: 'Confirm your withdrawal request',
-      html: `
-        <p>Hello 👋🏻,</p>
-        <p>Use the code below to confirm your withdrawal of $${amount}.</p>
-        <p>Code: ${withdrawalRequest.verificationCode}</p>
-        `,
-    });
-    await this.transactionRepo.save(transaction);
-    return 'ok';
-  }
+  // async requestWithdrawal(user: User, amount: number, linkedAccountId: string) {
+  //   const { email, id: userId } = user;
+  //   const wallet = await this.walletRepository.findOne({
+  //     where: {
+  //       userId,
+  //     },
+  //   });
+  //   if (amount > wallet.balance) {
+  //     throw new HttpException('Insufficient balance', 400);
+  //   }
+  //   // generate reference code
+  //   const referenceCode = 'WL_' + Math.floor(1000 + Math.random() * 9000);
+  //   const withdrawalRequest = new WithdrawalRequestEntity();
+  //   withdrawalRequest.amount = amount;
+  //   withdrawalRequest.balance = wallet.balance;
+  //   withdrawalRequest.userId = userId;
+  //   withdrawalRequest.walletId = wallet.id;
+  //   withdrawalRequest.stripeLinkedAccountId = linkedAccountId;
+  //   withdrawalRequest.verificationCode = Math.floor(
+  //     1000 + Math.random() * 9000,
+  //   );
+  //   withdrawalRequest.reference = referenceCode;
+  //   await this.withdrawalRequestRepo.save(withdrawalRequest);
+  //   const transaction = new TransactionEntity();
+  //   transaction.amount = amount;
+  //   transaction.balance = wallet.balance;
+  //   transaction.userId = userId;
+  //   transaction.walletId = wallet.id;
+  //   transaction.status = StatusType.PROCESSING;
+  //   transaction.transactionType = TransactionsType.PAYOUTS;
+  //   transaction.paymentRef = referenceCode;
+  //   await this.mailService.sendMail({
+  //     to: email,
+  //     subject: 'Confirm your withdrawal request',
+  //     text: 'Confirm your withdrawal request',
+  //     html: `
+  //       <p>Hello 👋🏻,</p>
+  //       <p>Use the code below to confirm your withdrawal of $${amount}.</p>
+  //       <p>Code: ${withdrawalRequest.verificationCode}</p>
+  //       `,
+  //   });
+  //   await this.transactionRepo.save(transaction);
+  //   return 'ok';
+  // }
 
-  async confirmWithdrawal(user: User, verificationCode: number) {
-    const { id: userId } = user;
-    const withdrawalRequest = await this.withdrawalRequestRepo.findOne({
-      where: {
-        userId,
-        verificationCode,
-      },
-    });
-    if (!withdrawalRequest) {
-      throw new HttpException('Invalid verification code', 400);
-    }
-    withdrawalRequest.status = StatusType.SUCCEDDED;
-    withdrawalRequest.verificationCode = null;
-    await this.withdrawalRequestRepo.save(withdrawalRequest);
-    const wallet = await this.walletRepository.findOne({
-      where: {
-        userId,
-      },
-    });
-    wallet.balance = wallet.balance - withdrawalRequest.amount;
-    await this.walletRepository.save(wallet);
-    const transaction = await this.transactionRepo.findOneBy({
-      paymentRef: withdrawalRequest.reference,
-    });
-    transaction.status = StatusType.SUCCEDDED;
-    await this.transactionRepo.save(transaction);
-    // Process payment on stripe
-    const payment = await stripe.payouts.create({
-      amount: withdrawalRequest.amount * 100,
-      currency: 'usd',
-      method: 'instant',
-      destination: withdrawalRequest.stripeLinkedAccountId,
-    });
-    return 'ok';
-  }
+  // async confirmWithdrawal(user: User, verificationCode: number) {
+  //   const { id: userId } = user;
+  //   const withdrawalRequest = await this.withdrawalRequestRepo.findOne({
+  //     where: {
+  //       userId,
+  //       verificationCode,
+  //     },
+  //   });
+  //   if (!withdrawalRequest) {
+  //     throw new HttpException('Invalid verification code', 400);
+  //   }
+  //   withdrawalRequest.status = StatusType.SUCCEDDED;
+  //   withdrawalRequest.verificationCode = null;
+  //   await this.withdrawalRequestRepo.save(withdrawalRequest);
+  //   const wallet = await this.walletRepository.findOne({
+  //     where: {
+  //       userId,
+  //     },
+  //   });
+  //   wallet.balance = wallet.balance - withdrawalRequest.amount;
+  //   await this.walletRepository.save(wallet);
+  //   const transaction = await this.transactionRepo.findOneBy({
+  //     paymentRef: withdrawalRequest.reference,
+  //   });
+  //   transaction.status = StatusType.SUCCEDDED;
+  //   await this.transactionRepo.save(transaction);
+  //   // Process payment on stripe
+  //   const payment = await stripe.payouts.create({
+  //     amount: withdrawalRequest.amount * 100,
+  //     currency: 'usd',
+  //     method: 'instant',
+  //     destination: withdrawalRequest.stripeLinkedAccountId,
+  //   });
+  //   return 'ok';
+  // }
 
   async addWalletBalance(
     userId: string,

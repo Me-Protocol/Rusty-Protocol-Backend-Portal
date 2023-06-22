@@ -18,8 +18,8 @@ import {
   WithdrawalDto,
   confirmWithdrawalDto,
 } from './dto/wallet.dto';
-import { User } from '../user/entities/user.entity';
 import { PaymentService } from './payment.service';
+import { User } from '@src/globalServices/user/entities/user.entity';
 
 @UseInterceptors(ResponseInterceptor)
 @Controller('payment')
@@ -106,25 +106,25 @@ export class PaymentController {
     );
   }
 
-  @UseGuards(AuthGuard())
-  @Post('withdrawal/confirm')
-  confirmWithdrawal(
-    @Req() req: any,
-    @Body(ValidationPipe)
-    { verificationCode }: confirmWithdrawalDto,
-  ) {
-    const user = req.user as User;
-    return this.paymentService.confirmWithdrawal(user, verificationCode);
-  }
+  // @UseGuards(AuthGuard())
+  // @Post('withdrawal/confirm')
+  // confirmWithdrawal(
+  //   @Req() req: any,
+  //   @Body(ValidationPipe)
+  //   { verificationCode }: confirmWithdrawalDto,
+  // ) {
+  //   const user = req.user as User;
+  //   return this.paymentService.confirmWithdrawal(user, verificationCode);
+  // }
 
-  @UseGuards(AuthGuard())
-  @Post('withdrawal')
-  requestWithdrawal(
-    @Req() req: any,
-    @Body(ValidationPipe)
-    { amount, linkedAccountId }: WithdrawalDto,
-  ) {
-    const user = req.user as User;
-    return this.paymentService.requestWithdrawal(user, amount, linkedAccountId);
-  }
+  // @UseGuards(AuthGuard())
+  // @Post('withdrawal')
+  // requestWithdrawal(
+  //   @Req() req: any,
+  //   @Body(ValidationPipe)
+  //   { amount, linkedAccountId }: WithdrawalDto,
+  // ) {
+  //   const user = req.user as User;
+  //   return this.paymentService.requestWithdrawal(user, amount, linkedAccountId);
+  // }
 }

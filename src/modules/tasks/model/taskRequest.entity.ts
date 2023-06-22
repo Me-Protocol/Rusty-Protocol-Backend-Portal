@@ -1,4 +1,3 @@
-import { UserEntity } from '@modules/user/models/user.entity';
 import {
   Column,
   Entity,
@@ -32,11 +31,11 @@ export class TaskRequest extends AuditFields {
   @Column({ nullable: true })
   wallet_address: string;
 
-  @ManyToOne(() => TaskDataEntity, (task) => task.taskResponses)
-  @JoinColumn({ name: 'task_id' })
-  task: TaskDataEntity;
+  // @ManyToOne(() => TaskDataEntity, (task) => task.taskResponses)
+  // @JoinColumn({ name: 'task_id' })
+  // task: TaskDataEntity;
 
-  @ManyToOne(() => UserEntity, (user) => user.taskResponses)
-  @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  // @ManyToOne(() => UserEntity, (user) => user.taskResponses)
+  // @JoinColumn({ name: 'user_id' })
+  // user: UserEntity;
 }

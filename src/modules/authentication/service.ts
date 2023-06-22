@@ -1,31 +1,31 @@
-import { HttpException, Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { In, Repository } from "typeorm";
-import * as bcrypt from "bcrypt";
-import { JwtService } from "@nestjs/jwt";
-import { JwtPayload, jwtConfigurations } from "@src/config/jwt.config";
-import { isNumber } from "@src/utils/helpers/isNumber";
-import { selectUser } from "@src/utils/helpers/selectUser";
-import { TwoFAType } from "@src/utils/enums/TwoFAType";
-import { LoginType } from "@src/utils/enums/LoginType";
-import { EmailSignupDto } from "./dto/EmailSignupDto";
-import { EmailVerifyDto } from "./dto/EmailVerifyDto";
-import { PhoneSignupDto } from "./dto/PhoneSignupDto";
-import { LoginDto } from "./dto/LoginDto";
-import { Verify2FADto } from "./dto/Verify2FADto";
-import { UpdateUserDto } from "./dto/UpdateUserDto";
-import { PasswordDto } from "./dto/PasswordDto";
-import { ChangeEmailDto } from "./dto/ChangeEmailDto";
-import { ChangePhoneDto } from "./dto/ChangePhoneDto";
-import { ForgotPasswordDto } from "./dto/ForgotPasswordDto";
-import { ResetPasswordDto } from "./dto/ResetPasswordDto";
-import { UpdateDeviceTokenDto } from "./dto/UpdateDeviceTokenDto";
-import { MailService } from "@src/globalServices/mail/mail.service";
-import { SmsService } from "@src/globalServices/sms/sms.service";
-import { UserService } from "@src/globalServices/user/user.service";
-import { User } from "@src/globalServices/user/entities/user.entity";
-import { Device } from "@src/globalServices/user/entities/device.entity";
-import { CustomerService } from "@src/globalServices/customer/customer.service";
+import { HttpException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
+import { JwtPayload, jwtConfigurations } from '@src/config/jwt.config';
+import { isNumber } from '@src/utils/helpers/isNumber';
+import { selectUser } from '@src/utils/helpers/selectUser';
+import { TwoFAType } from '@src/utils/enums/TwoFAType';
+import { LoginType } from '@src/utils/enums/LoginType';
+import { EmailSignupDto } from './dto/EmailSignupDto';
+import { EmailVerifyDto } from './dto/EmailVerifyDto';
+import { PhoneSignupDto } from './dto/PhoneSignupDto';
+import { LoginDto } from './dto/LoginDto';
+import { Verify2FADto } from './dto/Verify2FADto';
+import { UpdateUserDto } from './dto/UpdateUserDto';
+import { PasswordDto } from './dto/PasswordDto';
+import { ChangeEmailDto } from './dto/ChangeEmailDto';
+import { ChangePhoneDto } from './dto/ChangePhoneDto';
+import { ForgotPasswordDto } from './dto/ForgotPasswordDto';
+import { ResetPasswordDto } from './dto/ResetPasswordDto';
+import { UpdateDeviceTokenDto } from './dto/UpdateDeviceTokenDto';
+import { MailService } from '@src/globalServices/mail/mail.service';
+import { SmsService } from '@src/globalServices/sms/sms.service';
+import { UserService } from '@src/globalServices/user/user.service';
+import { User } from '@src/globalServices/user/entities/user.entity';
+import { Device } from '@src/globalServices/user/entities/device.entity';
+import { CustomerService } from '@src/globalServices/customer/customer.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -42,7 +42,7 @@ export class AuthenticationService {
     private jwtService: JwtService,
     private smsService: SmsService,
     private userService: UserService,
-    private customerService: CustomerService
+    private customerService: CustomerService,
   ) {}
 
   // Signs a token
@@ -360,7 +360,7 @@ export class AuthenticationService {
       let user: User;
       identifier = identifier.trim().toLocaleLowerCase();
 
-      if (identifier.includes("@")) {
+      if (identifier.includes('@')) {
         user = await this.userService.getUserByEmail(identifier);
 
         if (!user) {
@@ -755,13 +755,8 @@ export class AuthenticationService {
   async forgotPassword({ identifier }: ForgotPasswordDto): Promise<any> {
     let user: User;
 
-<<<<<<< HEAD:src/modules/user/user.service.ts
     if (identifier.includes('@')) {
-      user = await this.getUserByEmail(identifier);
-=======
-    if (identifier.includes("@")) {
       user = await this.userService.getUserByEmail(identifier);
->>>>>>> origin/code-structure:src/modules/authentication/service.ts
 
       if (!user.emailVerified) {
         throw new HttpException('Email not verified', 400);

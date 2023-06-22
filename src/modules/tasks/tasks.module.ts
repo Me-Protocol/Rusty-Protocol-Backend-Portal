@@ -1,22 +1,14 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { HttpModule } from '@nestjs/axios';
+import { InAppService } from './common/verifier/inapp.service';
+import { OutAppService } from './common/verifier/outapp.service';
+import { TaskDataService } from './data/taskData.service';
+
 @Module({
-import { InappService } from './data/inapp/inapp.service';
-import { OutappService } from './data/outapp/outapp.service';
-  imports: [
-    TypeOrmModule.forFeature([
-      TaskEntity,
-      TaskResponseEntity,
-      TokenReward,
-      BountyRecord,
-      BountyEntity,
-      BlockEntity,
-      TaskResponseRecord,
-      JobResponseEntity,
-      TaskResponderEntity,
-    ]),
-    HttpModule,
-  ],
+  imports: [TypeOrmModule.forFeature([]), HttpModule],
+  providers: [InAppService, OutAppService, TaskDataService],
   controllers: [],
-  providers: [InappService, OutappService],
   exports: [TypeOrmModule],
 })
 export class TasksModule {}

@@ -57,25 +57,25 @@ export class TaskDataEntity extends BaseEntity {
   @Column()
   reward_token_id: string;
 
-  @ManyToOne(() => TokenReward, (token) => token.tasks)
-  @JoinColumn({ name: 'reward_token_id' })
-  token: TokenReward;
+  // @ManyToOne(() => TokenReward, (token) => token.tasks)
+  // @JoinColumn({ name: 'reward_token_id' })
+  // token: TokenReward;
 
-  @OneToMany(() => TaskResponseEntity, (taskResponse) => taskResponse.task)
-  taskResponses: TaskResponseEntity[];
+  // @OneToMany(() => TaskResponseEntity, (taskResponse) => taskResponse.task)
+  // taskResponses: TaskResponseEntity[];
 
-  @OneToOne(() => TaskResponseRecord, (taskResponse) => taskResponse.task)
-  taskResponseRecord: TaskResponseRecord;
+  // @OneToOne(() => TaskResponseRecord, (taskResponse) => taskResponse.task)
+  // taskResponseRecord: TaskResponseRecord;
 
-  @Column({ nullable: true, default: false })
-  notification_sent: boolean;
+  // @Column({ nullable: true, default: false })
+  // notification_sent: boolean;
 
-  @Column({ nullable: true })
-  offer_id: number;
+  // @Column({ nullable: true })
+  // offer_id: number;
 
-  @ManyToOne(() => OffersEntity, (offer) => offer.tasks)
-  @JoinColumn({ name: 'offer_id' })
-  offer: OffersEntity;
+  // @ManyToOne(() => OffersEntity, (offer) => offer.tasks)
+  // @JoinColumn({ name: 'offer_id' })
+  // offer: OffersEntity;
 
   @Column({ nullable: true })
   tag_platform: string;

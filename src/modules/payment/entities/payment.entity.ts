@@ -2,7 +2,7 @@
 
 import { Entity, Column, OneToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from '@src/models/base.entity';
-import { User } from '@src/modules/user/entities/user.entity';
+import { User } from '@src/globalServices/user/entities/user.entity';
 
 @Entity('payment')
 export class PaymentEntity extends BaseEntity {
