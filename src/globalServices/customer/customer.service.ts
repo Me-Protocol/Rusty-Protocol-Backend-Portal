@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Customer } from "./entities/customer.entity";
 import { Repository } from "typeorm";
+import { UpdateCustomerDto } from "@src/modules/accountManagement/customerAccountManagement/dto/UpdateCustomerDto";
 
 @Injectable()
 export class CustomerService {
@@ -30,7 +31,7 @@ export class CustomerService {
     return this.customerRepo.findOneBy({ id });
   }
 
-  update(body: Customer, id: string) {
-    return this.customerRepo.update({ userId: id }, body);
+  update(body: UpdateCustomerDto, customerId: string) {
+    return this.customerRepo.update({ id: customerId }, body);
   }
 }

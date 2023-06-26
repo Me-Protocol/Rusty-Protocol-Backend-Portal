@@ -14,6 +14,11 @@ import {
   UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
+import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
+import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthStrategy } from '@src/middlewares/jwt-auth-strategy.middleware';
+import { LoginType } from '@src/utils/enums/LoginType';
+import { User } from '@src/globalServices/user/entities/user.entity';
 import { EmailSignupDto } from './dto/EmailSignupDto';
 import { EmailVerifyDto } from './dto/EmailVerifyDto';
 import { PhoneSignupDto } from './dto/PhoneSignupDto';
@@ -28,12 +33,7 @@ import { ForgotPasswordDto } from './dto/ForgotPasswordDto';
 import { ResetPasswordDto } from './dto/ResetPasswordDto';
 import { UpdateDeviceTokenDto } from './dto/UpdateDeviceTokenDto';
 import { AuthenticationService } from './service';
-import { UserService } from '@src/globalServices/user/user.service';
-import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
-import { JwtAuthStrategy } from '@src/middlewares/jwt-auth-strategy.middleware';
-import { User } from '@src/globalServices/user/entities/user.entity';
-import { AuthGuard } from '@nestjs/passport';
-import { LoginType } from '@src/utils/enums/LoginType';
+import { UserAppType } from '@src/utils/enums/UserAppType';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const requestIp = require('request-ip');
@@ -287,6 +287,7 @@ export class AuthenticationController {
         username: user.profile.username,
         userAgent: req.headers['user-agent'],
         ip: requestIp.getClientIp(req),
+        userType: UserAppType.USER,
       });
 
       return res
@@ -330,6 +331,7 @@ export class AuthenticationController {
         username: '',
         userAgent: req.headers['user-agent'],
         ip: requestIp.getClientIp(req),
+        userType: UserAppType.USER,
       });
 
       return res
@@ -374,6 +376,7 @@ export class AuthenticationController {
         username: '',
         userAgent: req.headers['user-agent'],
         ip: requestIp.getClientIp(req),
+        userType: UserAppType.USER,
       });
 
       return res

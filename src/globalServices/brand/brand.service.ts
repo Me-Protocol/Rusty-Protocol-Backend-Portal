@@ -1,9 +1,10 @@
-import { HttpException, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Brand } from "./entities/brand.entity";
 import { Repository } from "typeorm";
 import { ElasticIndex } from "@src/modules/search/index/search.index";
 import { brandIndex } from "@src/modules/search/interface/search.interface";
+import { UpdateBrandDto } from "@src/modules/accountManagement/brandAccountManagement/dto/UpdateBrandDto";
 
 @Injectable()
 export class BrandService {
@@ -25,22 +26,30 @@ export class BrandService {
     return this.brandRepo.save(brand);
   }
 
-  // async update(body: UpdateBrandDto, id: string) {
-  //   if (body.name) {
-  //     body.slug = body.name.toLowerCase().replace(/\s/g, "-");
+  async update(body: UpdateBrandDto, brandId: string) {
+    if (body.name) {
+      body.slug = body.name.toLowerCase().replace(/\s/g, "-");
 
-  //     const checkSlug = await this.brandRepo.findOneBy({ slug: body.slug });
-  //     if (checkSlug) {
-  //       throw new HttpException("Name/Slug already exists", 400);
-  //     }
-  //   }
+      const checkSlug = await this.brandRepo.findOneBy({ slug: body.slug });
+      if (checkSlug) {
+        throw new Error("Name/Slug already exists");
+      }
+    }
 
-  //   await this.brandRepo.update({ userId: id }, body);
+    await this.brandRepo.update({ id: brandId }, body);
 
-  //   const brand = await this.brandRepo.findOneBy({ userId: id });
+    const brand = await this.brandRepo.findOneBy({ id: brandId });
 
-  //   this.elasticIndex.updateDocument(brand, brandIndex);
+    this.elasticIndex.updateDocument(brand, brandIndex);
 
-  //   return brand;
-  // }
+    return brand;
+  }
+
+  getBrandById(id: string) {
+    return this.brandRepo.findOneBy({ id });
+  }
+
+  getBrandByUserId(userId: string) {
+    return this.brandRepo.findOneBy({ userId });
+  }
 }

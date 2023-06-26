@@ -1,15 +1,11 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload, jwtConfigurations } from '@src/config/jwt.config';
 import { isNumber } from '@src/utils/helpers/isNumber';
-import { selectUser } from '@src/utils/helpers/selectUser';
 import { TwoFAType } from '@src/utils/enums/TwoFAType';
 import { LoginType } from '@src/utils/enums/LoginType';
 import { EmailSignupDto } from './dto/EmailSignupDto';
-import { EmailVerifyDto } from './dto/EmailVerifyDto';
 import { PhoneSignupDto } from './dto/PhoneSignupDto';
 import { LoginDto } from './dto/LoginDto';
 import { Verify2FADto } from './dto/Verify2FADto';
@@ -26,6 +22,9 @@ import { UserService } from '@src/globalServices/user/user.service';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { Device } from '@src/globalServices/user/entities/device.entity';
 import { CustomerService } from '@src/globalServices/customer/customer.service';
+import { BrandService } from '@src/globalServices/brand/brand.service';
+import { UserAppType } from '@src/utils/enums/UserAppType';
+import { Role } from '@src/utils/enums/Role';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -43,6 +42,7 @@ export class AuthenticationService {
     private smsService: SmsService,
     private userService: UserService,
     private customerService: CustomerService,
+    private brandService: BrandService,
   ) {}
 
   // Signs a token
@@ -188,10 +188,21 @@ export class AuthenticationService {
 
       const saveUser = await this.userService.saveUser(newUser);
       await this.sendEmailVerificationCode(email);
-      await this.customerService.create({
-        name,
-        userId: saveUser.id,
-      });
+
+      if (userType === UserAppType.USER) {
+        await this.customerService.create({
+          name,
+          userId: saveUser.id,
+        });
+        saveUser.role = Role.CUSTOMER;
+      } else {
+        await this.brandService.create({
+          userId: saveUser.id,
+        });
+        saveUser.role = Role.BRAND;
+      }
+
+      await this.userService.saveUser(saveUser);
 
       const token = await this.signToken({
         email: newUser.email,
@@ -243,10 +254,10 @@ export class AuthenticationService {
       if (user.email) {
         await this.mailService.sendMail({
           to: user.email,
-          subject: 'Welcome to Me Protocol',
-          text: 'Welcome to Me Protocol',
+          subject: `Welcome to ${process.env.APP_NAME}`,
+          text: `Welcome to ${process.env.APP_NAME}`,
           html: `
-        <p>Thanks for signing up to Me Protocol. We're excited to have you on board!</p>
+        <p>Thanks for signing up to ${process.env.APP_NAME}. We're excited to have you on board!</p>
         `,
         });
       }
@@ -295,10 +306,21 @@ export class AuthenticationService {
 
       await this.sendPhoneVerificationCode(phone);
       const saveUser = await this.userService.saveUser(newUser);
-      await this.customerService.create({
-        name,
-        userId: saveUser.id,
-      });
+
+      if (userType === UserAppType.USER) {
+        await this.customerService.create({
+          name,
+          userId: saveUser.id,
+        });
+        saveUser.role = Role.CUSTOMER;
+      } else {
+        await this.brandService.create({
+          userId: saveUser.id,
+        });
+        saveUser.role = Role.BRAND;
+      }
+
+      await this.userService.saveUser(saveUser);
 
       const token = await this.signToken({
         email: newUser.email,
@@ -660,9 +682,18 @@ export class AuthenticationService {
     username: string;
     userAgent: string;
     ip: string;
+    userType: UserAppType;
   }): Promise<any> {
-    const { email, accessToken, refreshToken, provider, name, userAgent, ip } =
-      data;
+    const {
+      email,
+      userType,
+      accessToken,
+      refreshToken,
+      provider,
+      name,
+      userAgent,
+      ip,
+    } = data;
 
     const user = await this.userService.getUserByEmail(email);
 
@@ -728,19 +759,29 @@ export class AuthenticationService {
 
     const savedUser = await this.userService.saveUser(newUser);
 
-    await this.customerService.create({
-      name,
-      userId: savedUser.id,
-    });
+    if (userType === UserAppType.USER) {
+      await this.customerService.create({
+        name,
+        userId: savedUser.id,
+      });
+      savedUser.role = Role.CUSTOMER;
+    } else {
+      await this.brandService.create({
+        userId: savedUser.id,
+      });
+      savedUser.role = Role.BRAND;
+    }
+
+    await this.userService.saveUser(savedUser);
 
     // TODO CREATE WALLET
 
     await this.mailService.sendMail({
       to: email,
-      subject: 'Welcome to Me Protocol',
-      text: 'Welcome to Me Protocol',
+      subject: `Welcome to ${process.env.APP_NAME}`,
+      text: `Welcome to ${process.env.APP_NAME}`,
       html: `
-        <p>Thanks for signing up to Me Protocol. We're excited to have you on board!</p>
+        <p>Thanks for signing up to ${process.env.APP_NAME}. We're excited to have you on board!</p>
         `,
     });
 

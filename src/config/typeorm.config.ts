@@ -5,6 +5,7 @@ import { Customer } from '@src/globalServices/customer/entities/customer.entity'
 import { Device } from '@src/globalServices/user/entities/device.entity';
 import { User } from '@src/globalServices/user/entities/user.entity';
 require('dotenv').config();
+import { Wallet } from '@src/globalServices/wallet/entities/wallet.entity';
 
 export const typeOrmConfig: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -13,7 +14,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
   username: process.env.POSTGRES_USER,
   database: process.env.POSTGRES_DATABASE,
   password: process.env.POSTGRES_PASSWORD,
-  entities: [User, Device, Customer, Brand, Category],
+  entities: [User, Device, Customer, Brand, Category, Wallet],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   extra: {
     charset: 'utf8mb4_unicode_ci',

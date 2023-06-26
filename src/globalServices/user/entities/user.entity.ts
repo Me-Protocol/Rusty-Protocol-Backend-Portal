@@ -1,14 +1,15 @@
-import { Entity, Column, OneToMany, OneToOne } from "typeorm";
-import { Device } from "./device.entity";
-import { BaseEntity } from "@src/models/base.entity";
-import { LoginType } from "@src/utils/enums/LoginType";
-import { Role } from "@src/utils/enums/Role";
-import { TwoFAType } from "@src/utils/enums/TwoFAType";
-import { UserAppType } from "@src/utils/enums/UserAppType";
-import { Customer } from "@src/globalServices/customer/entities/customer.entity";
-import { Brand } from "@src/globalServices/brand/entities/brand.entity";
+import { Entity, Column, OneToMany, OneToOne } from 'typeorm';
+import { Device } from './device.entity';
+import { BaseEntity } from '@src/models/base.entity';
+import { LoginType } from '@src/utils/enums/LoginType';
+import { Role } from '@src/utils/enums/Role';
+import { TwoFAType } from '@src/utils/enums/TwoFAType';
+import { UserAppType } from '@src/utils/enums/UserAppType';
+import { Customer } from '@src/globalServices/customer/entities/customer.entity';
+import { Brand } from '@src/globalServices/brand/entities/brand.entity';
+import { Wallet } from '@src/globalServices/wallet/entities/wallet.entity';
 
-@Entity("user")
+@Entity('user')
 export class User extends BaseEntity {
   @Column({
     unique: true,
@@ -32,13 +33,13 @@ export class User extends BaseEntity {
 
   @Column({
     nullable: true,
-    type: "timestamp",
-    default: () => "CURRENT_TIMESTAMP",
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
   })
   last_login: Date;
 
   @Column({
-    type: "enum",
+    type: 'enum',
     enum: LoginType,
     default: LoginType.DEFAULT,
     nullable: true, // TODO REMOVE ME
@@ -92,45 +93,45 @@ export class User extends BaseEntity {
   devices: Device[];
 
   @Column({
-    type: "enum",
+    type: 'enum',
     enum: Role,
-    default: Role.USER,
+    default: Role.CUSTOMER,
   })
   role: Role;
 
   @Column({
     nullable: true,
-    type: "jsonb",
+    type: 'jsonb',
   })
   facebookAuth: object;
 
   @Column({
     nullable: true,
-    type: "jsonb",
+    type: 'jsonb',
   })
   googleAuth: object;
 
   @Column({
     nullable: true,
-    type: "jsonb",
+    type: 'jsonb',
   })
   twitterAuth: object;
 
   @Column({
     nullable: true,
-    type: "enum",
+    type: 'enum',
     enum: TwoFAType,
   })
   twoFAType: TwoFAType;
 
-  @Column("text", {
+  @Column('text', {
     nullable: true,
     array: true,
   })
   following_interests: string[];
 
   @Column({
-    type: "enum",
+    type: 'enum',
     enum: UserAppType,
     default: UserAppType.USER,
     nullable: true,
@@ -152,4 +153,7 @@ export class User extends BaseEntity {
 
   @OneToOne(() => Brand, (brand) => brand.user)
   brand: Brand;
+
+  @OneToOne(() => Wallet, (wallet) => wallet.user)
+  wallet: Wallet;
 }
