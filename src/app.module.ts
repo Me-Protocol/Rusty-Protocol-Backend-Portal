@@ -35,11 +35,23 @@ import { WalletService } from './modules/wallet/wallet.service';
 import { WalletController } from './modules/wallet/wallet.controller';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { Wallet } from './globalServices/wallet/entities/wallet.entity';
+import { Task } from './models/tasks.entity';
+import { TokenrewardModule } from './modules/tokenreward/tokenreward.module';
+import { RewardsModule } from './modules/rewards/rewards.module';
+import { PointrewardModule } from './modules/pointreward/pointreward.module';
+import { PointsReward } from './modules/pointreward/model/pointreward.entity';
 
 @Module({
   imports: [
-    //
-    TypeOrmModule.forFeature([User, Customer, Brand, Category, Device, Wallet]),
+    TypeOrmModule.forFeature([
+      User,
+      Customer,
+      Brand,
+      Category,
+      Device,
+      Wallet,
+      Task,
+    ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
@@ -65,6 +77,9 @@ import { Wallet } from './globalServices/wallet/entities/wallet.entity';
     SearchModule,
     AuthenticationModule,
     WalletModule,
+    TokenrewardModule,
+    RewardsModule,
+    PointrewardModule,
   ],
   controllers: [
     AppController,

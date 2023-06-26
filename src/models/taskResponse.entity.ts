@@ -7,8 +7,11 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-@Entity('task_request')
-export class TaskRequest extends BaseEntity {
+@Entity('task_response')
+export class TaskResponse extends BaseEntity {
+  @PrimaryGeneratedColumn()
+  id: number;
+
   @Column({ nullable: false })
   response: string;
 
@@ -27,11 +30,11 @@ export class TaskRequest extends BaseEntity {
   @Column({ nullable: true })
   wallet_address: string;
 
-  // @ManyToOne(() => TaskDataEntity, (task) => task.taskResponses)
+  // @ManyToOne(() => TaskEntity, (task) => task.taskResponses)
   // @JoinColumn({ name: 'task_id' })
-  // task: TaskDataEntity;
+  // task: TaskEntity;
 
-  // @ManyToOne(() => UserEntity, (user) => user.taskResponses)
+  // @ManyToOne(() => User, (user) => user.taskResponses)
   // @JoinColumn({ name: 'user_id' })
-  // user: UserEntity;
+  // user: User;
 }

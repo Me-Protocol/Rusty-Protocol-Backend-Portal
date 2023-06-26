@@ -1,12 +1,18 @@
-// brand entity
+import { BaseEntity } from '@src/models/base.entity';
+import { Category } from '@src/globalServices/category/entities/category.entity';
+import { User } from '@src/globalServices/user/entities/user.entity';
+import { RevenueRange } from '@src/utils/enums/RevenueRange';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  OneToOne,
+} from 'typeorm';
+import { Task } from '@src/models/tasks.entity';
 
-import { BaseEntity } from "@src/models/base.entity";
-import { Category } from "@src/globalServices/category/entities/category.entity";
-import { User } from "@src/globalServices/user/entities/user.entity";
-import { RevenueRange } from "@src/utils/enums/RevenueRange";
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from "typeorm";
-
-@Entity("brand")
+@Entity('brand')
 export class Brand extends BaseEntity {
   @Column()
   userId: string;
@@ -52,7 +58,7 @@ export class Brand extends BaseEntity {
   })
   logo_white_icon: string;
 
-  @Column("text", {
+  @Column('text', {
     nullable: true,
     array: true,
   })
@@ -69,12 +75,12 @@ export class Brand extends BaseEntity {
   categoryId: string;
 
   @ManyToOne(() => Category, (category) => category.brands)
-  @JoinColumn({ name: "categoryId" })
+  @JoinColumn({ name: 'categoryId' })
   category: Category;
 
   @Column({
     nullable: true,
-    type: "enum",
+    type: 'enum',
     enum: RevenueRange,
   })
   revenueRange: RevenueRange;
@@ -108,4 +114,7 @@ export class Brand extends BaseEntity {
     default: 0,
   })
   viewsCount: number;
+
+  @OneToMany(() => Task, (task) => task.brand)
+  tasks: Task[];
 }
