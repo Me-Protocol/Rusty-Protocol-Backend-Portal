@@ -7,6 +7,7 @@ import { TwoFAType } from "@src/utils/enums/TwoFAType";
 import { UserAppType } from "@src/utils/enums/UserAppType";
 import { Customer } from "@src/globalServices/customer/entities/customer.entity";
 import { Brand } from "@src/globalServices/brand/entities/brand.entity";
+import { Wallet } from "@src/globalServices/wallet/entities/wallet.entity";
 
 @Entity("user")
 export class User extends BaseEntity {
@@ -94,7 +95,7 @@ export class User extends BaseEntity {
   @Column({
     type: "enum",
     enum: Role,
-    default: Role.USER,
+    default: Role.CUSTOMER,
   })
   role: Role;
 
@@ -152,4 +153,7 @@ export class User extends BaseEntity {
 
   @OneToOne(() => Brand, (brand) => brand.user)
   brand: Brand;
+
+  @OneToOne(() => Wallet, (wallet) => wallet.user)
+  wallet: Wallet;
 }

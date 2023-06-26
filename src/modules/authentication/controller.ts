@@ -33,6 +33,7 @@ import { ForgotPasswordDto } from "./dto/ForgotPasswordDto";
 import { ResetPasswordDto } from "./dto/ResetPasswordDto";
 import { UpdateDeviceTokenDto } from "./dto/UpdateDeviceTokenDto";
 import { AuthenticationService } from "./service";
+import { UserAppType } from "@src/utils/enums/UserAppType";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const requestIp = require("request-ip");
@@ -286,6 +287,7 @@ export class AuthenticationController {
         username: user.profile.username,
         userAgent: req.headers["user-agent"],
         ip: requestIp.getClientIp(req),
+        userType: UserAppType.USER,
       });
 
       return res
@@ -329,6 +331,7 @@ export class AuthenticationController {
         username: "",
         userAgent: req.headers["user-agent"],
         ip: requestIp.getClientIp(req),
+        userType: UserAppType.USER,
       });
 
       return res
@@ -373,6 +376,7 @@ export class AuthenticationController {
         username: "",
         userAgent: req.headers["user-agent"],
         ip: requestIp.getClientIp(req),
+        userType: UserAppType.USER,
       });
 
       return res

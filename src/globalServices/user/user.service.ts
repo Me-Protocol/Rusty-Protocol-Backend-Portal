@@ -1,18 +1,9 @@
 import { HttpException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository } from "typeorm";
-import * as bcrypt from "bcrypt";
 import { User } from "./entities/user.entity";
-import { MailService } from "../mail/mail.service";
-import { JwtService } from "@nestjs/jwt";
-import { SmsService } from "../sms/sms.service";
-import { JwtPayload, jwtConfigurations } from "@src/config/jwt.config";
 import { Device } from "./entities/device.entity";
-import { isNumber } from "@src/utils/helpers/isNumber";
 import { selectUser } from "@src/utils/helpers/selectUser";
-import { TwoFAType } from "@src/utils/enums/TwoFAType";
-import { LoginType } from "@src/utils/enums/LoginType";
-import { CustomerService } from "../customer/customer.service";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require("geoip-lite");
@@ -28,12 +19,7 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Device)
-    private readonly deviceRepository: Repository<Device>,
-
-    private readonly mailService: MailService,
-    private jwtService: JwtService,
-    private smsService: SmsService,
-    private customerService: CustomerService
+    private readonly deviceRepository: Repository<Device>
   ) {}
 
   async getDeviceById(userId: string, id: string): Promise<Device> {

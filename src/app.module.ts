@@ -31,11 +31,15 @@ import { BrandService } from "./globalServices/brand/brand.service";
 import { AuthenticationModule } from "./modules/authentication/module";
 import { AuthenticationController } from "./modules/authentication/controller";
 import { AuthenticationService } from "./modules/authentication/service";
+import { WalletService } from "./modules/wallet/wallet.service";
+import { WalletController } from "./modules/wallet/wallet.controller";
+import { WalletModule } from "./modules/wallet/wallet.module";
+import { Wallet } from "./globalServices/wallet/entities/wallet.entity";
 
 @Module({
   imports: [
     //
-    TypeOrmModule.forFeature([User, Customer, Brand, Category, Device]),
+    TypeOrmModule.forFeature([User, Customer, Brand, Category, Device, Wallet]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
     PassportModule.register({ defaultStrategy: "jwt", session: false }),
@@ -60,8 +64,14 @@ import { AuthenticationService } from "./modules/authentication/service";
     SmsModule,
     SearchModule,
     AuthenticationModule,
+    WalletModule,
   ],
-  controllers: [AppController, SearchController, AuthenticationController],
+  controllers: [
+    AppController,
+    SearchController,
+    AuthenticationController,
+    WalletController,
+  ],
   providers: [
     ElasticIndex,
     {
@@ -80,6 +90,7 @@ import { AuthenticationService } from "./modules/authentication/service";
     CustomerService,
     BrandService,
     AuthenticationService,
+    WalletService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

@@ -1,7 +1,9 @@
 import { IsString, MinLength } from "class-validator";
 
 export class LoginDto {
-  @IsString()
+  @IsString({
+    message: "Please provide an identifier",
+  })
   identifier: string;
 
   @MinLength(6, {
