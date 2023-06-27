@@ -9,13 +9,11 @@ import { TokenrewardService } from '../tokenreward/tokenreward.service';
 import { TokenReward } from '../tokenreward/models/tokenreward.entity';
 import { ElasticIndex } from '../search/index/search.index';
 import { BrandService } from '@src/globalServices/brand/brand.service';
-import { PointsrewardService } from '../pointreward/pointreward.service';
 
 @Injectable()
 export class RewardsService {
   constructor(
     private readonly brandService: BrandService,
-    private readonly pointRewardService: PointsrewardService,
     private readonly tokenRewardService: TokenrewardService,
     private readonly elasticIndex: ElasticIndex,
 

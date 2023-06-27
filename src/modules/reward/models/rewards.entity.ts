@@ -10,7 +10,6 @@ import {
 import { RewardType } from '../interfaces/reward.inteface';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { TokenReward } from '@src/modules/tokenreward/models/tokenreward.entity';
-import { PointsReward } from '@src/modules/pointreward/model/pointreward.entity';
 
 @Entity('rewards')
 export class RewardsEntity {
@@ -60,9 +59,6 @@ export class RewardsEntity {
   // one reward belongs to one token
   // @OneToOne(() => TokenReward, (token) => token.reward)
   // tokenReward: TokenReward;
-
-  @OneToOne(() => PointsReward, (point) => point.reward)
-  pointReward: TokenReward;
 
   @Column({ nullable: true, default: false })
   autoSyncEnabled: boolean;
