@@ -27,13 +27,20 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('Me App Server')
-    .setDescription('This is the me app server')
-    .setVersion('1.0')
+    .addBearerAuth()
+    .setTitle(process.env.APP_NAME)
+    .setDescription(process.env.APP_DESCRIPTION)
+    .setVersion(process.env.API_VERSION)
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  const document = SwaggerModule.createDocument(app, config, {
+    ignoreGlobalPrefix: false,
+  });
+  try {
+    SwaggerModule.setup('api', app, document); // the swagger URL is thus /api
+  } catch (error) {
+    logger.error(error);
+  }
 
   await app.listen(APP_SERVER_LISTEN_PORT, APP_SERVER_LISTEN_IP);
 

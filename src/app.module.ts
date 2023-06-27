@@ -37,6 +37,7 @@ import { WalletModule } from './modules/wallet/wallet.module';
 import { Wallet } from './globalServices/wallet/entities/wallet.entity';
 import { Task } from './models/tasks.entity';
 import { TokenrewardModule } from './modules/tokenreward/tokenreward.module';
+import { PaymentModule } from './modules/payment/payment.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { TokenrewardModule } from './modules/tokenreward/tokenreward.module';
     AuthenticationModule,
     WalletModule,
     TokenrewardModule,
+    PaymentModule,
   ],
   controllers: [
     AppController,
