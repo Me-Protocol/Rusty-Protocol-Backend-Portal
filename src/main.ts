@@ -27,7 +27,17 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter Bearer token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
     .setTitle(process.env.APP_NAME)
     .setDescription(process.env.APP_DESCRIPTION)
     .setVersion(process.env.API_VERSION)

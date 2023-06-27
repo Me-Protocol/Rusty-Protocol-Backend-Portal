@@ -147,10 +147,11 @@ export class AuthenticationController {
   }
 
   @UseGuards(AuthGuard())
-  @ApiBearerAuth('access-token')
+  @ApiBearerAuth('JWT-auth')
   @Get('me')
   async me(@Req() req: any): Promise<any> {
     const user = req.user as User;
+    console.log(user);
 
     const {
       password,
