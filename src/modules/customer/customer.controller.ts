@@ -1,34 +1,26 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { CustomerService } from './customer.service';
-import { CreateCustomerDto } from './dto/create-customer.dto';
-import { UpdateCustomerDto } from './dto/update-customer.dto';
+import {
+  Body,
+  Controller,
+  Put,
+  Req,
+  UseGuards,
+  UseInterceptors,
+  ValidationPipe,
+} from '@nestjs/common';
+import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
+import { AuthGuard } from '@nestjs/passport';
+import { CustomerService } from '@src/globalServices/customer/customer.service';
+import { UpdateCustomerDto } from '../accountManagement/customerAccountManagement/dto/UpdateCustomerDto';
 
+@UseInterceptors(ResponseInterceptor)
 @Controller('customer')
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
-  @Post()
-  create(@Body() createCustomerDto: CreateCustomerDto) {
-    return this.customerService.create(createCustomerDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.customerService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.customerService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCustomerDto: UpdateCustomerDto) {
-    return this.customerService.update(+id, updateCustomerDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.customerService.remove(+id);
+  @UseGuards(AuthGuard())
+  @Put()
+  async update(@Body(ValidationPipe) body: UpdateCustomerDto, @Req() req: any) {
+    const userId = req.user.id;
+    // return this.customerService.update(body, userId);
   }
 }

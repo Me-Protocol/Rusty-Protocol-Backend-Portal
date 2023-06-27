@@ -1,34 +1,48 @@
-import { Module } from "@nestjs/common";
-import { PassportModule } from "@nestjs/passport";
-import { AppController } from "./app.controller";
-import { AppService } from "./app.service";
-import { UserService } from "./modules/user/user.service";
-import { UserController } from "./modules/user/user.controller";
-import { UserModule } from "./modules/user/user.module";
-import { ConfigModule } from "@nestjs/config";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { typeOrmConfig } from "./config/typeorm.config";
-import { MailModule } from "./modules/mail/mail.module";
-import { SmsModule } from "./modules/sms/sms.module";
-import { jwtConfigurations } from "./config/jwt.config";
-import { JwtModule } from "@nestjs/jwt";
-import { ElasticsearchModule } from "@nestjs/elasticsearch";
-import { JwtStrategy } from "./middlewares/jwt-strategy.middleware";
-import { SearchService } from "./modules/search/search.service";
-import { SearchModule } from "./modules/search/search.module";
-import { SearchController } from "./modules/search/search.controller";
-import { SmsService } from "./modules/sms/sms.service";
-import { MailService } from "./modules/mail/mail.service";
-import { TwitterStrategy } from "./middlewares/twitter-strategy.middleware";
-import { GoogleStrategy } from "./middlewares/google-strategy.middleware";
-import { FacebookStrategy } from "./middlewares/facebook-strategy.middleware";
-import { ElasticIndex } from "./modules/search/index/search.index";
+import { Module } from '@nestjs/common';
+import { PassportModule } from '@nestjs/passport';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { typeOrmConfig } from './config/typeorm.config';
+import { MailModule } from './globalServices/mail/mail.module';
+import { SmsModule } from './globalServices/sms/sms.module';
+import { jwtConfigurations } from './config/jwt.config';
+import { JwtModule } from '@nestjs/jwt';
+import { ElasticsearchModule } from '@nestjs/elasticsearch';
+import { JwtStrategy } from './middlewares/jwt-strategy.middleware';
+import { SearchService } from './modules/search/search.service';
+import { SearchModule } from './modules/search/search.module';
+import { SearchController } from './modules/search/search.controller';
+import { SmsService } from './globalServices/sms/sms.service';
+import { MailService } from './globalServices/mail/mail.service';
+import { TwitterStrategy } from './middlewares/twitter-strategy.middleware';
+import { GoogleStrategy } from './middlewares/google-strategy.middleware';
+import { FacebookStrategy } from './middlewares/facebook-strategy.middleware';
+import { ElasticIndex } from './modules/search/index/search.index';
+import { Customer } from './globalServices/customer/entities/customer.entity';
+import { User } from './globalServices/user/entities/user.entity';
+import { Brand } from './globalServices/brand/entities/brand.entity';
+import { Category } from './globalServices/category/entities/category.entity';
+import { Device } from './globalServices/user/entities/device.entity';
+import { UserService } from './globalServices/user/user.service';
+import { CustomerService } from './globalServices/customer/customer.service';
+import { BrandService } from './globalServices/brand/brand.service';
+import { AuthenticationModule } from './modules/authentication/module';
+import { AuthenticationController } from './modules/authentication/controller';
+import { AuthenticationService } from './modules/authentication/service';
+import { WalletService } from './modules/wallet/wallet.service';
+import { WalletController } from './modules/wallet/wallet.controller';
+import { WalletModule } from './modules/wallet/wallet.module';
+import { Wallet } from './globalServices/wallet/entities/wallet.entity';
 
 @Module({
   imports: [
+    //
+    TypeOrmModule.forFeature([User, Customer, Brand, Category, Device, Wallet]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
-    PassportModule.register({ defaultStrategy: "jwt", session: false }),
+    PassportModule.register({ defaultStrategy: 'jwt', session: false }),
     JwtModule.register(jwtConfigurations),
     ElasticsearchModule.register({
       node: process.env.ELASTIC_NODE,
@@ -41,25 +55,30 @@ import { ElasticIndex } from "./modules/search/index/search.index";
         rejectUnauthorized: false,
       },
       headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
       },
       requestTimeout: 30000,
     }),
-    UserModule,
     MailModule,
     SmsModule,
     SearchModule,
+    AuthenticationModule,
+    WalletModule,
   ],
-  controllers: [AppController, UserController, SearchController],
+  controllers: [
+    AppController,
+    SearchController,
+    AuthenticationController,
+    WalletController,
+  ],
   providers: [
     ElasticIndex,
     {
-      provide: "SearchServiceInterface",
+      provide: 'SearchServiceInterface',
       useClass: SearchService,
     },
     AppService,
-    UserService,
     JwtStrategy,
     TwitterStrategy,
     GoogleStrategy,
@@ -67,6 +86,11 @@ import { ElasticIndex } from "./modules/search/index/search.index";
     SmsService,
     MailService,
     SearchService,
+    UserService,
+    CustomerService,
+    BrandService,
+    AuthenticationService,
+    WalletService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

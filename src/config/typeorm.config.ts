@@ -1,19 +1,22 @@
-import { TypeOrmModuleOptions } from "@nestjs/typeorm";
-import { Customer } from "@src/modules/customer/entities/customer.entity";
-import { Device } from "@src/modules/user/entities/device.entity";
-import { User } from "@src/modules/user/entities/user.entity";
+import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { Brand } from '@src/globalServices/brand/entities/brand.entity';
+import { Category } from '@src/globalServices/category/entities/category.entity';
+import { Customer } from '@src/globalServices/customer/entities/customer.entity';
+import { Device } from '@src/globalServices/user/entities/device.entity';
+import { User } from '@src/globalServices/user/entities/user.entity';
+import { Wallet } from '@src/globalServices/wallet/entities/wallet.entity';
 
 export const typeOrmConfig: TypeOrmModuleOptions = {
-  type: "postgres",
+  type: 'postgres',
   host: process.env.POSTGRES_HOST,
   port: parseInt(process.env.POSTGRES_PORT, 10),
   username: process.env.POSTGRES_USER,
-  database: process.env.POSTGRES_DATABASE,
+  database: 'mepro',
   password: process.env.POSTGRES_PASSWORD,
-  entities: [User, Device, Customer],
-  migrations: [__dirname + "/../database/migrations/*{.ts,.js}"],
+  entities: [User, Device, Customer, Brand, Category, Wallet],
+  migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   extra: {
-    charset: "utf8mb4_unicode_ci",
+    charset: 'utf8mb4_unicode_ci',
   },
   synchronize: true,
   autoLoadEntities: true,
