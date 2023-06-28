@@ -1,5 +1,3 @@
-// brand entity
-
 import { BaseEntity } from '@src/models/base.entity';
 import { Category } from '@src/globalServices/category/entities/category.entity';
 import { User } from '@src/globalServices/user/entities/user.entity';

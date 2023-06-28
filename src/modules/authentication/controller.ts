@@ -34,10 +34,12 @@ import { ResetPasswordDto } from './dto/ResetPasswordDto';
 import { UpdateDeviceTokenDto } from './dto/UpdateDeviceTokenDto';
 import { AuthenticationService } from './service';
 import { UserAppType } from '@src/utils/enums/UserAppType';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const requestIp = require('request-ip');
 
+@ApiTags('Authentication')
 @UseInterceptors(ResponseInterceptor)
 @Controller('user')
 export class AuthenticationController {
@@ -145,6 +147,7 @@ export class AuthenticationController {
   }
 
   @UseGuards(AuthGuard())
+  @ApiBearerAuth('JWT-auth')
   @Get('me')
   async me(@Req() req: any): Promise<any> {
     const user = req.user as User;

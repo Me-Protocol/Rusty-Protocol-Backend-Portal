@@ -8,6 +8,7 @@ import { UserAppType } from '@src/utils/enums/UserAppType';
 import { Customer } from '@src/globalServices/customer/entities/customer.entity';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { Wallet } from '@src/globalServices/wallet/entities/wallet.entity';
+// import { TaskResponseEntity } from '@src/models/taskResponse.entity';
 
 @Entity('user')
 export class User extends BaseEntity {
@@ -156,4 +157,7 @@ export class User extends BaseEntity {
 
   @OneToOne(() => Wallet, (wallet) => wallet.user)
   wallet: Wallet;
+
+  // @OneToMany(() => TaskResponseEntity, (taskResponse) => taskResponse.user)
+  // taskResponses: TaskResponseEntity[];
 }

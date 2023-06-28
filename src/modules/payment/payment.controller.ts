@@ -20,7 +20,9 @@ import {
 } from './dto/wallet.dto';
 import { PaymentService } from './payment.service';
 import { User } from '@src/globalServices/user/entities/user.entity';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Payment')
 @UseInterceptors(ResponseInterceptor)
 @Controller('payment')
 export class PaymentController {

@@ -15,29 +15,37 @@ export class CreateIntentDto {
 }
 
 export class CreateWithdrawalRequestDto {
+  @ApiProperty()
   @IsNumber()
   amount: number;
 
+  @ApiProperty()
+  @IsString()
   userId: string;
 
+  @ApiProperty()
   @IsString()
   methodId: string;
 }
 
 export class FundDto {
+  @ApiProperty()
   @IsString()
   paymentIntent: string;
 }
 
 export class WithdrawalDto {
+  @ApiProperty()
   @IsNumber()
   amount: number;
 
+  @ApiProperty()
   @IsString()
   linkedAccountId: string;
 }
 
 export class confirmWithdrawalDto {
+  @ApiProperty()
   @IsNumber({}, { message: 'Please a valid code' })
   verificationCode: number;
 }

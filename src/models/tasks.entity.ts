@@ -1,6 +1,3 @@
-import { BaseEntity } from '@src/models/base.entity';
-import { TaskResponse } from '@src/models/taskResponse.entity';
-import { AllTaskTypes, TaskStatus } from '@src/utils/enums/TasksTypes';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -9,10 +6,20 @@ import {
   JoinColumn,
   OneToOne,
   OneToMany,
+  BaseEntity,
 } from 'typeorm';
+import { AllTaskTypes, TaskStatus } from '@src/utils/enums/TasksTypes';
+import { Brand } from '@src/globalServices/brand/entities/brand.entity';
+import { TokenReward } from '@src/modules/tokenreward/models/tokenreward.entity';
+
+//TODO: token reward
+//TODO: offer
 
 @Entity('tasks')
-export class TaskDataEntity extends BaseEntity {
+export class Task extends BaseEntity {
+  @PrimaryGeneratedColumn()
+  id: number;
+
   @Column()
   title: string;
 
@@ -48,9 +55,9 @@ export class TaskDataEntity extends BaseEntity {
   @Column()
   brand_id: number;
 
-  // @ManyToOne(() => BrandEntity, (brand) => brand.tasks)
-  // @JoinColumn({ name: 'brand_id' })
-  // brand: BrandEntity;
+  @ManyToOne(() => Brand, (brand) => brand.tasks)
+  @JoinColumn({ name: 'uid' })
+  brand: Brand;
 
   @Column({ nullable: true })
   report: string;
@@ -58,25 +65,25 @@ export class TaskDataEntity extends BaseEntity {
   @Column()
   reward_token_id: string;
 
-  // @ManyToOne(() => TokenReward, (token) => token.tasks)
-  // @JoinColumn({ name: 'reward_token_id' })
-  // token: TokenReward;
+  @ManyToOne(() => TokenReward, (token) => token.tasks)
+  @JoinColumn({ name: 'reward_token_id' })
+  token: TokenReward;
 
-  // @OneToMany(() => TTaskResponseEntityaskResponse, (taskResponse) => taskResponse.task)
-  // taskResponses: TaskResponse[];
+  // @OneToMany(() => TaskResponseEntity, (taskResponse) => taskResponse.task)
+  // taskResponses: TaskResponseEntity[];
 
   // @OneToOne(() => TaskResponseRecord, (taskResponse) => taskResponse.task)
   // taskResponseRecord: TaskResponseRecord;
 
-  // @Column({ nullable: true, default: false })
-  // notification_sent: boolean;
+  @Column({ nullable: true, default: false })
+  notification_sent: boolean;
 
-  // @Column({ nullable: true })
-  // offer_id: number;
+  @Column({ nullable: true })
+  offer_id: number;
 
   // @ManyToOne(() => OffersEntity, (offer) => offer.tasks)
   // @JoinColumn({ name: 'offer_id' })
-  // offer: OffersEntity;
+  // offer: Offer;
 
   @Column({ nullable: true })
   tag_platform: string;
