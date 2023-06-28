@@ -1,6 +1,7 @@
 // category entity
 
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
+import { Product } from '@src/globalServices/product/entities/product.entity';
 import { BaseEntity } from '@src/models/base.entity';
 import { CategoryType } from '@src/utils/enums/CategoryType';
 import { Column, Entity, JoinColumn, OneToMany } from 'typeorm';
@@ -42,4 +43,7 @@ export class Category extends BaseEntity {
 
   @OneToMany(() => Brand, (brand) => brand.category)
   brands?: Brand[];
+
+  @OneToMany(() => Product, (product) => product.category)
+  products?: Product[];
 }

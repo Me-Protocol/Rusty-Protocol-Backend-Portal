@@ -11,15 +11,16 @@ import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import { BrandAccountManagementService } from './service';
 import { UpdateBrandDto } from './dto/UpdateBrandDto';
+import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 
 @UseInterceptors(ResponseInterceptor)
 @Controller('brand')
-export class TicketController {
+export class BrandManagementController {
   constructor(
     private readonly brandAccountManagementService: BrandAccountManagementService,
   ) {}
 
-  @UseGuards(AuthGuard())
+  @UseGuards(BrandJwtStrategy)
   @Put()
   async updateCustomer(
     @Body(ValidationPipe) updateBrandDto: UpdateBrandDto,

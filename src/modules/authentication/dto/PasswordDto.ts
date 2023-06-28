@@ -1,6 +1,8 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Matches, MinLength } from 'class-validator';
 
 export class PasswordDto {
+  @ApiProperty()
   @MinLength(6, {
     message: 'Password is too short',
   })
@@ -10,10 +12,12 @@ export class PasswordDto {
   })
   password: string;
 
+  @ApiProperty()
   @MinLength(6, {
     message: 'Password is too short',
   })
   confirmPassword: string;
 
+  @ApiProperty()
   currentPassword?: string;
 }

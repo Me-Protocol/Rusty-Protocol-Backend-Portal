@@ -1,38 +1,48 @@
-import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, ExtractJwt } from 'passport-jwt';
 import {
-  HttpException,
+  CanActivate,
+  ExecutionContext,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtPayload, jwtConfigurations } from 'src/config/jwt.config';
+import { jwtConfigurations } from 'src/config/jwt.config';
+import { JwtService } from '@nestjs/jwt';
 import { UserService } from '@src/globalServices/user/user.service';
 import { UserAppType } from '@src/utils/enums/UserAppType';
 import { BrandService } from '@src/globalServices/brand/brand.service';
 
 @Injectable()
-export class BrandJwtStrategy extends PassportStrategy(Strategy) {
+export class BrandJwtStrategy implements CanActivate {
   constructor(
     private userService: UserService,
+    private jwtService: JwtService,
     private brandService: BrandService,
-  ) {
-    super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: jwtConfigurations.secret,
+  ) {}
+  async canActivate(context: ExecutionContext): Promise<any> {
+    const request = context.switchToHttp().getRequest();
+    const headers = context.switchToHttp().getRequest().headers;
+    const access_token = headers?.authorization?.split(' ')[1];
+
+    if (!access_token)
+      throw new UnauthorizedException('Unauthorized. Please login');
+
+    const { id, device } = await this.jwtService.verify(access_token, {
+      secret: jwtConfigurations.secret,
     });
-  }
 
-  // get token
-
-  async validate(payload: JwtPayload) {
-    if (!payload.id) {
+    if (!id) {
       throw new UnauthorizedException('Unauthorized. Please login');
     }
 
-    const user = await this.userService.getUserById(payload.id);
+    const user = await this.userService.getUserById(id);
 
     if (!user) {
       throw new UnauthorizedException('Unauthorized. Please login');
+    }
+
+    if (user.suspended) {
+      throw new UnauthorizedException(
+        'You account is currently suspended. Please contact support',
+      );
     }
 
     if (user.userType !== UserAppType.BRAND) {
@@ -58,26 +68,22 @@ export class BrandJwtStrategy extends PassportStrategy(Strategy) {
     }
 
     if (!user.password) {
-      throw new HttpException('Please create a password', 400);
+      throw new UnauthorizedException('Please create a password');
     }
 
-    const deviceToken = await this.userService.getDeviceById(
-      payload.id,
-      payload.device,
-    );
+    const deviceToken = await this.userService.getDeviceById(id, device);
 
     if (!deviceToken) {
       throw new UnauthorizedException('Unauthorized. Please login');
     }
 
-    const brandDetails = await this.brandService.getBrandByUserId(payload.id);
+    const brandDetails = await this.brandService.getBrandByUserId(id);
 
     delete deviceToken.token;
 
-    return {
-      ...user,
-      deviceToken,
-      brand: brandDetails,
-    };
+    request.user = user;
+    request.brand = brandDetails;
+
+    return true;
   }
 }

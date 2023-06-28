@@ -13,7 +13,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
   host: process.env.POSTGRES_HOST,
   port: parseInt(process.env.POSTGRES_PORT, 10),
   username: process.env.POSTGRES_USER,
-  database: 'mepro',
+  database: 'mepro_1',
   password: process.env.POSTGRES_PASSWORD,
   entities: [
     User,

@@ -1,6 +1,8 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, MaxLength, MinLength } from 'class-validator';
 
 export class ChangeEmailDto {
+  @ApiProperty()
   @MinLength(4, {
     message: 'Code is invalid',
   })
@@ -9,6 +11,7 @@ export class ChangeEmailDto {
   })
   code: number;
 
+  @ApiProperty()
   @IsEmail(
     {},
     {

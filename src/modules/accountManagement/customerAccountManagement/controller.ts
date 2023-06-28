@@ -14,7 +14,7 @@ import { CustomerAccountManagementService } from './service';
 
 @UseInterceptors(ResponseInterceptor)
 @Controller('customer')
-export class TicketController {
+export class CustomerManagementController {
   constructor(
     private readonly customerAccountManagementService: CustomerAccountManagementService,
   ) {}

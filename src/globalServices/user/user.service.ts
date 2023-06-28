@@ -1,15 +1,15 @@
-import { HttpException, Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { In, Repository } from "typeorm";
-import { User } from "./entities/user.entity";
-import { Device } from "./entities/device.entity";
-import { selectUser } from "@src/utils/helpers/selectUser";
+import { HttpException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import { User } from './entities/user.entity';
+import { Device } from './entities/device.entity';
+import { selectUser } from '@src/utils/helpers/selectUser';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const geoip = require("geoip-lite");
+const geoip = require('geoip-lite');
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const DeviceDetector = require("node-device-detector");
+const DeviceDetector = require('node-device-detector');
 
 const deviceDetector = new DeviceDetector();
 
@@ -19,7 +19,7 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Device)
-    private readonly deviceRepository: Repository<Device>
+    private readonly deviceRepository: Repository<Device>,
   ) {}
 
   async getDeviceById(userId: string, id: string): Promise<Device> {
@@ -45,14 +45,14 @@ export class UserService {
       },
     });
 
-    if (!device) throw new HttpException("Device not found", 404);
+    if (!device) throw new HttpException('Device not found', 404);
 
     await this.deviceRepository.delete({
       id,
       userId,
     });
 
-    return "ok";
+    return 'ok';
   }
 
   async getUserDevices(userId: string): Promise<Device[]> {
@@ -61,14 +61,14 @@ export class UserService {
         userId,
       },
       select: [
-        "id",
-        "name",
-        "type",
-        "agent",
-        "ip",
-        "location",
-        "createdAt",
-        "device_token",
+        'id',
+        'name',
+        'type',
+        'agent',
+        'ip',
+        'location',
+        'createdAt',
+        'device_token',
       ],
     });
     return devices;
@@ -78,11 +78,21 @@ export class UserService {
     return await this.deviceRepository.save(device);
   }
 
+  async checkDevice(ip: string, userId: string, type: string): Promise<Device> {
+    return await this.deviceRepository.findOne({
+      where: {
+        userId,
+        ip,
+        type,
+      },
+    });
+  }
+
   // For mobile notifications
   async updateDeviceToken(
     userId: string,
     id: string,
-    { device_token }: { device_token: string }
+    { device_token }: { device_token: string },
   ): Promise<any> {
     const device = await this.deviceRepository.findOne({
       where: {
@@ -91,20 +101,21 @@ export class UserService {
       },
     });
 
-    if (!device) throw new HttpException("Device not found", 404);
+    if (!device) throw new HttpException('Device not found', 404);
 
     device.device_token = device_token;
     await this.deviceRepository.save(device);
 
-    return "ok";
+    return 'ok';
   }
 
   async getUserById(id: string): Promise<User> {
+    console.log(id);
     return await this.userRepository.findOne({
       where: {
         id,
       },
-      relations: ["customer", "brand"],
+      relations: ['customer'],
     });
   }
 

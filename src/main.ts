@@ -27,13 +27,17 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
+    .addBearerAuth({
+      type: 'http',
+      scheme: 'bearer',
+    })
     .setTitle('Me App Server')
     .setDescription('This is the me app server')
     .setVersion('1.0')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('doc', app, document);
 
   await app.listen(APP_SERVER_LISTEN_PORT, APP_SERVER_LISTEN_IP);
 

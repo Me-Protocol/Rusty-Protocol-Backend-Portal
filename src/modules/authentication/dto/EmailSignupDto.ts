@@ -1,7 +1,9 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { UserAppType } from '@src/utils/enums/UserAppType';
 import { IsEmail, IsEnum, IsString, Matches, MinLength } from 'class-validator';
 
 export class EmailSignupDto {
+  @ApiProperty()
   @IsEmail(
     {},
     {
@@ -10,6 +12,7 @@ export class EmailSignupDto {
   )
   email: string;
 
+  @ApiProperty()
   @IsString()
   @MinLength(6, {
     message: 'Password is too short',
@@ -20,15 +23,18 @@ export class EmailSignupDto {
   })
   password: string;
 
+  @ApiProperty()
   @IsString()
   @MinLength(6, {
     message: 'Password is too short',
   })
   confirmPassword: string;
 
+  @ApiProperty()
   @IsString()
   name: string;
 
+  @ApiProperty()
   @IsEnum(UserAppType, {
     message: 'User type is invalid',
   })
