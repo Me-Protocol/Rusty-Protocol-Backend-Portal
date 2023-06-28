@@ -1,15 +1,15 @@
-import { RevenueRange } from "@src/utils/enums/RevenueRange";
-import { IsEnum, IsOptional, IsString, IsTaxId, IsUrl } from "class-validator";
+import { RevenueRange } from '@src/utils/enums/RevenueRange';
+import { IsEnum, IsOptional, IsString, IsTaxId, IsUrl } from 'class-validator';
 
 export class UpdateBrandDto {
   @IsOptional()
   @IsString({
-    message: "Enter a valid name",
+    message: 'Enter a valid name',
   })
   name: string;
 
   @IsOptional()
-  @IsUrl({}, { message: "Enter a valid website" })
+  @IsUrl({}, { message: 'Enter a valid website' })
   website: string;
 
   @IsOptional()
@@ -22,7 +22,7 @@ export class UpdateBrandDto {
 
   @IsOptional()
   @IsEnum(RevenueRange, {
-    message: "Revenue range is invalid",
+    message: 'Revenue range is invalid',
   })
   revenueRange: RevenueRange;
 
@@ -32,13 +32,13 @@ export class UpdateBrandDto {
 
   @IsOptional()
   @IsString({
-    message: "Enter a valid ecommerce platform",
+    message: 'Enter a valid ecommerce platform',
   })
   ecommercePlatform: string;
 
   @IsOptional()
   @IsString({
-    message: "Enter a valid loyalty program",
+    message: 'Enter a valid loyalty program',
   })
   loyaltyProgram: string;
 

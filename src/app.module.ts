@@ -35,11 +35,32 @@ import { WalletService } from './modules/wallet/wallet.service';
 import { WalletController } from './modules/wallet/wallet.controller';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { Wallet } from './globalServices/wallet/entities/wallet.entity';
+import { CategoryManagementController } from './modules/storeManagement/category/controller';
+import { CategoryManagementService } from './modules/storeManagement/category/service';
+import { CategoryService } from './globalServices/category/category.service';
+import { ProductService } from './globalServices/product/product.service';
+import { Product } from './globalServices/product/entities/product.entity';
+import { ProductImage } from './globalServices/product/entities/productImage.entity';
+import { ProductManagementService } from './modules/storeManagement/products/service';
+import { ProductManagementController } from './modules/storeManagement/products/controller';
+import { CustomerAccountManagementService } from './modules/accountManagement/customerAccountManagement/service';
+import { BrandAccountManagementService } from './modules/accountManagement/brandAccountManagement/service';
+import { CustomerManagementController } from './modules/accountManagement/customerAccountManagement/controller';
+import { BrandManagementController } from './modules/accountManagement/brandAccountManagement/controller';
 
 @Module({
   imports: [
     //
-    TypeOrmModule.forFeature([User, Customer, Brand, Category, Device, Wallet]),
+    TypeOrmModule.forFeature([
+      User,
+      Customer,
+      Brand,
+      Category,
+      Device,
+      Wallet,
+      Product,
+      ProductImage,
+    ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
@@ -71,6 +92,10 @@ import { Wallet } from './globalServices/wallet/entities/wallet.entity';
     SearchController,
     AuthenticationController,
     WalletController,
+    CategoryManagementController,
+    ProductManagementController,
+    CustomerManagementController,
+    BrandManagementController,
   ],
   providers: [
     ElasticIndex,
@@ -91,6 +116,12 @@ import { Wallet } from './globalServices/wallet/entities/wallet.entity';
     BrandService,
     AuthenticationService,
     WalletService,
+    CategoryService,
+    ProductService,
+    CategoryManagementService,
+    ProductManagementService,
+    CustomerAccountManagementService,
+    BrandAccountManagementService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

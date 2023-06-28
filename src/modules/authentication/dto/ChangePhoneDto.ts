@@ -1,16 +1,16 @@
-import { IsPhoneNumber, IsString, MaxLength, MinLength } from "class-validator";
+import { IsPhoneNumber, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class ChangePhoneDto {
   @MinLength(4, {
-    message: "Code is invalid",
+    message: 'Code is invalid',
   })
   @MaxLength(4, {
-    message: "Code is invalid",
+    message: 'Code is invalid',
   })
   code: number;
 
   @IsPhoneNumber(undefined, {
-    message: "Phone number is invalid",
+    message: 'Phone number is invalid',
   })
   phone: string;
 

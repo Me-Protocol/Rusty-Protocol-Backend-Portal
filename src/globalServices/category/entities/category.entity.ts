@@ -1,11 +1,11 @@
 // category entity
 
-import { Brand } from "@src/globalServices/brand/entities/brand.entity";
-import { BaseEntity } from "@src/models/base.entity";
-import { CategoryType } from "@src/utils/enums/CategoryType";
-import { Column, Entity, JoinColumn, OneToMany } from "typeorm";
+import { Brand } from '@src/globalServices/brand/entities/brand.entity';
+import { BaseEntity } from '@src/models/base.entity';
+import { CategoryType } from '@src/utils/enums/CategoryType';
+import { Column, Entity, JoinColumn, OneToMany } from 'typeorm';
 
-@Entity("category")
+@Entity('category')
 export class Category extends BaseEntity {
   @Column()
   name: string;
@@ -23,7 +23,7 @@ export class Category extends BaseEntity {
   slug: string;
 
   @Column({
-    type: "enum",
+    type: 'enum',
     enum: CategoryType,
   })
   type: CategoryType;
@@ -37,7 +37,7 @@ export class Category extends BaseEntity {
   parentId: string;
 
   @OneToMany(() => Category, (category) => category.children)
-  @JoinColumn({ name: "parentId" })
+  @JoinColumn({ name: 'parentId' })
   parent: Category;
 
   @OneToMany(() => Brand, (brand) => brand.category)

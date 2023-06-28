@@ -1,5 +1,5 @@
-import { NotificationFormat } from "@src/utils/enums/NotificationFormat";
-import { IsArray, IsBoolean, IsEnum, IsString } from "class-validator";
+import { NotificationFormat } from '@src/utils/enums/NotificationFormat';
+import { IsArray, IsBoolean, IsEnum, IsString } from 'class-validator';
 
 export class UpdateCustomerDto {
   @IsString()
@@ -36,37 +36,37 @@ export class UpdateCustomerDto {
   sizes: string[];
 
   @IsEnum(NotificationFormat, {
-    message: "Notification format is invalid",
+    message: 'Notification format is invalid',
   })
   news_notifications: NotificationFormat;
 
   @IsEnum(NotificationFormat, {
-    message: "Notification format is invalid",
+    message: 'Notification format is invalid',
   })
   offer_notifications: NotificationFormat;
 
   @IsEnum(NotificationFormat, {
-    message: "Notification format is invalid",
+    message: 'Notification format is invalid',
   })
   brand_notifications: NotificationFormat;
 
   @IsEnum(NotificationFormat, {
-    message: "Notification format is invalid",
+    message: 'Notification format is invalid',
   })
   expiring_notifications: NotificationFormat;
 
   @IsEnum(NotificationFormat, {
-    message: "Notification format is invalid",
+    message: 'Notification format is invalid',
   })
   point_notifications: NotificationFormat;
 
   @IsEnum(NotificationFormat, {
-    message: "Notification format is invalid",
+    message: 'Notification format is invalid',
   })
   order_notifications: NotificationFormat;
 
   @IsEnum(NotificationFormat, {
-    message: "Notification format is invalid",
+    message: 'Notification format is invalid',
   })
   other_notifications: NotificationFormat;
 }
