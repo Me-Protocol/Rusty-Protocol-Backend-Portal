@@ -1,16 +1,17 @@
 // customer entity
 
-import { User } from "@src/globalServices/user/entities/user.entity";
-import { BaseEntity } from "@src/models/base.entity";
-import { NotificationFormat } from "@src/utils/enums/NotificationFormat";
-import { Column, Entity, OneToOne } from "typeorm";
+import { User } from '@src/globalServices/user/entities/user.entity';
+import { BaseEntity } from '@src/models/base.entity';
+import { NotificationFormat } from '@src/utils/enums/NotificationFormat';
+import { Column, Entity, JoinColumn, OneToOne } from 'typeorm';
 
-@Entity("customer")
+@Entity('customer')
 export class Customer extends BaseEntity {
   @Column()
   userId: string;
 
   @OneToOne(() => User, (user) => user.customer)
+  @JoinColumn({ name: 'userId' })
   user: User;
 
   @Column()
@@ -43,7 +44,7 @@ export class Customer extends BaseEntity {
   @Column({ default: false })
   withdraw_2fa: boolean;
 
-  @Column("text", { array: true, nullable: true })
+  @Column('text', { array: true, nullable: true })
   sizes: string[];
 
   @Column({ nullable: true, default: NotificationFormat.NONE })

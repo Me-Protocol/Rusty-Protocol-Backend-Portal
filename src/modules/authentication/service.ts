@@ -73,6 +73,16 @@ export class AuthenticationService {
     device.ip = clientIp;
     device.location = location;
 
+    const checkDevice = await this.userService.checkDevice(
+      clientIp,
+      user.id,
+      device.type,
+    );
+
+    if (checkDevice) {
+      return checkDevice.token;
+    }
+
     const token = await this.signToken({
       email: user.email,
       id: user.id,
@@ -187,7 +197,6 @@ export class AuthenticationService {
       newUser.userType = userType;
 
       const saveUser = await this.userService.saveUser(newUser);
-      await this.sendEmailVerificationCode(email);
 
       if (userType === UserAppType.USER) {
         await this.customerService.create({
@@ -211,6 +220,8 @@ export class AuthenticationService {
         username: newUser.username,
         device: null,
       });
+
+      await this.sendEmailVerificationCode(email);
 
       return token;
     } catch (error) {
