@@ -151,7 +151,6 @@ export class AuthenticationController {
   @Get('me')
   async me(@Req() req: any): Promise<any> {
     const user = req.user as User;
-    console.log(user);
 
     const {
       password,
