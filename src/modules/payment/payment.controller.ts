@@ -40,13 +40,14 @@ export class PaymentController {
     const a = await this.paymentService.create({ ...userDto });
   }
 
-  @UseGuards(AuthGuard())
+  // @UseGuards(AuthGuard())
   @Post('pay')
   createIntent(@Body() createIntentDto: CreateIntentDto, @Req() req: any) {
-    const user = req.user as User;
-    console.log(user);
+    // const user = req.user as User;
+    const userDto = { userId: '5fdb9850-c3c4-468e-b4ae-3be1ec10db87' };
+    // console.log(user);
 
-    createIntentDto.userId = user.id;
+    createIntentDto.userId = userDto.userId;
     return this.paymentService.createStripePaymentIntent(
       createIntentDto.amount,
       createIntentDto.userId,
