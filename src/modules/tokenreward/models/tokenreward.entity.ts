@@ -44,8 +44,8 @@ export class TokenReward extends BaseEntity {
   })
   blockchain: TokenBlockchain;
 
-  @OneToMany(() => Task, (task) => task.token)
-  tasks?: Task[];
+  // @OneToMany(() => Task, (task) => task.token)
+  // tasks?: Task[];
 
   // one token belongs to one reward
   // @OneToOne(() => RewardsEntity, (reward) => reward.tokenReward)

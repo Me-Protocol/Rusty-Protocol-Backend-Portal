@@ -1,3 +1,4 @@
+import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { BaseEntity } from '@src/models/base.entity';
 import { TaskResponse } from '@src/models/taskResponse.entity';
 import { AllTaskTypes, TaskStatus } from '@src/utils/enums/TasksTypes';
@@ -48,9 +49,9 @@ export class TaskDataEntity extends BaseEntity {
   @Column()
   brand_id: number;
 
-  // @ManyToOne(() => BrandEntity, (brand) => brand.tasks)
-  // @JoinColumn({ name: 'brand_id' })
-  // brand: BrandEntity;
+  @ManyToOne(() => Brand, (brand) => brand.tasks)
+  @JoinColumn({ name: 'id' })
+  brand: Brand;
 
   @Column({ nullable: true })
   report: string;

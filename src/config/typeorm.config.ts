@@ -8,6 +8,7 @@ import { Device } from '@src/globalServices/user/entities/device.entity';
 import { User } from '@src/globalServices/user/entities/user.entity';
 require('dotenv').config();
 import { Wallet } from '@src/globalServices/wallet/entities/wallet.entity';
+import { Task } from '@src/models/tasks.entity';
 
 export const typeOrmConfig: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -25,6 +26,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     Wallet,
     Product,
     ProductImage,
+    Task,
   ],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   extra: {

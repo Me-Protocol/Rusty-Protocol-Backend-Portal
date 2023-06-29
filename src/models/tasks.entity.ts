@@ -65,9 +65,9 @@ export class Task extends BaseEntity {
   @Column()
   reward_token_id: string;
 
-  @ManyToOne(() => TokenReward, (token) => token.tasks)
-  @JoinColumn({ name: 'reward_token_id' })
-  token: TokenReward;
+  // @ManyToOne(() => TokenReward, (token) => token.tasks)
+  // @JoinColumn({ name: 'reward_token_id' })
+  // token: TokenReward;
 
   // @OneToMany(() => TaskResponseEntity, (taskResponse) => taskResponse.task)
   // taskResponses: TaskResponseEntity[];

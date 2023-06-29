@@ -11,6 +11,7 @@ import {
   OneToOne,
 } from 'typeorm';
 import { Product } from '@src/globalServices/product/entities/product.entity';
+import { Task } from '@src/models/tasks.entity';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -117,4 +118,7 @@ export class Brand extends BaseEntity {
 
   @OneToMany(() => Product, (product) => product.brand)
   products: Product[];
+
+  @OneToMany(() => Task, (task) => task.brand)
+  tasks: Task[];
 }
