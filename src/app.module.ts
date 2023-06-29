@@ -47,6 +47,7 @@ import { CustomerAccountManagementService } from './modules/accountManagement/cu
 import { BrandAccountManagementService } from './modules/accountManagement/brandAccountManagement/service';
 import { CustomerManagementController } from './modules/accountManagement/customerAccountManagement/controller';
 import { BrandManagementController } from './modules/accountManagement/brandAccountManagement/controller';
+import { PaymentModule } from './modules/payment/payment.module';
 
 @Module({
   imports: [
@@ -86,6 +87,7 @@ import { BrandManagementController } from './modules/accountManagement/brandAcco
     SearchModule,
     AuthenticationModule,
     WalletModule,
+    PaymentModule,
   ],
   controllers: [
     AppController,
