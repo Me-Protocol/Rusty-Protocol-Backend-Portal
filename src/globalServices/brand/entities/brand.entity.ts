@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { Product } from '@src/globalServices/product/entities/product.entity';
 import { Task } from '@src/models/tasks.entity';
+import { Collection } from '@src/globalServices/collections/entities/collection.entity';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -38,6 +39,20 @@ export class Brand extends BaseEntity {
     nullable: true,
   })
   description: string;
+
+  @Column({
+    nullable: true,
+  })
+  slogan: string;
+
+  @Column('text', {
+    nullable: true,
+    array: true,
+  })
+  socialMediaLinks: {
+    name: string;
+    link: string;
+  }[];
 
   @Column({
     nullable: true,
@@ -121,4 +136,7 @@ export class Brand extends BaseEntity {
 
   @OneToMany(() => Task, (task) => task.brand)
   tasks: Task[];
+
+  @OneToMany(() => Collection, (collection) => collection.brand)
+  collections: Collection[];
 }

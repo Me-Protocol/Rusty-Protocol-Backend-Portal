@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { ProductImage } from './entities/productImage.entity';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import { Variant } from './entities/variants.entity';
+import { VarientType } from '@src/utils/enums/VarientType';
 
 @Injectable()
 export class ProductService {
@@ -13,6 +15,9 @@ export class ProductService {
 
     @InjectRepository(ProductImage)
     private readonly productImageRepo: Repository<ProductImage>,
+
+    @InjectRepository(Variant)
+    private readonly variantRepo: Repository<Variant>,
   ) {}
 
   async getProductImages(brandId: string, page: number, limit: number) {
@@ -65,6 +70,36 @@ export class ProductService {
     );
 
     return this.productImageRepo.save(productImages);
+  }
+
+  async addVariants(
+    brandId: string,
+    productId: string,
+    variants: {
+      name: VarientType;
+      values: string[];
+      productId: string;
+      price: number;
+      inventory: number;
+    }[],
+  ) {
+    const product = await this.productRepo.findOne({
+      where: {
+        id: productId,
+        brandId,
+      },
+    });
+    if (!product) {
+      throw new Error('Product not found');
+    }
+
+    const productVariants = variants.map((variant) =>
+      this.variantRepo.create({
+        ...variant,
+      }),
+    );
+
+    return this.variantRepo.save(productVariants);
   }
 
   async createProduct(product: Product) {

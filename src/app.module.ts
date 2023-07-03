@@ -49,6 +49,8 @@ import { CustomerManagementController } from './modules/accountManagement/custom
 import { BrandManagementController } from './modules/accountManagement/brandAccountManagement/controller';
 import { PaymentModule } from './modules/payment/payment.module';
 import { Collection } from './globalServices/collections/entities/collection.entity';
+import { Variant } from './globalServices/product/entities/variants.entity';
+import { Offer } from './globalServices/offer/entities/offer.entity';
 
 @Module({
   imports: [
@@ -63,6 +65,8 @@ import { Collection } from './globalServices/collections/entities/collection.ent
       Product,
       ProductImage,
       Collection,
+      Variant,
+      Offer,
     ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),

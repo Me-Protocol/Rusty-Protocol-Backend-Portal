@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
-import { IsEnum, IsString } from 'class-validator';
+import { IsArray, IsEnum, IsString } from 'class-validator';
 
 export class UpdateCollectionDto {
   @ApiProperty()
@@ -25,4 +25,11 @@ export class UpdateCollectionDto {
     message: 'Please provide a valid status',
   })
   status: ItemStatus;
+
+  @ApiProperty()
+  brandId: string;
+
+  @ApiProperty()
+  @IsArray({ message: 'Product images must be an array of strings' })
+  products: string[];
 }

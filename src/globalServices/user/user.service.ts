@@ -164,7 +164,13 @@ export class UserService {
     const categoryIds = user.user_category_interests || [];
 
     if (!categoryIds.includes(categoryId)) {
-      categoryIds.push(categoryId);
+      // make sure it comes first
+      categoryIds.unshift(categoryId);
+    } else {
+      // bring it to the top
+      const index = categoryIds.indexOf(categoryId);
+      categoryIds.splice(index, 1);
+      categoryIds.unshift(categoryId);
     }
 
     user.user_category_interests = categoryIds;

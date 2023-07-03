@@ -14,18 +14,24 @@ export class CollectionManagementService {
   }
 
   async update(id: string, body: UpdateCollectionDto) {
-    return await this.collectionService.update(id, body.userId, body);
+    return await this.collectionService.update(
+      id,
+      body.userId,
+      body.brandId,
+      body,
+    );
   }
 
   async findAll(query: FIlterCollectionDto) {
     return await this.collectionService.findAll(
       query.userId,
+      query.brandId,
       query.page,
       query.limit,
     );
   }
 
-  async findOne(id: string, userId: string) {
-    return await this.collectionService.findOne(id, userId);
+  async findOne(id: string, userId: string, brandId: string) {
+    return await this.collectionService.findOne(id, userId, brandId);
   }
 }

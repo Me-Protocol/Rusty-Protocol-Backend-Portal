@@ -3,7 +3,6 @@
 import { BaseEntity } from '@src/models/base.entity';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
-import { User } from '@src/globalServices/user/entities/user.entity';
 import { Product } from '@src/globalServices/product/entities/product.entity';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { ProductImage } from '@src/globalServices/product/entities/productImage.entity';
@@ -38,7 +37,7 @@ export class Offer extends BaseEntity {
     precision: 10,
     scale: 2,
   })
-  discountPrice: number;
+  originalPrice: number;
 
   @Column({
     type: 'decimal',
@@ -47,6 +46,49 @@ export class Offer extends BaseEntity {
   })
   discountPercentage: number;
 
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+  })
+  tokens: number;
+
   @Column()
   offerCode: string;
+
+  @Column()
+  name: string;
+
+  @Column()
+  description: string;
+
+  @Column({
+    default: 0,
+  })
+  viewCount: number;
+
+  @Column({
+    default: 0,
+  })
+  likeCount: number;
+
+  @Column({
+    default: 0,
+  })
+  shareCount: number;
+
+  @Column({
+    default: 0,
+  })
+  commentCount: number;
+
+  @Column({
+    type: 'timestamp',
+  })
+  startDate: Date;
+
+  @Column({
+    type: 'timestamp',
+  })
+  endDate: Date;
 }

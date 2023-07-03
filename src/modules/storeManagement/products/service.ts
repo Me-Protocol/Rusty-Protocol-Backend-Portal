@@ -49,6 +49,13 @@ export class ProductManagementService {
       body.productImages,
     );
 
+    // add variants
+    await this.productService.addVariants(
+      body.brandId,
+      newProduct.id,
+      body.variants,
+    );
+
     return await this.productService.getOneProduct(newProduct.id, body.brandId);
   }
 
@@ -84,6 +91,15 @@ export class ProductManagementService {
         body.brandId,
         product.id,
         body.productImages,
+      );
+    }
+
+    if (body.variants.length > product.variants.length) {
+      // add variants
+      await this.productService.addVariants(
+        body.brandId,
+        product.id,
+        body.variants,
       );
     }
 

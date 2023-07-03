@@ -7,6 +7,8 @@ import { Category } from '@src/globalServices/category/entities/category.entity'
 import { ProductImage } from './productImage.entity';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
 import { Offer } from '@src/globalServices/offer/entities/offer.entity';
+import { Variant } from './variants.entity';
+import { Collection } from '@src/globalServices/collections/entities/collection.entity';
 
 @Entity('product')
 export class Product extends BaseEntity {
@@ -71,4 +73,16 @@ export class Product extends BaseEntity {
 
   @OneToMany(() => Offer, (offer) => offer.product)
   offers: Offer[];
+
+  @OneToMany(() => Variant, (variant) => variant.product)
+  variants: Variant[];
+
+  @Column({
+    nullable: true,
+  })
+  collectionId: string;
+
+  @ManyToOne(() => Collection, (collection) => collection.products)
+  @JoinColumn({ name: 'collectionId' })
+  collection: Collection;
 }

@@ -11,4 +11,6 @@ export class FIlterCollectionDto {
   @ApiProperty()
   @IsNumber()
   limit: number;
+
+  brandId: string;
 }
