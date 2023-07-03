@@ -6,6 +6,7 @@ import { ItemStatus } from '@src/utils/enums/ItemStatus';
 import { Product } from '@src/globalServices/product/entities/product.entity';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { ProductImage } from '@src/globalServices/product/entities/productImage.entity';
+import { View } from '@src/globalServices/views/entities/view.entity';
 
 @Entity('offer')
 export class Offer extends BaseEntity {
@@ -91,4 +92,7 @@ export class Offer extends BaseEntity {
     type: 'timestamp',
   })
   endDate: Date;
+
+  @OneToMany(() => View, (view) => view.user)
+  views: View[];
 }

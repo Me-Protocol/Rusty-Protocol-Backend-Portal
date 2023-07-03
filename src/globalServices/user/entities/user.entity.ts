@@ -10,6 +10,7 @@ import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { Wallet } from '@src/globalServices/wallet/entities/wallet.entity';
 import { Collection } from '@src/globalServices/collections/entities/collection.entity';
 import { Follow } from '@src/globalServices/follow/entities/follow.entity';
+import { View } from '@src/globalServices/views/entities/view.entity';
 // import { TaskResponseEntity } from '@src/models/taskResponse.entity';
 
 @Entity('user')
@@ -171,6 +172,9 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Follow, (follow) => follow.user)
   following: Follow[];
+
+  @OneToMany(() => View, (view) => view.user)
+  views: View[];
 
   // @OneToMany(() => TaskResponseEntity, (taskResponse) => taskResponse.user)
   // taskResponses: TaskResponseEntity[];

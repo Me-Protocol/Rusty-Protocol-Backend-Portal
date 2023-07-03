@@ -10,6 +10,7 @@ import { ProductImage } from '@src/globalServices/product/entities/productImage.
 import { Variant } from '@src/globalServices/product/entities/variants.entity';
 import { Device } from '@src/globalServices/user/entities/device.entity';
 import { User } from '@src/globalServices/user/entities/user.entity';
+import { View } from '@src/globalServices/views/entities/view.entity';
 require('dotenv').config();
 import { Wallet } from '@src/globalServices/wallet/entities/wallet.entity';
 import { Task } from '@src/models/tasks.entity';
@@ -35,6 +36,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     Variant,
     Offer,
     Follow,
+    View,
   ],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   extra: {
