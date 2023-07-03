@@ -38,6 +38,7 @@ export class ProductManagementService {
     product.inventory = body.inventory;
     product.isUnlimited = body.isUnlimited;
     product.productCode = productCode;
+    product.subCategoryId = body.subCategoryId;
 
     const newProduct = await this.productService.createProduct(product);
 
@@ -74,6 +75,17 @@ export class ProductManagementService {
     if (body.status) product.status = body.status;
     if (body.inventory) product.inventory = body.inventory;
     if (body.isUnlimited) product.isUnlimited = body.isUnlimited;
+    if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
+    if (body.categoryId) product.categoryId = body.categoryId;
+
+    if (body.productImages.length > product.productImages.length) {
+      // upload images
+      await this.productService.bulkAddProductImage(
+        body.brandId,
+        product.id,
+        body.productImages,
+      );
+    }
 
     await this.productService.updateProduct(product);
 

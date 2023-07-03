@@ -8,6 +8,7 @@ import { UserAppType } from '@src/utils/enums/UserAppType';
 import { Customer } from '@src/globalServices/customer/entities/customer.entity';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { Wallet } from '@src/globalServices/wallet/entities/wallet.entity';
+import { Collection } from '@src/globalServices/collections/entities/collection.entity';
 // import { TaskResponseEntity } from '@src/models/taskResponse.entity';
 
 @Entity('user')
@@ -157,6 +158,15 @@ export class User extends BaseEntity {
 
   @OneToOne(() => Wallet, (wallet) => wallet.user)
   wallet: Wallet;
+
+  @OneToMany(() => Collection, (collection) => collection.user)
+  collections: Collection[];
+
+  @Column('text', {
+    array: true,
+    nullable: true,
+  })
+  user_category_interests: string[];
 
   // @OneToMany(() => TaskResponseEntity, (taskResponse) => taskResponse.user)
   // taskResponses: TaskResponseEntity[];

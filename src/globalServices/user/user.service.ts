@@ -151,4 +151,38 @@ export class UserService {
       },
     });
   }
+
+  async updateUserCategoryInterests(userId: string, categoryId: string) {
+    const user = await this.userRepository.findOne({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) throw new HttpException('User not found', 404);
+
+    const categoryIds = user.user_category_interests || [];
+
+    if (!categoryIds.includes(categoryId)) {
+      categoryIds.push(categoryId);
+    }
+
+    user.user_category_interests = categoryIds;
+
+    await this.userRepository.save(user);
+
+    return user;
+  }
+
+  async getUserCategoryInterests(userId: string): Promise<string[]> {
+    const user = await this.userRepository.findOne({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) throw new HttpException('User not found', 404);
+
+    return user.user_category_interests || [];
+  }
 }

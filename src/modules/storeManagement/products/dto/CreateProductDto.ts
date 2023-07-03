@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ProductStatus } from '@src/utils/enums/ProductStatus';
+import { ItemStatus } from '@src/utils/enums/ItemStatus';
 import {
   IsArray,
   IsBoolean,
@@ -30,8 +30,10 @@ export class CreateProductDto {
   productImages: string[];
 
   @ApiProperty()
-  @IsEnum(ProductStatus)
-  status: ProductStatus;
+  @IsEnum(ItemStatus, {
+    message: 'Please provide a valid status',
+  })
+  status: ItemStatus;
 
   @ApiProperty()
   @IsNumber()
@@ -45,4 +47,9 @@ export class CreateProductDto {
   @IsOptional()
   @IsBoolean()
   isUnlimited: boolean;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  subCategoryId: string;
 }

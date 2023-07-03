@@ -48,6 +48,7 @@ import { BrandAccountManagementService } from './modules/accountManagement/brand
 import { CustomerManagementController } from './modules/accountManagement/customerAccountManagement/controller';
 import { BrandManagementController } from './modules/accountManagement/brandAccountManagement/controller';
 import { PaymentModule } from './modules/payment/payment.module';
+import { Collection } from './globalServices/collections/entities/collection.entity';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { PaymentModule } from './modules/payment/payment.module';
       Wallet,
       Product,
       ProductImage,
+      Collection,
     ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),

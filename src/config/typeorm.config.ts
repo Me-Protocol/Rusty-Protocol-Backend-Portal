@@ -1,6 +1,7 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { Category } from '@src/globalServices/category/entities/category.entity';
+import { Collection } from '@src/globalServices/collections/entities/collection.entity';
 import { Customer } from '@src/globalServices/customer/entities/customer.entity';
 import { Product } from '@src/globalServices/product/entities/product.entity';
 import { ProductImage } from '@src/globalServices/product/entities/productImage.entity';
@@ -27,6 +28,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     Product,
     ProductImage,
     Task,
+    Collection,
   ],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   extra: {

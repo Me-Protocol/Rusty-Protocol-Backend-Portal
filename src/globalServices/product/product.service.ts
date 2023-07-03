@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { ProductImage } from './entities/productImage.entity';
-import { ProductStatus } from '@src/utils/enums/ProductStatus';
+import { ItemStatus } from '@src/utils/enums/ItemStatus';
 
 @Injectable()
 export class ProductService {
@@ -79,7 +79,7 @@ export class ProductService {
     brandId: string,
     page: number,
     limit: number,
-    status?: ProductStatus,
+    status?: ItemStatus,
   ) {
     const products = await this.productRepo.find({
       where: {
@@ -120,7 +120,7 @@ export class ProductService {
         brandId,
       },
       {
-        status: ProductStatus.ARCHIVED,
+        status: ItemStatus.ARCHIVED,
       },
     );
   }
@@ -132,7 +132,7 @@ export class ProductService {
         brandId,
       },
       {
-        status: ProductStatus.DRAFT,
+        status: ItemStatus.DRAFT,
       },
     );
   }
@@ -179,7 +179,7 @@ export class ProductService {
   }: {
     page: number;
     limit: number;
-    status?: ProductStatus;
+    status?: ItemStatus;
     brandId?: string;
     categoryId?: string;
   }) {
