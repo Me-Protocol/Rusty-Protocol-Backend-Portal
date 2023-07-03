@@ -11,6 +11,7 @@ import { Wallet } from '@src/globalServices/wallet/entities/wallet.entity';
 import { Collection } from '@src/globalServices/collections/entities/collection.entity';
 import { Follow } from '@src/globalServices/follow/entities/follow.entity';
 import { View } from '@src/globalServices/views/entities/view.entity';
+import { Share } from '@src/globalServices/share/entities/share.entity';
 // import { TaskResponseEntity } from '@src/models/taskResponse.entity';
 
 @Entity('user')
@@ -175,6 +176,9 @@ export class User extends BaseEntity {
 
   @OneToMany(() => View, (view) => view.user)
   views: View[];
+
+  @OneToMany(() => Share, (view) => view.user)
+  shares: Share[];
 
   // @OneToMany(() => TaskResponseEntity, (taskResponse) => taskResponse.user)
   // taskResponses: TaskResponseEntity[];
