@@ -34,10 +34,12 @@ import { ResetPasswordDto } from './dto/ResetPasswordDto';
 import { UpdateDeviceTokenDto } from './dto/UpdateDeviceTokenDto';
 import { AuthenticationService } from './service';
 import { UserAppType } from '@src/utils/enums/UserAppType';
+import { ApiTags } from '@nestjs/swagger';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const requestIp = require('request-ip');
 
+@ApiTags('Authentication')
 @UseInterceptors(ResponseInterceptor)
 @Controller('user')
 export class AuthenticationController {
@@ -304,6 +306,12 @@ export class AuthenticationController {
     // This will redirect the user to Twitter for authentication
   }
 
+  @Get('google/brand')
+  @UseGuards(AuthGuard('google'))
+  async googleLoginBrand() {
+    // This will redirect the user to Twitter for authentication
+  }
+
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleCallback(
@@ -332,6 +340,44 @@ export class AuthenticationController {
         userAgent: req.headers['user-agent'],
         ip: requestIp.getClientIp(req),
         userType: UserAppType.USER,
+      });
+
+      return res
+        .status(302)
+        .redirect(
+          `${process.env.CLIENT_APP_URI}?token=${newUser.token}&provider=${newUser.provider}`,
+        );
+    }
+  }
+
+  @Get('google/brand/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleBrandCallback(
+    @Req() req: any,
+    @Res({ passthrough: true }) res: any,
+  ): Promise<any> {
+    const user = req.user;
+
+    if (!user) {
+      return res
+        .status(302)
+        .redirect(`${process.env.CLIENT_APP_URI}?token=null&provider=null`);
+    } else {
+      const newUser = await this.authService.socialAuth({
+        email: user.profile._json.email,
+        name: user.profile.displayName,
+        accessToken: user?.accessToken,
+        refreshToken: user?.refreshToken,
+        provider: LoginType.GOOGLE,
+        profileImage: user.profile._json.picture,
+        coverImage: '',
+        bio: '',
+        location: '',
+        website: '',
+        username: '',
+        userAgent: req.headers['user-agent'],
+        ip: requestIp.getClientIp(req),
+        userType: UserAppType.BRAND,
       });
 
       return res

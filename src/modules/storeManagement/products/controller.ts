@@ -17,7 +17,9 @@ import { ProductManagementService } from './service';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { CreateProductDto } from './dto/CreateProductDto';
 import { FilterDto } from './dto/FilterDto';
+import { ApiTags } from '@nestjs/swagger';
 
+ApiTags('Products');
 @UseInterceptors(ResponseInterceptor)
 @Controller('store/product')
 export class ProductManagementController {

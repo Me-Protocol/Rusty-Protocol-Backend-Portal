@@ -9,6 +9,7 @@ import { Customer } from '@src/globalServices/customer/entities/customer.entity'
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { Wallet } from '@src/globalServices/wallet/entities/wallet.entity';
 import { Collection } from '@src/globalServices/collections/entities/collection.entity';
+import { Follow } from '@src/globalServices/follow/entities/follow.entity';
 // import { TaskResponseEntity } from '@src/models/taskResponse.entity';
 
 @Entity('user')
@@ -167,6 +168,9 @@ export class User extends BaseEntity {
     nullable: true,
   })
   user_category_interests: string[];
+
+  @OneToMany(() => Follow, (follow) => follow.user)
+  following: Follow[];
 
   // @OneToMany(() => TaskResponseEntity, (taskResponse) => taskResponse.user)
   // taskResponses: TaskResponseEntity[];

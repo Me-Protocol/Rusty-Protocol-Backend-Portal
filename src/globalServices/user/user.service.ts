@@ -115,7 +115,7 @@ export class UserService {
       where: {
         id,
       },
-      relations: ['customer'],
+      relations: ['customer', 'brand'],
     });
   }
 

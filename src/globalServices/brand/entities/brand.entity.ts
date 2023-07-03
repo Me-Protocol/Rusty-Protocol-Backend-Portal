@@ -13,6 +13,7 @@ import {
 import { Product } from '@src/globalServices/product/entities/product.entity';
 import { Task } from '@src/models/tasks.entity';
 import { Collection } from '@src/globalServices/collections/entities/collection.entity';
+import { Follow } from '@src/globalServices/follow/entities/follow.entity';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -139,4 +140,7 @@ export class Brand extends BaseEntity {
 
   @OneToMany(() => Collection, (collection) => collection.brand)
   collections: Collection[];
+
+  @OneToMany(() => Follow, (follow) => follow.brand)
+  followers: Follow[];
 }

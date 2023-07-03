@@ -12,7 +12,9 @@ import { AuthGuard } from '@nestjs/passport';
 import { BrandAccountManagementService } from './service';
 import { UpdateBrandDto } from './dto/UpdateBrandDto';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Brand')
 @UseInterceptors(ResponseInterceptor)
 @Controller('brand')
 export class BrandManagementController {

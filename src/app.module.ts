@@ -51,6 +51,10 @@ import { PaymentModule } from './modules/payment/payment.module';
 import { Collection } from './globalServices/collections/entities/collection.entity';
 import { Variant } from './globalServices/product/entities/variants.entity';
 import { Offer } from './globalServices/offer/entities/offer.entity';
+import { UploadModule } from './modules/upload/upload.module';
+import { UploadController } from './modules/upload/upload.controller';
+import { UploadService } from './modules/upload/upload.service';
+import { Follow } from './globalServices/follow/entities/follow.entity';
 
 @Module({
   imports: [
@@ -67,6 +71,7 @@ import { Offer } from './globalServices/offer/entities/offer.entity';
       Collection,
       Variant,
       Offer,
+      Follow,
     ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
@@ -94,6 +99,7 @@ import { Offer } from './globalServices/offer/entities/offer.entity';
     AuthenticationModule,
     WalletModule,
     PaymentModule,
+    UploadModule,
   ],
   controllers: [
     AppController,
@@ -104,6 +110,7 @@ import { Offer } from './globalServices/offer/entities/offer.entity';
     ProductManagementController,
     CustomerManagementController,
     BrandManagementController,
+    UploadController,
   ],
   providers: [
     ElasticIndex,
@@ -130,6 +137,7 @@ import { Offer } from './globalServices/offer/entities/offer.entity';
     ProductManagementService,
     CustomerAccountManagementService,
     BrandAccountManagementService,
+    UploadService,
   ],
   exports: [JwtStrategy, PassportModule],
 })
