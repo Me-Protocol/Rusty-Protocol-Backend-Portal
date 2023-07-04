@@ -14,6 +14,7 @@ import { Product } from '@src/globalServices/product/entities/product.entity';
 import { Task } from '@src/models/tasks.entity';
 import { Collection } from '@src/globalServices/collections/entities/collection.entity';
 import { Follow } from '@src/globalServices/follow/entities/follow.entity';
+import { Reward } from '@src/globalServices/reward/entities/reward.entity';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -143,4 +144,7 @@ export class Brand extends BaseEntity {
 
   @OneToMany(() => Follow, (follow) => follow.brand)
   followers: Follow[];
+
+  @OneToMany(() => Reward, (reward) => reward.brand)
+  rewards: Reward[];
 }

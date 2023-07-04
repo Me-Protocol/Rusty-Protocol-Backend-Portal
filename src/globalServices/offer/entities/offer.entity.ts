@@ -9,6 +9,7 @@ import { ProductImage } from '@src/globalServices/product/entities/productImage.
 import { View } from '@src/globalServices/views/entities/view.entity';
 import { Share } from '@src/globalServices/share/entities/share.entity';
 import { Review } from '@src/globalServices/review/entities/review.entity';
+import { Reward } from '@src/globalServices/reward/entities/reward.entity';
 
 @Entity('offer')
 export class Offer extends BaseEntity {
@@ -103,4 +104,10 @@ export class Offer extends BaseEntity {
 
   @OneToMany(() => Review, (review) => review.user)
   reviews: Review[];
+
+  @Column()
+  rewardId: string;
+
+  @ManyToOne(() => Reward, (reward) => reward.offers)
+  reward: Reward;
 }
