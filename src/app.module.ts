@@ -57,6 +57,7 @@ import { UploadService } from './modules/upload/upload.service';
 import { Follow } from './globalServices/follow/entities/follow.entity';
 import { Share } from './globalServices/share/entities/share.entity';
 import { View } from './globalServices/views/entities/view.entity';
+import { Review } from './globalServices/review/entities/review.entity';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { View } from './globalServices/views/entities/view.entity';
       Follow,
       Share,
       View,
+      Review,
     ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),

@@ -8,6 +8,7 @@ import { Offer } from '@src/globalServices/offer/entities/offer.entity';
 import { Product } from '@src/globalServices/product/entities/product.entity';
 import { ProductImage } from '@src/globalServices/product/entities/productImage.entity';
 import { Variant } from '@src/globalServices/product/entities/variants.entity';
+import { Review } from '@src/globalServices/review/entities/review.entity';
 import { Share } from '@src/globalServices/share/entities/share.entity';
 import { Device } from '@src/globalServices/user/entities/device.entity';
 import { User } from '@src/globalServices/user/entities/user.entity';
@@ -39,6 +40,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     Follow,
     View,
     Share,
+    Review,
   ],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   extra: {

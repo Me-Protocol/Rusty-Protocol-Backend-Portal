@@ -8,6 +8,7 @@ import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { ProductImage } from '@src/globalServices/product/entities/productImage.entity';
 import { View } from '@src/globalServices/views/entities/view.entity';
 import { Share } from '@src/globalServices/share/entities/share.entity';
+import { Review } from '@src/globalServices/review/entities/review.entity';
 
 @Entity('offer')
 export class Offer extends BaseEntity {
@@ -97,6 +98,9 @@ export class Offer extends BaseEntity {
   @OneToMany(() => View, (view) => view.user)
   views: View[];
 
-  @OneToMany(() => Share, (view) => view.user)
+  @OneToMany(() => Share, (share) => share.user)
   shares: Share[];
+
+  @OneToMany(() => Review, (review) => review.user)
+  reviews: Review[];
 }

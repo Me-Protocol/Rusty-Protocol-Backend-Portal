@@ -12,6 +12,7 @@ import { Collection } from '@src/globalServices/collections/entities/collection.
 import { Follow } from '@src/globalServices/follow/entities/follow.entity';
 import { View } from '@src/globalServices/views/entities/view.entity';
 import { Share } from '@src/globalServices/share/entities/share.entity';
+import { Review } from '@src/globalServices/review/entities/review.entity';
 // import { TaskResponseEntity } from '@src/models/taskResponse.entity';
 
 @Entity('user')
@@ -177,8 +178,11 @@ export class User extends BaseEntity {
   @OneToMany(() => View, (view) => view.user)
   views: View[];
 
-  @OneToMany(() => Share, (view) => view.user)
+  @OneToMany(() => Share, (share) => share.user)
   shares: Share[];
+
+  @OneToMany(() => Review, (review) => review.user)
+  reviews: Review[];
 
   // @OneToMany(() => TaskResponseEntity, (taskResponse) => taskResponse.user)
   // taskResponses: TaskResponseEntity[];
