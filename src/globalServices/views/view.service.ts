@@ -10,16 +10,16 @@ export class ViewsService {
     private readonly viewsRepository: Repository<View>,
   ) {}
 
-  async createView(offer_id: string, session_id: string, user_id?: string) {
+  async createView(offerId: string, sessionId: string, userId?: string) {
     const view = new View();
-    view.offerId = offer_id;
-    view.sessionId = session_id;
-    view.userId = user_id;
+    view.offerId = offerId;
+    view.sessionId = sessionId;
+    view.userId = userId;
     return await this.viewsRepository.save(view);
   }
 
   // get sessions recently viewed
-  async getSessionViews(session_id: string) {
+  async getSessionViews(sessionId: string) {
     // get views and populate offer
     const views = await this.viewsRepository.findAndCount({
       relations: [
@@ -34,7 +34,7 @@ export class ViewsService {
       },
       take: 10,
       where: {
-        sessionId: session_id,
+        sessionId: sessionId,
       },
     });
 

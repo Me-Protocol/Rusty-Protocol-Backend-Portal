@@ -24,9 +24,7 @@ export class ProductManagementService {
       throw new HttpException('Category does not exist', 400);
     }
 
-    const productCode = await this.productService.generateProductCode(
-      body.brandId,
-    );
+    const productCode = await this.productService.generateProductCode();
 
     const product = new Product();
     product.brandId = body.brandId;

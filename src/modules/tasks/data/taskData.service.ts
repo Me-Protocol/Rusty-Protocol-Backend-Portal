@@ -21,7 +21,6 @@ import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { TaskResponseRecord } from '@src/models/taskResponseRecord.entity';
 import { HttpService } from '@nestjs/axios';
 import { UserService } from '@src/globalServices/user/user.service';
-import { TokenReward } from '@src/modules/tokenreward/models/tokenreward.entity';
 import { TaskResponse } from '@src/models/taskResponse.entity';
 
 //TODO: reward service
@@ -45,8 +44,8 @@ export class TaskDataService {
 
     private readonly userService: UserService,
 
-    @InjectRepository(TokenReward)
-    private tokenRepo: Repository<TokenReward>,
+    // @InjectRepository(TokenReward)
+    // private tokenRepo: Repository<TokenReward>,
 
     private readonly tasksResultService: TasksResultService, // @InjectRepository(BountyRecord) // private bountyRecordRepo: Repository<BountyRecord>, // @InjectRepository(JobResponseEntity) // private jobResponseRepo: Repository<JobResponseEntity>, // @InjectRepository(TaskResponderEntity) // private taskResponder: Repository<TaskResponderEntity>, // private configService: ConfigService, // private readonly rewardService: RewardsService, // private readonly brandService: BrandsService, // private readonly followService: FollowerService, // private readonly notificationService: NotificationService,
   ) {}

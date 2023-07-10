@@ -182,17 +182,16 @@ export class ProductService {
     });
   }
 
-  async generateProductCode(brandId: string) {
+  async generateProductCode() {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const product = await this.productRepo.findOne({
       where: {
-        brandId,
         productCode: code,
       },
     });
 
     if (product) {
-      return this.generateProductCode(brandId);
+      return this.generateProductCode();
     }
 
     return code;

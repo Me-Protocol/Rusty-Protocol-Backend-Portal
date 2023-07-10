@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { AllTaskTypes, TaskStatus } from '@src/utils/enums/TasksTypes';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
-import { TokenReward } from '@src/modules/tokenreward/models/tokenreward.entity';
+// import { TokenReward } from '@src/modules/tokenreward/models/tokenreward.entity';
 
 //TODO: token reward
 //TODO: offer

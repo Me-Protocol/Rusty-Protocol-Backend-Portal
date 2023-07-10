@@ -58,6 +58,13 @@ import { Follow } from './globalServices/follow/entities/follow.entity';
 import { Share } from './globalServices/share/entities/share.entity';
 import { View } from './globalServices/views/entities/view.entity';
 import { Review } from './globalServices/review/entities/review.entity';
+import { Reward } from './globalServices/reward/entities/reward.entity';
+import { CollectionManagementController } from './modules/storeManagement/collections/controller';
+import { CollectionManagementService } from './modules/storeManagement/collections/service';
+import { FollowManagementService } from './modules/storeManagement/follow/service';
+import { CollectionService } from './globalServices/collections/collections.service';
+import { FollowService } from './globalServices/follow/follow.service';
+import { FollowManagementController } from './modules/storeManagement/follow/controller';
 
 @Module({
   imports: [
@@ -78,6 +85,7 @@ import { Review } from './globalServices/review/entities/review.entity';
       Share,
       View,
       Review,
+      Reward,
     ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
@@ -117,6 +125,8 @@ import { Review } from './globalServices/review/entities/review.entity';
     CustomerManagementController,
     BrandManagementController,
     UploadController,
+    CollectionManagementController,
+    FollowManagementController,
   ],
   providers: [
     ElasticIndex,
@@ -144,6 +154,10 @@ import { Review } from './globalServices/review/entities/review.entity';
     CustomerAccountManagementService,
     BrandAccountManagementService,
     UploadService,
+    CollectionManagementService,
+    FollowManagementService,
+    CollectionService,
+    FollowService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

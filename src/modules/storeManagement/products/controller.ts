@@ -18,6 +18,7 @@ import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware
 import { CreateProductDto } from './dto/CreateProductDto';
 import { FilterDto } from './dto/FilterDto';
 import { ApiTags } from '@nestjs/swagger';
+import { UpdateProductDto } from './dto/UpdateProductDto';
 
 ApiTags('Products');
 @UseInterceptors(ResponseInterceptor)
@@ -29,7 +30,7 @@ export class ProductManagementController {
 
   @UseGuards(BrandJwtStrategy)
   @Post()
-  async createCategory(
+  async createProduct(
     @Body(ValidationPipe) body: CreateProductDto,
     @Req() req: any,
   ) {
@@ -41,8 +42,8 @@ export class ProductManagementController {
 
   @UseGuards(BrandJwtStrategy)
   @Put(':productId')
-  async updateCategory(
-    @Body(ValidationPipe) body: CreateProductDto,
+  async updateProduct(
+    @Body(ValidationPipe) body: UpdateProductDto,
     @Param('productId') productId: string,
     @Req() req: any,
   ) {
@@ -100,7 +101,10 @@ export class ProductManagementController {
 
   @UseGuards(BrandJwtStrategy)
   @Get('')
-  async getAllProducts(@Query() query: FilterDto, @Req() req: any) {
+  async getAllProducts(
+    @Query(ValidationPipe) query: FilterDto,
+    @Req() req: any,
+  ) {
     const brandId = req.user.brand.id;
     query.brandId = brandId;
 

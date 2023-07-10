@@ -5,7 +5,7 @@ import { Follow } from './entities/follow.entity';
 import { BrandService } from '../brand/brand.service';
 
 @Injectable()
-export class FollowerService {
+export class FollowService {
   constructor(
     @InjectRepository(Follow)
     private readonly followerRepository: Repository<Follow>,
@@ -14,7 +14,7 @@ export class FollowerService {
   ) {}
 
   // get brands followers
-  async getBrandsFollowers(brandId: string): Promise<Follow[]> {
+  async getBrandsFollowers(brandId: string, page: number, limit: number) {
     const followers = await this.followerRepository.find({
       where: {
         brandId,
@@ -29,9 +29,18 @@ export class FollowerService {
           },
         },
       },
+      skip: page * limit,
+      take: limit,
     });
 
-    return followers;
+    const total = await this.countBrandFollowers(brandId);
+
+    return {
+      total,
+      followers,
+      nextPage: total > page * limit ? page + 1 : null,
+      previousPage: page > 1 ? page - 1 : null,
+    };
   }
 
   // follow brand
@@ -52,7 +61,7 @@ export class FollowerService {
   }
 
   // delete follower
-  async unfollow(userId: string, brandId: string): Promise<string> {
+  async unfollow(brandId: string, userId: string): Promise<string> {
     await this.followerRepository.delete({
       userId,
       brandId,
@@ -89,7 +98,7 @@ export class FollowerService {
   }
 
   // get users following
-  async getUsersFollowing(userId: string): Promise<Follow[]> {
+  async getUsersFollowing(userId: string, page: number, limit: number) {
     const following = await this.followerRepository.find({
       where: {
         userId,
@@ -104,9 +113,18 @@ export class FollowerService {
           },
         },
       },
+      skip: page * limit,
+      take: limit,
     });
 
-    return following;
+    const total = await this.countUserFollowing(userId);
+
+    return {
+      total,
+      following,
+      nextPage: total > page * limit ? page + 1 : null,
+      previousPage: page > 1 ? page - 1 : null,
+    };
   }
 
   // count followers
