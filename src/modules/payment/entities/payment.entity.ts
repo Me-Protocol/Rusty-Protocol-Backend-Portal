@@ -1,7 +1,7 @@
 // wallet entity
 
 import { Entity, Column, OneToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '@src/models/base.entity';
+import { BaseEntity } from '@src/common/entities/base.entity';
 import { User } from '@src/globalServices/user/entities/user.entity';
 
 @Entity('payment')

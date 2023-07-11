@@ -1,7 +1,7 @@
 // withdrawalMethods entity
 
 import { Column, Entity } from 'typeorm';
-import { BaseEntity } from '@src/models/base.entity';
+import { BaseEntity } from '@src/common/entities/base.entity';
 
 @Entity('withdrawal_methods')
 export class WithdrawalMethodsEntity extends BaseEntity {

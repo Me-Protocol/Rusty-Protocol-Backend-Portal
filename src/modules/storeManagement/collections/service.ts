@@ -32,6 +32,6 @@ export class CollectionManagementService {
   }
 
   async findOne(id: string, userId: string, brandId: string) {
-    return await this.collectionService.findOne(id, userId, brandId);
+    return await this.collectionService.findOne({ id, userId, brandId });
   }
 }

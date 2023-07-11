@@ -1,17 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Gender } from '@src/utils/enums/Gender';
-import { TwoFAType } from '@src/utils/enums/TwoFAType';
 import { UserAppType } from '@src/utils/enums/UserAppType';
 import {
-  IsBoolean,
-  IsEmail,
   IsEnum,
-  IsOptional,
   IsPhoneNumber,
   IsString,
-  IsUrl,
   Matches,
-  MaxLength,
   MinLength,
 } from 'class-validator';
 

@@ -65,6 +65,14 @@ import { FollowManagementService } from './modules/storeManagement/follow/servic
 import { CollectionService } from './globalServices/collections/collections.service';
 import { FollowService } from './globalServices/follow/follow.service';
 import { FollowManagementController } from './modules/storeManagement/follow/controller';
+import { LikeService } from './globalServices/like/like.service';
+import { LikeManagementService } from './modules/storeManagement/like/service';
+import { LikeManagementController } from './modules/storeManagement/like/controller';
+import { Like } from './globalServices/like/entities/like.entity';
+import { OfferService } from './globalServices/offer/offer.service';
+import { OfferManagementService } from './modules/storeManagement/offers/service';
+import { OfferManagementController } from './modules/storeManagement/offers/controller';
+import { ViewsService } from './globalServices/views/view.service';
 
 @Module({
   imports: [
@@ -86,6 +94,7 @@ import { FollowManagementController } from './modules/storeManagement/follow/con
       View,
       Review,
       Reward,
+      Like,
     ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
@@ -127,6 +136,8 @@ import { FollowManagementController } from './modules/storeManagement/follow/con
     UploadController,
     CollectionManagementController,
     FollowManagementController,
+    LikeManagementController,
+    OfferManagementController,
   ],
   providers: [
     ElasticIndex,
@@ -158,6 +169,11 @@ import { FollowManagementController } from './modules/storeManagement/follow/con
     FollowManagementService,
     CollectionService,
     FollowService,
+    LikeService,
+    LikeManagementService,
+    OfferService,
+    OfferManagementService,
+    ViewsService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

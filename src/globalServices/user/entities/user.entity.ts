@@ -1,6 +1,6 @@
 import { Entity, Column, OneToMany, OneToOne } from 'typeorm';
 import { Device } from './device.entity';
-import { BaseEntity } from '@src/models/base.entity';
+import { BaseEntity } from '@src/common/entities/base.entity';
 import { LoginType } from '@src/utils/enums/LoginType';
 import { Role } from '@src/utils/enums/Role';
 import { TwoFAType } from '@src/utils/enums/TwoFAType';
@@ -13,6 +13,9 @@ import { Follow } from '@src/globalServices/follow/entities/follow.entity';
 import { View } from '@src/globalServices/views/entities/view.entity';
 import { Share } from '@src/globalServices/share/entities/share.entity';
 import { Review } from '@src/globalServices/review/entities/review.entity';
+import { Like } from '@src/globalServices/like/entities/like.entity';
+import { TaskResponse } from '@src/globalServices/task/entities/taskResponse.entity';
+import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
 // import { TaskResponseEntity } from '@src/models/taskResponse.entity';
 
 @Entity('user')
@@ -109,19 +112,31 @@ export class User extends BaseEntity {
     nullable: true,
     type: 'jsonb',
   })
-  facebookAuth: object;
+  facebookAuth: {
+    username: string;
+    accessToken: string;
+    refreshToken: string;
+  };
 
   @Column({
     nullable: true,
     type: 'jsonb',
   })
-  googleAuth: object;
+  googleAuth: {
+    username: string;
+    accessToken: string;
+    refreshToken: string;
+  };
 
   @Column({
     nullable: true,
     type: 'jsonb',
   })
-  twitterAuth: object;
+  twitterAuth: {
+    username: string;
+    accessToken: string;
+    refreshToken: string;
+  };
 
   @Column({
     nullable: true,
@@ -184,6 +199,12 @@ export class User extends BaseEntity {
   @OneToMany(() => Review, (review) => review.user)
   reviews: Review[];
 
-  // @OneToMany(() => TaskResponseEntity, (taskResponse) => taskResponse.user)
-  // taskResponses: TaskResponseEntity[];
+  @OneToMany(() => Like, (like) => like.user)
+  likes: Like[];
+
+  @OneToMany(() => TaskResponse, (taskResponse) => taskResponse.task)
+  taskResponses: TaskResponse[];
+
+  @OneToMany(() => RewardRegistry, (rewardRegistry) => rewardRegistry.reward)
+  rewardRegistries: RewardRegistry[];
 }

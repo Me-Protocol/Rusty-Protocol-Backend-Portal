@@ -1,10 +1,10 @@
 // wallet entity
 
-import { User } from "@src/globalServices/user/entities/user.entity";
-import { BaseEntity } from "@src/models/base.entity";
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { User } from '@src/globalServices/user/entities/user.entity';
+import { BaseEntity } from '@src/common/entities/base.entity';
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity("wallet")
+@Entity('wallet')
 export class Wallet extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: string;

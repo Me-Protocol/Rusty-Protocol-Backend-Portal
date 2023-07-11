@@ -1,7 +1,7 @@
 // customer entity
 
 import { User } from '@src/globalServices/user/entities/user.entity';
-import { BaseEntity } from '@src/models/base.entity';
+import { BaseEntity } from '@src/common/entities/base.entity';
 import { NotificationFormat } from '@src/utils/enums/NotificationFormat';
 import { Column, Entity, JoinColumn, OneToOne } from 'typeorm';
 

@@ -1,7 +1,7 @@
 // productImage entity
 
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '@src/models/base.entity';
+import { BaseEntity } from '@src/common/entities/base.entity';
 import { Product } from './product.entity';
 import { Offer } from '@src/globalServices/offer/entities/offer.entity';
 

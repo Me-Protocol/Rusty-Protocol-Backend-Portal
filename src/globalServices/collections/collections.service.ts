@@ -26,10 +26,10 @@ export class CollectionService {
     name: string;
     description: string;
     image: string;
-    userId: string;
-    brandId: string;
-    status: ItemStatus;
-    products: string[];
+    userId?: string;
+    brandId?: string;
+    status?: ItemStatus;
+    products?: string[];
   }) {
     const productRecords = [];
 
@@ -113,12 +113,37 @@ export class CollectionService {
     };
   }
 
-  findOne(id: string, userId: string, brandId: string) {
+  findOne({
+    id,
+    userId,
+    brandId,
+  }: {
+    id: string;
+    userId?: string;
+    brandId?: string;
+  }) {
     return this.collectionRepo.findOne({
       where: {
         id,
         userId,
         brandId,
+      },
+      relations: ['products', 'offer'],
+    });
+  }
+
+  findDefaultCollection({
+    brandId,
+    userId,
+  }: {
+    brandId?: string;
+    userId?: string;
+  }) {
+    return this.collectionRepo.findOne({
+      where: {
+        brandId,
+        userId,
+        isDefault: true,
       },
       relations: ['products'],
     });

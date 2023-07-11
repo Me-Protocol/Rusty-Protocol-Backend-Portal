@@ -2,7 +2,7 @@
 
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { Product } from '@src/globalServices/product/entities/product.entity';
-import { BaseEntity } from '@src/models/base.entity';
+import { BaseEntity } from '@src/common/entities/base.entity';
 import { VarientType } from '@src/utils/enums/VarientType';
 
 @Entity('variant')

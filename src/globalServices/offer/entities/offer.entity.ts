@@ -1,6 +1,6 @@
 // offer entity
 
-import { BaseEntity } from '@src/models/base.entity';
+import { BaseEntity } from '@src/common/entities/base.entity';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
 import { Product } from '@src/globalServices/product/entities/product.entity';
@@ -10,6 +10,8 @@ import { View } from '@src/globalServices/views/entities/view.entity';
 import { Share } from '@src/globalServices/share/entities/share.entity';
 import { Review } from '@src/globalServices/review/entities/review.entity';
 import { Reward } from '@src/globalServices/reward/entities/reward.entity';
+import { Like } from '@src/globalServices/like/entities/like.entity';
+import { Task } from '@src/globalServices/task/entities/task.entity';
 
 @Entity('offer')
 export class Offer extends BaseEntity {
@@ -110,4 +112,10 @@ export class Offer extends BaseEntity {
 
   @ManyToOne(() => Reward, (reward) => reward.offers)
   reward: Reward;
+
+  @OneToMany(() => Like, (like) => like.user)
+  likes: Like[];
+
+  @OneToMany(() => Task, (task) => task.offer)
+  tasks: Task[];
 }

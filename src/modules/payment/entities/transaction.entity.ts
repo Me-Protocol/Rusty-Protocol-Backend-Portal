@@ -1,7 +1,7 @@
 // transaction entity
 
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '@src/models/base.entity';
+import { BaseEntity } from '@src/common/entities/base.entity';
 import { StatusType, TransactionsType } from '@src/utils/enums/Transactions';
 import { PaymentEntity } from './payment.entity';
 import { User } from '@src/globalServices/user/entities/user.entity';

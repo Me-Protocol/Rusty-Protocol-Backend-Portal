@@ -1,18 +1,9 @@
-import {
-  BaseEntity,
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { TaskResponseRecord } from './taskResponseRecord.entity';
+import { BaseEntity } from '@src/common/entities/base.entity';
 
 @Entity('job_response')
 export class JobResponse extends BaseEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
   @Column({ nullable: false, type: 'text', array: true })
   response: string[];
 
@@ -23,12 +14,15 @@ export class JobResponse extends BaseEntity {
   escrowAddress: string;
 
   @Column({ nullable: false })
-  task_record_id: number;
+  taskRecordId: string;
 
   @ManyToOne(
     () => TaskResponseRecord,
     (task_record) => task_record.jobResponses,
+    {
+      onDelete: 'CASCADE',
+    },
   )
-  @JoinColumn({ name: 'task_record_id' })
-  task_record: TaskResponseRecord;
+  @JoinColumn({ name: 'taskRecordId' })
+  taskRecord: TaskResponseRecord;
 }

@@ -1,26 +1,20 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  JoinColumn,
-  OneToOne,
-  OneToMany,
-} from 'typeorm';
-import { BaseEntity } from './base.entity';
+import { BaseEntity } from '@src/common/entities/base.entity';
+import { Entity, Column, OneToMany, OneToOne, JoinColumn } from 'typeorm';
+import { Task } from './task.entity';
 import { JobResponse } from './jobResponse.entity';
 
 @Entity('task_response_record')
 export class TaskResponseRecord extends BaseEntity {
   @Column()
-  manifest_url: string;
+  manifestUrl: string;
 
   @Column()
-  manifest_hash: string;
+  manifestHash: string;
 
   @Column({
     nullable: true,
   })
-  escrow_address: string;
+  escrowAddress: string;
 
   @Column({
     nullable: true,
@@ -41,12 +35,14 @@ export class TaskResponseRecord extends BaseEntity {
   isFunded: boolean;
 
   @Column()
-  task_id: number;
+  taskId: number;
 
-  // @OneToOne(() => TaskEntity, (task) => task.taskResponseRecord)
-  // @JoinColumn({ name: 'task_id' })
-  // task: TaskEntity;
+  @OneToOne(() => Task, (task) => task.taskResponseRecord, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'taskId' })
+  task: Task;
 
-  @OneToMany(() => JobResponse, (jobResponse) => jobResponse.task_record)
+  @OneToMany(() => JobResponse, (jobResponse) => jobResponse.taskRecord)
   jobResponses: JobResponse[];
 }
