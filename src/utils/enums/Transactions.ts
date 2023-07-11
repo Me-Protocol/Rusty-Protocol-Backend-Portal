@@ -1,10 +1,10 @@
 export enum TransactionsType {
-  SUCCEDDED = 'SUCCEDDED',
-  FUNDINGS = 'FUNDINGS',
-  PAYOUTS = 'PAYOUTS',
+  DEBIT = 'DEBIT',
+  CREDIT = 'CREDIT',
 }
 
 export enum StatusType {
   SUCCEDDED = 'SUCCEDDED',
   PROCESSING = 'PROCESSING',
+  FAILED = 'FAILED',
 }

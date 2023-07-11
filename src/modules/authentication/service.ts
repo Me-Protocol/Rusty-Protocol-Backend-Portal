@@ -5,17 +5,17 @@ import { JwtPayload, jwtConfigurations } from '@src/config/jwt.config';
 import { isNumber } from '@src/utils/helpers/isNumber';
 import { TwoFAType } from '@src/utils/enums/TwoFAType';
 import { LoginType } from '@src/utils/enums/LoginType';
-import { EmailSignupDto } from './dto/EmailSignupDto';
-import { PhoneSignupDto } from './dto/PhoneSignupDto';
-import { LoginDto } from './dto/LoginDto';
-import { Verify2FADto } from './dto/Verify2FADto';
-import { UpdateUserDto } from './dto/UpdateUserDto';
-import { PasswordDto } from './dto/PasswordDto';
-import { ChangeEmailDto } from './dto/ChangeEmailDto';
-import { ChangePhoneDto } from './dto/ChangePhoneDto';
-import { ForgotPasswordDto } from './dto/ForgotPasswordDto';
-import { ResetPasswordDto } from './dto/ResetPasswordDto';
-import { UpdateDeviceTokenDto } from './dto/UpdateDeviceTokenDto';
+import { EmailSignupDto } from './dto/EmailSignupDto.dto';
+import { PhoneSignupDto } from './dto/PhoneSignupDto.dto';
+import { LoginDto } from './dto/LoginDto.dto';
+import { Verify2FADto } from './dto/Verify2FADto.dto';
+import { UpdateUserDto } from './dto/UpdateUserDto.dto';
+import { PasswordDto } from './dto/PasswordDto.dto';
+import { ChangeEmailDto } from './dto/ChangeEmailDto.dto';
+import { ChangePhoneDto } from './dto/ChangePhoneDto.dto';
+import { ForgotPasswordDto } from './dto/ForgotPasswordDto.dto';
+import { ResetPasswordDto } from './dto/ResetPasswordDto.dto';
+import { UpdateDeviceTokenDto } from './dto/UpdateDeviceTokenDto.dto';
 import { MailService } from '@src/globalServices/mail/mail.service';
 import { SmsService } from '@src/globalServices/sms/sms.service';
 import { UserService } from '@src/globalServices/user/user.service';
@@ -704,6 +704,7 @@ export class AuthenticationService {
       name,
       userAgent,
       ip,
+      username,
     } = data;
 
     const user = await this.userService.getUserByEmail(email);
@@ -714,6 +715,7 @@ export class AuthenticationService {
           user.facebookAuth = {
             accessToken,
             refreshToken,
+            username: username,
           };
         }
 
@@ -726,16 +728,19 @@ export class AuthenticationService {
           user.facebookAuth = {
             accessToken,
             refreshToken,
+            username: username,
           };
         } else if (provider === LoginType.GOOGLE) {
           user.googleAuth = {
             accessToken,
             refreshToken,
+            username: username,
           };
         } else if (provider === LoginType.TWITTER) {
           user.twitterAuth = {
             accessToken,
             refreshToken,
+            username: username,
           };
         }
 
@@ -755,16 +760,19 @@ export class AuthenticationService {
       newUser.facebookAuth = {
         accessToken,
         refreshToken,
+        username: username,
       };
     } else if (provider === LoginType.GOOGLE) {
       newUser.googleAuth = {
         accessToken,
         refreshToken,
+        username: username,
       };
     } else if (provider === LoginType.TWITTER) {
       newUser.twitterAuth = {
         accessToken,
         refreshToken,
+        username: username,
       };
     }
 

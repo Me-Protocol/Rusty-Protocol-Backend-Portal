@@ -115,7 +115,7 @@ export class UserService {
       where: {
         id,
       },
-      relations: ['customer'],
+      relations: ['customer', 'brand'],
     });
   }
 
@@ -150,5 +150,45 @@ export class UserService {
         phone: In(phone),
       },
     });
+  }
+
+  async updateUserCategoryInterests(userId: string, categoryId: string) {
+    const user = await this.userRepository.findOne({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) throw new HttpException('User not found', 404);
+
+    const categoryIds = user.user_category_interests || [];
+
+    if (!categoryIds.includes(categoryId)) {
+      // make sure it comes first
+      categoryIds.unshift(categoryId);
+    } else {
+      // bring it to the top
+      const index = categoryIds.indexOf(categoryId);
+      categoryIds.splice(index, 1);
+      categoryIds.unshift(categoryId);
+    }
+
+    user.user_category_interests = categoryIds;
+
+    await this.userRepository.save(user);
+
+    return user;
+  }
+
+  async getUserCategoryInterests(userId: string): Promise<string[]> {
+    const user = await this.userRepository.findOne({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) throw new HttpException('User not found', 404);
+
+    return user.user_category_interests || [];
   }
 }

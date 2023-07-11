@@ -16,7 +16,9 @@ import { CategoryManagementService } from './service';
 import { CreateCategoryDto } from './dto/CreateCategoryDto';
 import { UpdateCategoryDto } from './dto/UpdateCategoryDto';
 import { FilterCategoryDto } from './dto/FilterCategoryDto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Category')
 @UseInterceptors(ResponseInterceptor)
 @Controller('category')
 export class CategoryManagementController {

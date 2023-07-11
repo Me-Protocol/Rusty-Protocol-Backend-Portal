@@ -1,6 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { RevenueRange } from '@src/utils/enums/RevenueRange';
-import { IsEnum, IsOptional, IsString, IsTaxId, IsUrl } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsTaxId,
+  IsUrl,
+} from 'class-validator';
 
 export class UpdateBrandDto {
   @ApiProperty()
@@ -53,4 +60,23 @@ export class UpdateBrandDto {
 
   @ApiProperty()
   slug: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString({
+    message: 'Enter a valid slogan',
+  })
+  slogan: string;
+
+  @ApiProperty({
+    type: [Object],
+  })
+  @IsOptional()
+  @IsArray({
+    message: 'Enter a valid social media links',
+  })
+  socialMediaLinks: {
+    name: string;
+    link: string;
+  }[];
 }

@@ -8,18 +8,20 @@ import {
   Req,
   Query,
   UseInterceptors,
-} from "@nestjs/common";
-import { WalletService } from "./wallet.service";
-import { ResponseInterceptor } from "@src/interceptors/response.interceptor";
-import { AuthGuard } from "@nestjs/passport";
+} from '@nestjs/common';
+import { WalletService } from './wallet.service';
+import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiTags } from '@nestjs/swagger';
 
+ApiTags('Wallet');
 @UseInterceptors(ResponseInterceptor)
-@Controller("wallet")
+@Controller('wallet')
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
   @UseGuards(AuthGuard())
-  @Get("")
+  @Get('')
   async getWallet(@Req() req: any) {
     const user = req.user;
 
@@ -27,7 +29,7 @@ export class WalletController {
   }
 
   @UseGuards(AuthGuard())
-  @Get("/balances")
+  @Get('/balances')
   async getWalletBalances(@Req() req: any) {
     const user = req.user;
 
@@ -35,41 +37,41 @@ export class WalletController {
   }
 
   @UseGuards(AuthGuard())
-  @Get("/balances/:contractAddress")
+  @Get('/balances/:contractAddress')
   async getSingleWalletBalance(
     @Req() req: any,
-    @Param("contractAddress") contractAddress: string
+    @Param('contractAddress') contractAddress: string,
   ) {
     const user = req.user;
 
     return await this.walletService.getSingleWalletBalance(
       user.id,
-      contractAddress
+      contractAddress,
     );
   }
 
   @UseGuards(AuthGuard())
-  @Get("/history")
+  @Get('/history')
   async getWalletHistory(
     @Req() req: any,
     @Query()
     query: {
       paginationToken?: string;
-    }
+    },
   ) {
     const user = req.user;
 
     return await this.walletService.getWalletHistory(
       user.id,
-      query.paginationToken
+      query.paginationToken,
     );
   }
 
   @UseGuards(AuthGuard())
-  @Post("transfer")
+  @Post('transfer')
   async transfer(
     @Req() req: any,
-    @Body() body: { to: string; amount: string; contract: string }
+    @Body() body: { to: string; amount: string; contract: string },
   ) {
     const user = req.user;
 
@@ -77,15 +79,15 @@ export class WalletController {
       user.id,
       body.to,
       body.amount,
-      body.contract
+      body.contract,
     );
   }
 
   @UseGuards(AuthGuard())
-  @Get("/transfer/:transferId")
+  @Get('/transfer/:transferId')
   async getTransferStatus(
     @Req() req: any,
-    @Param("transferId") transferId: string
+    @Param('transferId') transferId: string,
   ) {
     const user = req.user;
 
@@ -93,7 +95,7 @@ export class WalletController {
   }
 
   @UseGuards(AuthGuard())
-  @Post("/signature")
+  @Post('/signature')
   async generateNewSignature(@Req() req: any) {
     const user = req.user;
 
@@ -101,10 +103,10 @@ export class WalletController {
   }
 
   @UseGuards(AuthGuard())
-  @Get("/signature/:signatureId")
+  @Get('/signature/:signatureId')
   async getSignatureStatus(
     @Req() req: any,
-    @Param("signatureId") signatureId: string
+    @Param('signatureId') signatureId: string,
   ) {
     const user = req.user;
 

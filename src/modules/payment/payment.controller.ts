@@ -14,25 +14,40 @@ import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import {
   CreateIntentDto,
+  CreateWalletDto,
   FundDto,
   WithdrawalDto,
   confirmWithdrawalDto,
 } from './dto/wallet.dto';
 import { PaymentService } from './payment.service';
 import { User } from '@src/globalServices/user/entities/user.entity';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-@ApiTags('Payment')
+@ApiTags('Payment Wallet')
 @UseInterceptors(ResponseInterceptor)
 @Controller('payment')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
+  //TODO: remove later
   @UseGuards(AuthGuard())
+  @ApiBearerAuth('JWT-auth')
+  @Post('create-wallet')
+  async createWallet(@Req() req: any): Promise<any> {
+    const user = req.user as User;
+    // const userDto = { userId: '5fdb9850-c3c4-468e-b4ae-3be1ec10db87' } as any;
+    const userDto = { ...user, userId: user.id };
+    const a = await this.paymentService.create({ ...userDto });
+  }
+
+  // @UseGuards(AuthGuard())
   @Post('pay')
   createIntent(@Body() createIntentDto: CreateIntentDto, @Req() req: any) {
-    const user = req.user as User;
-    createIntentDto.userId = user.id;
+    // const user = req.user as User;
+    const userDto = { userId: '5fdb9850-c3c4-468e-b4ae-3be1ec10db87' };
+    // console.log(user);
+
+    createIntentDto.userId = userDto.userId;
     return this.paymentService.createStripePaymentIntent(
       createIntentDto.amount,
       createIntentDto.userId,
@@ -108,25 +123,25 @@ export class PaymentController {
     );
   }
 
-  // @UseGuards(AuthGuard())
-  // @Post('withdrawal/confirm')
-  // confirmWithdrawal(
-  //   @Req() req: any,
-  //   @Body(ValidationPipe)
-  //   { verificationCode }: confirmWithdrawalDto,
-  // ) {
-  //   const user = req.user as User;
-  //   return this.paymentService.confirmWithdrawal(user, verificationCode);
-  // }
+  @UseGuards(AuthGuard())
+  @Post('withdrawal/confirm')
+  confirmWithdrawal(
+    @Req() req: any,
+    @Body(ValidationPipe)
+    { verificationCode }: confirmWithdrawalDto,
+  ) {
+    const user = req.user as User;
+    return this.paymentService.confirmWithdrawal(user, verificationCode);
+  }
 
-  // @UseGuards(AuthGuard())
-  // @Post('withdrawal')
-  // requestWithdrawal(
-  //   @Req() req: any,
-  //   @Body(ValidationPipe)
-  //   { amount, linkedAccountId }: WithdrawalDto,
-  // ) {
-  //   const user = req.user as User;
-  //   return this.paymentService.requestWithdrawal(user, amount, linkedAccountId);
-  // }
+  @UseGuards(AuthGuard())
+  @Post('withdrawal')
+  requestWithdrawal(
+    @Req() req: any,
+    @Body(ValidationPipe)
+    { amount, linkedAccountId }: WithdrawalDto,
+  ) {
+    const user = req.user as User;
+    return this.paymentService.requestWithdrawal(user, amount, linkedAccountId);
+  }
 }

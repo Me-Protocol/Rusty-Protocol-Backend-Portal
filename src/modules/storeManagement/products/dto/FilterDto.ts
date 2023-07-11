@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ProductStatus } from '@src/utils/enums/ProductStatus';
+import { ItemStatus } from '@src/utils/enums/ItemStatus';
 import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class FilterDto {
@@ -16,11 +16,18 @@ export class FilterDto {
 
   @ApiProperty()
   @IsOptional()
-  @IsEnum(ProductStatus)
-  status?: ProductStatus;
+  @IsEnum(ItemStatus, {
+    message: 'Please provide a valid status',
+  })
+  status?: ItemStatus;
 
   @ApiProperty()
   @IsOptional()
   @IsString()
   categoryId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  subCategoryId: string;
 }

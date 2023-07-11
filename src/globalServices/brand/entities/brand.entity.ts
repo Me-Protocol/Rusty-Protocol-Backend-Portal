@@ -1,4 +1,4 @@
-import { BaseEntity } from '@src/models/base.entity';
+import { BaseEntity } from '@src/common/entities/base.entity';
 import { Category } from '@src/globalServices/category/entities/category.entity';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { RevenueRange } from '@src/utils/enums/RevenueRange';
@@ -11,6 +11,10 @@ import {
   OneToOne,
 } from 'typeorm';
 import { Product } from '@src/globalServices/product/entities/product.entity';
+import { Collection } from '@src/globalServices/collections/entities/collection.entity';
+import { Follow } from '@src/globalServices/follow/entities/follow.entity';
+import { Reward } from '@src/globalServices/reward/entities/reward.entity';
+import { Task } from '@src/globalServices/task/entities/task.entity';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -37,6 +41,20 @@ export class Brand extends BaseEntity {
     nullable: true,
   })
   description: string;
+
+  @Column({
+    nullable: true,
+  })
+  slogan: string;
+
+  @Column('text', {
+    nullable: true,
+    array: true,
+  })
+  socialMediaLinks: {
+    name: string;
+    link: string;
+  }[];
 
   @Column({
     nullable: true,
@@ -117,4 +135,16 @@ export class Brand extends BaseEntity {
 
   @OneToMany(() => Product, (product) => product.brand)
   products: Product[];
+
+  @OneToMany(() => Task, (task) => task.brand)
+  tasks: Task[];
+
+  @OneToMany(() => Collection, (collection) => collection.brand)
+  collections: Collection[];
+
+  @OneToMany(() => Follow, (follow) => follow.brand)
+  followers: Follow[];
+
+  @OneToMany(() => Reward, (reward) => reward.brand)
+  rewards: Reward[];
 }

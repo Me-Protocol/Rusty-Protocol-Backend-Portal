@@ -47,6 +47,32 @@ import { CustomerAccountManagementService } from './modules/accountManagement/cu
 import { BrandAccountManagementService } from './modules/accountManagement/brandAccountManagement/service';
 import { CustomerManagementController } from './modules/accountManagement/customerAccountManagement/controller';
 import { BrandManagementController } from './modules/accountManagement/brandAccountManagement/controller';
+import { PaymentModule } from './modules/payment/payment.module';
+import { Collection } from './globalServices/collections/entities/collection.entity';
+import { Variant } from './globalServices/product/entities/variants.entity';
+import { Offer } from './globalServices/offer/entities/offer.entity';
+import { UploadModule } from './modules/upload/upload.module';
+import { UploadController } from './modules/upload/upload.controller';
+import { UploadService } from './modules/upload/upload.service';
+import { Follow } from './globalServices/follow/entities/follow.entity';
+import { Share } from './globalServices/share/entities/share.entity';
+import { View } from './globalServices/views/entities/view.entity';
+import { Review } from './globalServices/review/entities/review.entity';
+import { Reward } from './globalServices/reward/entities/reward.entity';
+import { CollectionManagementController } from './modules/storeManagement/collections/controller';
+import { CollectionManagementService } from './modules/storeManagement/collections/service';
+import { FollowManagementService } from './modules/storeManagement/follow/service';
+import { CollectionService } from './globalServices/collections/collections.service';
+import { FollowService } from './globalServices/follow/follow.service';
+import { FollowManagementController } from './modules/storeManagement/follow/controller';
+import { LikeService } from './globalServices/like/like.service';
+import { LikeManagementService } from './modules/storeManagement/like/service';
+import { LikeManagementController } from './modules/storeManagement/like/controller';
+import { Like } from './globalServices/like/entities/like.entity';
+import { OfferService } from './globalServices/offer/offer.service';
+import { OfferManagementService } from './modules/storeManagement/offers/service';
+import { OfferManagementController } from './modules/storeManagement/offers/controller';
+import { ViewsService } from './globalServices/views/view.service';
 
 @Module({
   imports: [
@@ -60,6 +86,15 @@ import { BrandManagementController } from './modules/accountManagement/brandAcco
       Wallet,
       Product,
       ProductImage,
+      Collection,
+      Variant,
+      Offer,
+      Follow,
+      Share,
+      View,
+      Review,
+      Reward,
+      Like,
     ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
@@ -86,6 +121,8 @@ import { BrandManagementController } from './modules/accountManagement/brandAcco
     SearchModule,
     AuthenticationModule,
     WalletModule,
+    PaymentModule,
+    UploadModule,
   ],
   controllers: [
     AppController,
@@ -96,6 +133,11 @@ import { BrandManagementController } from './modules/accountManagement/brandAcco
     ProductManagementController,
     CustomerManagementController,
     BrandManagementController,
+    UploadController,
+    CollectionManagementController,
+    FollowManagementController,
+    LikeManagementController,
+    OfferManagementController,
   ],
   providers: [
     ElasticIndex,
@@ -122,6 +164,16 @@ import { BrandManagementController } from './modules/accountManagement/brandAcco
     ProductManagementService,
     CustomerAccountManagementService,
     BrandAccountManagementService,
+    UploadService,
+    CollectionManagementService,
+    FollowManagementService,
+    CollectionService,
+    FollowService,
+    LikeService,
+    LikeManagementService,
+    OfferService,
+    OfferManagementService,
+    ViewsService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

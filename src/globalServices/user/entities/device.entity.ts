@@ -2,7 +2,7 @@
 
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from './user.entity';
-import { BaseEntity } from '@src/models/base.entity';
+import { BaseEntity } from '@src/common/entities/base.entity';
 
 @Entity('device')
 export class Device extends BaseEntity {

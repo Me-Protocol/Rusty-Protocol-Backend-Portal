@@ -24,9 +24,7 @@ export class ProductManagementService {
       throw new HttpException('Category does not exist', 400);
     }
 
-    const productCode = await this.productService.generateProductCode(
-      body.brandId,
-    );
+    const productCode = await this.productService.generateProductCode();
 
     const product = new Product();
     product.brandId = body.brandId;
@@ -38,6 +36,7 @@ export class ProductManagementService {
     product.inventory = body.inventory;
     product.isUnlimited = body.isUnlimited;
     product.productCode = productCode;
+    product.subCategoryId = body.subCategoryId;
 
     const newProduct = await this.productService.createProduct(product);
 
@@ -46,6 +45,13 @@ export class ProductManagementService {
       body.brandId,
       newProduct.id,
       body.productImages,
+    );
+
+    // add variants
+    await this.productService.addVariants(
+      body.brandId,
+      newProduct.id,
+      body.variants,
     );
 
     return await this.productService.getOneProduct(newProduct.id, body.brandId);
@@ -74,6 +80,26 @@ export class ProductManagementService {
     if (body.status) product.status = body.status;
     if (body.inventory) product.inventory = body.inventory;
     if (body.isUnlimited) product.isUnlimited = body.isUnlimited;
+    if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
+    if (body.categoryId) product.categoryId = body.categoryId;
+
+    if (body.productImages.length > product.productImages.length) {
+      // upload images
+      await this.productService.bulkAddProductImage(
+        body.brandId,
+        product.id,
+        body.productImages,
+      );
+    }
+
+    if (body.variants.length > product.variants.length) {
+      // add variants
+      await this.productService.addVariants(
+        body.brandId,
+        product.id,
+        body.variants,
+      );
+    }
 
     await this.productService.updateProduct(product);
 

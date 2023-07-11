@@ -3,7 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { ProductImage } from './entities/productImage.entity';
-import { ProductStatus } from '@src/utils/enums/ProductStatus';
+import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import { Variant } from './entities/variants.entity';
+import { VarientType } from '@src/utils/enums/VarientType';
 
 @Injectable()
 export class ProductService {
@@ -13,6 +15,9 @@ export class ProductService {
 
     @InjectRepository(ProductImage)
     private readonly productImageRepo: Repository<ProductImage>,
+
+    @InjectRepository(Variant)
+    private readonly variantRepo: Repository<Variant>,
   ) {}
 
   async getProductImages(brandId: string, page: number, limit: number) {
@@ -67,6 +72,36 @@ export class ProductService {
     return this.productImageRepo.save(productImages);
   }
 
+  async addVariants(
+    brandId: string,
+    productId: string,
+    variants: {
+      name: VarientType;
+      values: string[];
+      productId: string;
+      price: number;
+      inventory: number;
+    }[],
+  ) {
+    const product = await this.productRepo.findOne({
+      where: {
+        id: productId,
+        brandId,
+      },
+    });
+    if (!product) {
+      throw new Error('Product not found');
+    }
+
+    const productVariants = variants.map((variant) =>
+      this.variantRepo.create({
+        ...variant,
+      }),
+    );
+
+    return this.variantRepo.save(productVariants);
+  }
+
   async createProduct(product: Product) {
     return this.productRepo.save(product);
   }
@@ -79,7 +114,7 @@ export class ProductService {
     brandId: string,
     page: number,
     limit: number,
-    status?: ProductStatus,
+    status?: ItemStatus,
   ) {
     const products = await this.productRepo.find({
       where: {
@@ -120,7 +155,7 @@ export class ProductService {
         brandId,
       },
       {
-        status: ProductStatus.ARCHIVED,
+        status: ItemStatus.ARCHIVED,
       },
     );
   }
@@ -132,7 +167,7 @@ export class ProductService {
         brandId,
       },
       {
-        status: ProductStatus.DRAFT,
+        status: ItemStatus.DRAFT,
       },
     );
   }
@@ -147,17 +182,16 @@ export class ProductService {
     });
   }
 
-  async generateProductCode(brandId: string) {
+  async generateProductCode() {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const product = await this.productRepo.findOne({
       where: {
-        brandId,
         productCode: code,
       },
     });
 
     if (product) {
-      return this.generateProductCode(brandId);
+      return this.generateProductCode();
     }
 
     return code;
@@ -179,7 +213,7 @@ export class ProductService {
   }: {
     page: number;
     limit: number;
-    status?: ProductStatus;
+    status?: ItemStatus;
     brandId?: string;
     categoryId?: string;
   }) {

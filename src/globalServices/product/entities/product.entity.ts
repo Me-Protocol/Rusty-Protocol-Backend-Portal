@@ -1,11 +1,14 @@
 // product entity
 
 import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
-import { BaseEntity } from '@src/models/base.entity';
+import { BaseEntity } from '@src/common/entities/base.entity';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { Category } from '@src/globalServices/category/entities/category.entity';
 import { ProductImage } from './productImage.entity';
-import { ProductStatus } from '@src/utils/enums/ProductStatus';
+import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import { Offer } from '@src/globalServices/offer/entities/offer.entity';
+import { Variant } from './variants.entity';
+import { Collection } from '@src/globalServices/collections/entities/collection.entity';
 
 @Entity('product')
 export class Product extends BaseEntity {
@@ -34,10 +37,10 @@ export class Product extends BaseEntity {
 
   @Column({
     type: 'enum',
-    enum: ProductStatus,
-    default: ProductStatus.DRAFT,
+    enum: ItemStatus,
+    default: ItemStatus.DRAFT,
   })
-  status: ProductStatus;
+  status: ItemStatus;
 
   @Column({
     type: 'decimal',
@@ -58,4 +61,28 @@ export class Product extends BaseEntity {
 
   @Column()
   productCode: string;
+
+  @Column({
+    nullable: true,
+  })
+  subCategoryId: string;
+
+  @ManyToOne(() => Category, (category) => category.products)
+  @JoinColumn({ name: 'subCategoryId' })
+  subCategory: Category;
+
+  @OneToMany(() => Offer, (offer) => offer.product)
+  offers: Offer[];
+
+  @OneToMany(() => Variant, (variant) => variant.product)
+  variants: Variant[];
+
+  @Column({
+    nullable: true,
+  })
+  collectionId: string;
+
+  @ManyToOne(() => Collection, (collection) => collection.products)
+  @JoinColumn({ name: 'collectionId' })
+  collection: Collection;
 }
