@@ -22,6 +22,7 @@ export class SyncBatch extends BaseEntity {
     id: string;
     identifier: string;
     identifierType: SyncIdentifierType;
+    amount: number;
   }[];
 
   @Column({

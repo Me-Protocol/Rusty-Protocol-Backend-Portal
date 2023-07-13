@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { RewardType } from '@src/utils/enums/RewardType';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 
-export class FilterOfferDto {
+export class FilterRewardDto {
   @ApiProperty()
   @IsNumber()
   page: number;
@@ -18,12 +19,12 @@ export class FilterOfferDto {
   @ApiProperty()
   @IsOptional()
   @IsString()
-  subCategory?: string;
+  brandId: string;
 
   @ApiProperty()
   @IsOptional()
-  @IsString()
-  brandId: string;
-
-  userId: string;
+  @IsEnum(RewardType, {
+    message: 'Reward type is invalid',
+  })
+  rewardType: RewardType;
 }

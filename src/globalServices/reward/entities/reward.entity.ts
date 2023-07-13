@@ -85,9 +85,6 @@ export class Reward extends BaseEntity {
   @Column({ nullable: true })
   oidcDiscoveryAddress: string;
 
-  @Column('text', { array: true, default: [] })
-  handlesConnected: string[];
-
   @Column('text', { nullable: true, array: true, default: [] })
   acceptedCustomerIdentitytypes: string[];
 

@@ -34,7 +34,7 @@ import { ResetPasswordDto } from './dto/ResetPasswordDto.dto';
 import { UpdateDeviceTokenDto } from './dto/UpdateDeviceTokenDto.dto';
 import { AuthenticationService } from './service';
 import { UserAppType } from '@src/utils/enums/UserAppType';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const requestIp = require('request-ip');
@@ -146,6 +146,7 @@ export class AuthenticationController {
     );
   }
 
+  @ApiBearerAuth()
   @UseGuards(AuthGuard())
   @Get('me')
   async me(@Req() req: any): Promise<any> {
@@ -175,6 +176,7 @@ export class AuthenticationController {
     };
   }
 
+  @ApiBearerAuth()
   @UseGuards(AuthGuard())
   @Post('logout')
   async logout(
@@ -186,6 +188,7 @@ export class AuthenticationController {
     return await this.authService.logout(user.id, params.deviceId);
   }
 
+  @ApiBearerAuth()
   @UseGuards(AuthGuard())
   @Put('me/username')
   async updateUsername(
@@ -199,6 +202,7 @@ export class AuthenticationController {
     return 'ok';
   }
 
+  @ApiBearerAuth()
   @UseGuards(AuthGuard())
   @Put('me/password')
   async updatePassword(
@@ -212,6 +216,7 @@ export class AuthenticationController {
     return 'ok';
   }
 
+  @ApiBearerAuth()
   @UseGuards(AuthGuard())
   @Put('me/email')
   async updateEmail(
@@ -223,6 +228,7 @@ export class AuthenticationController {
     return await this.authService.changeEmail(user, body);
   }
 
+  @ApiBearerAuth()
   @UseGuards(AuthGuard())
   @Post('me/email/verify')
   async verifyUpdateEmail(
@@ -234,6 +240,7 @@ export class AuthenticationController {
     return await this.authService.verifyAndChangeEmail(user, body);
   }
 
+  @ApiBearerAuth()
   @UseGuards(AuthGuard())
   @Put('me/phone')
   async updatePhone(
@@ -245,6 +252,7 @@ export class AuthenticationController {
     return await this.authService.changePhone(user, body);
   }
 
+  @ApiBearerAuth()
   @UseGuards(AuthGuard())
   @Post('me/phone/verify')
   async verifyUpdatePhone(
@@ -445,6 +453,7 @@ export class AuthenticationController {
     return await this.authService.resetPassword(body);
   }
 
+  @ApiBearerAuth()
   @UseGuards(AuthGuard())
   @Get('me/devices')
   async getDevices(@Req() req: any): Promise<any> {
@@ -453,6 +462,7 @@ export class AuthenticationController {
     return await this.authService.getUserDevices(user.id);
   }
 
+  @ApiBearerAuth()
   @UseGuards(AuthGuard())
   @Put('me/devices/:id')
   async updateDevice(

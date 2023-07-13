@@ -220,7 +220,7 @@ export class PaymentService {
     transaction.userId = userId;
     transaction.walletId = wallet.id;
     transaction.status = StatusType.PROCESSING;
-    transaction.transactionType = TransactionsType.PAYOUTS;
+    // transaction.transactionType = TransactionsType.PAYOUTS;
     return this.transactionRepo.save(transaction);
   }
 
@@ -252,7 +252,7 @@ export class PaymentService {
     transaction.userId = userId;
     transaction.walletId = wallet.id;
     transaction.status = StatusType.SUCCEDDED;
-    transaction.transactionType = TransactionsType.FUNDINGS;
+    // transaction.transactionType = TransactionsType.FUNDINGS;
     transaction.paymentRef = paymentIntentId;
     transaction.paymentMethod = 'Stripe';
 
@@ -421,7 +421,7 @@ export class PaymentService {
     transaction.userId = userId;
     transaction.walletId = wallet.id;
     transaction.status = StatusType.PROCESSING;
-    transaction.transactionType = TransactionsType.PAYOUTS;
+    // transaction.transactionType = TransactionsType.PAYOUTS;
     transaction.paymentRef = referenceCode;
 
     await this.mailService.sendMail({

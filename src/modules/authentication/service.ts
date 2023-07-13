@@ -207,6 +207,7 @@ export class AuthenticationService {
       } else {
         await this.brandService.create({
           userId: saveUser.id,
+          name,
         });
         saveUser.role = Role.BRAND;
       }
@@ -327,6 +328,7 @@ export class AuthenticationService {
       } else {
         await this.brandService.create({
           userId: saveUser.id,
+          name,
         });
         saveUser.role = Role.BRAND;
       }
@@ -787,6 +789,7 @@ export class AuthenticationService {
     } else {
       await this.brandService.create({
         userId: savedUser.id,
+        name,
       });
       savedUser.role = Role.BRAND;
     }

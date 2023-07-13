@@ -1,18 +1,16 @@
 import { BaseEntity } from '@src/common/entities/base.entity';
 import { TransactionsType } from '@src/utils/enums/Transactions';
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { RewardRegistry } from './registry.entity';
 
 @Entity('registry_history')
 export class RegistryHistory extends BaseEntity {
-  @Column()
-  balance: string;
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+  })
+  balance: number;
 
   @Column()
   description: string;
@@ -29,16 +27,10 @@ export class RegistryHistory extends BaseEntity {
   @JoinColumn({ name: 'rewardRegistryId' })
   rewardRegistry: RewardRegistry;
 
-  @Column()
-  customerId?: string;
-
-  @Column({ nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+  })
   amount: number;
-
-  @ManyToOne(
-    () => PointRegistryEntity,
-    (pointRegistry) => pointRegistry.pointdebitcredit,
-  )
-  @JoinColumn({ name: 'pointRegistryId' })
-  pointRegistry: PointRegistryEntity;
 }
