@@ -16,13 +16,13 @@ export class FilterOfferDto {
   category?: string;
 
   @ApiProperty()
-  @IsString()
   @IsOptional()
+  @IsString()
   subCategory?: string;
 
   @ApiProperty()
-  @IsString()
   @IsOptional()
+  @IsString()
   brandId: string;
 
   userId: string;

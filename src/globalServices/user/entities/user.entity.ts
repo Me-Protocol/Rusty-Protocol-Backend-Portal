@@ -169,10 +169,16 @@ export class User extends BaseEntity {
   })
   countryAbbr: string;
 
-  @OneToOne(() => Customer, (customer) => customer.user)
+  @OneToOne(() => Customer, (customer) => customer.user, {
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
   customer: Customer;
 
-  @OneToOne(() => Brand, (brand) => brand.user)
+  @OneToOne(() => Brand, (brand) => brand.user, {
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
   brand: Brand;
 
   @OneToOne(() => Wallet, (wallet) => wallet.user)

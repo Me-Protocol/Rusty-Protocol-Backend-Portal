@@ -5,22 +5,34 @@ import { Repository } from 'typeorm';
 import { FilterCategoryDto } from '@src/modules/storeManagement/category/dto/FilterCategoryDto';
 import { UpdateCategoryDto } from '@src/modules/storeManagement/category/dto/UpdateCategoryDto';
 import { CreateCategoryDto } from '@src/modules/storeManagement/category/dto/CreateCategoryDto';
+import { ElasticIndex } from '@src/modules/search/index/search.index';
+import { categoryIndex } from '@src/modules/search/interface/search.interface';
 
 @Injectable()
 export class CategoryService {
   constructor(
     @InjectRepository(Category)
     private readonly categoryRepo: Repository<Category>,
+    private readonly elasticIndex: ElasticIndex,
   ) {}
 
-  create(createCategoryDto: CreateCategoryDto) {
-    const category = this.categoryRepo.create(createCategoryDto);
+  async create(createCategoryDto: CreateCategoryDto) {
+    const newCategory = this.categoryRepo.create(createCategoryDto);
+    const category = await this.categoryRepo.save(newCategory);
 
-    return this.categoryRepo.save(category);
+    this.elasticIndex.insertDocument(category, categoryIndex);
+
+    return category;
   }
 
-  update(id: string, category: UpdateCategoryDto) {
-    return this.categoryRepo.update({ id }, category);
+  async update(id: string, category: UpdateCategoryDto) {
+    await this.categoryRepo.update({ id }, category);
+
+    const cate = await this.categoryRepo.findOneBy({ id });
+
+    this.elasticIndex.updateDocument(cate, categoryIndex);
+
+    return cate;
   }
 
   async findAll(query: FilterCategoryDto) {
@@ -59,6 +71,8 @@ export class CategoryService {
   }
 
   remove(id: string) {
+    this.elasticIndex.deleteDocument(categoryIndex, id);
+
     return this.categoryRepo.softDelete({ id });
   }
 }

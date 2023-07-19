@@ -17,49 +17,99 @@ export class RewardService {
     private readonly rewardsRepo: Repository<Reward>,
   ) {}
 
-  async save(reward: Reward): Promise<Reward> {
+  async create(reward: Reward): Promise<Reward> {
     const createReward = this.rewardsRepo.create(reward);
-    return await this.rewardsRepo.save(createReward);
+    const rewardRec = await this.save(createReward);
+    this.elasticIndex.insertDocument(rewardRec, rewardIndex);
+    return rewardRec;
   }
 
-  async findAll(
-    category_id: string,
-    brand_id: string,
-    reward_type: RewardType,
-  ): Promise<Reward[]> {
-    return this.rewardsRepo.find({
-      where: {
-        brand: {
-          category: {
-            id: category_id,
-          },
-          id: brand_id,
-        },
-        rewardType: reward_type,
-      },
-      relations: ['brand'],
-    });
+  async save(reward: Reward): Promise<Reward> {
+    const rewardRec = await this.rewardsRepo.save(reward);
+    this.elasticIndex.updateDocument(rewardRec, rewardIndex);
+
+    return rewardRec;
   }
 
-  async findOneRewardByLabel(label: string): Promise<Reward> {
-    const rewardSlug = slugify(label).toLowerCase();
-    return this.rewardsRepo.findOneBy({ slug: rewardSlug });
+  async findAll({
+    category_id,
+    brand_id,
+    reward_type,
+    page,
+    limit,
+  }: {
+    category_id: string;
+    brand_id: string;
+    reward_type: RewardType;
+    page: number;
+    limit: number;
+  }) {
+    const rewards = this.rewardsRepo
+      .createQueryBuilder('reward')
+      .leftJoinAndSelect('reward.brand', 'brand');
+
+    if (category_id) {
+      rewards.andWhere('brand.categoryId = :category_id', { category_id });
+    }
+
+    if (brand_id) {
+      rewards.andWhere('brand.id = :brand_id', { brand_id });
+    }
+
+    if (reward_type) {
+      rewards.andWhere('reward.rewardType = :reward_type', { reward_type });
+    }
+
+    rewards.skip((page - 1) * limit).take(limit);
+
+    const rewardsRec = await rewards.getMany();
+
+    const total = await rewards.getCount();
+
+    return {
+      total,
+      rewards: rewardsRec,
+      nextPage: total > page * limit ? page + 1 : null,
+      previousPage: page > 1 ? page - 1 : null,
+    };
   }
 
-  /**
-   * delete a reward
-   * @param rewardId
-   * @returns boolean
-   */
-  async delete(rewardId: string): Promise<boolean> {
-    await this.rewardsRepo.delete({ id: rewardId });
+  async findOneRewardBySlug(slug: string): Promise<Reward> {
+    return this.rewardsRepo.findOneBy({ slug: slug });
+  }
 
-    this.elasticIndex.deleteDocument(rewardIndex, Number(rewardId));
+  async delete(rewardId: string, brandId: string): Promise<boolean> {
+    await this.rewardsRepo.delete({ id: rewardId, brandId: brandId });
+
+    this.elasticIndex.deleteDocument(rewardIndex, rewardId);
 
     return true;
   }
 
   async findOneById(id: string): Promise<Reward> {
     return this.rewardsRepo.findOneBy({ id: id });
+  }
+
+  async findOneByIdAndBrand(id: string, brandId: string): Promise<Reward> {
+    return this.rewardsRepo.findOneBy({ id: id, brandId: brandId });
+  }
+
+  async getRegistryByIdentifer(identifier: string, rewardId: string) {
+    const reward = await this.rewardsRepo.findOneBy({
+      id: rewardId,
+    });
+
+    const rewardPoint = reward.syncData?.find((sync) => {
+      // @ts-ignore
+      const newSynC = JSON.parse(sync);
+      return newSynC.identifier === identifier;
+    });
+
+    return rewardPoint
+      ? JSON.parse(
+          // @ts-ignore
+          rewardPoint,
+        )
+      : null;
   }
 }

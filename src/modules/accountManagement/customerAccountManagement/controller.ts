@@ -11,9 +11,10 @@ import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import { UpdateCustomerDto } from './dto/UpdateCustomerDto';
 import { CustomerAccountManagementService } from './service';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Customer')
+@ApiBearerAuth()
 @UseInterceptors(ResponseInterceptor)
 @Controller('customer')
 export class CustomerManagementController {

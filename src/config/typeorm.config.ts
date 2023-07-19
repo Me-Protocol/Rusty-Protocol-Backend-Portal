@@ -11,6 +11,8 @@ import { Product } from '@src/globalServices/product/entities/product.entity';
 import { ProductImage } from '@src/globalServices/product/entities/productImage.entity';
 import { Variant } from '@src/globalServices/product/entities/variants.entity';
 import { Review } from '@src/globalServices/review/entities/review.entity';
+import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
+import { RegistryHistory } from '@src/globalServices/reward/entities/registryHistory.entity';
 import { Reward } from '@src/globalServices/reward/entities/reward.entity';
 import { SyncBatch } from '@src/globalServices/reward/entities/syncBatch.entity';
 import { Share } from '@src/globalServices/share/entities/share.entity';
@@ -55,6 +57,8 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     JobResponse,
     TaskResponseRecord,
     SyncBatch,
+    RewardRegistry,
+    RegistryHistory,
   ],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   extra: {

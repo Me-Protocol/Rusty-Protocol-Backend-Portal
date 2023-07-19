@@ -47,4 +47,21 @@ export class Device extends BaseEntity {
     nullable: true,
   })
   device_token: string;
+
+  @Column({
+    nullable: true,
+  })
+  timezone: string;
+
+  @Column('text', {
+    array: true,
+    nullable: true,
+  })
+  lat_lng: string[];
+
+  @Column('text', {
+    array: true,
+    nullable: true,
+  })
+  range: string[];
 }

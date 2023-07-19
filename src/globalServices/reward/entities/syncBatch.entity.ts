@@ -17,11 +17,13 @@ export class SyncBatch extends BaseEntity {
 
   @Column('text', {
     array: true,
+    name: 'syncData',
   })
   syncData: {
     id: string;
     identifier: string;
     identifierType: SyncIdentifierType;
+    amount: number;
   }[];
 
   @Column({

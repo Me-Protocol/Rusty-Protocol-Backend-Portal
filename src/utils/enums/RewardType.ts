@@ -1,4 +1,4 @@
 export enum RewardType {
-  REGULARPOINTS = 'REGULARPOINTS',
-  TOKEN = 'TOKENS',
+  REGULARPOINTS = 'point',
+  TOKEN = 'token',
 }

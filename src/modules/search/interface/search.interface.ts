@@ -1,5 +1,6 @@
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { Category } from '@src/globalServices/category/entities/category.entity';
+import { Reward } from '@src/globalServices/reward/entities/reward.entity';
 import { User } from '@src/globalServices/user/entities/user.entity';
 
 export interface SearchServiceInterface<T> {
@@ -19,7 +20,7 @@ export type SearchIndex = {
   _type: string;
 };
 
-export type SearchEntity = User | Category | Brand;
+export type SearchEntity = User | Category | Brand | Reward;
 
 export const userIndex = {
   _index: 'user',

@@ -73,6 +73,13 @@ import { OfferService } from './globalServices/offer/offer.service';
 import { OfferManagementService } from './modules/storeManagement/offers/service';
 import { OfferManagementController } from './modules/storeManagement/offers/controller';
 import { ViewsService } from './globalServices/views/view.service';
+import { RewardService } from './globalServices/reward/reward.service';
+import { SyncRewardService } from './globalServices/reward/sync/sync.service';
+import { RewardManagementService } from './modules/storeManagement/reward/service';
+import { RewardManagementController } from './modules/storeManagement/reward/controller';
+import { SyncBatch } from './globalServices/reward/entities/syncBatch.entity';
+import { RewardRegistry } from './globalServices/reward/entities/registry.entity';
+import { RegistryHistory } from './globalServices/reward/entities/registryHistory.entity';
 
 @Module({
   imports: [
@@ -95,6 +102,9 @@ import { ViewsService } from './globalServices/views/view.service';
       Review,
       Reward,
       Like,
+      SyncBatch,
+      RewardRegistry,
+      RegistryHistory,
     ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
@@ -138,6 +148,7 @@ import { ViewsService } from './globalServices/views/view.service';
     FollowManagementController,
     LikeManagementController,
     OfferManagementController,
+    RewardManagementController,
   ],
   providers: [
     ElasticIndex,
@@ -174,6 +185,9 @@ import { ViewsService } from './globalServices/views/view.service';
     OfferService,
     OfferManagementService,
     ViewsService,
+    RewardService,
+    SyncRewardService,
+    RewardManagementService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

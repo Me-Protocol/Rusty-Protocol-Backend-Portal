@@ -47,7 +47,7 @@ async function bootstrap() {
     ignoreGlobalPrefix: false,
   });
   try {
-    SwaggerModule.setup('api', app, document); // the swagger URL is thus /api
+    SwaggerModule.setup('doc', app, document); // the swagger URL is thus /api
   } catch (error) {
     logger.error(error);
   }

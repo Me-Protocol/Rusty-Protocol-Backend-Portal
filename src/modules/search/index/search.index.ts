@@ -25,11 +25,11 @@ export class ElasticIndex {
     index: SearchIndex,
   ): Promise<any> {
     const data = this.document(index, entity);
-    await this.deleteDocument(index, Number(entity.id));
+    await this.deleteDocument(index, entity.id);
     return this.searchService.insertIndex(data);
   }
 
-  public async deleteDocument(index: SearchIndex, id: number): Promise<any> {
+  public async deleteDocument(index: SearchIndex, id: string): Promise<any> {
     const data = {
       index: index._index,
       type: index._type,

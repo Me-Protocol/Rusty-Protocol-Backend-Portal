@@ -62,7 +62,8 @@ export class AuthenticationService {
     clientIp: string,
   ): Promise<any> {
     const deviceData = deviceDetector.detect(userAgent);
-    const location = 'Lagos, NG'; //TODO:: please remove the hard coded location
+
+    const location = geoip.lookup(clientIp);
 
     const device = new Device();
     device.user = user;
@@ -71,7 +72,10 @@ export class AuthenticationService {
     device.agent = deviceData.client.name;
     device.userId = user.id;
     device.ip = clientIp;
-    device.location = location;
+    device.location = `${location?.city ?? ''}, ${location?.country ?? ''}`;
+    device.timezone = location?.timezone;
+    device.lat_lng = location?.ll;
+    device.range = location?.range;
 
     const checkDevice = await this.userService.checkDevice(
       clientIp,
@@ -126,7 +130,7 @@ export class AuthenticationService {
     try {
       const user = await this.userService.getUserByEmail(email);
 
-      if (!user) throw new HttpException('User not found', 404);
+      if (!user) throw new Error('User not found');
 
       user.accountVerificationCode = Math.floor(1000 + Math.random() * 9000);
       await this.userService.saveUser(user);
@@ -142,7 +146,9 @@ export class AuthenticationService {
         `,
       });
     } catch (error) {
-      throw new HttpException(error, 500);
+      throw new HttpException(error, 400, {
+        cause: new Error(error.message),
+      });
     }
   }
 
@@ -152,7 +158,7 @@ export class AuthenticationService {
 
       const user = await this.userService.getUserByPhone(phone);
 
-      if (!user) throw new HttpException('User not found', 404);
+      if (!user) throw new Error('User not found');
 
       user.accountVerificationCode = Math.floor(1000 + Math.random() * 9000);
       await this.userService.saveUser(user);
@@ -162,7 +168,9 @@ export class AuthenticationService {
         body: `Hello 👋🏻, Use the code below to verify your phone number. Code: ${user.accountVerificationCode}`,
       });
     } catch (error) {
-      throw new HttpException(error, 500);
+      throw new HttpException(error, 400, {
+        cause: new Error(error.message),
+      });
     }
   }
 
@@ -177,7 +185,7 @@ export class AuthenticationService {
     try {
       const user = await this.userService.getUserByEmail(email);
       if (user) {
-        throw new HttpException('Email already exists', 400);
+        throw new Error('Email already exists');
       }
 
       const newUser = new User();
@@ -186,7 +194,7 @@ export class AuthenticationService {
       newUser.twoFAType = TwoFAType.EMAIL;
 
       if (password !== confirmPassword) {
-        throw new HttpException('Passwords do not match', 400);
+        throw new Error('Passwords do not match');
       }
 
       const salt = await bcrypt.genSalt();
@@ -207,6 +215,12 @@ export class AuthenticationService {
       } else {
         await this.brandService.create({
           userId: saveUser.id,
+          name,
+        });
+        // Create customer incase user wants to login as customer
+        await this.customerService.create({
+          name,
+          userId: saveUser.id,
         });
         saveUser.role = Role.BRAND;
       }
@@ -225,7 +239,9 @@ export class AuthenticationService {
 
       return token;
     } catch (error) {
-      throw new HttpException(error, 400);
+      throw new HttpException(error, 400, {
+        cause: new Error(error.message),
+      });
     }
   }
 
@@ -237,18 +253,16 @@ export class AuthenticationService {
     is2Fa?: boolean,
   ): Promise<any> {
     try {
-      console.log(user);
-
       if (!user) {
-        throw new HttpException('User not found', 404);
+        throw new Error('User not found');
       }
 
       if (user.emailVerified && !is2Fa) {
-        throw new HttpException('Email already verified', 400);
+        throw new Error('Email already verified');
       }
 
       if (user.accountVerificationCode !== Number(code)) {
-        throw new HttpException('Invalid code', 400);
+        throw new Error('Invalid code');
       }
 
       user.emailVerified = true;
@@ -276,7 +290,9 @@ export class AuthenticationService {
       return token;
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 500);
+      throw new HttpException(error, 400, {
+        cause: new Error(error.message),
+      });
     }
   }
 
@@ -294,7 +310,7 @@ export class AuthenticationService {
 
       const user = await this.userService.getUserByPhone(phone);
       if (user) {
-        throw new HttpException('Phone already exists', 400);
+        throw new Error('Phone already exists');
       }
 
       const newUser = new User();
@@ -305,7 +321,7 @@ export class AuthenticationService {
       newUser.twoFAType = TwoFAType.SMS;
 
       if (password !== confirmPassword) {
-        throw new HttpException('Passwords do not match', 400);
+        throw new Error('Passwords do not match');
       }
 
       const salt = await bcrypt.genSalt();
@@ -327,6 +343,7 @@ export class AuthenticationService {
       } else {
         await this.brandService.create({
           userId: saveUser.id,
+          name,
         });
         saveUser.role = Role.BRAND;
       }
@@ -343,7 +360,9 @@ export class AuthenticationService {
 
       return token;
     } catch (error) {
-      throw new HttpException(error, 500);
+      throw new HttpException(error, 400, {
+        cause: new Error(error.message),
+      });
     }
   }
 
@@ -356,15 +375,15 @@ export class AuthenticationService {
   ): Promise<any> {
     try {
       if (!user) {
-        throw new HttpException('User not found', 404);
+        throw new Error('User not found');
       }
 
       if (user.phoneVerified && !is2Fa) {
-        throw new HttpException('Phone already verified', 400);
+        throw new Error('Phone already verified');
       }
 
       if (user.accountVerificationCode !== Number(code)) {
-        throw new HttpException('Invalid code', 400);
+        throw new Error('Invalid code');
       }
 
       user.phoneVerified = true;
@@ -380,7 +399,9 @@ export class AuthenticationService {
       return token;
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 500);
+      throw new HttpException(error, 400, {
+        cause: new Error(error.message),
+      });
     }
   }
 
@@ -397,53 +418,52 @@ export class AuthenticationService {
         user = await this.userService.getUserByEmail(identifier);
 
         if (!user) {
-          throw new HttpException('Invalid login details', 404);
+          throw new Error('Invalid login details');
         }
 
         if (!user.emailVerified) {
-          throw new HttpException('Email not verified', 400);
+          throw new Error('Email not verified');
         }
       } else if (isNumber(identifier)) {
         user = await this.userService.getUserByPhone(identifier);
 
         if (!user) {
-          throw new HttpException('Invalid login details', 404);
+          throw new Error('Invalid login details');
         }
 
         if (!user.phoneVerified) {
-          throw new HttpException('Phone not verified', 400);
+          throw new Error('Phone not verified');
         }
       } else {
         user = await this.userService.getUserByUsername(identifier);
 
         if (!user) {
-          throw new HttpException('Invalid login details', 404);
+          throw new Error('Invalid login details');
         }
 
         if (user.email && !user.emailVerified) {
-          throw new HttpException('Email not verified', 400);
+          throw new Error('Email not verified');
         }
 
         if (user.phone && !user.phoneVerified) {
-          throw new HttpException('Phone not verified', 400);
+          throw new Error('Phone not verified');
         }
       }
 
       if (!user) {
-        throw new HttpException('Invalid login details', 404);
+        throw new Error('Invalid login details');
       }
 
       if (!user.password) {
-        throw new HttpException(
+        throw new Error(
           'Please use the forgot password button to create a password',
-          400,
         );
       }
 
       const isPasswordValid = await bcrypt.compare(password, user.password);
 
       if (!isPasswordValid) {
-        throw new HttpException('Invalid login details', 400);
+        throw new Error('Invalid login details');
       }
 
       if (user.is2faEnabled) {
@@ -465,8 +485,9 @@ export class AuthenticationService {
 
       return token;
     } catch (error) {
-      console.log(error);
-      throw new HttpException(error, 500);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
     }
   }
 
@@ -502,7 +523,9 @@ export class AuthenticationService {
       return 'Logged out! See you soon :)';
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 500);
+      throw new HttpException(error, 400, {
+        cause: new Error(error.message),
+      });
     }
   }
 
@@ -521,7 +544,9 @@ export class AuthenticationService {
       return user;
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 500);
+      throw new HttpException(error, 400, {
+        cause: new Error(error.message),
+      });
     }
   }
 
@@ -531,7 +556,7 @@ export class AuthenticationService {
   ): Promise<any> {
     try {
       if (!user.password && user.loginType !== LoginType.DEFAULT) {
-        throw new HttpException('Please create a password', 400);
+        throw new Error('Please create a password');
       }
 
       const isPasswordValid = await bcrypt.compare(
@@ -540,11 +565,11 @@ export class AuthenticationService {
       );
 
       if (!isPasswordValid) {
-        throw new HttpException('Invalid password', 400);
+        throw new Error('Invalid password');
       }
 
       if (password !== confirmPassword) {
-        throw new HttpException('Passwords do not match', 400);
+        throw new Error('Passwords do not match');
       }
 
       const salt = await bcrypt.genSalt();
@@ -558,7 +583,9 @@ export class AuthenticationService {
       return 'Password changed';
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 500);
+      throw new HttpException(error, 400, {
+        cause: new Error(error.message),
+      });
     }
   }
 
@@ -567,7 +594,7 @@ export class AuthenticationService {
       const existingUser = await this.userService.getUserByEmail(email);
 
       if (existingUser && existingUser.id !== user.id) {
-        throw new HttpException('Email already exists', 400);
+        throw new Error('Email already exists');
       }
 
       if (!user.email) {
@@ -577,7 +604,7 @@ export class AuthenticationService {
       }
 
       if (user.email === email) {
-        throw new HttpException('Email already exists', 400);
+        throw new Error('Email already exists');
       }
 
       await this.sendEmailVerificationCode(user.email);
@@ -585,7 +612,9 @@ export class AuthenticationService {
       return 'Please verify your current email';
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 500);
+      throw new HttpException(error, 400, {
+        cause: new Error(error.message),
+      });
     }
   }
 
@@ -596,11 +625,11 @@ export class AuthenticationService {
     try {
       const existingUser = await this.userService.getUserByEmail(email);
       if (existingUser) {
-        throw new HttpException('Email already exists', 400);
+        throw new Error('Email already exists');
       }
 
       if (Number(code) !== user.accountVerificationCode) {
-        throw new HttpException('Code is invalid', 400);
+        throw new Error('Code is invalid');
       }
 
       user.email = email;
@@ -612,7 +641,9 @@ export class AuthenticationService {
       return 'Email changed';
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 500);
+      throw new HttpException(error, 400, {
+        cause: new Error(error.message),
+      });
     }
   }
 
@@ -626,7 +657,7 @@ export class AuthenticationService {
       const existingUser = await this.userService.getUserByPhone(phoneNumber);
 
       if (existingUser && existingUser.id !== user.id) {
-        throw new HttpException('Phone number already exists', 400);
+        throw new Error('Phone number already exists');
       }
 
       if (!user.phone) {
@@ -636,7 +667,7 @@ export class AuthenticationService {
       }
 
       if (user.phone === phoneNumber) {
-        throw new HttpException('Phone number already exists', 400);
+        throw new Error('Phone number already exists');
       }
 
       await this.sendPhoneVerificationCode(user.phone);
@@ -644,7 +675,9 @@ export class AuthenticationService {
       return 'Please verify your current phone number';
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 500);
+      throw new HttpException(error, 400, {
+        cause: new Error(error.message),
+      });
     }
   }
 
@@ -657,11 +690,11 @@ export class AuthenticationService {
 
       const existingUser = await this.userService.getUserByPhone(phoneNumber);
       if (existingUser) {
-        throw new HttpException('Phone number already exists', 400);
+        throw new Error('Phone number already exists');
       }
 
       if (Number(code) !== user.accountVerificationCode) {
-        throw new HttpException('Code is invalid', 400);
+        throw new Error('Code is invalid');
       }
 
       user.phone = phoneNumber.replace(/\D/g, '').replace(countryCode, '');
@@ -675,7 +708,9 @@ export class AuthenticationService {
       return 'Phone number changed';
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 500);
+      throw new HttpException(error, 400, {
+        cause: new Error(error.message),
+      });
     }
   }
 
@@ -787,6 +822,7 @@ export class AuthenticationService {
     } else {
       await this.brandService.create({
         userId: savedUser.id,
+        name,
       });
       savedUser.role = Role.BRAND;
     }
