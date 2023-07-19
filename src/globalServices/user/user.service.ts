@@ -110,7 +110,6 @@ export class UserService {
   }
 
   async getUserById(id: string): Promise<User> {
-    console.log(id);
     return await this.userRepository.findOne({
       where: {
         id,

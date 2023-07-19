@@ -1,10 +1,15 @@
-import { Module } from "@nestjs/common";
+import { Module } from '@nestjs/common';
 import {
   ElasticsearchModule,
   ElasticsearchService,
-} from "@nestjs/elasticsearch";
-import { SearchService } from "./search.service";
-import { userIndex } from "./interface/search.interface";
+} from '@nestjs/elasticsearch';
+import { SearchService } from './search.service';
+import {
+  brandIndex,
+  offerIndex,
+  rewardIndex,
+  userIndex,
+} from './interface/search.interface';
 
 @Module({
   imports: [
@@ -22,7 +27,7 @@ import { userIndex } from "./interface/search.interface";
   ],
   providers: [
     {
-      provide: "SearchServiceInterface",
+      provide: 'SearchServiceInterface',
       useClass: SearchService,
     },
   ],
@@ -32,7 +37,7 @@ export class SearchModule {
   constructor(private readonly esService: ElasticsearchService) {}
 
   public async onModuleInit() {
-    [userIndex].forEach(async (index) => {
+    [userIndex, offerIndex, rewardIndex, brandIndex].forEach(async (index) => {
       const exists = await this.esService.indices.exists({
         index: index._index,
       });
@@ -44,10 +49,10 @@ export class SearchModule {
             mappings: {
               properties: {
                 search_text: {
-                  type: "text",
+                  type: 'text',
                   fields: {
                     keyword: {
-                      type: "keyword",
+                      type: 'keyword',
                     },
                   },
                 },

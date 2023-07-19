@@ -77,12 +77,9 @@ export class BrandJwtStrategy implements CanActivate {
       throw new UnauthorizedException('Unauthorized. Please login');
     }
 
-    const brandDetails = await this.brandService.getBrandByUserId(id);
-
     delete deviceToken.token;
 
     request.user = user;
-    request.brand = brandDetails;
 
     return true;
   }

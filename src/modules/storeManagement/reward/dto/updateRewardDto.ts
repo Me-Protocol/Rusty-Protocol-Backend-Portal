@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { RewardType } from '@src/utils/enums/RewardType';
 import { TokenBlockchain } from '@src/utils/enums/reward.enum';
-import { IsBoolean, IsEnum, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsString } from 'class-validator';
 
 export class UpdateRewardDto {
   brandId: string;
@@ -19,10 +19,6 @@ export class UpdateRewardDto {
   @ApiProperty()
   @IsString()
   rewardImage: string;
-
-  @ApiProperty()
-  @IsString()
-  otherRewardType: string;
 
   @ApiProperty()
   @IsString()
@@ -55,22 +51,6 @@ export class UpdateRewardDto {
   blockchain: TokenBlockchain;
 
   @ApiProperty()
-  @IsString()
-  syncApiAddress: string;
-
-  @ApiProperty()
-  @IsString()
-  syncApiAccessToken: string;
-
-  @ApiProperty()
-  @IsString()
-  syncApiRefreshToken: string;
-
-  @ApiProperty()
-  @IsString()
-  oidcDiscoveryAddress: string;
-
-  @ApiProperty()
-  @IsString()
+  @IsArray()
   acceptedCustomerIdentitytypes: string[];
 }

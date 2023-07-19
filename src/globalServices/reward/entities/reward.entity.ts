@@ -7,6 +7,7 @@ import { RewardType } from '@src/utils/enums/RewardType';
 import { Task } from '@src/globalServices/task/entities/task.entity';
 import { SyncBatch } from './syncBatch.entity';
 import { RewardRegistry } from './registry.entity';
+import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 
 @Entity('reward')
 export class Reward extends BaseEntity {
@@ -60,9 +61,6 @@ export class Reward extends BaseEntity {
   @Column({ nullable: true })
   contractAddress?: string;
 
-  @Column({ nullable: true })
-  symbol: string;
-
   @Column({ nullable: true, default: false })
   isBounty?: boolean;
 
@@ -73,18 +71,6 @@ export class Reward extends BaseEntity {
   })
   blockchain: TokenBlockchain;
 
-  @Column({ nullable: false })
-  syncApiAddress: string;
-
-  @Column({ nullable: false })
-  syncApiAccessToken: string;
-
-  @Column({ nullable: false })
-  syncApiRefreshToken: string;
-
-  @Column({ nullable: true })
-  oidcDiscoveryAddress: string;
-
   @Column('text', { nullable: true, array: true, default: [] })
   acceptedCustomerIdentitytypes: string[];
 
@@ -93,4 +79,16 @@ export class Reward extends BaseEntity {
 
   @OneToMany(() => RewardRegistry, (rewardRegistry) => rewardRegistry.reward)
   rewardRegistries: RewardRegistry[];
+
+  @Column('text', {
+    array: true,
+    name: 'syncData',
+    nullable: true,
+  })
+  syncData: {
+    id: string;
+    identifier: string;
+    identifierType: SyncIdentifierType;
+    amount: number;
+  }[];
 }

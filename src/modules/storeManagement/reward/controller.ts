@@ -22,6 +22,7 @@ import { UpdateRewardDto } from './dto/updateRewardDto';
 import { FilterRewardDto } from './dto/filterRewardDto.dto';
 import { AddBatchDto } from './dto/addBatchDto.dto';
 import { UpdateBatchDto } from './dto/updateBatchDto';
+import { GetCustomerPointDto } from './dto/getCustomerPointDto.dto';
 
 @ApiTags('Reward')
 @UseInterceptors(ResponseInterceptor)
@@ -117,10 +118,25 @@ export class RewardManagementController {
   }
 
   @UseGuards(BrandJwtStrategy)
-  @Post('distribute')
-  async distributeBatch(@Req() req: any) {
+  @Post('distribute/:rewardId')
+  async distributeBatch(@Req() req: any, @Param('rewardId') rewardId: string) {
     const brandId = req.user.brand.id;
 
-    return await this.rewardManagementService.distributeBatch(brandId);
+    return await this.rewardManagementService.distributeBatch(
+      brandId,
+      rewardId,
+    );
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Post('registry/syncedCustomer')
+  async getRegistryByIdentifer(
+    @Req() req: any,
+    @Query(ValidationPipe) query: GetCustomerPointDto,
+  ) {
+    return await this.rewardManagementService.getRegistryByIdentifer(
+      query.identifier,
+      query.rewardId,
+    );
   }
 }

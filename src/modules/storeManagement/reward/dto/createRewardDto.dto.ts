@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { RewardType } from '@src/utils/enums/RewardType';
 import { TokenBlockchain } from '@src/utils/enums/reward.enum';
-import { IsBoolean, IsEnum, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsString } from 'class-validator';
 
 export class CreateRewardDto {
   brandId: string;
@@ -22,10 +22,6 @@ export class CreateRewardDto {
 
   @ApiProperty()
   @IsString()
-  otherRewardType: string;
-
-  @ApiProperty()
-  @IsString()
   rewardSymbol: string;
 
   @ApiProperty()
@@ -41,10 +37,6 @@ export class CreateRewardDto {
   contractAddress: string;
 
   @ApiProperty()
-  @IsString()
-  symbol: string;
-
-  @ApiProperty()
   @IsBoolean()
   isBounty: boolean;
 
@@ -55,22 +47,6 @@ export class CreateRewardDto {
   blockchain: TokenBlockchain;
 
   @ApiProperty()
-  @IsString()
-  syncApiAddress: string;
-
-  @ApiProperty()
-  @IsString()
-  syncApiAccessToken: string;
-
-  @ApiProperty()
-  @IsString()
-  syncApiRefreshToken: string;
-
-  @ApiProperty()
-  @IsString()
-  oidcDiscoveryAddress: string;
-
-  @ApiProperty()
-  @IsString()
+  @IsArray()
   acceptedCustomerIdentitytypes: string[];
 }

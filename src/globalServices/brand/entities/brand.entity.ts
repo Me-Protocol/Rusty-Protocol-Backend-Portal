@@ -15,6 +15,7 @@ import { Collection } from '@src/globalServices/collections/entities/collection.
 import { Follow } from '@src/globalServices/follow/entities/follow.entity';
 import { Reward } from '@src/globalServices/reward/entities/reward.entity';
 import { Task } from '@src/globalServices/task/entities/task.entity';
+import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -22,6 +23,7 @@ export class Brand extends BaseEntity {
   userId: string;
 
   @OneToOne(() => User, (user) => user.brand)
+  @JoinColumn({ name: 'userId' })
   user: User;
 
   @Column()
@@ -145,4 +147,7 @@ export class Brand extends BaseEntity {
 
   @OneToMany(() => Reward, (reward) => reward.brand)
   rewards: Reward[];
+
+  @OneToMany(() => ApiKey, (api_key) => api_key.brand)
+  apiKeys: ApiKey[];
 }

@@ -28,7 +28,7 @@ export class RewardService {
     const rewardRec = await this.rewardsRepo.save(reward);
     this.elasticIndex.updateDocument(rewardRec, rewardIndex);
 
-    return reward;
+    return rewardRec;
   }
 
   async findAll({
@@ -44,43 +44,38 @@ export class RewardService {
     page: number;
     limit: number;
   }) {
-    const rewards = this.rewardsRepo.find({
-      where: {
-        brand: {
-          category: {
-            id: category_id,
-          },
-          id: brand_id,
-        },
-        rewardType: reward_type,
-      },
-      relations: ['brand'],
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-    const total = await this.rewardsRepo.count({
-      where: {
-        brand: {
-          category: {
-            id: category_id,
-          },
-          id: brand_id,
-        },
-        rewardType: reward_type,
-      },
-    });
+    const rewards = this.rewardsRepo
+      .createQueryBuilder('reward')
+      .leftJoinAndSelect('reward.brand', 'brand');
+
+    if (category_id) {
+      rewards.andWhere('brand.categoryId = :category_id', { category_id });
+    }
+
+    if (brand_id) {
+      rewards.andWhere('brand.id = :brand_id', { brand_id });
+    }
+
+    if (reward_type) {
+      rewards.andWhere('reward.rewardType = :reward_type', { reward_type });
+    }
+
+    rewards.skip((page - 1) * limit).take(limit);
+
+    const rewardsRec = await rewards.getMany();
+
+    const total = await rewards.getCount();
 
     return {
       total,
-      rewards,
+      rewards: rewardsRec,
       nextPage: total > page * limit ? page + 1 : null,
       previousPage: page > 1 ? page - 1 : null,
     };
   }
 
-  async findOneRewardByLabel(label: string): Promise<Reward> {
-    const rewardSlug = slugify(label).toLowerCase();
-    return this.rewardsRepo.findOneBy({ slug: rewardSlug });
+  async findOneRewardBySlug(slug: string): Promise<Reward> {
+    return this.rewardsRepo.findOneBy({ slug: slug });
   }
 
   async delete(rewardId: string, brandId: string): Promise<boolean> {
@@ -97,5 +92,24 @@ export class RewardService {
 
   async findOneByIdAndBrand(id: string, brandId: string): Promise<Reward> {
     return this.rewardsRepo.findOneBy({ id: id, brandId: brandId });
+  }
+
+  async getRegistryByIdentifer(identifier: string, rewardId: string) {
+    const reward = await this.rewardsRepo.findOneBy({
+      id: rewardId,
+    });
+
+    const rewardPoint = reward.syncData?.find((sync) => {
+      // @ts-ignore
+      const newSynC = JSON.parse(sync);
+      return newSynC.identifier === identifier;
+    });
+
+    return rewardPoint
+      ? JSON.parse(
+          // @ts-ignore
+          rewardPoint,
+        )
+      : null;
   }
 }

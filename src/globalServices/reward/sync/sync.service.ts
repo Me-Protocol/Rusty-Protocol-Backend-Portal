@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Raw, Repository } from 'typeorm';
 import slugify from 'slugify';
 import { SyncBatch } from '../entities/syncBatch.entity';
 import { RegistryHistory } from '../entities/registryHistory.entity';
@@ -221,11 +221,12 @@ export class SyncRewardService {
     return registry;
   }
 
-  async checkActiveBatch(brandId: string) {
+  async checkActiveBatch(brandId: string, rewardId: string) {
     const batch = await this.syncBatchRepo.findOne({
       where: {
         reward: {
           brandId,
+          id: rewardId,
         },
         isDistributed: false,
       },

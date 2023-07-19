@@ -4,11 +4,11 @@ import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class FilterRewardDto {
   @ApiProperty()
-  @IsNumber()
+  @IsString()
   page: number;
 
   @ApiProperty()
-  @IsNumber()
+  @IsString()
   limit: number;
 
   @ApiProperty()

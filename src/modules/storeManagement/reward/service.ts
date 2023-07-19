@@ -13,6 +13,8 @@ import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
 import { UpdateRewardDto } from './dto/updateRewardDto';
 import { User } from '@src/globalServices/user/entities/user.entity';
+import { getSlug } from '@src/utils/helpers/getSlug';
+import { string } from 'joi';
 
 @Injectable()
 export class RewardManagementService {
@@ -24,12 +26,21 @@ export class RewardManagementService {
 
   async createReward(body: CreateRewardDto) {
     try {
+      const slug = getSlug(body.rewardName);
+
+      const checkReward = await this.rewardService.findOneRewardBySlug(slug);
+
+      if (checkReward) {
+        throw new Error('Looks like this reward already exists');
+      }
+
       const reward = new Reward();
+
+      reward.slug = slug;
       reward.brandId = body.brandId;
       reward.description = body.description;
       reward.rewardType = body.rewardType;
       reward.rewardImage = body.rewardImage;
-      reward.otherRewardType = body.otherRewardType;
       reward.rewardSymbol = body.rewardSymbol;
       reward.rewardName = body.rewardName;
       reward.autoSyncEnabled = body.autoSyncEnabled;
@@ -37,13 +48,8 @@ export class RewardManagementService {
 
       if (body.rewardType === RewardType.TOKEN) {
         reward.contractAddress = body.contractAddress;
-        reward.symbol = body.symbol;
         reward.isBounty = body.isBounty;
         reward.blockchain = body.blockchain;
-        reward.syncApiAddress = body.syncApiAddress;
-        reward.syncApiAccessToken = body.syncApiAccessToken;
-        reward.syncApiRefreshToken = body.syncApiRefreshToken;
-        reward.oidcDiscoveryAddress = body.oidcDiscoveryAddress;
       }
 
       return await this.rewardService.create(reward);
@@ -65,11 +71,21 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
+      const slug = getSlug(body.rewardName);
+
+      if (slug !== reward.slug) {
+        const checkReward = await this.rewardService.findOneRewardBySlug(slug);
+
+        if (checkReward) {
+          throw new Error('Looks like this reward already exists');
+        }
+      }
+
+      reward.slug = slug;
       reward.brandId = body.brandId;
       reward.description = body.description;
       reward.rewardType = body.rewardType;
       reward.rewardImage = body.rewardImage;
-      reward.otherRewardType = body.otherRewardType;
       reward.rewardSymbol = body.rewardSymbol;
       reward.rewardName = body.rewardName;
       reward.autoSyncEnabled = body.autoSyncEnabled;
@@ -77,13 +93,8 @@ export class RewardManagementService {
 
       if (body.rewardType === RewardType.TOKEN) {
         reward.contractAddress = body.contractAddress;
-        reward.symbol = body.symbol;
         reward.isBounty = body.isBounty;
         reward.blockchain = body.blockchain;
-        reward.syncApiAddress = body.syncApiAddress;
-        reward.syncApiAccessToken = body.syncApiAccessToken;
-        reward.syncApiRefreshToken = body.syncApiRefreshToken;
-        reward.oidcDiscoveryAddress = body.oidcDiscoveryAddress;
       }
 
       return await this.rewardService.save(reward);
@@ -164,17 +175,38 @@ export class RewardManagementService {
         };
       }
 
-      let batch: SyncBatch;
+      const checkBatch = await this.syncService.checkActiveBatch(
+        body.brandId,
+        body.rewardId,
+      );
 
-      batch = await this.syncService.checkActiveBatch(body.brandId);
-
-      if (!batch) {
+      if (!checkBatch) {
         const newBatch = new SyncBatch();
         newBatch.rewardId = body.rewardId;
         newBatch.syncData = addableSyncData;
         newBatch.description = body.description;
 
-        const savedBatch = await this.syncService.createBatch(batch);
+        const savedBatch = await this.syncService.createBatch(newBatch);
+
+        // push new syncData to reward syncData if they doesn't exist
+        const newSyncData = addableSyncData.filter((syncData) => {
+          const found = checkReward.syncData?.find(
+            (item) => item.identifier === syncData.identifier,
+          );
+          if (!found) {
+            return syncData;
+          }
+        });
+
+        if (checkReward.syncData) {
+          checkReward.syncData = [...checkReward.syncData, ...newSyncData];
+
+          await this.rewardService.save(checkReward);
+        } else {
+          checkReward.syncData = newSyncData;
+
+          await this.rewardService.save(checkReward);
+        }
 
         return {
           descripancies: null,
@@ -182,13 +214,12 @@ export class RewardManagementService {
         };
       }
 
-      batch.rewardId = body.rewardId;
-      batch.description = body.description;
-
       // compare syncData and add new ones, update and add new ones
 
       const newSyncData = addableSyncData.filter((syncData) => {
-        const found = batch.syncData.find((item) => item.id === syncData.id);
+        const found = checkBatch.syncData.find(
+          (item) => item.id === syncData.id,
+        );
         if (!found) {
           return syncData;
         }
@@ -202,15 +233,30 @@ export class RewardManagementService {
         return found;
       });
 
-      batch.syncData = newSyncData;
+      checkBatch.syncData = newSyncData;
+      checkBatch.rewardId = body.rewardId;
+      checkBatch.description = body.description;
 
-      const savedBatch = await this.syncService.saveBatch(batch);
+      const savedBatch = await this.syncService.saveBatch(checkBatch);
+
+      // Push new syncData to reward syncData if they doesn't exist
+
+      if (checkReward.syncData) {
+        checkReward.syncData = [...checkReward.syncData, ...newSyncData];
+
+        await this.rewardService.save(checkReward);
+      } else {
+        checkReward.syncData = newSyncData;
+
+        await this.rewardService.save(checkReward);
+      }
 
       return {
         descripancies: null,
         batch: savedBatch,
       };
     } catch (error) {
+      console.log(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });
@@ -229,12 +275,14 @@ export class RewardManagementService {
     });
   }
 
-  async distributeBatch(brandId: string) {
+  async distributeBatch(brandId: string, rewardId: string) {
     try {
-      const batch = await this.syncService.checkActiveBatch(brandId);
+      const batch = await this.syncService.checkActiveBatch(brandId, rewardId);
 
       if (!batch) {
-        throw new Error('Batch not found');
+        throw new Error(
+          'Batch alrady distributed or No pending batch not found',
+        );
       }
 
       if (batch.isDistributed) {
@@ -285,5 +333,20 @@ export class RewardManagementService {
         cause: new Error(error.message),
       });
     }
+  }
+
+  async getRegistryByIdentifer(identifier: string, rewardId: string) {
+    const register = await this.rewardService.getRegistryByIdentifer(
+      identifier,
+      rewardId,
+    );
+
+    if (!register) {
+      throw new HttpException('Customer not found', 404, {
+        cause: new Error('Customer not found'),
+      });
+    }
+
+    return register;
   }
 }

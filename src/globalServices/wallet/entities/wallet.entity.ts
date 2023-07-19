@@ -2,7 +2,13 @@
 
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { BaseEntity } from '@src/common/entities/base.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinTable,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity('wallet')
 export class Wallet extends BaseEntity {
@@ -16,5 +22,6 @@ export class Wallet extends BaseEntity {
   walletId: string;
 
   @OneToOne(() => User, (user) => user.wallet)
+  @JoinTable({ name: 'userId' })
   user: User;
 }
