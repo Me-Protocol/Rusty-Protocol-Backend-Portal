@@ -1,9 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 
-export class FIlterCollectionDto {
-  userId: string;
-
+export class FilterOrderDto {
   @ApiProperty()
   @IsString()
   page: number;
@@ -12,5 +10,5 @@ export class FIlterCollectionDto {
   @IsString()
   limit: number;
 
-  brandId: string;
+  userId: string;
 }

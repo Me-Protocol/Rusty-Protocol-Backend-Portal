@@ -26,4 +26,6 @@ export class UpdateCategoryDto {
     message: 'Category type is invalid',
   })
   type: CategoryType;
+
+  slug: string;
 }

@@ -7,6 +7,7 @@ import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { Reward } from './entities/reward.entity';
 import { RewardType } from '@src/utils/enums/RewardType';
 import { rewardIndex } from '@src/modules/search/interface/search.interface';
+import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 
 @Injectable()
 export class RewardService {
@@ -94,7 +95,15 @@ export class RewardService {
     return this.rewardsRepo.findOneBy({ id: id, brandId: brandId });
   }
 
-  async getRegistryByIdentifer(identifier: string, rewardId: string) {
+  async getRegistryByIdentifer(
+    identifier: string,
+    rewardId: string,
+  ): Promise<{
+    id: string;
+    identifier: string;
+    identifierType: SyncIdentifierType;
+    amount: number;
+  } | null> {
     const reward = await this.rewardsRepo.findOneBy({
       id: rewardId,
     });

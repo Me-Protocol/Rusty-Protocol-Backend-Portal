@@ -6,6 +6,8 @@ import { SyncBatch } from '../entities/syncBatch.entity';
 import { RegistryHistory } from '../entities/registryHistory.entity';
 import { RewardRegistry } from '../entities/registry.entity';
 import { TransactionsType } from '@src/utils/enums/Transactions';
+import { RewardService } from '../reward.service';
+import { UserService } from '@src/globalServices/user/user.service';
 
 @Injectable()
 export class SyncRewardService {
@@ -18,6 +20,9 @@ export class SyncRewardService {
 
     @InjectRepository(RewardRegistry)
     private readonly rewardRegistryRepo: Repository<RewardRegistry>,
+
+    private readonly rewardService: RewardService,
+    private readonly userService: UserService,
   ) {}
 
   async createBatch(batch: SyncBatch) {
@@ -234,4 +239,51 @@ export class SyncRewardService {
 
     return batch;
   }
+
+  async manualSyncReward(userId: string, rewardId: string) {
+    const reward = await this.rewardService.findOneById(rewardId);
+
+    if (!reward) {
+      throw new Error('Reward not found');
+    }
+
+    const user = await this.userService.getUserById(userId);
+
+    const checkAndGetPoints = await this.rewardService.getRegistryByIdentifer(
+      user.email,
+      rewardId,
+    );
+
+    const registry = new RewardRegistry();
+    registry.rewardId = rewardId;
+    registry.customerIdentiyOnBrandSite = user.email; // TODO Using email for now
+    registry.customerIdentityType = checkAndGetPoints.identifierType;
+    registry.balance = 0;
+    registry.userId = user.id;
+
+    const rewardRegistry = await this.addRegistry(registry);
+
+    if (checkAndGetPoints) {
+      // create transaction
+      await this.creditReward({
+        rewardId: rewardId,
+        userId: user.id,
+        amount: checkAndGetPoints.amount,
+        description: `Reward sync`,
+      });
+
+      return rewardRegistry;
+    }
+
+    return rewardRegistry;
+  }
+
+  // getUserRegistry(userId: string, rewardId: string) {
+  //   return this.rewardRegistryRepo.findOne({
+  //     where: {
+  //       userId,
+  //       rewardId,
+  //     },
+  //   });
+  // }
 }

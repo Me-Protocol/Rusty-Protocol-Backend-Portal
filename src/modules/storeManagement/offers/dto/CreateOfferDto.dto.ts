@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
-import { IsEnum, IsNumber, IsString } from 'class-validator';
+import { IsArray, IsEnum, IsNumber, IsString } from 'class-validator';
 
 export class CreateOfferDto {
   @ApiProperty()
@@ -16,7 +16,7 @@ export class CreateOfferDto {
   productId: string;
 
   @ApiProperty()
-  @IsString()
+  @IsArray()
   productImages: string[];
 
   @ApiProperty()
@@ -46,4 +46,12 @@ export class CreateOfferDto {
   @ApiProperty()
   @IsString()
   endDate: Date;
+
+  @ApiProperty()
+  @IsString()
+  idOnBrandsite: string;
+
+  @ApiProperty()
+  @IsString()
+  rewardId: string;
 }

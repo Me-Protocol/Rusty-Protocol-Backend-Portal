@@ -12,6 +12,8 @@ import { Review } from '@src/globalServices/review/entities/review.entity';
 import { Reward } from '@src/globalServices/reward/entities/reward.entity';
 import { Like } from '@src/globalServices/like/entities/like.entity';
 import { Task } from '@src/globalServices/task/entities/task.entity';
+import { Order } from '@src/globalServices/order/entities/order.entity';
+import { Coupon } from '@src/globalServices/order/entities/coupon.entity';
 
 @Entity('offer')
 export class Offer extends BaseEntity {
@@ -98,13 +100,16 @@ export class Offer extends BaseEntity {
   })
   endDate: Date;
 
-  @OneToMany(() => View, (view) => view.user)
+  @Column()
+  idOnBrandsite: string;
+
+  @OneToMany(() => View, (view) => view.offer)
   views: View[];
 
-  @OneToMany(() => Share, (share) => share.user)
+  @OneToMany(() => Share, (share) => share.offer)
   shares: Share[];
 
-  @OneToMany(() => Review, (review) => review.user)
+  @OneToMany(() => Review, (review) => review.offer)
   reviews: Review[];
 
   @Column()
@@ -113,9 +118,15 @@ export class Offer extends BaseEntity {
   @ManyToOne(() => Reward, (reward) => reward.offers)
   reward: Reward;
 
-  @OneToMany(() => Like, (like) => like.user)
+  @OneToMany(() => Like, (like) => like.offer)
   likes: Like[];
 
   @OneToMany(() => Task, (task) => task.offer)
   tasks: Task[];
+
+  @OneToMany(() => Order, (order) => order.offer)
+  orders: Order[];
+
+  @OneToMany(() => Coupon, (coupon) => coupon.offer)
+  coupons: Coupon[];
 }

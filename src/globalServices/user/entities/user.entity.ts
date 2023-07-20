@@ -16,6 +16,8 @@ import { Review } from '@src/globalServices/review/entities/review.entity';
 import { Like } from '@src/globalServices/like/entities/like.entity';
 import { TaskResponse } from '@src/globalServices/task/entities/taskResponse.entity';
 import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
+import { Order } from '@src/globalServices/order/entities/order.entity';
+import { Coupon } from '@src/globalServices/order/entities/coupon.entity';
 // import { TaskResponseEntity } from '@src/models/taskResponse.entity';
 
 @Entity('user')
@@ -208,9 +210,15 @@ export class User extends BaseEntity {
   @OneToMany(() => Like, (like) => like.user)
   likes: Like[];
 
-  @OneToMany(() => TaskResponse, (taskResponse) => taskResponse.task)
+  @OneToMany(() => TaskResponse, (taskResponse) => taskResponse.user)
   taskResponses: TaskResponse[];
 
-  @OneToMany(() => RewardRegistry, (rewardRegistry) => rewardRegistry.reward)
+  @OneToMany(() => RewardRegistry, (rewardRegistry) => rewardRegistry.user)
   rewardRegistries: RewardRegistry[];
+
+  @OneToMany(() => Order, (order) => order.user)
+  orders: Order[];
+
+  @OneToMany(() => Coupon, (coupon) => coupon.user)
+  coupons: Coupon[];
 }
