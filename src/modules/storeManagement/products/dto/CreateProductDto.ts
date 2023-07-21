@@ -19,7 +19,6 @@ export class CreateProductDto {
   @IsString()
   description: string;
 
-  @ApiProperty()
   brandId: string;
 
   @ApiProperty()
@@ -68,9 +67,6 @@ export class CreateProductDto {
             type: 'string',
           },
         },
-        productId: {
-          type: 'string',
-        },
         price: {
           type: 'number',
         },
@@ -84,7 +80,6 @@ export class CreateProductDto {
   variants: {
     name: VarientType;
     values: string[];
-    productId: string;
     price: number;
     inventory: number;
   }[];

@@ -1,5 +1,6 @@
 require('dotenv').config();
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { Category } from '@src/globalServices/category/entities/category.entity';
 import { Collection } from '@src/globalServices/collections/entities/collection.entity';
@@ -7,6 +8,8 @@ import { Customer } from '@src/globalServices/customer/entities/customer.entity'
 import { Follow } from '@src/globalServices/follow/entities/follow.entity';
 import { Like } from '@src/globalServices/like/entities/like.entity';
 import { Offer } from '@src/globalServices/offer/entities/offer.entity';
+import { Coupon } from '@src/globalServices/order/entities/coupon.entity';
+import { Order } from '@src/globalServices/order/entities/order.entity';
 import { Product } from '@src/globalServices/product/entities/product.entity';
 import { ProductImage } from '@src/globalServices/product/entities/productImage.entity';
 import { Variant } from '@src/globalServices/product/entities/variants.entity';
@@ -59,6 +62,9 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     SyncBatch,
     RewardRegistry,
     RegistryHistory,
+    Order,
+    Coupon,
+    ApiKey,
   ],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   extra: {

@@ -25,7 +25,7 @@ import { GetOfferDto } from './dto/GetOfferDto.dto';
 
 ApiTags('Offers');
 @UseInterceptors(ResponseInterceptor)
-@Controller('store/offers')
+@Controller('store/offer')
 export class OfferManagementController {
   constructor(
     private readonly offerManagementService: OfferManagementService,

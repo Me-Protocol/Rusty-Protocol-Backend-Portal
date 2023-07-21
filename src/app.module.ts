@@ -80,6 +80,16 @@ import { RewardManagementController } from './modules/storeManagement/reward/con
 import { SyncBatch } from './globalServices/reward/entities/syncBatch.entity';
 import { RewardRegistry } from './globalServices/reward/entities/registry.entity';
 import { RegistryHistory } from './globalServices/reward/entities/registryHistory.entity';
+import { Order } from './globalServices/order/entities/order.entity';
+import { Coupon } from './globalServices/order/entities/coupon.entity';
+import { ApiKey } from './globalServices/api_key/entities/api_key.entity';
+import { ApiKeyManagementController } from './modules/storeManagement/apiKey/controller';
+import { ApiKeyManagementService } from './modules/storeManagement/apiKey/service';
+import { OrderManagementService } from './modules/storeManagement/order/service';
+import { ApiKeyService } from './globalServices/api_key/api_key.service';
+import { OrderService } from './globalServices/order/order.service';
+import { CouponService } from './globalServices/order/coupon.service';
+import { OrderManagementController } from './modules/storeManagement/order/controller';
 
 @Module({
   imports: [
@@ -105,6 +115,9 @@ import { RegistryHistory } from './globalServices/reward/entities/registryHistor
       SyncBatch,
       RewardRegistry,
       RegistryHistory,
+      Order,
+      Coupon,
+      ApiKey,
     ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
@@ -149,6 +162,8 @@ import { RegistryHistory } from './globalServices/reward/entities/registryHistor
     LikeManagementController,
     OfferManagementController,
     RewardManagementController,
+    ApiKeyManagementController,
+    OrderManagementController,
   ],
   providers: [
     ElasticIndex,
@@ -188,6 +203,11 @@ import { RegistryHistory } from './globalServices/reward/entities/registryHistor
     RewardService,
     SyncRewardService,
     RewardManagementService,
+    ApiKeyManagementService,
+    ApiKeyService,
+    OrderManagementService,
+    OrderService,
+    CouponService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

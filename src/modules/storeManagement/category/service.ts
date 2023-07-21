@@ -3,21 +3,24 @@ import { FilterCategoryDto } from '@src/modules/storeManagement/category/dto/Fil
 import { CategoryService } from '@src/globalServices/category/category.service';
 import { CreateCategoryDto } from './dto/CreateCategoryDto';
 import { UpdateCategoryDto } from './dto/UpdateCategoryDto';
+import { getSlug } from '@src/utils/helpers/getSlug';
 
 @Injectable()
 export class CategoryManagementService {
   constructor(private readonly categoryService: CategoryService) {}
 
-  createCategory(createCategoryDto: CreateCategoryDto) {
+  async createCategory(createCategoryDto: CreateCategoryDto) {
     try {
-      const checkCategory = this.categoryService.findOneByName(
+      const checkCategory = await this.categoryService.findOneByName(
         createCategoryDto.name,
       );
       if (checkCategory) {
         throw new Error('Category already exists');
       }
 
-      return this.categoryService.create(createCategoryDto);
+      createCategoryDto.slug = getSlug(createCategoryDto.name);
+
+      return await this.categoryService.create(createCategoryDto);
     } catch (error) {
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
@@ -34,6 +37,10 @@ export class CategoryManagementService {
         throw new Error('Category already exists');
       }
 
+      if (category.name !== checkCategory.name) {
+        category.slug = getSlug(category.name);
+      }
+
       return this.categoryService.update(id, category);
     } catch (error) {
       throw new HttpException(error.message, 400, {
@@ -43,6 +50,6 @@ export class CategoryManagementService {
   }
 
   async findAllCategory(query: FilterCategoryDto) {
-    return this.categoryService.findAll(query);
+    return await this.categoryService.findAll(query);
   }
 }

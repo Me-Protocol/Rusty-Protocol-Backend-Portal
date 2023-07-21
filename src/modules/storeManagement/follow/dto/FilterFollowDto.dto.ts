@@ -1,13 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsString } from 'class-validator';
+import { IsString } from 'class-validator';
 
 export class FilterFollowDto {
   @ApiProperty()
-  @IsNumber()
+  @IsString()
   page: number;
 
   @ApiProperty()
-  @IsNumber()
+  @IsString()
   limit: number;
 
   @ApiProperty()
@@ -17,11 +17,11 @@ export class FilterFollowDto {
 
 export class FilteUserFollowDto {
   @ApiProperty()
-  @IsNumber()
+  @IsString()
   page: number;
 
   @ApiProperty()
-  @IsNumber()
+  @IsString()
   limit: number;
 
   userId: string;

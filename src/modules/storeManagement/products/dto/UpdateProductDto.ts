@@ -68,9 +68,6 @@ export class UpdateProductDto {
             type: 'string',
           },
         },
-        productId: {
-          type: 'string',
-        },
         price: {
           type: 'number',
         },
@@ -84,7 +81,6 @@ export class UpdateProductDto {
   variants: {
     name: VarientType;
     values: string[];
-    productId: string;
     price: number;
     inventory: number;
   }[];

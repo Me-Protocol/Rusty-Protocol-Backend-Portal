@@ -1,13 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class FilterOfferDto {
   @ApiProperty()
-  @IsNumber()
+  @IsString()
   page: number;
 
   @ApiProperty()
-  @IsNumber()
+  @IsString()
   limit: number;
 
   @ApiProperty()

@@ -78,7 +78,6 @@ export class ProductService {
     variants: {
       name: VarientType;
       values: string[];
-      productId: string;
       price: number;
       inventory: number;
     }[],
@@ -96,6 +95,7 @@ export class ProductService {
     const productVariants = variants.map((variant) =>
       this.variantRepo.create({
         ...variant,
+        productId,
       }),
     );
 

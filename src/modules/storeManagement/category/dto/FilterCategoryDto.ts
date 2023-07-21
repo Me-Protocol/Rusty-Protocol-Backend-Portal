@@ -1,14 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { CategoryType } from '@src/utils/enums/CategoryType';
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class FilterCategoryDto {
   @ApiProperty()
-  @IsNumber()
+  @IsString()
   page: number;
 
   @ApiProperty()
-  @IsNumber()
+  @IsString()
   limit: number;
 
   @ApiProperty({

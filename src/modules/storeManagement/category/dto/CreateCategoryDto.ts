@@ -31,4 +31,6 @@ export class CreateCategoryDto {
   @IsOptional()
   @IsString()
   parentId: string;
+
+  slug: string;
 }

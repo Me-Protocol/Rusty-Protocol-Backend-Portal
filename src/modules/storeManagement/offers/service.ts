@@ -25,8 +25,10 @@ export class OfferManagementService {
       });
     }
 
+    const offerCode = await this.offerService.generateOfferCode();
+
     const offer = new Offer();
-    offer.offerCode = this.offerService.generateOfferCode();
+    offer.offerCode = offerCode;
     offer.name = body.name;
     offer.status = body.status;
     offer.brandId = body.brandId;
@@ -37,6 +39,8 @@ export class OfferManagementService {
     offer.description = body.description;
     offer.startDate = body.startDate;
     offer.endDate = body.endDate;
+    offer.idOnBrandsite = body.idOnBrandsite;
+    offer.rewardId = body.rewardId;
 
     // upload images
     await this.productService.bulkAddProductImage(
@@ -72,14 +76,17 @@ export class OfferManagementService {
       offer.productId = body.productId;
     }
 
-    offer.name = body.name;
-    offer.status = body.status;
-    offer.originalPrice = body.originalPrice;
-    offer.discountPercentage = body.discountPercentage;
-    offer.tokens = body.tokens;
-    offer.description = body.description;
-    offer.startDate = body.startDate;
-    offer.endDate = body.endDate;
+    if (body.name) offer.name = body.name;
+    if (body.status) offer.status = body.status;
+    if (body.originalPrice) offer.originalPrice = body.originalPrice;
+    if (body.discountPercentage)
+      offer.discountPercentage = body.discountPercentage;
+    if (body.tokens) offer.tokens = body.tokens;
+    if (body.description) offer.description = body.description;
+    if (body.startDate) offer.startDate = body.startDate;
+    if (body.endDate) offer.endDate = body.endDate;
+    if (body.idOnBrandsite) offer.idOnBrandsite = body.idOnBrandsite;
+    if (body.rewardId) offer.rewardId = body.rewardId;
 
     // upload images
     await this.productService.bulkAddProductImage(
