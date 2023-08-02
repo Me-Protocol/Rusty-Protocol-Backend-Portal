@@ -90,6 +90,14 @@ import { ApiKeyService } from './globalServices/api_key/api_key.service';
 import { OrderService } from './globalServices/order/order.service';
 import { CouponService } from './globalServices/order/coupon.service';
 import { OrderManagementController } from './modules/storeManagement/order/controller';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CostBatch } from './globalServices/costManagement/entities/costBatch.entity';
+import { CostCollection } from './globalServices/costManagement/entities/costCollection';
+import { PaymentRequest } from './globalServices/costManagement/entities/paymentRequest.entity';
+import { CostManagementController } from './modules/costModule/controller';
+import { CostModuleService } from './globalServices/costManagement/costModule.service';
+import { PaymentRequestService } from './globalServices/costManagement/paymentProcessors.service';
+import { CostModuleManagementService } from './modules/costModule/service';
 
 @Module({
   imports: [
@@ -118,6 +126,9 @@ import { OrderManagementController } from './modules/storeManagement/order/contr
       Order,
       Coupon,
       ApiKey,
+      CostBatch,
+      CostCollection,
+      PaymentRequest,
     ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
@@ -146,6 +157,7 @@ import { OrderManagementController } from './modules/storeManagement/order/contr
     WalletModule,
     PaymentModule,
     UploadModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [
     AppController,
@@ -164,6 +176,7 @@ import { OrderManagementController } from './modules/storeManagement/order/contr
     RewardManagementController,
     ApiKeyManagementController,
     OrderManagementController,
+    CostManagementController,
   ],
   providers: [
     ElasticIndex,
@@ -208,6 +221,9 @@ import { OrderManagementController } from './modules/storeManagement/order/contr
     OrderManagementService,
     OrderService,
     CouponService,
+    CostModuleService,
+    PaymentRequestService,
+    CostModuleManagementService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

@@ -4,6 +4,9 @@ import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { Category } from '@src/globalServices/category/entities/category.entity';
 import { Collection } from '@src/globalServices/collections/entities/collection.entity';
+import { CostBatch } from '@src/globalServices/costManagement/entities/costBatch.entity';
+import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection';
+import { PaymentRequest } from '@src/globalServices/costManagement/entities/paymentRequest.entity';
 import { Customer } from '@src/globalServices/customer/entities/customer.entity';
 import { Follow } from '@src/globalServices/follow/entities/follow.entity';
 import { Like } from '@src/globalServices/like/entities/like.entity';
@@ -65,6 +68,9 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     Order,
     Coupon,
     ApiKey,
+    CostBatch,
+    CostCollection,
+    PaymentRequest,
   ],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   extra: {
@@ -73,8 +79,8 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
   synchronize: true,
   autoLoadEntities: true,
   logging: false,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  // ssl: {
+  //   rejectUnauthorized: false,
+  // },
   // ssl: true,
 };
