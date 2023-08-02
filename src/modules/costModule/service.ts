@@ -9,11 +9,11 @@ import { BrandService } from '@src/globalServices/brand/brand.service';
 import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection';
 import { supportedNetworks } from '@src/globalServices/costManagement/symbol-finder.service';
 import retrieveCost from '@src/globalServices/costManagement/relayer-costgetter.service';
-import { CallWithERC2771Struct } from '@gelatonetwork/relay-sdk/dist/lib/erc2771/types';
 import { GelatoRelay } from '@gelatonetwork/relay-sdk';
 import axios from 'axios';
+import { CostBatch } from '@src/globalServices/costManagement/entities/costBatch.entity';
 
-const maxAttempts = 5;
+const maxAttempts = 1;
 const delayBetweenAttempts = 5000; // 5 seconds
 
 @Injectable()
@@ -36,20 +36,6 @@ export class CostModuleManagementService {
     try {
       const response = await axios.get(apiUrl);
       const status = response.data.task.taskState;
-
-      if (status === 'CheckPending') {
-        if (attempt >= maxAttempts) {
-          return status;
-        }
-
-        await new Promise((resolve) =>
-          setTimeout(resolve, delayBetweenAttempts),
-        );
-        return this.checkTransactionStatusWithRetry({
-          taskId,
-          attempt: attempt + 1,
-        });
-      }
 
       return status;
     } catch (error) {
@@ -117,13 +103,20 @@ export class CostModuleManagementService {
             success: true,
             message:
               'Transaction status is not yet available. Please check back later.',
+            status,
+            taskId: relayResponse.taskId,
           };
         }
 
         req.sourceReference = relayResponse.taskId;
         await this.paymentRequestService.save(req);
 
-        return { success: true, status, taskId: relayResponse.taskId };
+        return {
+          success: true,
+          status,
+          taskId: relayResponse.taskId,
+          message: 'Transaction is complete',
+        };
       } else {
         // Query the runtime processor
 
@@ -149,49 +142,55 @@ export class CostModuleManagementService {
   async costCollector() {
     // Runs every 4 hours (picks all the requests in the active batch and sends to the processor to get cost) update requests with cost and close batch
 
-    const activeBatch =
-      await this.costModuleService.getOrCreateActiveCostBatch();
+    try {
+      const activeBatch =
+        await this.costModuleService.getOrCreateActiveCostBatch();
 
-    const requests =
-      await this.paymentRequestService.getCostBatchPaymentRequests(
-        activeBatch.id,
-      );
+      const requests =
+        await this.paymentRequestService.getCostBatchPaymentRequests(
+          activeBatch.id,
+        );
 
-    for (let index = 0; index < requests.length; index++) {
-      const request = requests[index];
+      for (let index = 0; index < requests.length; index++) {
+        const request = requests[index];
 
-      if (request.tnxType === PaymentRequestTnxType.RELAYER) {
-        // Query the relayer processor
+        if (request.tnxType === PaymentRequestTnxType.RELAYER) {
+          // Query the relayer processor
 
-        const { totalCost, totalCostInDollar, tokenSymbol } =
-          await retrieveCost(
-            request.sourceReference,
-            request.relayerType,
-            request.network,
-          );
+          const { totalCost, totalCostInDollar, tokenSymbol } =
+            await retrieveCost(
+              request.sourceReference,
+              request.relayerType,
+              request.network,
+            );
 
-        request.costAmountInToken = totalCost;
-        request.costAmountInDollar = totalCostInDollar;
-        request.costCurrency = 'dollar';
-        request.tokenSymbol = tokenSymbol;
-      } else {
-        // Query the runtime processor
-        request.costAmountInToken = 100;
-        request.costAmountInDollar = 100;
-        request.costCurrency = 'dollar';
-        request.tokenSymbol = 'MATIC';
+          request.costAmountInToken = totalCost;
+          request.costAmountInDollar = totalCostInDollar;
+          request.costCurrency = 'dollar';
+          request.tokenSymbol = tokenSymbol;
+        } else {
+          // Query the runtime processor
+          request.costAmountInToken = 100;
+          request.costAmountInDollar = 100;
+          request.costCurrency = 'dollar';
+          request.tokenSymbol = 'MATIC';
+        }
+
+        await this.paymentRequestService.save(request);
       }
 
-      await this.paymentRequestService.save(request);
+      activeBatch.isClosed = true;
+      await this.costModuleService.createCostBatch(activeBatch);
+
+      const newBatch = new CostBatch();
+
+      await this.costModuleService.createCostBatch(newBatch);
+
+      return true;
+    } catch (error) {
+      console.log(error);
+      return false;
     }
-
-    activeBatch.isClosed = true;
-
-    await this.costModuleService.createCostBatch(activeBatch);
-
-    console.log('Batch closed');
-
-    return true;
   }
 
   @Cron(CronExpression.EVERY_MINUTE)

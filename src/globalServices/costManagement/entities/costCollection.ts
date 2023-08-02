@@ -10,8 +10,8 @@ import { CostBatch } from './costBatch.entity';
 export class CostCollection extends BaseEntity {
   @Column({
     type: 'decimal',
-    precision: 10,
-    scale: 2,
+    precision: 20,
+    scale: 20,
     nullable: true,
   })
   totalCost: number;

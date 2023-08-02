@@ -21,10 +21,18 @@ const gelatoCostRetriever = async (
   const gelatoResponse = await axios.get(url);
   const transactionHash = gelatoResponse.data.task.transactionHash;
   const cost = await getGasCost(network, transactionHash);
-  const totalCost = addPremium(cost);
-  const tokenSymbol = symbolRetriever(network);
-  const totalCostInDollar = await retrieveCostInDollar(totalCost, tokenSymbol);
-  return { totalCost, totalCostInDollar, tokenSymbol };
+
+  if (cost) {
+    const totalCost = addPremium(cost);
+    const tokenSymbol = symbolRetriever(network);
+    const totalCostInDollar = await retrieveCostInDollar(
+      totalCost,
+      tokenSymbol,
+    );
+    return { totalCost, totalCostInDollar, tokenSymbol };
+  } else {
+    throw new Error('Cost not found');
+  }
 };
 
 const calculateTransactionFee = (gasUsed: number, gasPriceInGwei: number) => {
@@ -64,19 +72,29 @@ const getGasCost = async (network: string, transactionHash: string) => {
   }
 };
 
-const getPolygonMumbaiCost = async (transactionHash: string) => {
-  const indexerResponse = await axios.get(process.env.MUMBAI_INDEXER_URL, {
-    params: {
-      module: 'proxy',
-      action: 'eth_getTransactionByHash',
-      txhash: transactionHash,
-      apikey: process.env.MUMBAI_INDEXER_API_KEY,
-    },
-  });
-  const gas = indexerResponse.data.result.gas;
-  const gasPriceInGWei = indexerResponse.data.result.gasPrice / 1000000000;
-  const cost = calculateTransactionFee(gas, gasPriceInGWei);
-  return cost;
+const getPolygonMumbaiCost = async (
+  transactionHash: string,
+): Promise<number> => {
+  return await axios
+    .get(process.env.MUMBAI_INDEXER_URL, {
+      params: {
+        module: 'proxy',
+        action: 'eth_getTransactionByHash',
+        txhash: transactionHash,
+        apikey: process.env.MUMBAI_INDEXER_API_KEY,
+      },
+    })
+    .then((response) => {
+      const gas = response.data.result.gas;
+      const gasPriceInGWei = response.data.result.gasPrice / 1000000000;
+      const cost = calculateTransactionFee(gas, gasPriceInGWei);
+
+      return cost;
+    })
+    .catch((error) => {
+      console.log(error);
+      throw new Error('Failed to retrieve cost');
+    });
 };
 
 export default retrieveCost;

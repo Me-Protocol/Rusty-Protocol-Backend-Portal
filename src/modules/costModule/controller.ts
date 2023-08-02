@@ -6,6 +6,8 @@ import {
   ValidationPipe,
   Post,
   Req,
+  Get,
+  Param,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { ApiTags } from '@nestjs/swagger';
@@ -23,7 +25,7 @@ export class CostManagementController {
 
   @UseGuards(ApiKeyJwtStrategy)
   @Post('/request')
-  async createReward(
+  async createPaymentRequest(
     @Body(ValidationPipe) body: PaymentRequestDto,
     @Req() req: any,
   ) {
@@ -31,5 +33,16 @@ export class CostManagementController {
     body.brandId = brandId;
 
     return await this.costModuleManagementService.createPaymentRequest(body);
+  }
+
+  @UseGuards(ApiKeyJwtStrategy)
+  @Get('/request/check-status/:taskId')
+  async checkStatus(@Req() req: any, @Param('taskId') taskId: string) {
+    return await this.costModuleManagementService.checkTransactionStatusWithRetry(
+      {
+        taskId: taskId,
+        attempt: 1,
+      },
+    );
   }
 }

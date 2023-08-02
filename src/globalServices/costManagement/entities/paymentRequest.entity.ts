@@ -16,8 +16,8 @@ export class PaymentRequest extends BaseEntity {
 
   @Column({
     type: 'decimal',
-    precision: 10,
-    scale: 2,
+    precision: 20,
+    scale: 20,
     nullable: true,
   })
   costAmountInToken: number;
@@ -25,7 +25,7 @@ export class PaymentRequest extends BaseEntity {
   @Column({
     type: 'decimal',
     precision: 10,
-    scale: 2,
+    scale: 5,
     nullable: true,
   })
   costAmountInDollar: number;
