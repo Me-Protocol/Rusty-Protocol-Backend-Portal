@@ -163,4 +163,27 @@ export class Brand extends BaseEntity {
 
   @OneToMany(() => CostCollection, (costCollection) => costCollection.brand)
   costCollections: CostCollection[];
+
+  @Column({
+    nullable: true,
+  })
+  stripeCustomerId: string;
+
+  @Column({
+    nullable: true,
+  })
+  stripeAccountId: string;
+
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0,
+  })
+  balance: number;
+
+  @Column({
+    nullable: true,
+  })
+  stripePaymentMethodId: string;
 }

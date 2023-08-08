@@ -31,9 +31,9 @@ import { BrandService } from './globalServices/brand/brand.service';
 import { AuthenticationModule } from './modules/authentication/module';
 import { AuthenticationController } from './modules/authentication/controller';
 import { AuthenticationService } from './modules/authentication/service';
-import { WalletService } from './modules/wallet/wallet.service';
-import { WalletController } from './modules/wallet/wallet.controller';
-import { WalletModule } from './modules/wallet/wallet.module';
+import { DFNSWalletService } from './modules/dfnsWalletModule/wallet.service';
+import { WalletController } from './modules/dfnsWalletModule/wallet.controller';
+import { WalletModule } from './modules/dfnsWalletModule/wallet.module';
 import { Wallet } from './globalServices/wallet/entities/wallet.entity';
 import { CategoryManagementController } from './modules/storeManagement/category/controller';
 import { CategoryManagementService } from './modules/storeManagement/category/service';
@@ -47,7 +47,6 @@ import { CustomerAccountManagementService } from './modules/accountManagement/cu
 import { BrandAccountManagementService } from './modules/accountManagement/brandAccountManagement/service';
 import { CustomerManagementController } from './modules/accountManagement/customerAccountManagement/controller';
 import { BrandManagementController } from './modules/accountManagement/brandAccountManagement/controller';
-import { PaymentModule } from './modules/payment/payment.module';
 import { Collection } from './globalServices/collections/entities/collection.entity';
 import { Variant } from './globalServices/product/entities/variants.entity';
 import { Offer } from './globalServices/offer/entities/offer.entity';
@@ -98,6 +97,10 @@ import { CostManagementController } from './modules/costModule/controller';
 import { CostModuleService } from './globalServices/costManagement/costModule.service';
 import { PaymentRequestService } from './globalServices/costManagement/paymentProcessors.service';
 import { CostModuleManagementService } from './modules/costModule/service';
+import { Transaction } from './globalServices/wallet/entities/transaction.entity';
+import { PaymentController } from './modules/paymentModule/payment.controller';
+import { PaymentService } from './modules/paymentModule/payment.service';
+import { WalletService } from './globalServices/wallet/wallet.service';
 
 @Module({
   imports: [
@@ -129,6 +132,7 @@ import { CostModuleManagementService } from './modules/costModule/service';
       CostBatch,
       CostCollection,
       PaymentRequest,
+      Transaction,
     ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
@@ -155,7 +159,6 @@ import { CostModuleManagementService } from './modules/costModule/service';
     SearchModule,
     AuthenticationModule,
     WalletModule,
-    PaymentModule,
     UploadModule,
     ScheduleModule.forRoot(),
   ],
@@ -177,6 +180,7 @@ import { CostModuleManagementService } from './modules/costModule/service';
     ApiKeyManagementController,
     OrderManagementController,
     CostManagementController,
+    PaymentController,
   ],
   providers: [
     ElasticIndex,
@@ -196,7 +200,7 @@ import { CostModuleManagementService } from './modules/costModule/service';
     CustomerService,
     BrandService,
     AuthenticationService,
-    WalletService,
+    DFNSWalletService,
     CategoryService,
     ProductService,
     CategoryManagementService,
@@ -224,6 +228,8 @@ import { CostModuleManagementService } from './modules/costModule/service';
     CostModuleService,
     PaymentRequestService,
     CostModuleManagementService,
+    PaymentService,
+    WalletService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

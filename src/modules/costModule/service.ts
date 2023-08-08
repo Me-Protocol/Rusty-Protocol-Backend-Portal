@@ -12,9 +12,17 @@ import retrieveCost from '@src/globalServices/costManagement/relayer-costgetter.
 import { GelatoRelay } from '@gelatonetwork/relay-sdk';
 import axios from 'axios';
 import { CostBatch } from '@src/globalServices/costManagement/entities/costBatch.entity';
+import { PaymentService } from '../paymentModule/payment.service';
+import { WalletService } from '@src/globalServices/wallet/wallet.service';
+import { TransactionsType } from '@src/utils/enums/Transactions';
 
 const maxAttempts = 1;
 const delayBetweenAttempts = 5000; // 5 seconds
+
+let amount = 50;
+
+// Convert the amount to cents
+amount = amount * 100;
 
 @Injectable()
 export class CostModuleManagementService {
@@ -22,6 +30,8 @@ export class CostModuleManagementService {
     private readonly costModuleService: CostModuleService,
     private readonly paymentRequestService: PaymentRequestService,
     private readonly brandService: BrandService,
+    private readonly paymentService: PaymentService,
+    private readonly walletService: WalletService,
   ) {}
 
   async checkTransactionStatusWithRetry({
@@ -229,7 +239,43 @@ export class CostModuleManagementService {
         0,
       );
 
+      let brand = await this.brandService.getBrandById(brandId);
+
+      if (brand.balance < totalCost) {
+        // try to charge brand account with 50 dollars
+        if (brand.stripePaymentMethodId) {
+          // charge brand account with 50 dollars
+
+          // Create a payment intent to charge the user's card
+          const paymentIntent =
+            await this.paymentService.createAutoCardChargePaymentIntent(
+              brand.stripePaymentMethodId,
+              amount,
+            );
+
+          // Confirm the payment intent (this will automatically attempt the charge on the user's card)
+          await this.paymentService.confirmPaymentIntent(paymentIntent.id);
+
+          // add brand balance
+
+          await this.walletService.addBrandBalance({
+            brand,
+            amount,
+            transactionType: TransactionsType.CREDIT,
+            narration: 'Cost Reimbursement',
+          });
+        }
+      }
+
       // Debit brand account with total cost
+      await this.walletService.minusBrandBalance({
+        brand,
+        amount: totalCost,
+        transactionType: TransactionsType.DEBIT,
+        narration: 'Cost Reimbursement',
+      });
+
+      brand = await this.brandService.getBrandById(brandId);
 
       // Create cost collection
       const costCollection = new CostCollection();
@@ -248,15 +294,62 @@ export class CostModuleManagementService {
 
       // Check if brand has enough balance to pay for cost next time
 
-      const hasEnoughBalance = true;
+      if (brand.balance < totalCost) {
+        // try to charge brand account with 50 dollars
+        if (brand.stripePaymentMethodId) {
+          // charge brand account with 50 dollars
 
-      // If not, send notification to brand admin
-      const brand = await this.brandService.getBrandById(brandId);
+          // Create a payment intent to charge the user's card
+          const paymentIntent =
+            await this.paymentService.createAutoCardChargePaymentIntent(
+              brand.stripePaymentMethodId,
+              amount,
+            );
 
-      if (hasEnoughBalance) {
-        brand.canPayCost = true;
+          // Confirm the payment intent (this will automatically attempt the charge on the user's card)
+          await this.paymentService.confirmPaymentIntent(paymentIntent.id);
 
-        await this.brandService.save(brand);
+          // add brand balance
+
+          await this.walletService.addBrandBalance({
+            brand,
+            amount,
+            transactionType: TransactionsType.CREDIT,
+            narration: 'Cost Reimbursement',
+          });
+        }
+      }
+    }
+
+    return true;
+  }
+
+  @Cron(
+    // every month
+    '0 0 1 * *',
+  )
+  async brandBalanceChecker() {
+    // Runs every month (Picks all brands, check balance, if balance is less than 100, send notification to brand admin)
+
+    const brands = await this.brandService.getAllBrands();
+
+    for (let index = 0; index < brands.length; index++) {
+      const brand = brands[index];
+
+      if (brand.stripePaymentMethodId) {
+        // charge brand account with 50 dollars
+
+        // Create a payment intent to charge the user's card
+        const paymentIntent =
+          await this.paymentService.createAutoCardChargePaymentIntent(
+            brand.stripePaymentMethodId,
+            amount,
+          );
+
+        // Confirm the payment intent (this will automatically attempt the charge on the user's card)
+        await this.paymentService.confirmPaymentIntent(paymentIntent.id);
+
+        return { message: 'Payment successful' };
       } else {
         brand.canPayCost = false;
 
@@ -265,10 +358,5 @@ export class CostModuleManagementService {
     }
 
     return true;
-  }
-
-  @Cron(CronExpression.EVERY_MINUTE)
-  async brandBalanceChecker() {
-    // Runs every minute (Picks all brands that has canPayCost as false, check if they have enough balance to pay for cost) update brand.canPayCost
   }
 }
