@@ -10,6 +10,7 @@ import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiKeyManagementService } from './service';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
+import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
 
 @ApiTags('API Key')
 @UseInterceptors(ResponseInterceptor)
@@ -33,5 +34,14 @@ export class ApiKeyManagementController {
     const brandId = req.user.brand.id;
 
     return await this.apiKeyManagementService.getApiKeysByBrandId(brandId);
+  }
+
+  @UseGuards(ApiKeyJwtStrategy)
+  @Get('/get-external-keys')
+  async getMagicKey() {
+    return {
+      magicKey: process.env.MAGIC_KEY,
+      rpcPolygonKey: process.env.RPC_POLYGON_KEY,
+    };
   }
 }

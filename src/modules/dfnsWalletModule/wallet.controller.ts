@@ -9,7 +9,7 @@ import {
   Query,
   UseInterceptors,
 } from '@nestjs/common';
-import { WalletService } from './wallet.service';
+import { DFNSWalletService } from './wallet.service';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags } from '@nestjs/swagger';
@@ -18,7 +18,7 @@ ApiTags('Wallet');
 @UseInterceptors(ResponseInterceptor)
 @Controller('wallet')
 export class WalletController {
-  constructor(private readonly walletService: WalletService) {}
+  constructor(private readonly walletService: DFNSWalletService) {}
 
   @UseGuards(AuthGuard())
   @Get('')

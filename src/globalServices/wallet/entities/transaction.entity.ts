@@ -3,25 +3,29 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from '@src/common/entities/base.entity';
 import { StatusType, TransactionsType } from '@src/utils/enums/Transactions';
-import { PaymentEntity } from './payment.entity';
 import { User } from '@src/globalServices/user/entities/user.entity';
+import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 // import { StatusType, TransactionType } from '@src/utils/enums';
 
 @Entity('transaction')
-export class TransactionEntity extends BaseEntity {
-  @Column()
+export class Transaction extends BaseEntity {
+  @Column({
+    nullable: true,
+  })
   userId: string;
 
   @ManyToOne(() => User, (user) => user.id)
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @Column()
-  walletId: string;
+  @Column({
+    nullable: true,
+  })
+  brandId: string;
 
-  @ManyToOne(() => PaymentEntity, (wallet) => wallet.id)
-  @JoinColumn({ name: 'walletId' })
-  wallet: PaymentEntity;
+  @ManyToOne(() => Brand, (brand) => brand.id)
+  @JoinColumn({ name: 'brandId' })
+  brand: Brand;
 
   @Column({
     type: 'enum',
@@ -64,4 +68,7 @@ export class TransactionEntity extends BaseEntity {
     default: 'Stripe',
   })
   paymentMethod: string;
+
+  @Column()
+  narration: string;
 }

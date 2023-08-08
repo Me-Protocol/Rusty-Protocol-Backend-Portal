@@ -16,6 +16,8 @@ import { Follow } from '@src/globalServices/follow/entities/follow.entity';
 import { Reward } from '@src/globalServices/reward/entities/reward.entity';
 import { Task } from '@src/globalServices/task/entities/task.entity';
 import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
+import { PaymentRequest } from '@src/globalServices/costManagement/entities/paymentRequest.entity';
+import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -150,4 +152,38 @@ export class Brand extends BaseEntity {
 
   @OneToMany(() => ApiKey, (api_key) => api_key.brand)
   apiKeys: ApiKey[];
+
+  @OneToMany(() => PaymentRequest, (paymentRequest) => paymentRequest.brand)
+  paymentRequests: PaymentRequest[];
+
+  @Column({
+    default: false,
+  })
+  canPayCost: boolean;
+
+  @OneToMany(() => CostCollection, (costCollection) => costCollection.brand)
+  costCollections: CostCollection[];
+
+  @Column({
+    nullable: true,
+  })
+  stripeCustomerId: string;
+
+  @Column({
+    nullable: true,
+  })
+  stripeAccountId: string;
+
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0,
+  })
+  balance: number;
+
+  @Column({
+    nullable: true,
+  })
+  stripePaymentMethodId: string;
 }

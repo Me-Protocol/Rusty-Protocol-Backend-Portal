@@ -27,7 +27,7 @@ export class ApiKeyJwtStrategy implements CanActivate {
       throw new UnauthorizedException('Invalid api key or api key is expired');
     }
 
-    const brand = this.brandService.getBrandById(apiKey.brandId);
+    const brand = await this.brandService.getBrandById(apiKey.brandId);
 
     if (!brand) {
       throw new UnauthorizedException('Invalid api key or api key is expired');
