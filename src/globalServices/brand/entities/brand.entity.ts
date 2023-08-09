@@ -18,6 +18,7 @@ import { Task } from '@src/globalServices/task/entities/task.entity';
 import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
 import { PaymentRequest } from '@src/globalServices/costManagement/entities/paymentRequest.entity';
 import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection';
+import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.entity';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -161,29 +162,14 @@ export class Brand extends BaseEntity {
   })
   canPayCost: boolean;
 
+  @Column({
+    default: false,
+  })
+  canPayCost_inApp: boolean;
+
   @OneToMany(() => CostCollection, (costCollection) => costCollection.brand)
   costCollections: CostCollection[];
 
-  @Column({
-    nullable: true,
-  })
-  stripeCustomerId: string;
-
-  @Column({
-    nullable: true,
-  })
-  stripeAccountId: string;
-
-  @Column({
-    type: 'decimal',
-    precision: 10,
-    scale: 2,
-    default: 0,
-  })
-  balance: number;
-
-  @Column({
-    nullable: true,
-  })
-  stripePaymentMethodId: string;
+  @OneToOne(() => FiatWallet, (wallet) => wallet.brand)
+  fiatWallet: FiatWallet;
 }

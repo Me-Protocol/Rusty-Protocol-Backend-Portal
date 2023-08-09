@@ -15,7 +15,7 @@ export class CostModuleService {
     private readonly costCollectionRepo: Repository<CostCollection>,
   ) {}
 
-  async createCostBatch(costBatch: CostBatch) {
+  async save(costBatch: CostBatch) {
     return await this.costBatchRepo.save(costBatch);
   }
 

@@ -31,10 +31,7 @@ import { BrandService } from './globalServices/brand/brand.service';
 import { AuthenticationModule } from './modules/authentication/module';
 import { AuthenticationController } from './modules/authentication/controller';
 import { AuthenticationService } from './modules/authentication/service';
-import { DFNSWalletService } from './modules/dfnsWalletModule/wallet.service';
-import { WalletController } from './modules/dfnsWalletModule/wallet.controller';
-import { WalletModule } from './modules/dfnsWalletModule/wallet.module';
-import { Wallet } from './globalServices/wallet/entities/wallet.entity';
+import { FiatWallet } from './globalServices/fiatWallet/entities/fiatWallet.entity';
 import { CategoryManagementController } from './modules/storeManagement/category/controller';
 import { CategoryManagementService } from './modules/storeManagement/category/service';
 import { CategoryService } from './globalServices/category/category.service';
@@ -97,10 +94,13 @@ import { CostManagementController } from './modules/costModule/controller';
 import { CostModuleService } from './globalServices/costManagement/costModule.service';
 import { PaymentRequestService } from './globalServices/costManagement/paymentProcessors.service';
 import { CostModuleManagementService } from './modules/costModule/service';
-import { Transaction } from './globalServices/wallet/entities/transaction.entity';
-import { PaymentController } from './modules/paymentModule/payment.controller';
-import { PaymentService } from './modules/paymentModule/payment.service';
-import { WalletService } from './globalServices/wallet/wallet.service';
+import { Transaction } from './globalServices/fiatWallet/entities/transaction.entity';
+import { PaymentService } from './globalServices/fiatWallet/payment.service';
+import { WalletService } from './globalServices/fiatWallet/wallet.service';
+import { PaymentModuleService } from './modules/paymentModule/service';
+import { PaymentMethod } from './globalServices/fiatWallet/entities/paymentMethod';
+import { PaymentModuleController } from './modules/paymentModule/controller';
+import { InAppApiKeyJwtStrategy } from './middlewares/inapp-api-jwt-strategy.middleware';
 
 @Module({
   imports: [
@@ -111,7 +111,7 @@ import { WalletService } from './globalServices/wallet/wallet.service';
       Brand,
       Category,
       Device,
-      Wallet,
+      FiatWallet,
       Product,
       ProductImage,
       Collection,
@@ -133,6 +133,7 @@ import { WalletService } from './globalServices/wallet/wallet.service';
       CostCollection,
       PaymentRequest,
       Transaction,
+      PaymentMethod,
     ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
@@ -158,7 +159,6 @@ import { WalletService } from './globalServices/wallet/wallet.service';
     SmsModule,
     SearchModule,
     AuthenticationModule,
-    WalletModule,
     UploadModule,
     ScheduleModule.forRoot(),
   ],
@@ -166,7 +166,6 @@ import { WalletService } from './globalServices/wallet/wallet.service';
     AppController,
     SearchController,
     AuthenticationController,
-    WalletController,
     CategoryManagementController,
     ProductManagementController,
     CustomerManagementController,
@@ -180,7 +179,7 @@ import { WalletService } from './globalServices/wallet/wallet.service';
     ApiKeyManagementController,
     OrderManagementController,
     CostManagementController,
-    PaymentController,
+    PaymentModuleController,
   ],
   providers: [
     ElasticIndex,
@@ -200,7 +199,6 @@ import { WalletService } from './globalServices/wallet/wallet.service';
     CustomerService,
     BrandService,
     AuthenticationService,
-    DFNSWalletService,
     CategoryService,
     ProductService,
     CategoryManagementService,
@@ -230,6 +228,8 @@ import { WalletService } from './globalServices/wallet/wallet.service';
     CostModuleManagementService,
     PaymentService,
     WalletService,
+    PaymentModuleService,
+    InAppApiKeyJwtStrategy,
   ],
   exports: [JwtStrategy, PassportModule],
 })

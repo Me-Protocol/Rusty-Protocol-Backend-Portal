@@ -11,18 +11,22 @@ import { supportedNetworks } from '@src/globalServices/costManagement/symbol-fin
 import retrieveCost from '@src/globalServices/costManagement/relayer-costgetter.service';
 import { GelatoRelay } from '@gelatonetwork/relay-sdk';
 import axios from 'axios';
-import { CostBatch } from '@src/globalServices/costManagement/entities/costBatch.entity';
-import { PaymentService } from '../paymentModule/payment.service';
-import { WalletService } from '@src/globalServices/wallet/wallet.service';
+import { PaymentService } from '../../globalServices/fiatWallet/payment.service';
+import { WalletService } from '@src/globalServices/fiatWallet/wallet.service';
 import { TransactionsType } from '@src/utils/enums/Transactions';
-
-const maxAttempts = 1;
-const delayBetweenAttempts = 5000; // 5 seconds
-
-let amount = 50;
+import { Brand } from '@src/globalServices/brand/entities/brand.entity';
+import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.entity';
+import { PaymentOrigin } from '@src/utils/enums/PaymentOrigin';
 
 // Convert the amount to cents
-amount = amount * 100;
+// amount = amount * 100;
+
+const minimumBalanceApi = 500;
+const minimumBalanceInApp = 100;
+const percentageDiff = 4;
+
+let amount = (minimumBalanceApi + minimumBalanceInApp) * percentageDiff;
+console.log(amount);
 
 @Injectable()
 export class CostModuleManagementService {
@@ -53,14 +57,42 @@ export class CostModuleManagementService {
     }
   }
 
-  async createPaymentRequest(body: PaymentRequestDto) {
+  async createPaymentRequestApi(body: PaymentRequestDto) {
     try {
       const brand = await this.brandService.getBrandById(body.brandId);
+      const wallet = await this.walletService.getWalletByBrandId(body.brandId);
 
-      if (!brand.canPayCost) {
+      if (!brand.canPayCost || wallet.balance < minimumBalanceApi) {
         throw new HttpException("Brand can't pay cost", 400, {});
       }
 
+      return await this.createPaymentRequest(body, PaymentOrigin.API);
+
+      // Create payment request
+    } catch (error) {
+      throw new HttpException(error.message, 400, {});
+    }
+  }
+
+  async createPaymentRequestInApp(body: PaymentRequestDto) {
+    try {
+      const brand = await this.brandService.getBrandById(body.brandId);
+      const wallet = await this.walletService.getWalletByBrandId(body.brandId);
+
+      if (!brand.canPayCost_inApp || wallet.balance < minimumBalanceInApp) {
+        throw new HttpException("Brand can't pay cost", 400, {});
+      }
+
+      return await this.createPaymentRequest(body, PaymentOrigin.IN_APP);
+
+      // Create payment request
+    } catch (error) {
+      throw new HttpException(error.message, 400, {});
+    }
+  }
+
+  async createPaymentRequest(body: PaymentRequestDto, origin: PaymentOrigin) {
+    try {
       // check if network is supported
       const supportedNetworksArray = Object.values(supportedNetworks);
 
@@ -80,6 +112,7 @@ export class CostModuleManagementService {
       req.data = body.data;
       req.signature = body.signature;
       req.tnxType = body.tnxType;
+      req.origin = origin;
 
       if (body.tnxType === PaymentRequestTnxType.RELAYER) {
         // Query the relayer processor
@@ -108,6 +141,9 @@ export class CostModuleManagementService {
           attempt: 1,
         });
 
+        req.sourceReference = relayResponse.taskId;
+        await this.paymentRequestService.save(req);
+
         if (status === 'CheckPending') {
           return {
             success: true,
@@ -117,9 +153,6 @@ export class CostModuleManagementService {
             taskId: relayResponse.taskId,
           };
         }
-
-        req.sourceReference = relayResponse.taskId;
-        await this.paymentRequestService.save(req);
 
         return {
           success: true,
@@ -161,51 +194,51 @@ export class CostModuleManagementService {
           activeBatch.id,
         );
 
-      for (let index = 0; index < requests.length; index++) {
-        const request = requests[index];
+      if (requests.length !== 0) {
+        for (let index = 0; index < requests.length; index++) {
+          const request = requests[index];
 
-        if (request.tnxType === PaymentRequestTnxType.RELAYER) {
-          // Query the relayer processor
+          if (request.tnxType === PaymentRequestTnxType.RELAYER) {
+            // Query the relayer processor
 
-          const { totalCost, totalCostInDollar, tokenSymbol } =
-            await retrieveCost(
-              request.sourceReference,
-              request.relayerType,
-              request.network,
-            );
+            const { totalCost, totalCostInDollar, tokenSymbol } =
+              await retrieveCost(
+                request.sourceReference,
+                request.relayerType,
+                request.network,
+              );
 
-          request.costAmountInToken = totalCost;
-          request.costAmountInDollar = totalCostInDollar;
-          request.costCurrency = 'dollar';
-          request.tokenSymbol = tokenSymbol;
-        } else {
-          // Query the runtime processor
-          request.costAmountInToken = 100;
-          request.costAmountInDollar = 100;
-          request.costCurrency = 'dollar';
-          request.tokenSymbol = 'MATIC';
+            request.costAmountInToken = totalCost;
+            request.costAmountInDollar = totalCostInDollar;
+            request.costCurrency = 'dollar';
+            request.tokenSymbol = tokenSymbol;
+          } else {
+            // Query the runtime processor
+            request.costAmountInToken = 100;
+            request.costAmountInDollar = 100;
+            request.costCurrency = 'dollar';
+            request.tokenSymbol = 'MATIC';
+          }
+
+          await this.paymentRequestService.save(request);
         }
 
-        await this.paymentRequestService.save(request);
+        activeBatch.isClosed = true;
+        await this.costModuleService.save(activeBatch);
+
+        await this.costModuleService.getOrCreateActiveCostBatch();
       }
-
-      activeBatch.isClosed = true;
-      await this.costModuleService.createCostBatch(activeBatch);
-
-      const newBatch = new CostBatch();
-
-      await this.costModuleService.createCostBatch(newBatch);
 
       return true;
     } catch (error) {
-      console.log(error);
+      console.log(error.message);
       return false;
     }
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async costReimburser() {
-    // Runs every minute (Picks all closed batchs, picks all the requests that has not been paid, aggregate the cost and send to the processor to get cost) update requests
+    // Runs every minute (Picks all closed batchs, picks all the requests that has not been paid,agrregate the cos, debit brands balance and reimburse us if necessary)
 
     const singleClosedBatch =
       await this.costModuleService.getSingleClosedCostBatch();
@@ -240,31 +273,11 @@ export class CostModuleManagementService {
       );
 
       let brand = await this.brandService.getBrandById(brandId);
+      let wallet = await this.walletService.getWalletByBrandId(brandId);
 
-      if (brand.balance < totalCost) {
-        // try to charge brand account with 50 dollars
-        if (brand.stripePaymentMethodId) {
-          // charge brand account with 50 dollars
-
-          // Create a payment intent to charge the user's card
-          const paymentIntent =
-            await this.paymentService.createAutoCardChargePaymentIntent(
-              brand.stripePaymentMethodId,
-              amount,
-            );
-
-          // Confirm the payment intent (this will automatically attempt the charge on the user's card)
-          await this.paymentService.confirmPaymentIntent(paymentIntent.id);
-
-          // add brand balance
-
-          await this.walletService.addBrandBalance({
-            brand,
-            amount,
-            transactionType: TransactionsType.CREDIT,
-            narration: 'Cost Reimbursement',
-          });
-        }
+      if (wallet.balance < totalCost) {
+        // try to fund brand account
+        await this.fundBrandAccountForCostCollection(wallet, brand);
       }
 
       // Debit brand account with total cost
@@ -276,6 +289,7 @@ export class CostModuleManagementService {
       });
 
       brand = await this.brandService.getBrandById(brandId);
+      wallet = await this.walletService.getWalletByBrandId(brandId);
 
       // Create cost collection
       const costCollection = new CostCollection();
@@ -294,30 +308,16 @@ export class CostModuleManagementService {
 
       // Check if brand has enough balance to pay for cost next time
 
-      if (brand.balance < totalCost) {
-        // try to charge brand account with 50 dollars
-        if (brand.stripePaymentMethodId) {
-          // charge brand account with 50 dollars
+      // 4 * minimumBalance
+      const minimumBalanceForNextBatch =
+        (minimumBalanceApi + minimumBalanceInApp) * 4;
 
-          // Create a payment intent to charge the user's card
-          const paymentIntent =
-            await this.paymentService.createAutoCardChargePaymentIntent(
-              brand.stripePaymentMethodId,
-              amount,
-            );
+      if (wallet.balance < minimumBalanceForNextBatch) {
+        await this.fundBrandAccountForCostCollection(wallet, brand);
+      } else {
+        brand.canPayCost = true;
 
-          // Confirm the payment intent (this will automatically attempt the charge on the user's card)
-          await this.paymentService.confirmPaymentIntent(paymentIntent.id);
-
-          // add brand balance
-
-          await this.walletService.addBrandBalance({
-            brand,
-            amount,
-            transactionType: TransactionsType.CREDIT,
-            narration: 'Cost Reimbursement',
-          });
-        }
+        await this.brandService.save(brand);
       }
     }
 
@@ -325,38 +325,80 @@ export class CostModuleManagementService {
   }
 
   @Cron(
-    // every month
-    '0 0 1 * *',
+    // every 30 days
+    '0 0 1 */30 *',
   )
-  async brandBalanceChecker() {
-    // Runs every month (Picks all brands, check balance, if balance is less than 100, send notification to brand admin)
-
+  async brandBalanceAutoTopup() {
     const brands = await this.brandService.getAllBrands();
 
     for (let index = 0; index < brands.length; index++) {
       const brand = brands[index];
+      const wallet = await this.walletService.getWalletByBrandId(brand.id);
 
-      if (brand.stripePaymentMethodId) {
-        // charge brand account with 50 dollars
+      try {
+        this.fundBrandAccountForCostCollection(wallet, brand);
+      } catch (error) {
+        console.log(error);
+      }
+    }
 
+    return true;
+  }
+
+  async fundBrandAccountForCostCollection(wallet: FiatWallet, brand: Brand) {
+    // try to charge brand card
+
+    const defaultPaymentMethod =
+      await this.paymentService.getDefaultPaymentMethod(wallet.id);
+
+    if (defaultPaymentMethod.stripePaymentMethodId) {
+      try {
         // Create a payment intent to charge the user's card
         const paymentIntent =
           await this.paymentService.createAutoCardChargePaymentIntent(
-            brand.stripePaymentMethodId,
+            defaultPaymentMethod.stripePaymentMethodId,
             amount,
+            wallet.stripeCustomerId,
           );
 
         // Confirm the payment intent (this will automatically attempt the charge on the user's card)
         await this.paymentService.confirmPaymentIntent(paymentIntent.id);
 
-        return { message: 'Payment successful' };
-      } else {
+        // add to brand balance
+        await this.walletService.addBrandBalance({
+          brand,
+          amount,
+          transactionType: TransactionsType.CREDIT,
+          narration: 'Cost Reimbursement',
+        });
+
+        brand.canPayCost = true;
+        brand.canPayCost_inApp = true;
+
+        await this.brandService.save(brand);
+      } catch (error) {
         brand.canPayCost = false;
+        brand.canPayCost_inApp = false;
 
         await this.brandService.save(brand);
       }
-    }
+    } else {
+      brand.canPayCost = false;
+      brand.canPayCost_inApp = false;
 
-    return true;
+      await this.brandService.save(brand);
+    }
+  }
+
+  async manualTopUp(brandId: string) {
+    const brand = await this.brandService.getBrandById(brandId);
+    const wallet = await this.walletService.getWalletByBrandId(brandId);
+
+    try {
+      return await this.fundBrandAccountForCostCollection(wallet, brand);
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, 400, {});
+    }
   }
 }

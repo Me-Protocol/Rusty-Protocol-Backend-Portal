@@ -13,7 +13,11 @@ import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
 import { CostModuleManagementService } from './service';
-import { PaymentRequestDto } from './dto/PaymentRequestDto.dto';
+import {
+  PaymentRequestDto,
+  PaymentRequestInAppDto,
+} from './dto/PaymentRequestDto.dto';
+import { InAppApiKeyJwtStrategy } from '@src/middlewares/inapp-api-jwt-strategy.middleware';
 
 @ApiTags('Cost Module')
 @UseInterceptors(ResponseInterceptor)
@@ -32,7 +36,17 @@ export class CostManagementController {
     const brandId = req.brand.id;
     body.brandId = brandId;
 
-    return await this.costModuleManagementService.createPaymentRequest(body);
+    return await this.costModuleManagementService.createPaymentRequestApi(body);
+  }
+
+  @UseGuards(InAppApiKeyJwtStrategy)
+  @Post('/request/in-app')
+  async createPaymentRequestInApp(
+    @Body(ValidationPipe) body: PaymentRequestInAppDto,
+  ) {
+    return await this.costModuleManagementService.createPaymentRequestInApp(
+      body,
+    );
   }
 
   @UseGuards(ApiKeyJwtStrategy)

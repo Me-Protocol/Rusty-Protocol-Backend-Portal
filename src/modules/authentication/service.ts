@@ -25,6 +25,7 @@ import { CustomerService } from '@src/globalServices/customer/customer.service';
 import { BrandService } from '@src/globalServices/brand/brand.service';
 import { UserAppType } from '@src/utils/enums/UserAppType';
 import { Role } from '@src/utils/enums/Role';
+import { WalletService } from '@src/globalServices/fiatWallet/wallet.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -43,6 +44,7 @@ export class AuthenticationService {
     private userService: UserService,
     private customerService: CustomerService,
     private brandService: BrandService,
+    private walletService: WalletService,
   ) {}
 
   // Signs a token
@@ -270,7 +272,17 @@ export class AuthenticationService {
       await this.userService.saveUser(user);
 
       if (!is2Fa) {
-        // TODO CREATE WALLET
+        if (user.userType === UserAppType.BRAND) {
+          const brand = await this.brandService.getBrandByUserId(user.id);
+
+          await this.walletService.createWallet({
+            brand,
+          });
+        }
+
+        await this.walletService.createWallet({
+          user,
+        });
       }
 
       const token = await this.registerDevice(user, userAgent, clientIp);
@@ -391,7 +403,19 @@ export class AuthenticationService {
       await this.userService.saveUser(user);
 
       if (!is2Fa) {
-        // TODO CREATE WALLET
+        if (!is2Fa) {
+          if (user.userType === UserAppType.BRAND) {
+            const brand = await this.brandService.getBrandByUserId(user.id);
+
+            await this.walletService.createWallet({
+              brand,
+            });
+          }
+
+          await this.walletService.createWallet({
+            user,
+          });
+        }
       }
 
       const token = await this.registerDevice(user, userAgent, clientIp);
@@ -829,7 +853,17 @@ export class AuthenticationService {
 
     await this.userService.saveUser(savedUser);
 
-    // TODO CREATE WALLET
+    if (userType === UserAppType.BRAND) {
+      const brand = await this.brandService.getBrandByUserId(user.id);
+
+      await this.walletService.createWallet({
+        brand,
+      });
+    }
+
+    await this.walletService.createWallet({
+      user: savedUser,
+    });
 
     await this.mailService.sendMail({
       to: email,

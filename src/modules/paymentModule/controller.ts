@@ -9,16 +9,16 @@ import {
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { LinkCardDto } from './dto/LinkCardDto.dto';
-import { PaymentService } from './payment.service';
 import { ApiTags } from '@nestjs/swagger';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
+import { PaymentModuleService } from './service';
 
 @ApiTags('Payment')
 @UseInterceptors(ResponseInterceptor)
 @Controller('payment')
-export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) {}
+export class PaymentModuleController {
+  constructor(private readonly paymentService: PaymentModuleService) {}
 
   @UseGuards(BrandJwtStrategy)
   @Post('add-payment-method')
@@ -30,7 +30,7 @@ export class PaymentController {
 
     return await this.paymentService.savePaymentMethodBrand(
       body.paymentMethodId,
-      brand,
+      brand.id,
     );
   }
 }

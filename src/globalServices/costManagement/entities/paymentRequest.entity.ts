@@ -5,6 +5,7 @@ import { Entity, Column, ManyToOne } from 'typeorm';
 import { CostBatch } from './costBatch.entity';
 import { supportedNetworks } from '../symbol-finder.service';
 import { CallWithERC2771Struct } from '@gelatonetwork/relay-sdk/dist/lib/erc2771/types';
+import { PaymentOrigin } from '@src/utils/enums/PaymentOrigin';
 
 @Entity('payment_request')
 export class PaymentRequest extends BaseEntity {
@@ -73,4 +74,11 @@ export class PaymentRequest extends BaseEntity {
 
   @Column()
   signature: string;
+
+  @Column({
+    type: 'enum',
+    enum: PaymentOrigin,
+    default: PaymentOrigin.API,
+  })
+  origin: PaymentOrigin;
 }
