@@ -22,4 +22,9 @@ export class ApiKey extends BaseEntity {
 
   @ManyToOne(() => Brand, (brand) => brand.apiKeys)
   brand: Brand;
+
+  @Column({
+    default: 'Default App',
+  })
+  name: string;
 }

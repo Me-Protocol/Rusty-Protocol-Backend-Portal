@@ -1,11 +1,11 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { PaymentService } from '@src/globalServices/fiatWallet/payment.service';
-import { WalletService } from '@src/globalServices/fiatWallet/wallet.service';
+import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 
 @Injectable()
 export class PaymentModuleService {
   constructor(
-    private readonly walletService: WalletService,
+    private readonly walletService: FiatWalletService,
     private readonly paymentService: PaymentService,
   ) {}
 

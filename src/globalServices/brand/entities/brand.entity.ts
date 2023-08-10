@@ -19,6 +19,7 @@ import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
 import { PaymentRequest } from '@src/globalServices/costManagement/entities/paymentRequest.entity';
 import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection';
 import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.entity';
+import { BrandSubServices } from '@src/utils/enums/BrandSubServices';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -172,4 +173,18 @@ export class Brand extends BaseEntity {
 
   @OneToOne(() => FiatWallet, (wallet) => wallet.brand)
   fiatWallet: FiatWallet;
+
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0,
+  })
+  autoTopupAmount: number;
+
+  @Column('text', {
+    nullable: true,
+    array: true,
+  })
+  subscribedServices: BrandSubServices[];
 }

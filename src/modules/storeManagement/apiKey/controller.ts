@@ -5,12 +5,15 @@ import {
   Post,
   Get,
   Req,
+  ValidationPipe,
+  Body,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiKeyManagementService } from './service';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
+import { CreateApiDto } from './dto/createApiDto';
 
 @ApiTags('API Key')
 @UseInterceptors(ResponseInterceptor)
@@ -22,10 +25,13 @@ export class ApiKeyManagementController {
 
   @UseGuards(BrandJwtStrategy)
   @Post()
-  async createApiKey(@Req() req: any) {
+  async createApiKey(
+    @Req() req: any,
+    @Body(ValidationPipe) body: CreateApiDto,
+  ) {
     const brandId = req.user.brand.id;
 
-    return await this.apiKeyManagementService.createApiKey(brandId);
+    return await this.apiKeyManagementService.createApiKey(brandId, body.name);
   }
 
   @UseGuards(BrandJwtStrategy)

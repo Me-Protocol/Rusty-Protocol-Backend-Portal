@@ -1,6 +1,6 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { CostModuleService } from '@src/globalServices/costManagement/costModule.service';
-import { PaymentRequestService } from '@src/globalServices/costManagement/paymentProcessors.service';
+import { PaymentRequestService } from '@src/globalServices/costManagement/paymentRequestProcessors.service';
 import { PaymentRequestDto } from './dto/PaymentRequestDto.dto';
 import { PaymentRequestTnxType } from '@src/utils/enums/PaymentRequestTnxType';
 import { PaymentRequest } from '@src/globalServices/costManagement/entities/paymentRequest.entity';
@@ -12,21 +12,11 @@ import retrieveCost from '@src/globalServices/costManagement/relayer-costgetter.
 import { GelatoRelay } from '@gelatonetwork/relay-sdk';
 import axios from 'axios';
 import { PaymentService } from '../../globalServices/fiatWallet/payment.service';
-import { WalletService } from '@src/globalServices/fiatWallet/wallet.service';
 import { TransactionsType } from '@src/utils/enums/Transactions';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
-import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.entity';
 import { PaymentOrigin } from '@src/utils/enums/PaymentOrigin';
-
-// Convert the amount to cents
-// amount = amount * 100;
-
-const minimumBalanceApi = 500;
-const minimumBalanceInApp = 100;
-const percentageDiff = 4;
-
-let amount = (minimumBalanceApi + minimumBalanceInApp) * percentageDiff;
-console.log(amount);
+import { SettingsService } from '@src/globalServices/settings/settings.service';
+import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 
 @Injectable()
 export class CostModuleManagementService {
@@ -35,8 +25,17 @@ export class CostModuleManagementService {
     private readonly paymentRequestService: PaymentRequestService,
     private readonly brandService: BrandService,
     private readonly paymentService: PaymentService,
-    private readonly walletService: WalletService,
+    private readonly walletService: FiatWalletService,
+    private readonly settingsService: SettingsService,
   ) {}
+
+  async setAutoTopUpAmount(amount: number, brand: Brand) {
+    brand.autoTopupAmount = amount;
+
+    await this.brandService.save(brand);
+
+    return 'ok';
+  }
 
   async checkTransactionStatusWithRetry({
     attempt,
@@ -59,6 +58,8 @@ export class CostModuleManagementService {
 
   async createPaymentRequestApi(body: PaymentRequestDto) {
     try {
+      const { minimumBalanceApi } = this.settingsService.getCostSettings();
+
       const brand = await this.brandService.getBrandById(body.brandId);
       const wallet = await this.walletService.getWalletByBrandId(body.brandId);
 
@@ -76,6 +77,8 @@ export class CostModuleManagementService {
 
   async createPaymentRequestInApp(body: PaymentRequestDto) {
     try {
+      const { minimumBalanceInApp } = this.settingsService.getCostSettings();
+
       const brand = await this.brandService.getBrandById(body.brandId);
       const wallet = await this.walletService.getWalletByBrandId(body.brandId);
 
@@ -272,23 +275,16 @@ export class CostModuleManagementService {
         0,
       );
 
-      let brand = await this.brandService.getBrandById(brandId);
       let wallet = await this.walletService.getWalletByBrandId(brandId);
-
-      if (wallet.balance < totalCost) {
-        // try to fund brand account
-        await this.fundBrandAccountForCostCollection(wallet, brand);
-      }
 
       // Debit brand account with total cost
       await this.walletService.minusBrandBalance({
-        brand,
+        fiatWallet: wallet,
         amount: totalCost,
         transactionType: TransactionsType.DEBIT,
         narration: 'Cost Reimbursement',
       });
 
-      brand = await this.brandService.getBrandById(brandId);
       wallet = await this.walletService.getWalletByBrandId(brandId);
 
       // Create cost collection
@@ -305,29 +301,12 @@ export class CostModuleManagementService {
 
         await this.paymentRequestService.save(request);
       }
-
-      // Check if brand has enough balance to pay for cost next time
-
-      // 4 * minimumBalance
-      const minimumBalanceForNextBatch =
-        (minimumBalanceApi + minimumBalanceInApp) * 4;
-
-      if (wallet.balance < minimumBalanceForNextBatch) {
-        await this.fundBrandAccountForCostCollection(wallet, brand);
-      } else {
-        brand.canPayCost = true;
-
-        await this.brandService.save(brand);
-      }
     }
 
     return true;
   }
 
-  @Cron(
-    // every 30 days
-    '0 0 1 */30 *',
-  )
+  @Cron('0 0 1 */30 *')
   async brandBalanceAutoTopup() {
     const brands = await this.brandService.getAllBrands();
 
@@ -336,7 +315,10 @@ export class CostModuleManagementService {
       const wallet = await this.walletService.getWalletByBrandId(brand.id);
 
       try {
-        this.fundBrandAccountForCostCollection(wallet, brand);
+        await this.walletService.fundBrandAccountForCostCollection(
+          wallet,
+          brand,
+        );
       } catch (error) {
         console.log(error);
       }
@@ -345,57 +327,26 @@ export class CostModuleManagementService {
     return true;
   }
 
-  async fundBrandAccountForCostCollection(wallet: FiatWallet, brand: Brand) {
-    // try to charge brand card
-
-    const defaultPaymentMethod =
-      await this.paymentService.getDefaultPaymentMethod(wallet.id);
-
-    if (defaultPaymentMethod.stripePaymentMethodId) {
-      try {
-        // Create a payment intent to charge the user's card
-        const paymentIntent =
-          await this.paymentService.createAutoCardChargePaymentIntent(
-            defaultPaymentMethod.stripePaymentMethodId,
-            amount,
-            wallet.stripeCustomerId,
-          );
-
-        // Confirm the payment intent (this will automatically attempt the charge on the user's card)
-        await this.paymentService.confirmPaymentIntent(paymentIntent.id);
-
-        // add to brand balance
-        await this.walletService.addBrandBalance({
-          brand,
-          amount,
-          transactionType: TransactionsType.CREDIT,
-          narration: 'Cost Reimbursement',
-        });
-
-        brand.canPayCost = true;
-        brand.canPayCost_inApp = true;
-
-        await this.brandService.save(brand);
-      } catch (error) {
-        brand.canPayCost = false;
-        brand.canPayCost_inApp = false;
-
-        await this.brandService.save(brand);
-      }
-    } else {
-      brand.canPayCost = false;
-      brand.canPayCost_inApp = false;
-
-      await this.brandService.save(brand);
-    }
-  }
-
   async manualTopUp(brandId: string) {
     const brand = await this.brandService.getBrandById(brandId);
     const wallet = await this.walletService.getWalletByBrandId(brandId);
 
+    const defaultPaymentMethod =
+      await this.paymentService.getDefaultPaymentMethod(wallet.id);
+
     try {
-      return await this.fundBrandAccountForCostCollection(wallet, brand);
+      if (!defaultPaymentMethod?.stripePaymentMethodId) {
+        throw new HttpException('Please link your card first.', 400, {});
+      }
+
+      if (!brand?.autoTopupAmount) {
+        throw new HttpException('No auto topup amount set yet.', 400, {});
+      }
+
+      return await this.walletService.fundBrandAccountForCostCollection(
+        wallet,
+        brand,
+      );
     } catch (error) {
       console.log(error);
       throw new HttpException(error.message, 400, {});

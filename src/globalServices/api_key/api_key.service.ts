@@ -17,12 +17,13 @@ export class ApiKeyService {
     );
   }
 
-  async createApiKey(brandId: string): Promise<ApiKey> {
+  async createApiKey(brandId: string, name: string): Promise<ApiKey> {
     const apiKey = new ApiKey();
 
     apiKey.brandId = brandId;
     apiKey.publicKey = this.generateHash();
     apiKey.privateKey = this.generateHash();
+    apiKey.name = name;
 
     return await this.apiKeyRepository.save(apiKey);
   }

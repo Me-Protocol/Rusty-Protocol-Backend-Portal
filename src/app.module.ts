@@ -92,15 +92,17 @@ import { CostCollection } from './globalServices/costManagement/entities/costCol
 import { PaymentRequest } from './globalServices/costManagement/entities/paymentRequest.entity';
 import { CostManagementController } from './modules/costModule/controller';
 import { CostModuleService } from './globalServices/costManagement/costModule.service';
-import { PaymentRequestService } from './globalServices/costManagement/paymentProcessors.service';
+import { PaymentRequestService } from './globalServices/costManagement/paymentRequestProcessors.service';
 import { CostModuleManagementService } from './modules/costModule/service';
 import { Transaction } from './globalServices/fiatWallet/entities/transaction.entity';
 import { PaymentService } from './globalServices/fiatWallet/payment.service';
-import { WalletService } from './globalServices/fiatWallet/wallet.service';
+import { FiatWalletService } from './globalServices/fiatWallet/fiatWallet.service';
 import { PaymentModuleService } from './modules/paymentModule/service';
 import { PaymentMethod } from './globalServices/fiatWallet/entities/paymentMethod';
 import { PaymentModuleController } from './modules/paymentModule/controller';
 import { InAppApiKeyJwtStrategy } from './middlewares/inapp-api-jwt-strategy.middleware';
+import { SettingsService } from './globalServices/settings/settings.service';
+import { BrandSubscriptionService } from './globalServices/brand/brandSeviceSubscription.service';
 
 @Module({
   imports: [
@@ -227,9 +229,11 @@ import { InAppApiKeyJwtStrategy } from './middlewares/inapp-api-jwt-strategy.mid
     PaymentRequestService,
     CostModuleManagementService,
     PaymentService,
-    WalletService,
+    FiatWalletService,
     PaymentModuleService,
     InAppApiKeyJwtStrategy,
+    SettingsService,
+    BrandSubscriptionService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

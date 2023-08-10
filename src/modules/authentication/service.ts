@@ -25,7 +25,7 @@ import { CustomerService } from '@src/globalServices/customer/customer.service';
 import { BrandService } from '@src/globalServices/brand/brand.service';
 import { UserAppType } from '@src/utils/enums/UserAppType';
 import { Role } from '@src/utils/enums/Role';
-import { WalletService } from '@src/globalServices/fiatWallet/wallet.service';
+import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -44,7 +44,7 @@ export class AuthenticationService {
     private userService: UserService,
     private customerService: CustomerService,
     private brandService: BrandService,
-    private walletService: WalletService,
+    private walletService: FiatWalletService,
   ) {}
 
   // Signs a token
