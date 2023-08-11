@@ -41,7 +41,16 @@ export class CostModuleService {
 
   async getSingleClosedCostBatch() {
     return await this.costBatchRepo.findOne({
-      where: { isClosed: true },
+      where: { isClosed: true, reimburserFailed: false },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+  }
+
+  async getSingleFailedCostBatch() {
+    return await this.costBatchRepo.findOne({
+      where: { isClosed: true, reimburserFailed: true },
     });
   }
 

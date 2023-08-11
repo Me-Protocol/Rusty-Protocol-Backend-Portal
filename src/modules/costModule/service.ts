@@ -17,6 +17,7 @@ import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { PaymentOrigin } from '@src/utils/enums/PaymentOrigin';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
+import { CostBatch } from '@src/globalServices/costManagement/entities/costBatch.entity';
 
 @Injectable()
 export class CostModuleManagementService {
@@ -197,7 +198,7 @@ export class CostModuleManagementService {
           activeBatch.id,
         );
 
-      if (requests.length !== 0) {
+      if (requests?.length !== 0) {
         for (let index = 0; index < requests.length; index++) {
           const request = requests[index];
 
@@ -230,6 +231,8 @@ export class CostModuleManagementService {
         await this.costModuleService.save(activeBatch);
 
         await this.costModuleService.getOrCreateActiveCostBatch();
+
+        await this.costReimburser(activeBatch);
       }
 
       return true;
@@ -240,70 +243,102 @@ export class CostModuleManagementService {
   }
 
   @Cron(CronExpression.EVERY_30_SECONDS)
-  async costReimburser() {
+  async costReimburser(batch?: CostBatch) {
     // Runs every minute (Picks all closed batchs, picks all the requests that has not been paid,agrregate the cos, debit brands balance and reimburse us if necessary)
 
-    const singleClosedBatch =
-      await this.costModuleService.getSingleClosedCostBatch();
+    try {
+      let singleClosedBatch: CostBatch;
 
-    if (!singleClosedBatch) {
-      return true;
-    }
-
-    const requests =
-      await this.paymentRequestService.getCostBatchPaymentRequests(
-        singleClosedBatch.id,
-      );
-
-    // pick all brandIds in each request without repetition
-
-    const brandIds = requests.map((request) => request.brandId);
-    const uniqueBrandIds = [...new Set(brandIds)];
-
-    // for each brandId, get all requests and aggregate the cost
-
-    for (let index = 0; index < uniqueBrandIds.length; index++) {
-      const brandId = uniqueBrandIds[index];
-
-      const brandRequests = requests.filter(
-        (request) => request.brandId === brandId,
-      );
-
-      // IN DOLLAR!!!
-      const totalCost = brandRequests.reduce(
-        (acc, curr) => acc + curr.costAmountInDollar,
-        0,
-      );
-
-      let wallet = await this.walletService.getWalletByBrandId(brandId);
-
-      // Debit brand account with total cost
-      await this.walletService.minusBrandBalance({
-        fiatWallet: wallet,
-        amount: totalCost,
-        transactionType: TransactionsType.DEBIT,
-        narration: 'Cost Reimbursement',
-      });
-
-      wallet = await this.walletService.getWalletByBrandId(brandId);
-
-      // Create cost collection
-      const costCollection = new CostCollection();
-      costCollection.brandId = brandId;
-      costCollection.totalCost = totalCost;
-      costCollection.costBatchId = singleClosedBatch.id;
-
-      // Update all requests with status paid
-      for (let index = 0; index < brandRequests.length; index++) {
-        const request = brandRequests[index];
-
-        request.isCostPaid = true;
-
-        await this.paymentRequestService.save(request);
+      if (batch) {
+        singleClosedBatch = batch;
+      } else {
+        singleClosedBatch =
+          await this.costModuleService.getSingleClosedCostBatch();
       }
-    }
 
-    return true;
+      if (!singleClosedBatch) {
+        return true;
+      }
+
+      const requests =
+        await this.paymentRequestService.getCostBatchPaymentRequests(
+          singleClosedBatch.id,
+        );
+
+      const paidRequests = [];
+
+      // pick all brandIds in each request without repetition
+
+      const brandIds = requests.map((request) => request.brandId);
+      const uniqueBrandIds = [...new Set(brandIds)];
+
+      // for each brandId, get all requests and aggregate the cost
+
+      for (let index = 0; index < uniqueBrandIds.length; index++) {
+        const brandId = uniqueBrandIds[index];
+
+        const brandRequests = requests.filter(
+          (request) => request.brandId === brandId,
+        );
+
+        // IN DOLLAR!!!
+        const totalCost = brandRequests.reduce(
+          (acc, curr) => acc + curr.costAmountInDollar,
+          0,
+        );
+
+        let wallet = await this.walletService.getWalletByBrandId(brandId);
+
+        // Debit brand account with total cost
+        const paidCost = await this.walletService.minusBrandBalance({
+          fiatWallet: wallet,
+          amount: totalCost,
+          transactionType: TransactionsType.DEBIT,
+          narration: 'Cost Reimbursement',
+        });
+
+        // Create cost collection
+        if (paidCost) {
+          const costCollection = new CostCollection();
+          costCollection.brandId = brandId;
+          costCollection.totalCost = totalCost;
+          costCollection.costBatchId = singleClosedBatch.id;
+
+          // Update all requests with status paid
+          for (let index = 0; index < brandRequests.length; index++) {
+            const request = brandRequests[index];
+
+            request.isCostPaid = true;
+
+            await this.paymentRequestService.save(request);
+            paidRequests.push(request);
+          }
+        }
+      }
+
+      if (paidRequests?.length === requests?.length) {
+        singleClosedBatch.isPaid = true;
+        await this.costModuleService.save(singleClosedBatch);
+      } else {
+        singleClosedBatch.reimburserFailed = true;
+        await this.costModuleService.save(singleClosedBatch);
+      }
+
+      return true;
+    } catch (error) {
+      console.log(error.message);
+      return false;
+    }
+  }
+
+  @Cron(CronExpression.EVERY_30_SECONDS)
+  async costReimburserRetry() {
+    const closedFailedBatch =
+      await this.costModuleService.getSingleFailedCostBatch();
+
+    if (closedFailedBatch) {
+      await this.costReimburser(closedFailedBatch);
+    }
   }
 
   @Cron('0 0 1 */30 *')

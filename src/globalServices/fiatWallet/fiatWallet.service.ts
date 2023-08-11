@@ -109,7 +109,7 @@ export class FiatWalletService {
 
     await this.checkCanPayCost(fiatWallet.id, fiatWallet.brandId);
 
-    return 'ok';
+    return true;
   }
 
   async minusBrandBalance({
@@ -123,6 +123,11 @@ export class FiatWalletService {
     narration: string;
     fiatWallet: FiatWallet;
   }) {
+    if (fiatWallet.balance < amount) {
+      await this.checkCanPayCost(fiatWallet.id, fiatWallet.brandId);
+      return false;
+    }
+
     const initialBalance = fiatWallet.balance * 100; // convert to cents
     const amountToAdd = amount * 100; // convert to cents
 
@@ -145,54 +150,43 @@ export class FiatWalletService {
 
     await this.checkCanPayCost(fiatWallet.id, fiatWallet.brandId);
 
-    return 'ok';
+    return true;
   }
 
   async checkCanPayCost(walletId: string, brandId: string) {
     const brand = await this.brandService.getBrandById(brandId);
     const wallet = await this.walletRepo.findOneBy({ id: walletId });
 
-    const minimumBalanceForNextBatchApp =
-      this.brandServiceSubscription.getServiceCost(BrandSubServices.IN_APP);
-    const minimumBalanceForNextBatchApi =
-      this.brandServiceSubscription.getServiceCost(BrandSubServices.API);
+    const brandServices = await this.brandServiceSubscription.getBrandServices(
+      brand.id,
+    );
+
+    if (!brandServices) return;
 
     let triggerTopup: boolean = false;
 
-    const checkInAppCost = await this.shouldCheckCost(
-      brand,
-      BrandSubServices.IN_APP,
-    );
-    const checkApiCost = await this.shouldCheckCost(
-      brand,
-      BrandSubServices.API,
-    );
+    for (let index = 0; index < brandServices.length; index++) {
+      const service = brandServices[index];
+      const cost = this.brandServiceSubscription.getServiceCost(service);
 
-    if (wallet.balance < minimumBalanceForNextBatchApi && checkApiCost) {
-      brand.canPayCost = false;
-      await this.brandService.save(brand);
+      const canPay = wallet.balance < cost;
 
-      triggerTopup = true;
-    }
+      switch (service) {
+        case BrandSubServices.IN_APP:
+          brand.canPayCost_inApp = !!canPay;
+          await this.brandService.save(brand);
+          triggerTopup = !!canPay;
 
-    if (wallet.balance < minimumBalanceForNextBatchApp && checkInAppCost) {
-      brand.canPayCost_inApp = false;
-      await this.brandService.save(brand);
-
-      triggerTopup = true;
+        case BrandSubServices.API:
+          brand.canPayCost = !!canPay;
+          await this.brandService.save(brand);
+          triggerTopup = !!canPay;
+      }
     }
 
     if (triggerTopup) {
       await this.fundBrandAccountForCostCollection(wallet, brand);
     }
-  }
-
-  async shouldCheckCost(brand: Brand, service: BrandSubServices) {
-    if (brand.subscribedServices.includes(service)) {
-      return true;
-    }
-
-    return false;
   }
 
   async fundBrandAccountForCostCollection(wallet: FiatWallet, brand: Brand) {
@@ -211,9 +205,12 @@ export class FiatWalletService {
       ? brand.autoTopupAmount
       : amount;
 
+    if (!brand.enableAutoTopup) {
+      return false;
+    }
+
     if (defaultPaymentMethod?.stripePaymentMethodId) {
       try {
-        // Create a payment intent to charge the user's card
         const paymentIntent =
           await this.paymentService.createAutoCardChargePaymentIntent(
             defaultPaymentMethod.stripePaymentMethodId,
@@ -221,7 +218,6 @@ export class FiatWalletService {
             wallet.stripeCustomerId,
           );
 
-        // Confirm the payment intent (this will automatically attempt the charge on the user's card)
         await this.paymentService.confirmPaymentIntent(paymentIntent.id);
 
         // add to brand balance
@@ -232,10 +228,7 @@ export class FiatWalletService {
           narration: 'Cost Reimbursement',
         });
 
-        brand.canPayCost = true;
-        brand.canPayCost_inApp = true;
-
-        await this.brandService.save(brand);
+        // TODO: send email to brand
 
         return true;
       } catch (error) {

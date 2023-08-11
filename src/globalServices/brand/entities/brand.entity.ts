@@ -187,4 +187,9 @@ export class Brand extends BaseEntity {
     array: true,
   })
   subscribedServices: BrandSubServices[];
+
+  @Column({
+    default: true, // TODO: put back to false
+  })
+  enableAutoTopup: boolean;
 }

@@ -38,7 +38,7 @@ export class PaymentRequestService {
 
   async getCostBatchPaymentRequests(batchId: string) {
     return await this.paymentRequestRepo.find({
-      where: { costBatchId: batchId },
+      where: { costBatchId: batchId, isCostPaid: false },
     });
   }
 }

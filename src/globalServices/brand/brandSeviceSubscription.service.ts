@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { BrandService } from './brand.service';
 import { BrandSubServices } from '@src/utils/enums/BrandSubServices';
 import { SettingsService } from '../settings/settings.service';
+import { Brand } from './entities/brand.entity';
 
 @Injectable()
 export class BrandSubscriptionService {
