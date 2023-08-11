@@ -21,6 +21,7 @@ import { InAppApiKeyJwtStrategy } from '@src/middlewares/inapp-api-jwt-strategy.
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { SetAutoTopupAmountDto } from './dto/SetAutoTopupAmountDto.dto';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
+import { ManualTopupDto } from './dto/ManualTopupDto.dto';
 
 @ApiTags('Cost Module')
 @UseInterceptors(ResponseInterceptor)
@@ -79,9 +80,15 @@ export class CostManagementController {
 
   @UseGuards(BrandJwtStrategy)
   @Post('/manual-topup')
-  async manualTopUp(@Req() req: any) {
+  async manualTopUp(
+    @Req() req: any,
+    @Body(ValidationPipe) body: ManualTopupDto,
+  ) {
     const brand = req.user.brand as Brand;
 
-    return await this.costModuleManagementService.manualTopUp(brand.id);
+    return await this.costModuleManagementService.manualTopUp(
+      brand.id,
+      body.amount,
+    );
   }
 }

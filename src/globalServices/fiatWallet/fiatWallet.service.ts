@@ -169,18 +169,18 @@ export class FiatWalletService {
       const service = brandServices[index];
       const cost = this.brandServiceSubscription.getServiceCost(service);
 
-      const canPay = wallet.balance < cost;
+      const canPay = wallet.balance < cost ? false : true;
 
       switch (service) {
         case BrandSubServices.IN_APP:
-          brand.canPayCost_inApp = !!canPay;
+          brand.canPayCost_inApp = canPay;
           await this.brandService.save(brand);
-          triggerTopup = !!canPay;
+          triggerTopup = !canPay;
 
         case BrandSubServices.API:
-          brand.canPayCost = !!canPay;
+          brand.canPayCost = canPay;
           await this.brandService.save(brand);
-          triggerTopup = !!canPay;
+          triggerTopup = !canPay;
       }
     }
 
@@ -189,23 +189,31 @@ export class FiatWalletService {
     }
   }
 
-  async fundBrandAccountForCostCollection(wallet: FiatWallet, brand: Brand) {
+  async fundBrandAccountForCostCollection(
+    wallet: FiatWallet,
+    brand: Brand,
+    amount?: number,
+  ) {
     const { topupAmountFactor } = this.settingsService.getCostSettings();
 
     const maximumCost = await this.brandServiceSubscription.getMaxServiceCost(
       brand.id,
     );
 
-    const amount = maximumCost * topupAmountFactor;
+    const topupAmount = maximumCost * topupAmountFactor;
 
     const defaultPaymentMethod =
       await this.paymentService.getDefaultPaymentMethod(wallet.id);
 
-    const autoTopupAmount = brand.autoTopupAmount
+    const autoTopupAmountInCent = amount
+      ? amount
+      : brand.autoTopupAmount
       ? brand.autoTopupAmount
-      : amount;
+      : topupAmount;
 
-    if (!brand.enableAutoTopup) {
+    const autoTopupAmountInDollar = autoTopupAmountInCent * 100;
+
+    if (!brand.enableAutoTopup && !amount) {
       return false;
     }
 
@@ -214,23 +222,23 @@ export class FiatWalletService {
         const paymentIntent =
           await this.paymentService.createAutoCardChargePaymentIntent(
             defaultPaymentMethod.stripePaymentMethodId,
-            autoTopupAmount,
+            autoTopupAmountInDollar,
             wallet.stripeCustomerId,
           );
 
         await this.paymentService.confirmPaymentIntent(paymentIntent.id);
 
+        const paymentDetail = await this.paymentService.getPaymentIntent(
+          paymentIntent.id,
+        );
+
         // add to brand balance
         await this.addBrandBalance({
           fiatWallet: wallet,
-          amount: autoTopupAmount,
+          amount: paymentDetail?.amount / 100,
           transactionType: TransactionsType.CREDIT,
           narration: 'Cost Reimbursement',
         });
-
-        // TODO: send email to brand
-
-        return true;
       } catch (error) {
         console.log(error);
         return false;

@@ -1,5 +1,3 @@
-// wallet entity
-
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { BaseEntity } from '@src/common/entities/base.entity';
 import {
@@ -54,7 +52,7 @@ export class FiatWallet extends BaseEntity {
   @Column({
     type: 'decimal',
     precision: 10,
-    scale: 2,
+    scale: 5,
     default: 0,
   })
   balance: number;

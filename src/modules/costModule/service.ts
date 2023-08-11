@@ -242,7 +242,7 @@ export class CostModuleManagementService {
     }
   }
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  // @Cron(CronExpression.EVERY_30_SECONDS)
   async costReimburser(batch?: CostBatch) {
     // Runs every minute (Picks all closed batchs, picks all the requests that has not been paid,agrregate the cos, debit brands balance and reimburse us if necessary)
 
@@ -362,7 +362,7 @@ export class CostModuleManagementService {
     return true;
   }
 
-  async manualTopUp(brandId: string) {
+  async manualTopUp(brandId: string, amount: number) {
     const brand = await this.brandService.getBrandById(brandId);
     const wallet = await this.walletService.getWalletByBrandId(brandId);
 
@@ -374,13 +374,10 @@ export class CostModuleManagementService {
         throw new HttpException('Please link your card first.', 400, {});
       }
 
-      if (!brand?.autoTopupAmount) {
-        throw new HttpException('No auto topup amount set yet.', 400, {});
-      }
-
       return await this.walletService.fundBrandAccountForCostCollection(
         wallet,
         brand,
+        amount,
       );
     } catch (error) {
       console.log(error);

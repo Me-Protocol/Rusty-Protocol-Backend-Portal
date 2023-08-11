@@ -50,7 +50,7 @@ export class CostModuleService {
 
   async getSingleFailedCostBatch() {
     return await this.costBatchRepo.findOne({
-      where: { isClosed: true, reimburserFailed: true },
+      where: { isClosed: true, reimburserFailed: true, isPaid: false },
     });
   }
 

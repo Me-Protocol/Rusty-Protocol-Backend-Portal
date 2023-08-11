@@ -16,14 +16,10 @@ export class PaymentService {
 
   async createAccount() {
     const customer = await stripe.customers.create();
-    const account = await stripe.accounts.create({
-      type: 'express',
-      requested_capabilities: ['card_payments', 'transfers'],
-    });
 
     return {
       customerId: customer.id,
-      accountId: account.id,
+      accountId: null,
     };
   }
 
@@ -110,7 +106,7 @@ export class PaymentService {
     customerId: string,
   ) {
     return stripe.paymentIntents.create({
-      amount,
+      amount: amount,
       currency: 'usd',
       payment_method: paymentMethodId,
       // confirm: true,
@@ -120,5 +116,9 @@ export class PaymentService {
 
   async confirmPaymentIntent(paymentIntentId: string) {
     return stripe.paymentIntents.confirm(paymentIntentId);
+  }
+
+  async getPaymentIntent(paymentIntentId: string) {
+    return stripe.paymentIntents.retrieve(paymentIntentId);
   }
 }

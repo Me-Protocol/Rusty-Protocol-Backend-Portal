@@ -505,6 +505,15 @@ export class AuthenticationService {
         };
       }
 
+      const brand = await this.brandService.getBrandByUserId(user.id);
+
+      await this.walletService.createWallet({
+        brand,
+      });
+      await this.walletService.createWallet({
+        user,
+      });
+
       const token = await this.registerDevice(user, userAgent, clientIp);
 
       return token;
