@@ -3,8 +3,7 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from '@src/common/entities/base.entity';
 import { StatusType, TransactionsType } from '@src/utils/enums/Transactions';
-import { User } from '@src/globalServices/user/entities/user.entity';
-import { Brand } from '@src/globalServices/brand/entities/brand.entity';
+import { FiatWallet } from './fiatWallet.entity';
 // import { StatusType, TransactionType } from '@src/utils/enums';
 
 @Entity('transaction')
@@ -12,20 +11,11 @@ export class Transaction extends BaseEntity {
   @Column({
     nullable: true,
   })
-  userId: string;
+  walletId: string;
 
-  @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn({ name: 'userId' })
-  user: User;
-
-  @Column({
-    nullable: true,
-  })
-  brandId: string;
-
-  @ManyToOne(() => Brand, (brand) => brand.id)
-  @JoinColumn({ name: 'brandId' })
-  brand: Brand;
+  @ManyToOne(() => FiatWallet, (fiatWallet) => fiatWallet.id)
+  @JoinColumn({ name: 'walletId' })
+  fiatWallet: FiatWallet;
 
   @Column({
     type: 'enum',

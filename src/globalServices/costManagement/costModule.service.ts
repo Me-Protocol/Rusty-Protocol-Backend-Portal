@@ -1,7 +1,6 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PaymentRequest } from './entities/paymentRequest.entity';
 import { CostBatch } from './entities/costBatch.entity';
 import { CostCollection } from './entities/costCollection';
 
@@ -15,7 +14,7 @@ export class CostModuleService {
     private readonly costCollectionRepo: Repository<CostCollection>,
   ) {}
 
-  async createCostBatch(costBatch: CostBatch) {
+  async save(costBatch: CostBatch) {
     return await this.costBatchRepo.save(costBatch);
   }
 
@@ -42,7 +41,16 @@ export class CostModuleService {
 
   async getSingleClosedCostBatch() {
     return await this.costBatchRepo.findOne({
-      where: { isClosed: true },
+      where: { isClosed: true, reimburserFailed: false },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+  }
+
+  async getSingleFailedCostBatch() {
+    return await this.costBatchRepo.findOne({
+      where: { isClosed: true, reimburserFailed: true, isPaid: false },
     });
   }
 

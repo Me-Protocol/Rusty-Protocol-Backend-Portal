@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaymentRequest } from './entities/paymentRequest.entity';
@@ -38,7 +38,7 @@ export class PaymentRequestService {
 
   async getCostBatchPaymentRequests(batchId: string) {
     return await this.paymentRequestRepo.find({
-      where: { costBatchId: batchId },
+      where: { costBatchId: batchId, isCostPaid: false },
     });
   }
 }

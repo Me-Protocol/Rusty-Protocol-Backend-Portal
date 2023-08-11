@@ -20,6 +20,11 @@ export class CostBatch extends BaseEntity {
   })
   isClosed: boolean;
 
+  @Column({
+    default: false,
+  })
+  reimburserFailed: boolean;
+
   @OneToMany(() => CostCollection, (costCollection) => costCollection.costBatch)
   costCollections: CostCollection[];
 }

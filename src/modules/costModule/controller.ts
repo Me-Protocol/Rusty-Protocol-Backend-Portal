@@ -13,7 +13,15 @@ import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
 import { CostModuleManagementService } from './service';
-import { PaymentRequestDto } from './dto/PaymentRequestDto.dto';
+import {
+  PaymentRequestDto,
+  PaymentRequestInAppDto,
+} from './dto/PaymentRequestDto.dto';
+import { InAppApiKeyJwtStrategy } from '@src/middlewares/inapp-api-jwt-strategy.middleware';
+import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
+import { SetAutoTopupAmountDto } from './dto/SetAutoTopupAmountDto.dto';
+import { Brand } from '@src/globalServices/brand/entities/brand.entity';
+import { ManualTopupDto } from './dto/ManualTopupDto.dto';
 
 @ApiTags('Cost Module')
 @UseInterceptors(ResponseInterceptor)
@@ -32,7 +40,17 @@ export class CostManagementController {
     const brandId = req.brand.id;
     body.brandId = brandId;
 
-    return await this.costModuleManagementService.createPaymentRequest(body);
+    return await this.costModuleManagementService.createPaymentRequestApi(body);
+  }
+
+  @UseGuards(InAppApiKeyJwtStrategy)
+  @Post('/request/in-app')
+  async createPaymentRequestInApp(
+    @Body(ValidationPipe) body: PaymentRequestInAppDto,
+  ) {
+    return await this.costModuleManagementService.createPaymentRequestInApp(
+      body,
+    );
   }
 
   @UseGuards(ApiKeyJwtStrategy)
@@ -43,6 +61,34 @@ export class CostManagementController {
         taskId: taskId,
         attempt: 1,
       },
+    );
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Post('/set-topup-amount')
+  async setAutoTopUpAmount(
+    @Req() req: any,
+    @Body(ValidationPipe) body: SetAutoTopupAmountDto,
+  ) {
+    const brand = req.user.brand as Brand;
+
+    return await this.costModuleManagementService.setAutoTopUpAmount(
+      body.amount,
+      brand,
+    );
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Post('/manual-topup')
+  async manualTopUp(
+    @Req() req: any,
+    @Body(ValidationPipe) body: ManualTopupDto,
+  ) {
+    const brand = req.user.brand as Brand;
+
+    return await this.costModuleManagementService.manualTopUp(
+      brand.id,
+      body.amount,
     );
   }
 }

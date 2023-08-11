@@ -7,7 +7,7 @@ import { TwoFAType } from '@src/utils/enums/TwoFAType';
 import { UserAppType } from '@src/utils/enums/UserAppType';
 import { Customer } from '@src/globalServices/customer/entities/customer.entity';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
-import { Wallet } from '@src/globalServices/wallet/entities/wallet.entity';
+import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.entity';
 import { Collection } from '@src/globalServices/collections/entities/collection.entity';
 import { Follow } from '@src/globalServices/follow/entities/follow.entity';
 import { View } from '@src/globalServices/views/entities/view.entity';
@@ -183,8 +183,8 @@ export class User extends BaseEntity {
   })
   brand: Brand;
 
-  @OneToOne(() => Wallet, (wallet) => wallet.user)
-  wallet: Wallet;
+  @OneToOne(() => FiatWallet, (wallet) => wallet.user)
+  fiatWallet: FiatWallet;
 
   @OneToMany(() => Collection, (collection) => collection.user)
   collections: Collection[];

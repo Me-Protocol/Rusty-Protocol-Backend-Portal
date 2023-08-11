@@ -18,6 +18,8 @@ import { Task } from '@src/globalServices/task/entities/task.entity';
 import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
 import { PaymentRequest } from '@src/globalServices/costManagement/entities/paymentRequest.entity';
 import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection';
+import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.entity';
+import { BrandSubServices } from '@src/utils/enums/BrandSubServices';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -161,18 +163,16 @@ export class Brand extends BaseEntity {
   })
   canPayCost: boolean;
 
+  @Column({
+    default: false,
+  })
+  canPayCost_inApp: boolean;
+
   @OneToMany(() => CostCollection, (costCollection) => costCollection.brand)
   costCollections: CostCollection[];
 
-  @Column({
-    nullable: true,
-  })
-  stripeCustomerId: string;
-
-  @Column({
-    nullable: true,
-  })
-  stripeAccountId: string;
+  @OneToOne(() => FiatWallet, (wallet) => wallet.brand)
+  fiatWallet: FiatWallet;
 
   @Column({
     type: 'decimal',
@@ -180,10 +180,16 @@ export class Brand extends BaseEntity {
     scale: 2,
     default: 0,
   })
-  balance: number;
+  autoTopupAmount: number;
+
+  @Column('text', {
+    nullable: true,
+    array: true,
+  })
+  subscribedServices: BrandSubServices[];
 
   @Column({
-    nullable: true,
+    default: true, // TODO: put back to false
   })
-  stripePaymentMethodId: string;
+  enableAutoTopup: boolean;
 }

@@ -30,7 +30,8 @@ import { TaskResponseRecord } from '@src/globalServices/task/entities/taskRespon
 import { Device } from '@src/globalServices/user/entities/device.entity';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { View } from '@src/globalServices/views/entities/view.entity';
-import { Wallet } from '@src/globalServices/wallet/entities/wallet.entity';
+import { PaymentMethod } from '@src/globalServices/fiatWallet/entities/paymentMethod';
+import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.entity';
 
 export const typeOrmConfig: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -45,7 +46,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     Customer,
     Brand,
     Category,
-    Wallet,
+    FiatWallet,
     Product,
     ProductImage,
     Task,
@@ -71,6 +72,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     CostBatch,
     CostCollection,
     PaymentRequest,
+    PaymentMethod,
   ],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   extra: {
