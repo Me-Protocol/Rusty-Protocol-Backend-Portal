@@ -10,7 +10,11 @@ export class ProductImage extends BaseEntity {
   @Column()
   url: string;
 
-  @ManyToOne(() => Product, (product) => product.productImages)
+  @ManyToOne(() => Product, (product) => product.productImages, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+    cascade: true,
+  })
   @JoinColumn({ name: 'productId' })
   product: Product;
 

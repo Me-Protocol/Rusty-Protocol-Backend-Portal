@@ -1,0 +1,5 @@
+export enum OfferFilter {
+  MOST_VIEWED = 'MOST_VIEWED',
+  MOST_SALES = 'MOST_SALES',
+  MOST_RECENT = 'MOST_RECENT',
+}

@@ -61,7 +61,7 @@ export class AuthenticationController {
       throw new HttpException('Please signup with email first', 400);
     }
 
-    await this.authService.sendEmailVerificationCode(user.email);
+    await this.authService.sendEmailVerificationCode(user.email, user.username);
 
     return 'ok';
   }
@@ -314,11 +314,11 @@ export class AuthenticationController {
     // This will redirect the user to Twitter for authentication
   }
 
-  @Get('google/brand')
-  @UseGuards(AuthGuard('google'))
-  async googleLoginBrand() {
-    // This will redirect the user to Twitter for authentication
-  }
+  // @Get('google/brand')
+  // @UseGuards(AuthGuard('google'))
+  // async googleLoginBrand() {
+  //   // This will redirect the user to Twitter for authentication
+  // }
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))

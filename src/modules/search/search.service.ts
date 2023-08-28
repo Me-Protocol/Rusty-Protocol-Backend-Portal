@@ -16,8 +16,7 @@ export class SearchService
     return await this.bulk(bulkData)
       .then((res: any) => res)
       .catch((err: string | Record<string, any>) => {
-        console.log(err);
-        throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
+        return err;
       });
   }
 
@@ -25,7 +24,7 @@ export class SearchService
     return await this.update(updateData)
       .then((res: any) => res)
       .catch((err: string | Record<string, any>) => {
-        throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
+        return err;
       });
   }
 
@@ -36,24 +35,24 @@ export class SearchService
         return res.hits.hits;
       })
       .catch((err: string | Record<string, any>) => {
-        throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
+        return err;
       });
   }
 
   public async deleteIndex(indexData: any): Promise<any> {
-    return await this.indices
-      .delete(indexData)
-      .then((res: any) => res)
-      .catch((err: string | Record<string, any>) => {
-        throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
-      });
+    return await this.indices.delete(indexData).then((res: any) => res);
+    // .catch((err: string | Record<string, any>) => {
+    //   throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
+    // });
+    // TODO: fix delete index
+    //
   }
 
   public async deleteDocument(indexData: any): Promise<any> {
     return await this.delete(indexData)
       .then((res: any) => res)
       .catch((err: string | Record<string, any>) => {
-        throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
+        return err;
       });
   }
 
@@ -67,7 +66,7 @@ export class SearchService
         .create(indexData)
         .then((res: any) => res)
         .catch((err: string | Record<string, any>) => {
-          throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
+          return err;
         });
     } else {
       return true;

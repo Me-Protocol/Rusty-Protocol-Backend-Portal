@@ -86,7 +86,7 @@ export class SyncRewardService {
   async addRegistry(registry: RewardRegistry) {
     const checkRegistry = await this.rewardRegistryRepo.findOne({
       where: {
-        userId: registry.userId,
+        customerIdentiyOnBrandSite: registry.customerIdentiyOnBrandSite,
         rewardId: registry.rewardId,
       },
     });
@@ -97,6 +97,10 @@ export class SyncRewardService {
 
     const newRegistry = this.rewardRegistryRepo.create(registry);
     return this.rewardRegistryRepo.save(newRegistry);
+  }
+
+  async saveRegistry(registry: RewardRegistry) {
+    return this.rewardRegistryRepo.save(registry);
   }
 
   async addRegistryHistory(registryHistory: RegistryHistory) {
@@ -189,19 +193,61 @@ export class SyncRewardService {
     return registry;
   }
 
+  // debit reward
+  async clearBalance({
+    registryId,
+    amount,
+    description,
+  }: {
+    registryId: string;
+    amount: number;
+    description: string;
+  }) {
+    const registry = await this.rewardRegistryRepo.findOne({
+      where: {
+        id: registryId,
+      },
+    });
+
+    if (!registry) {
+      throw new Error('Registry not found');
+    }
+
+    registry.balance = 0;
+
+    await this.rewardRegistryRepo.save(registry);
+
+    // add registry history
+
+    const registryHistory = this.registryHistoryRepo.create({
+      balance: registry.balance,
+      description,
+      transactionType: TransactionsType.DEBIT,
+      rewardRegistryId: registry.id,
+      amount: amount,
+    });
+
+    await this.registryHistoryRepo.save(registryHistory);
+
+    return registry;
+  }
+
   // credit reward
   async creditReward({
     rewardId,
-    userId,
+    identifier,
     amount,
     description,
   }: {
     rewardId: string;
-    userId: string;
+    identifier: string;
     amount: number;
     description: string;
   }) {
-    const registry = await this.findOneRegistryByUserId(userId, rewardId);
+    const registry = await this.rewardRegistryRepo.findOneBy({
+      rewardId,
+      customerIdentiyOnBrandSite: identifier,
+    });
 
     if (!registry) {
       throw new Error('Registry not found');
@@ -226,13 +272,51 @@ export class SyncRewardService {
     return registry;
   }
 
+  async fullBalanceUpdate({
+    rewardId,
+    identifier,
+    amount,
+    description,
+  }: {
+    rewardId: string;
+    identifier: string;
+    amount: number;
+    description: string;
+  }) {
+    const registry = await this.rewardRegistryRepo.findOne({
+      where: {
+        rewardId,
+        customerIdentiyOnBrandSite: identifier,
+      },
+    });
+
+    if (!registry) {
+      throw new Error('Registry not found');
+    }
+
+    registry.balance = amount;
+
+    await this.rewardRegistryRepo.save(registry);
+
+    // add registry history
+
+    const registryHistory = this.registryHistoryRepo.create({
+      balance: registry.balance,
+      description,
+      transactionType: TransactionsType.CREDIT,
+      rewardRegistryId: registry.id,
+      amount: amount,
+    });
+
+    await this.registryHistoryRepo.save(registryHistory);
+
+    return registry;
+  }
+
   async checkActiveBatch(brandId: string, rewardId: string) {
     const batch = await this.syncBatchRepo.findOne({
       where: {
-        reward: {
-          brandId,
-          id: rewardId,
-        },
+        rewardId: rewardId,
         isDistributed: false,
       },
     });
@@ -267,7 +351,7 @@ export class SyncRewardService {
       // create transaction
       await this.creditReward({
         rewardId: rewardId,
-        userId: user.id,
+        identifier: user.email,
         amount: checkAndGetPoints.amount,
         description: `Reward sync`,
       });
@@ -276,6 +360,13 @@ export class SyncRewardService {
     }
 
     return rewardRegistry;
+  }
+
+  async getRegistryRecordByIdentifer(identifier: string, rewardId: string) {
+    return this.rewardRegistryRepo.findOneBy({
+      rewardId,
+      customerIdentiyOnBrandSite: identifier,
+    });
   }
 
   // getUserRegistry(userId: string, rewardId: string) {

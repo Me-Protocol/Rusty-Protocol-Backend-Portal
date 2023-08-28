@@ -126,7 +126,7 @@ export class AuthenticationService {
     return 'ok';
   }
 
-  async sendEmailVerificationCode(email: string): Promise<any> {
+  async sendEmailVerificationCode(email: string, name: string): Promise<any> {
     email = email.toLowerCase();
 
     try {
@@ -142,13 +142,13 @@ export class AuthenticationService {
         subject: 'Verify your email address',
         text: 'Verify your email address',
         html: `
-        <p>Hello 👋🏻,</p>
-        <p>Use the code below to verify your email address.</p>
-        <p>Code: ${user.accountVerificationCode}</p>
+        <p>Hello ${name},</p><br/>
+        <p>Use the code below to verify your email address.</p><br/>
+        <b><p>Code: ${user.accountVerificationCode}</p></b>
         `,
       });
     } catch (error) {
-      throw new HttpException(error, 400, {
+      throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
     }
@@ -170,7 +170,7 @@ export class AuthenticationService {
         body: `Hello 👋🏻, Use the code below to verify your phone number. Code: ${user.accountVerificationCode}`,
       });
     } catch (error) {
-      throw new HttpException(error, 400, {
+      throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });
     }
@@ -188,6 +188,13 @@ export class AuthenticationService {
       const user = await this.userService.getUserByEmail(email);
       if (user) {
         throw new Error('Email already exists');
+      }
+
+      if (userType === UserAppType.BRAND) {
+        const checkBrandName = await this.brandService.getBrandByName(name);
+        if (checkBrandName) {
+          throw new Error(`Brand with name ${name} already exists`);
+        }
       }
 
       const newUser = new User();
@@ -237,11 +244,12 @@ export class AuthenticationService {
         device: null,
       });
 
-      await this.sendEmailVerificationCode(email);
+      await this.sendEmailVerificationCode(email, name);
 
       return token;
     } catch (error) {
-      throw new HttpException(error, 400, {
+      console.log(error);
+      throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });
     }
@@ -302,7 +310,7 @@ export class AuthenticationService {
       return token;
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 400, {
+      throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
     }
@@ -372,7 +380,7 @@ export class AuthenticationService {
 
       return token;
     } catch (error) {
-      throw new HttpException(error, 400, {
+      throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
     }
@@ -423,7 +431,7 @@ export class AuthenticationService {
       return token;
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 400, {
+      throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
     }
@@ -492,7 +500,7 @@ export class AuthenticationService {
 
       if (user.is2faEnabled) {
         if (user.twoFAType === TwoFAType.EMAIL) {
-          await await this.sendEmailVerificationCode(user.email);
+          await await this.sendEmailVerificationCode(user.email, user.username);
         } else if (user.twoFAType === TwoFAType.SMS) {
           await await this.sendPhoneVerificationCode(user.phone);
         } else {
@@ -556,7 +564,7 @@ export class AuthenticationService {
       return 'Logged out! See you soon :)';
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 400, {
+      throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
     }
@@ -577,7 +585,7 @@ export class AuthenticationService {
       return user;
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 400, {
+      throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
     }
@@ -616,7 +624,7 @@ export class AuthenticationService {
       return 'Password changed';
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 400, {
+      throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
     }
@@ -631,7 +639,7 @@ export class AuthenticationService {
       }
 
       if (!user.email) {
-        await this.sendEmailVerificationCode(email);
+        await this.sendEmailVerificationCode(email, user.username);
 
         return 'Please verify your new email';
       }
@@ -640,12 +648,12 @@ export class AuthenticationService {
         throw new Error('Email already exists');
       }
 
-      await this.sendEmailVerificationCode(user.email);
+      await this.sendEmailVerificationCode(user.email, user.username);
 
       return 'Please verify your current email';
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 400, {
+      throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
     }
@@ -674,7 +682,7 @@ export class AuthenticationService {
       return 'Email changed';
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 400, {
+      throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
     }
@@ -708,7 +716,7 @@ export class AuthenticationService {
       return 'Please verify your current phone number';
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 400, {
+      throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
     }
@@ -741,7 +749,7 @@ export class AuthenticationService {
       return 'Phone number changed';
     } catch (error) {
       console.log(error);
-      throw new HttpException(error, 400, {
+      throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
     }
@@ -925,7 +933,7 @@ export class AuthenticationService {
     if (isNumber(identifier)) {
       await this.sendPhoneVerificationCode(user.phone);
     } else {
-      await this.sendEmailVerificationCode(user.email);
+      await this.sendEmailVerificationCode(user.email, user.username);
     }
 
     return {

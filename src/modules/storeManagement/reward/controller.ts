@@ -20,9 +20,11 @@ import { CreateRewardDto } from './dto/createRewardDto.dto';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { UpdateRewardDto } from './dto/updateRewardDto';
 import { FilterRewardDto } from './dto/filterRewardDto.dto';
-import { AddBatchDto } from './dto/addBatchDto.dto';
 import { UpdateBatchDto } from './dto/updateBatchDto';
 import { GetCustomerPointDto } from './dto/getCustomerPointDto.dto';
+import { DistributeBatchDto } from './dto/distributeBatch.dto';
+import { SpendRewardDto } from './dto/spendRewardDto.dto';
+import { InAppApiKeyJwtStrategy } from '@src/middlewares/inapp-api-jwt-strategy.middleware';
 
 @ApiTags('Reward')
 @UseInterceptors(ResponseInterceptor)
@@ -82,6 +84,12 @@ export class RewardManagementController {
     return await this.rewardManagementService.getRewards(query);
   }
 
+  @UseGuards(AuthGuard())
+  @Get('contract/:contractAddress')
+  async getRewardByContractAddress(@Param('contractAddress') param: string) {
+    return await this.rewardManagementService.getRewardByContractAddress(param);
+  }
+
   // @UseGuards(BrandJwtStrategy)
   // @Post('batch')
   // async createBatch(@Body(ValidationPipe) body: AddBatchDto, @Req() req: any) {
@@ -118,14 +126,37 @@ export class RewardManagementController {
   }
 
   @UseGuards(BrandJwtStrategy)
-  @Post('distribute/:rewardId')
-  async distributeBatch(@Req() req: any, @Param('rewardId') rewardId: string) {
+  @Get('pre-distribute/:rewardId')
+  async preDistributeBatch(
+    @Req() req: any,
+    @Param('rewardId') rewardId: string,
+  ) {
     const brandId = req.user.brand.id;
 
-    return await this.rewardManagementService.distributeBatch(
+    return await this.rewardManagementService.getBatchUserWalletsAndAmount(
       brandId,
       rewardId,
     );
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Post('distribute')
+  async distributeBatch(
+    @Req() req: any,
+    @Body(ValidationPipe) body: DistributeBatchDto,
+  ) {
+    const brandId = req.user.brand.id;
+
+    return await this.rewardManagementService.distributeBatch(brandId, body);
+  }
+
+  @UseGuards(InAppApiKeyJwtStrategy)
+  @Post('spend')
+  async spendReward(
+    @Req() req: any,
+    @Body(ValidationPipe) body: SpendRewardDto,
+  ) {
+    return await this.rewardManagementService.spendReward(body);
   }
 
   @UseGuards(BrandJwtStrategy)

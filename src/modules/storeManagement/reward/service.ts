@@ -14,7 +14,10 @@ import { RewardRegistry } from '@src/globalServices/reward/entities/registry.ent
 import { UpdateRewardDto } from './dto/updateRewardDto';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { getSlug } from '@src/utils/helpers/getSlug';
-import { string } from 'joi';
+import { DistributeBatchDto } from './dto/distributeBatch.dto';
+import { mutate, mutate_n_format } from '@developeruche/runtime-sdk';
+import { SpendRewardDto } from './dto/spendRewardDto.dto';
+import { AxiosResponse } from 'axios';
 
 @Injectable()
 export class RewardManagementService {
@@ -117,6 +120,10 @@ export class RewardManagementService {
     return await this.rewardService.findOneById(id);
   }
 
+  async getRewardByContractAddress(contractAddress: string) {
+    return await this.rewardService.getRewardByContractAddress(contractAddress);
+  }
+
   async getRewards(query: FilterRewardDto) {
     return await this.rewardService.findAll({
       brand_id: query.brandId,
@@ -127,6 +134,117 @@ export class RewardManagementService {
     });
   }
 
+  getAddableSyncData(syncData: any[], reward: Reward) {
+    const addableSyncData = syncData.filter((syncData) => {
+      if (
+        (syncData.id,
+        syncData.identifier,
+        syncData.identifierType,
+        syncData.amount)
+      ) {
+        if (
+          reward.acceptedCustomerIdentitytypes.includes(syncData.identifierType)
+        ) {
+          return {
+            id: syncData.id,
+            identifier: syncData.identifier,
+            identifierType: syncData.identifierType,
+            amount: syncData.amount,
+          };
+        }
+      }
+    });
+
+    const descripancies = syncData.filter((syncData) => {
+      if (!syncData.id || !syncData.identifier || !syncData.identifierType) {
+        return {
+          id: syncData.id,
+          identifier: syncData.identifier,
+          identifierType: syncData.identifierType,
+          reason: `Missing required fields: id, identifier, identifierType or unaccepted identity type`,
+        };
+      }
+    });
+
+    return {
+      addableSyncData,
+      descripancies,
+      hasDescripancies: descripancies.length > 0 ? true : false,
+    };
+  }
+
+  async createRewardRegistry({
+    amount,
+    identifier,
+    identifierType,
+    rewardId,
+  }: {
+    amount: number;
+    identifier: string;
+    identifierType: SyncIdentifierType;
+    rewardId: string;
+  }) {
+    let user: User;
+
+    if (identifierType === SyncIdentifierType.EMAIL) {
+      user = await this.userService.getUserByEmail(identifier);
+    }
+
+    if (identifierType === SyncIdentifierType.PHONE) {
+      user = await this.userService.getUserByPhone(identifier);
+    }
+
+    const registry = new RewardRegistry();
+    registry.rewardId = rewardId;
+    registry.customerIdentiyOnBrandSite = identifier;
+    registry.customerIdentityType = identifierType;
+    registry.balance = 0;
+    registry.userId = user?.id;
+
+    const newReg = await this.syncService.addRegistry(registry);
+
+    // create transaction
+    await this.syncService.fullBalanceUpdate({
+      rewardId: rewardId,
+      identifier,
+      amount: amount,
+      description: `Reward sync`,
+    });
+  }
+
+  //
+
+  async addPointsToRewardRegistry(addableSyncData: any[], rewardId: string) {
+    for (const syncData of addableSyncData) {
+      const identifier = syncData.identifier;
+      const checkRegistry = await this.syncService.getRegistryRecordByIdentifer(
+        identifier,
+        rewardId,
+      );
+
+      console.log(checkRegistry);
+
+      if (checkRegistry) {
+        // create transaction
+        await this.syncService.fullBalanceUpdate({
+          rewardId: rewardId,
+          identifier: identifier,
+          amount: syncData.amount,
+          description: `Reward sync`,
+        });
+      } else {
+        await this.createRewardRegistry({
+          amount: syncData.amount,
+          identifier: identifier,
+          identifierType: syncData.identifierType,
+          rewardId: rewardId,
+        });
+      }
+    }
+
+    return true;
+  }
+
   async updateBatch(body: UpdateBatchDto) {
     try {
       const checkReward = await this.rewardService.findOneById(body.rewardId);
@@ -135,40 +253,10 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
-      const addableSyncData = body.syncData.filter((syncData) => {
-        if (
-          (syncData.id,
-          syncData.identifier,
-          syncData.identifierType,
-          syncData.amount)
-        ) {
-          if (
-            checkReward.acceptedCustomerIdentitytypes.includes(
-              syncData.identifierType,
-            )
-          ) {
-            return {
-              id: syncData.id,
-              identifier: syncData.identifier,
-              identifierType: syncData.identifierType,
-              amount: syncData.amount,
-            };
-          }
-        }
-      });
+      const { hasDescripancies, descripancies, addableSyncData } =
+        this.getAddableSyncData(body.syncData, checkReward);
 
-      const descripancies = body.syncData.filter((syncData) => {
-        if (!syncData.id || !syncData.identifier || !syncData.identifierType) {
-          return {
-            id: syncData.id,
-            identifier: syncData.identifier,
-            identifierType: syncData.identifierType,
-            reason: `Missing required fields: id, identifier, identifierType or unaccepted by identity type`,
-          };
-        }
-      });
-
-      if (descripancies.length > 0) {
+      if (hasDescripancies) {
         return {
           descripancies,
           batch: null,
@@ -189,7 +277,7 @@ export class RewardManagementService {
         const savedBatch = await this.syncService.createBatch(newBatch);
 
         // push new syncData to reward syncData if they doesn't exist
-        const newSyncData = addableSyncData.filter((syncData) => {
+        const newSyncDataForReward = addableSyncData.filter((syncData) => {
           const found = checkReward.syncData?.find(
             (item) => item.identifier === syncData.identifier,
           );
@@ -198,15 +286,22 @@ export class RewardManagementService {
           }
         });
 
+        // Get all batches
+
         if (checkReward.syncData) {
-          checkReward.syncData = [...checkReward.syncData, ...newSyncData];
+          checkReward.syncData = [
+            ...checkReward.syncData,
+            ...newSyncDataForReward,
+          ];
 
           await this.rewardService.save(checkReward);
         } else {
-          checkReward.syncData = newSyncData;
+          checkReward.syncData = newSyncDataForReward;
 
           await this.rewardService.save(checkReward);
         }
+
+        await this.addPointsToRewardRegistry(addableSyncData, body.rewardId);
 
         return {
           descripancies: null,
@@ -251,6 +346,10 @@ export class RewardManagementService {
         await this.rewardService.save(checkReward);
       }
 
+      // Update the registry if the identifier is found
+
+      await this.addPointsToRewardRegistry(addableSyncData, body.rewardId);
+
       return {
         descripancies: null,
         batch: savedBatch,
@@ -275,60 +374,94 @@ export class RewardManagementService {
     });
   }
 
-  async distributeBatch(brandId: string, rewardId: string) {
+  async spendReward(body: SpendRewardDto) {
     try {
-      const batch = await this.syncService.checkActiveBatch(brandId, rewardId);
+      const reward = this.rewardService.findOneById(body.rewardId);
+
+      if (!reward) {
+        throw new Error('Reward not found');
+      }
+
+      let distribute: AxiosResponse<any>;
+
+      if (body.params.data.startsWith('0x00000001')) {
+        distribute = await mutate_n_format(body.params);
+      } else {
+        distribute = await mutate(body.params);
+      }
+
+      return distribute;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
+    }
+  }
+
+  async distributeBatch(brandId: string, body: DistributeBatchDto) {
+    try {
+      const batch = await this.syncService.checkActiveBatch(
+        brandId,
+        body.rewardId,
+      );
 
       if (!batch) {
-        throw new Error(
-          'Batch alrady distributed or No pending batch not found',
-        );
+        throw new Error('No batch to distribute');
       }
 
       if (batch.isDistributed) {
         throw new Error('Batch already distributed');
       }
 
-      for (let index = 0; index < batch.syncData.length; index++) {
-        const syncData = batch.syncData[index];
+      // if body.params.data starts with 0x00000001
 
-        let user: User;
+      const distribute = await this.spendReward(body);
 
-        if (syncData.identifierType === SyncIdentifierType.EMAIL) {
-          user = await this.userService.getUserByEmail(syncData.identifier);
-        }
+      // Pick the rewards whose users exists and update balacne to 0
+      await Promise.all(
+        batch.syncData.map(async (syncDataJSON) => {
+          // @ts-ignore
+          const syncData = JSON.parse(syncDataJSON) as typeof syncDataJSON;
 
-        if (syncData.identifierType === SyncIdentifierType.PHONE) {
-          user = await this.userService.getUserByPhone(syncData.identifier);
-        }
+          let user: User;
 
-        if (user) {
-          //  create registry
-          const registry = new RewardRegistry();
-          registry.rewardId = batch.rewardId;
-          registry.customerIdentiyOnBrandSite = syncData.identifier;
-          registry.customerIdentityType = syncData.identifierType;
-          registry.balance = 0;
-          registry.userId = user.id;
+          if (syncData.identifierType === SyncIdentifierType.EMAIL) {
+            user = await this.userService.getUserByEmail(syncData.identifier);
+          }
 
-          await this.syncService.addRegistry(registry);
+          if (syncData.identifierType === SyncIdentifierType.PHONE) {
+            user = await this.userService.getUserByPhone(syncData.identifier);
+          }
 
-          // create transaction
-          await this.syncService.creditReward({
-            rewardId: batch.rewardId,
-            userId: user.id,
-            amount: syncData.amount,
-            description: `Reward sync`,
-          });
-        }
-      }
+          if (user) {
+            // Get users rewardRegistry
+            const registry =
+              await this.syncService.getRegistryRecordByIdentifer(
+                syncData.identifier,
+                body.rewardId,
+              );
+
+            if (registry) {
+              await this.syncService.clearBalance({
+                registryId: registry.id,
+                amount: syncData.amount,
+                description: 'Reward distribution',
+              });
+            }
+          }
+        }),
+      );
 
       batch.isDistributed = true;
 
-      const savedBatch = await this.syncService.saveBatch(batch);
+      await this.syncService.saveBatch(batch);
 
-      return savedBatch;
+      console.log(distribute);
+
+      return distribute;
     } catch (error) {
+      console.log(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });
@@ -348,5 +481,76 @@ export class RewardManagementService {
     }
 
     return register;
+  }
+
+  async getBatchUserWalletsAndAmount(brandId: string, rewardId: string) {
+    try {
+      const batch = await this.syncService.checkActiveBatch(brandId, rewardId);
+
+      if (!batch) {
+        throw new Error('No batch to distribute');
+      }
+
+      if (batch.isDistributed) {
+        throw new Error('Batch already distributed');
+      }
+
+      const syncData = batch.syncData;
+
+      let aggregateSumOfNonExistingUsers = 0;
+      const users = [];
+
+      await Promise.all(
+        syncData.map(async (syncDataJSON) => {
+          // @ts-ignore
+          const syncData = JSON.parse(syncDataJSON);
+
+          let user: User;
+
+          if (syncData.identifierType === SyncIdentifierType.EMAIL) {
+            user = await this.userService.getUserByEmail(syncData.identifier);
+          }
+
+          if (syncData.identifierType === SyncIdentifierType.PHONE) {
+            user = await this.userService.getUserByPhone(syncData.identifier);
+          }
+
+          if (!user) {
+            aggregateSumOfNonExistingUsers += syncData.amount;
+          } else {
+            if (!user.walletAddress) {
+              aggregateSumOfNonExistingUsers += syncData.amount;
+            } else {
+              const registry =
+                await this.syncService.getRegistryRecordByIdentifer(
+                  syncData.identifier,
+                  rewardId,
+                );
+
+              if (registry) {
+                users.push({
+                  walletAddress: user.walletAddress,
+                  amount: syncData.amount,
+                });
+              }
+            }
+          }
+        }),
+      );
+
+      return {
+        users: [
+          ...users,
+          {
+            walletAddress: process.env.MEPRO_WALLET_ADDRESS,
+            amount: aggregateSumOfNonExistingUsers,
+          },
+        ],
+      };
+    } catch (error) {
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
+    }
   }
 }

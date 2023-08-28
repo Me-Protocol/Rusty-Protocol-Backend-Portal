@@ -212,10 +212,12 @@ export class CostModuleManagementService {
                 request.network,
               );
 
-            request.costAmountInToken = totalCost;
-            request.costAmountInDollar = totalCostInDollar;
-            request.costCurrency = 'dollar';
-            request.tokenSymbol = tokenSymbol;
+            if (totalCost && totalCostInDollar && tokenSymbol) {
+              request.costAmountInToken = totalCost;
+              request.costAmountInDollar = totalCostInDollar;
+              request.costCurrency = 'dollar';
+              request.tokenSymbol = tokenSymbol;
+            }
           } else {
             // Query the runtime processor
             request.costAmountInToken = 100;

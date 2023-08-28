@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Offer } from './entities/offer.entity';
 import { UserService } from '../user/user.service';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
 import { ProductImage } from '../product/entities/productImage.entity';
 import { ViewsService } from '../views/view.service';
+import { OfferFilter } from '@src/utils/enums/OfferFiilter';
 
 @Injectable()
 export class OfferService {
@@ -99,7 +100,7 @@ export class OfferService {
     return offer;
   }
 
-  async getTopOffers({
+  async getOffers({
     page,
     limit,
     category,
@@ -133,10 +134,6 @@ export class OfferService {
         'product.category',
         'product.subCategory',
       ],
-      order: {
-        likeCount: 'DESC',
-        viewCount: 'DESC',
-      },
     });
 
     const total = await this.offerRepo.count({
@@ -168,11 +165,65 @@ export class OfferService {
 
     // Check if user has any interests
     if (interests.length === 0) {
+      // Get trending offers if user has no interests
+
+      const trendingOffers = await this.offerRepo.find({
+        where: {
+          status: ItemStatus.PUBLISHED,
+          updatedAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
+        },
+        take: 10,
+        order: {
+          likeCount: 'DESC',
+          viewCount: 'DESC',
+        },
+      });
+
+      // Get offer product categories and subcategories
+
+      const categories = trendingOffers.map(
+        (offer) => offer.product.categoryId,
+      );
+      const subCategories = trendingOffers.map(
+        (offer) => offer.product.subCategoryId,
+      );
+
+      // Get offers based on categories and subcategories
+
+      const offers = await this.offerRepo.find({
+        where: {
+          status: ItemStatus.PUBLISHED,
+          product: {
+            categoryId: In(categories),
+            subCategoryId: In(subCategories),
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        relations: [
+          'brand',
+          'product',
+          'product.category',
+          'product.subCategory',
+        ],
+        order: {
+          likeCount: 'DESC',
+          viewCount: 'DESC',
+        },
+      });
+
+      const total = await this.offerRepo.count({
+        where: {
+          status: ItemStatus.PUBLISHED,
+          product: {},
+        },
+      });
+
       return {
-        offers: [],
-        total: 0,
-        nextPage: null,
-        previousPage: null,
+        offers,
+        total,
+        nextPage: total > page * limit ? page + 1 : null,
+        previousPage: page > 1 ? page - 1 : null,
       };
     } else {
       // Get offers based on users first interest
@@ -219,32 +270,43 @@ export class OfferService {
     }
   }
 
-  async getBrandOffers(page: number, limit: number, brandId: string) {
-    const offers = await this.offerRepo.find({
-      where: {
-        status: ItemStatus.PUBLISHED,
-        brandId,
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-      relations: [
-        'brand',
-        'product',
-        'product.category',
-        'product.subCategory',
-      ],
-      order: {
-        likeCount: 'DESC',
-        viewCount: 'DESC',
-      },
-    });
+  async getBrandOffers(
+    page: number,
+    limit: number,
+    brandId: string,
+    status: ItemStatus,
+    orderBy: OfferFilter,
+  ) {
+    const offersQuery = this.offerRepo
+      .createQueryBuilder('offer')
+      .leftJoinAndSelect('offer.product', 'product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.subCategory', 'subCategory')
+      .leftJoinAndSelect('offer.productImages', 'productImages')
+      .leftJoinAndSelect('offer.brand', 'brand')
+      .where('offer.brandId = :brandId', { brandId });
 
-    const total = await this.offerRepo.count({
-      where: {
-        status: ItemStatus.PUBLISHED,
-        brandId,
-      },
-    });
+    if (status) {
+      offersQuery.andWhere('offer.status = :status', { status });
+    }
+
+    if (orderBy === OfferFilter.MOST_SALES) {
+      offersQuery.orderBy('offer.viewCount', 'DESC');
+    }
+
+    if (orderBy === OfferFilter.MOST_SALES) {
+      offersQuery.orderBy('offer.totalOrders', 'DESC');
+    }
+
+    if (orderBy === OfferFilter.MOST_RECENT) {
+      offersQuery.orderBy('offer.createdAt', 'DESC');
+    }
+
+    offersQuery.skip((page - 1) * limit);
+    offersQuery.take(limit);
+
+    const offers = await offersQuery.getMany();
+    const total = await offersQuery.getCount();
 
     return {
       offers,
@@ -262,7 +324,7 @@ export class OfferService {
       },
     });
     if (!offer) {
-      throw new Error('Product not found');
+      throw new Error('Offer not found');
     }
 
     const productImages = images.map((image) =>
@@ -295,5 +357,18 @@ export class OfferService {
       id: offerId,
       brandId,
     });
+  }
+
+  async increaseOfferSales({
+    offer,
+    amount,
+  }: {
+    offer: Offer;
+    amount: number;
+  }) {
+    offer.totalOrders = offer.totalOrders + 1;
+    offer.totalSales = offer.totalSales + amount;
+
+    return await this.offerRepo.save(offer);
   }
 }

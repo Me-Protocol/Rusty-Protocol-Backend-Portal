@@ -8,6 +8,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
 } from 'class-validator';
 
 export class UpdateProductDto {
@@ -23,7 +24,7 @@ export class UpdateProductDto {
   brandId: string;
 
   @ApiProperty()
-  @IsString()
+  @IsUUID()
   categoryId: string;
 
   @ApiProperty()
@@ -51,7 +52,7 @@ export class UpdateProductDto {
 
   @ApiProperty()
   @IsOptional()
-  @IsString()
+  @IsUUID()
   subCategoryId: string;
 
   @ApiProperty({
@@ -62,11 +63,8 @@ export class UpdateProductDto {
         name: {
           type: 'string',
         },
-        values: {
-          type: 'array',
-          items: {
-            type: 'string',
-          },
+        value: {
+          type: 'string',
         },
         price: {
           type: 'number',
@@ -77,10 +75,13 @@ export class UpdateProductDto {
       },
     },
   })
-  @IsArray({ message: 'Variants must be an array of objects' })
+  @IsArray({
+    message: 'Variants must be an array of objects',
+    // each: true,
+  })
   variants: {
     name: VarientType;
-    values: string[];
+    value: string;
     price: number;
     inventory: number;
   }[];

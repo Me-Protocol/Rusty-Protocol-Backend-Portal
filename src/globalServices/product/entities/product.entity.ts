@@ -1,6 +1,14 @@
 // product entity
 
-import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+  ManyToMany,
+  JoinTable,
+} from 'typeorm';
 import { BaseEntity } from '@src/common/entities/base.entity';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { Category } from '@src/globalServices/category/entities/category.entity';
@@ -77,12 +85,19 @@ export class Product extends BaseEntity {
   @OneToMany(() => Variant, (variant) => variant.product)
   variants: Variant[];
 
-  @Column({
-    nullable: true,
+  @ManyToMany(() => Collection, (collection) => collection.products, {
+    cascade: ['insert', 'update'],
   })
-  collectionId: string;
-
-  @ManyToOne(() => Collection, (collection) => collection.products)
-  @JoinColumn({ name: 'collectionId' })
-  collection: Collection;
+  @JoinTable({
+    name: 'product_collections',
+    joinColumn: {
+      name: 'productId',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'collectionId',
+      referencedColumnName: 'id',
+    },
+  })
+  collections: Collection[];
 }

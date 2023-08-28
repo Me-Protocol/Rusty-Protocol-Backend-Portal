@@ -16,6 +16,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
         scope: ['profile', 'email'],
       },
       async (
+        req: any,
         accessToken: string,
         refreshToken: string,
         profile: any,
@@ -23,6 +24,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
         done: Function,
       ) => {
         try {
+          const userType = req.query.userType;
+          console.log(userType);
+
           done(null, {
             profile,
             accessToken,

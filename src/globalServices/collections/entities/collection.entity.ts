@@ -6,7 +6,14 @@ import { Product } from '@src/globalServices/product/entities/product.entity';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { BaseEntity } from '@src/common/entities/base.entity';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
-import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 
 @Entity('collection')
 export class Collection extends BaseEntity {
@@ -34,7 +41,7 @@ export class Collection extends BaseEntity {
   })
   status: ItemStatus;
 
-  @OneToMany(() => Product, (product) => product.collection)
+  @ManyToMany(() => Product, (product) => product.collections)
   products: Product[];
 
   @Column({

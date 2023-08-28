@@ -115,6 +115,19 @@ export class Offer extends BaseEntity {
   @Column()
   rewardId: string;
 
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0.0,
+  })
+  totalSales: number;
+
+  @Column({
+    default: 0,
+  })
+  totalOrders: number;
+
   @ManyToOne(() => Reward, (reward) => reward.offers)
   reward: Reward;
 

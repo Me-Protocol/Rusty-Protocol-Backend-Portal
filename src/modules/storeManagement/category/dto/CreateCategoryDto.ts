@@ -1,6 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { CategoryType } from '@src/utils/enums/CategoryType';
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateCategoryDto {
   @ApiProperty()
@@ -29,7 +35,7 @@ export class CreateCategoryDto {
 
   @ApiProperty()
   @IsOptional()
-  @IsString()
+  @IsUUID()
   parentId: string;
 
   slug: string;

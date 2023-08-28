@@ -27,7 +27,8 @@ const { SENDGRID_API_KEY, SENDGRID_EMAIL } = process.env;
           from: `"Synchro" <${SENDGRID_EMAIL}>`,
         },
         template: {
-          dir: join(__dirname, 'templates'),
+          // direction in src/views/template/mail.hbs
+          dir: join(__dirname, '../../../src/views/templates'),
           adapter: new HandlebarsAdapter(),
           options: {
             strict: true,

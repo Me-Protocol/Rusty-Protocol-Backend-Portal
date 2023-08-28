@@ -1,5 +1,3 @@
-// category entity
-
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { Product } from '@src/globalServices/product/entities/product.entity';
 import { BaseEntity } from '@src/common/entities/base.entity';
