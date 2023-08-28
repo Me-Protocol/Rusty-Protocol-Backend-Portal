@@ -30,7 +30,9 @@ export class RewardRegistry extends BaseEntity {
   })
   balance: number;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   userId: string;
 
   @ManyToOne(() => User, (user) => user.rewardRegistries)

@@ -30,6 +30,8 @@ export class CreateCollectionDto {
   brandId: string;
 
   @ApiProperty()
-  @IsArray({ message: 'Product images must be an array of strings' })
+  @IsArray({
+    message: 'Product images must be an array of strings',
+  })
   products: string[];
 }

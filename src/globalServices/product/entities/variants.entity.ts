@@ -13,15 +13,19 @@ export class Variant extends BaseEntity {
   })
   name: VarientType;
 
-  @Column('text', {
-    array: true,
+  @Column({
+    nullable: true,
   })
-  values: string[];
+  value: string;
 
   @Column()
   productId: string;
 
-  @ManyToOne(() => Product, (product) => product.variants)
+  @ManyToOne(() => Product, (product) => product.variants, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+    cascade: true,
+  })
   @JoinColumn({ name: 'productId' })
   product: Product;
 

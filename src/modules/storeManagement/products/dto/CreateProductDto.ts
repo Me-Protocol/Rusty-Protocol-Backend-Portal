@@ -5,9 +5,11 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
 } from 'class-validator';
 
 export class CreateProductDto {
@@ -22,7 +24,8 @@ export class CreateProductDto {
   brandId: string;
 
   @ApiProperty()
-  @IsString()
+  @IsUUID()
+  @IsNotEmpty({ message: 'Please provide a category id' })
   categoryId: string;
 
   @ApiProperty()
@@ -50,7 +53,7 @@ export class CreateProductDto {
 
   @ApiProperty()
   @IsOptional()
-  @IsString()
+  @IsUUID()
   subCategoryId: string;
 
   @ApiProperty({
@@ -61,11 +64,8 @@ export class CreateProductDto {
         name: {
           type: 'string',
         },
-        values: {
-          type: 'array',
-          items: {
-            type: 'string',
-          },
+        value: {
+          type: 'string',
         },
         price: {
           type: 'number',
@@ -76,10 +76,13 @@ export class CreateProductDto {
       },
     },
   })
-  @IsArray({ message: 'Variants must be an array of objects' })
+  @IsArray({
+    message: 'Variants must be an array of objects',
+    // each: true,
+  })
   variants: {
     name: VarientType;
-    values: string[];
+    value: string;
     price: number;
     inventory: number;
   }[];

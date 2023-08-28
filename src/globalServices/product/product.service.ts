@@ -77,7 +77,7 @@ export class ProductService {
     productId: string,
     variants: {
       name: VarientType;
-      values: string[];
+      value: string;
       price: number;
       inventory: number;
     }[],
@@ -108,6 +108,10 @@ export class ProductService {
 
   async updateProduct(product: Product) {
     return this.productRepo.update({ id: product.id }, product);
+  }
+
+  async saveProduct(product: Product) {
+    return this.productRepo.save(product);
   }
 
   async getBrandProducts(
@@ -178,7 +182,15 @@ export class ProductService {
         brandId,
         id: productId,
       },
-      relations: ['category', 'productImages', 'brand'],
+      relations: ['category', 'productImages', 'brand', 'variants'],
+    });
+  }
+
+  async findOneProduct(productId: string) {
+    return await this.productRepo.findOne({
+      where: {
+        id: productId,
+      },
     });
   }
 
@@ -222,6 +234,9 @@ export class ProductService {
       .leftJoinAndSelect('product.productImages', 'productImages')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.brand', 'brand')
+      .leftJoinAndSelect('product.variants', 'variants')
+      .leftJoinAndSelect('product.collections', 'collections')
+      .leftJoinAndSelect('product.offers', 'offers')
       .where('product.brandId = :brandId', { brandId });
 
     if (status) {

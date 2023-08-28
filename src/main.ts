@@ -4,6 +4,7 @@ import { jwtConfigurations } from './config/jwt.config';
 import * as session from 'express-session';
 import { logger } from './globalServices/logger/logger.service';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const cloudinary_1 = require('cloudinary');
 
@@ -16,7 +17,7 @@ const {
 } = process.env;
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.enableCors();
   app.use(
     session({
@@ -25,6 +26,9 @@ async function bootstrap() {
       resave: true,
     }),
   );
+
+  app.useLogger(app.get(Logger));
+  app.useGlobalInterceptors(new LoggerErrorInterceptor());
 
   const config = new DocumentBuilder()
     .addBearerAuth(
@@ -61,7 +65,7 @@ async function bootstrap() {
     secure: true,
   });
 
-  logger.warn(`Application is now running on: ${await app.getUrl()}`);
-  console.log(`Application is now running on: ${await app.getUrl()}`);
+  // logger.warn(`Application is now running on: ${await app.getUrl()}`);
+  // console.log(`Application is now running on: ${await app.getUrl()}`);
 }
 bootstrap();

@@ -62,13 +62,12 @@ export class OfferManagementController {
     return await this.offerManagementService.deleteOffer(offerId, brandId);
   }
 
-  @UseGuards(AuthGuard())
-  @Get('top')
-  async getTopOffers(
+  @Get('')
+  async getOffers(
     @Query(ValidationPipe) query: FilterOfferDto,
     @Req() req: any,
   ) {
-    return await this.offerManagementService.getTopOffers(query);
+    return await this.offerManagementService.getOffers(query);
   }
 
   @UseGuards(AuthGuard())
@@ -83,15 +82,14 @@ export class OfferManagementController {
     return await this.offerManagementService.getTopOffersForUser(query);
   }
 
-  @UseGuards(AuthGuard())
+  @UseGuards(BrandJwtStrategy)
   @Get('brand')
   async getBrandOffers(
     @Query(ValidationPipe) query: FilterOfferDto,
     @Req() req: any,
   ) {
-    if (!query.brandId) {
-      throw new HttpException('BrandId is required', 400);
-    }
+    const brandId = req.user.brand.id;
+    query.brandId = brandId;
 
     return await this.offerManagementService.getBrandOffers(query);
   }
@@ -107,6 +105,7 @@ export class OfferManagementController {
     );
   }
 
+  @UseGuards(AuthGuard())
   @Get(':offerCode/user')
   async getOfferForLoggedInUser(
     @Param('offerCode') offerCode: string,

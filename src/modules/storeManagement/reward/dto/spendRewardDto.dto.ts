@@ -1,18 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsObject, IsString } from 'class-validator';
-import { SendTransactionData } from '../../reward/dto/distributeBatch.dto';
+import { IsObject, IsUUID } from 'class-validator';
+import { SendTransactionData } from './distributeBatch.dto';
 
-export class CreateOrderDto {
-  userId: string;
-
-  @ApiProperty()
-  @IsString()
-  offerId: string;
-
-  @ApiProperty()
-  @IsNumber()
-  quantity: number;
-
+export class SpendRewardDto {
   @ApiProperty({
     type: 'object',
     example: {
@@ -29,4 +19,8 @@ export class CreateOrderDto {
     each: true,
   })
   params: SendTransactionData;
+
+  @ApiProperty()
+  @IsUUID()
+  rewardId: string;
 }

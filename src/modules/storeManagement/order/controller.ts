@@ -31,12 +31,12 @@ export class OrderManagementController {
   ) {}
 
   @UseGuards(AuthGuard())
-  @Post('redeem')
+  @Post('redeem-offer')
   async redeem(@Req() req: any, @Body(ValidationPipe) body: CreateOrderDto) {
     const userId = req.user.id;
     body.userId = userId;
 
-    return await this.orderManagementService.redeem(body);
+    return await this.orderManagementService.redeemWithRewardSpend(body);
   }
 
   @UseGuards(AuthGuard())

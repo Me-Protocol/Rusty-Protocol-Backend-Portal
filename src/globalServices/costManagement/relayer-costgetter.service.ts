@@ -19,6 +19,9 @@ const gelatoCostRetriever = async (
 ) => {
   const url = process.env.GELATO_RELAYER_STATUS_URL + taskId;
   const gelatoResponse = await axios.get(url);
+
+  if (!gelatoResponse.data.task) return null;
+
   const transactionHash = gelatoResponse.data.task.transactionHash;
   const cost = await getGasCost(network, transactionHash);
 

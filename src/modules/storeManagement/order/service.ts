@@ -10,6 +10,7 @@ import { FilterOrderDto } from './dto/FilterOrderDto.dto';
 import { UseCouponDto } from './dto/UseCouponDto.dto';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
+import { RewardManagementService } from '../reward/service';
 
 @Injectable()
 export class OrderManagementService {
@@ -20,6 +21,7 @@ export class OrderManagementService {
     private readonly userService: UserService,
     private readonly orderService: OrderService,
     private readonly rewardService: RewardService,
+    private readonly rewardManagementService: RewardManagementService,
   ) {}
 
   randomCode() {
@@ -69,7 +71,7 @@ export class OrderManagementService {
           // create transaction
           await this.syncService.creditReward({
             rewardId: offer.rewardId,
-            userId: user.id,
+            identifier: syncData.identifier,
             amount: syncData.amount,
             description: `Reward sync`,
           });
@@ -157,6 +159,69 @@ export class OrderManagementService {
   async useCoupon(body: UseCouponDto) {
     try {
       return this.couponService.useCoupon(body);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async redeemWithRewardSpend({
+    userId,
+    offerId,
+    quantity,
+    params,
+  }: CreateOrderDto) {
+    try {
+      const offer = await this.offerService.getOfferById(offerId);
+
+      if (!offer) {
+        throw new Error('Offer not found');
+      }
+
+      if (quantity === 0) {
+        throw new Error('Quantity must be greater than 0');
+      }
+
+      if (offer.product.inventory < quantity) {
+        throw new Error('Offer is out of stock');
+      }
+
+      // check if offer has expired
+      if (offer.endDate < new Date()) {
+        throw new Error('Offer has expired');
+      }
+      const user = await this.userService.getUserById(userId);
+
+      const discount = (offer.tokens * offer.discountPercentage) / 100;
+      const amount = offer.tokens - discount;
+
+      const totalAmount = amount * quantity;
+
+      // Spend reward
+      const spend = await this.rewardManagementService.spendReward({
+        rewardId: offer.rewardId,
+        params,
+      });
+
+      const coupon = await this.couponService.create(user.id, offerId);
+
+      const orderRecord = new Order();
+      orderRecord.userId = user.id;
+      orderRecord.offerId = offerId;
+      orderRecord.points = totalAmount;
+      orderRecord.couponId = coupon.id;
+      orderRecord.quantity = quantity;
+      orderRecord.isRedeemed = true;
+
+      await this.orderService.saveOrder(orderRecord);
+
+      await this.offerService.increaseOfferSales({
+        offer,
+        amount: totalAmount,
+      });
+
+      // TODO: send notification to user
+
+      return spend;
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }

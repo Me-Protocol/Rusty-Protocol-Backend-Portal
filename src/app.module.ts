@@ -103,6 +103,7 @@ import { PaymentModuleController } from './modules/paymentModule/controller';
 import { InAppApiKeyJwtStrategy } from './middlewares/inapp-api-jwt-strategy.middleware';
 import { SettingsService } from './globalServices/settings/settings.service';
 import { BrandSubscriptionService } from './globalServices/brand/brandSeviceSubscription.service';
+import { LoggerModule } from 'nestjs-pino';
 
 @Module({
   imports: [
@@ -163,6 +164,7 @@ import { BrandSubscriptionService } from './globalServices/brand/brandSeviceSubs
     AuthenticationModule,
     UploadModule,
     ScheduleModule.forRoot(),
+    LoggerModule.forRoot(),
   ],
   controllers: [
     AppController,

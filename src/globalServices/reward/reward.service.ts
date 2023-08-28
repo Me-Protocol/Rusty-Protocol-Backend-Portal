@@ -121,4 +121,11 @@ export class RewardService {
         )
       : null;
   }
+
+  getRewardByContractAddress(contractAddress: string) {
+    return this.rewardsRepo.findOne({
+      where: { contractAddress: contractAddress },
+      relations: ['brand'],
+    });
+  }
 }

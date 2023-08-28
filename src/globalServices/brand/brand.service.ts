@@ -59,4 +59,8 @@ export class BrandService {
   getAllBrands() {
     return this.brandRepo.find();
   }
+
+  getBrandByName(name: string) {
+    return this.brandRepo.findOneBy({ name });
+  }
 }

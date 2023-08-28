@@ -31,14 +31,14 @@ export class CollectionService {
     status?: ItemStatus;
     products?: string[];
   }) {
-    const productRecords = [];
+    const collectionProducts = [];
 
     for (const productId of products) {
-      const product = await this.productService.getOneProduct(
-        productId,
-        brandId,
-      );
-      productRecords.push(product);
+      const product = await this.productService.findOneProduct(productId);
+
+      if (product) {
+        collectionProducts.push(product);
+      }
     }
 
     const collection = this.collectionRepo.create({
@@ -48,10 +48,10 @@ export class CollectionService {
       userId,
       status,
       brandId,
-      products: productRecords,
+      products: collectionProducts,
     });
 
-    return this.collectionRepo.save(collection);
+    return await this.collectionRepo.save(collection);
   }
 
   async update(
@@ -72,20 +72,32 @@ export class CollectionService {
       products: string[];
     },
   ) {
-    const productRecords = [];
+    const collection = await this.collectionRepo.findOne({
+      where: {
+        id,
+      },
+    });
+
+    await this.collectionRepo.update(
+      { id, userId },
+      { name, description, image, status },
+    );
 
     for (const productId of products) {
-      const product = await this.productService.getOneProduct(
-        productId,
-        brandId,
-      );
-      productRecords.push(product);
+      const product = await this.productService.findOneProduct(productId);
+
+      if (product) {
+        const checkProduct = collection.products.find(
+          (product) => product.id === productId,
+        );
+
+        if (!checkProduct) {
+          collection.products.push(product);
+        }
+      }
     }
 
-    return this.collectionRepo.update(
-      { id, userId },
-      { name, description, image, status, products: productRecords },
-    );
+    return await this.collectionRepo.save(collection);
   }
 
   async findAll(userId: string, brandId: string, page: number, limit: number) {
@@ -96,6 +108,7 @@ export class CollectionService {
       },
       skip: (page - 1) * limit,
       take: limit,
+      relations: ['products'],
     });
 
     const total = await this.collectionRepo.count({
@@ -106,7 +119,7 @@ export class CollectionService {
     });
 
     return {
-      data,
+      collections: data,
       total,
       nextPage: total > page * limit ? page + 1 : null,
       previousPage: page > 1 ? page - 1 : null,

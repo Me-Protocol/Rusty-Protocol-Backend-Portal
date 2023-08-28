@@ -5,12 +5,14 @@ import { Offer } from '@src/globalServices/offer/entities/offer.entity';
 import { ProductService } from '@src/globalServices/product/product.service';
 import { UpdateOfferDto } from './dto/UpdateOfferDto.dto';
 import { FilterOfferDto } from './dto/FilterOfferDto.dto';
+import { RewardService } from '@src/globalServices/reward/reward.service';
 
 @Injectable()
 export class OfferManagementService {
   constructor(
     private readonly offerService: OfferService,
     private readonly productService: ProductService,
+    private readonly rewardService: RewardService,
   ) {}
 
   async createOffer(body: CreateOfferDto) {
@@ -22,6 +24,17 @@ export class OfferManagementService {
     if (!product) {
       throw new HttpException('Product not found', 404, {
         cause: new Error('Product not found'),
+      });
+    }
+
+    const reward = await this.rewardService.findOneByIdAndBrand(
+      body.rewardId,
+      body.brandId,
+    );
+
+    if (!reward) {
+      throw new HttpException('Reward not found', 404, {
+        cause: new Error('Reward not found'),
       });
     }
 
@@ -42,14 +55,16 @@ export class OfferManagementService {
     offer.idOnBrandsite = body.idOnBrandsite;
     offer.rewardId = body.rewardId;
 
+    const saveOffer = await this.offerService.saveOffer(offer);
+
     // upload images
-    await this.productService.bulkAddProductImage(
+    await this.offerService.bulkAddOfferImage(
       body.brandId,
-      offer.id,
+      saveOffer.id,
       body.productImages,
     );
 
-    return await this.offerService.saveOffer(offer);
+    return saveOffer;
   }
 
   async updateOffer(id: string, body: UpdateOfferDto) {
@@ -74,6 +89,17 @@ export class OfferManagementService {
       }
 
       offer.productId = body.productId;
+    }
+
+    const reward = await this.rewardService.findOneByIdAndBrand(
+      body.rewardId,
+      body.brandId,
+    );
+
+    if (!reward) {
+      throw new HttpException('Reward not found', 404, {
+        cause: new Error('Reward not found'),
+      });
     }
 
     if (body.name) offer.name = body.name;
@@ -114,8 +140,8 @@ export class OfferManagementService {
     );
   }
 
-  async getTopOffers(query: FilterOfferDto) {
-    return await this.offerService.getTopOffers(query);
+  async getOffers(query: FilterOfferDto) {
+    return await this.offerService.getOffers(query);
   }
 
   async getTopOffersForUser(query: FilterOfferDto) {
@@ -131,6 +157,8 @@ export class OfferManagementService {
       query.page,
       query.limit,
       query.brandId,
+      query.status,
+      query.orderBy,
     );
   }
 

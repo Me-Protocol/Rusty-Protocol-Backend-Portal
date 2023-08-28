@@ -18,25 +18,37 @@ export class ProductManagementService {
   }
 
   async createProduct(body: CreateProductDto) {
-    const category = await this.categoryService.findOne(body.categoryId);
+    if (body.categoryId) {
+      const category = await this.categoryService.findOne(body.categoryId);
 
-    if (!category) {
-      throw new HttpException('Category does not exist', 400);
+      if (!category) {
+        throw new HttpException('Category does not exist', 400);
+      }
+    }
+
+    if (body.subCategoryId) {
+      const subCategory = await this.categoryService.findOne(
+        body.subCategoryId,
+      );
+
+      if (!subCategory) {
+        throw new HttpException('Sub Category does not exist', 400);
+      }
     }
 
     const productCode = await this.productService.generateProductCode();
 
     const product = new Product();
     product.brandId = body.brandId;
-    product.categoryId = body.categoryId;
-    product.name = body.name;
-    product.description = body.description;
-    product.price = body.price;
-    product.status = body.status;
-    product.inventory = body.inventory;
-    product.isUnlimited = body.isUnlimited;
+    if (body.categoryId) product.categoryId = body.categoryId;
+    if (body.name) product.name = body.name;
+    if (body.description) product.description = body.description;
+    if (body.price) product.price = body.price;
+    if (body.status) product.status = body.status;
+    if (body.inventory) product.inventory = body.inventory;
+    if (body.isUnlimited) product.isUnlimited = body.isUnlimited;
+    if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
     product.productCode = productCode;
-    product.subCategoryId = body.subCategoryId;
 
     const newProduct = await this.productService.createProduct(product);
 
@@ -67,10 +79,22 @@ export class ProductManagementService {
       );
     }
 
-    const category = await this.categoryService.findOne(body.categoryId);
+    if (body.categoryId) {
+      const category = await this.categoryService.findOne(body.categoryId);
 
-    if (!category) {
-      throw new HttpException('Category does not exist', 400);
+      if (!category) {
+        throw new HttpException('Category does not exist', 400);
+      }
+    }
+
+    if (body.subCategoryId) {
+      const subCategory = await this.categoryService.findOne(
+        body.subCategoryId,
+      );
+
+      if (!subCategory) {
+        throw new HttpException('Sub Category does not exist', 400);
+      }
     }
 
     // update only what is provided
@@ -171,8 +195,13 @@ export class ProductManagementService {
   }
 
   async getProducts(query: FilterDto) {
-    const products = await this.productService.getProducts(query);
+    try {
+      const products = await this.productService.getProducts(query);
 
-    return products;
+      return products;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, 400);
+    }
   }
 }
