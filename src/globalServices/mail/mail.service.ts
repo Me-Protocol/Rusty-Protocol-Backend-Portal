@@ -1,5 +1,6 @@
 import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
+import { logger } from '../logger/logger.service';
 
 @Injectable()
 export class MailService {
@@ -18,6 +19,7 @@ export class MailService {
         },
       });
     } catch (error) {
+      logger.error(error);
       throw new Error(error);
     }
   }

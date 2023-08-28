@@ -4,6 +4,7 @@ import { CategoryService } from '@src/globalServices/category/category.service';
 import { CreateCategoryDto } from './dto/CreateCategoryDto';
 import { UpdateCategoryDto } from './dto/UpdateCategoryDto';
 import { getSlug } from '@src/utils/helpers/getSlug';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 @Injectable()
 export class CategoryManagementService {
@@ -22,6 +23,7 @@ export class CategoryManagementService {
 
       return await this.categoryService.create(createCategoryDto);
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });
@@ -43,6 +45,7 @@ export class CategoryManagementService {
 
       return this.categoryService.update(id, category);
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });

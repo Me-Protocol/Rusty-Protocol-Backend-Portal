@@ -1,6 +1,7 @@
 import { Strategy } from 'passport-google-oauth20';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI } =
   process.env;
@@ -33,6 +34,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
             refreshToken,
           });
         } catch (err) {
+          logger.error(err);
           done(new UnauthorizedException(), false);
         }
       },

@@ -1,6 +1,7 @@
 import { Strategy } from 'passport-twitter';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 const { TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET, TWITTER_CALLBACK_URL } =
   process.env;
@@ -33,6 +34,7 @@ export class TwitterStrategy extends PassportStrategy(Strategy) {
         refreshToken,
       });
     } catch (err) {
+      logger.error(err);
       done(err, false);
     }
   }

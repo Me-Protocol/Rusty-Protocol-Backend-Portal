@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UserService } from '@src/globalServices/user/user.service';
 import { UserAppType } from '@src/utils/enums/UserAppType';
 import { BrandService } from '@src/globalServices/brand/brand.service';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 @Injectable()
 export class BrandJwtStrategy implements CanActivate {
@@ -84,6 +85,7 @@ export class BrandJwtStrategy implements CanActivate {
 
       return true;
     } catch (error) {
+      logger.error(error);
       throw new UnauthorizedException('Unauthorized. Please login');
     }
   }

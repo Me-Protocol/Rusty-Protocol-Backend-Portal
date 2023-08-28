@@ -18,6 +18,7 @@ import { DistributeBatchDto } from './dto/distributeBatch.dto';
 import { mutate, mutate_n_format } from '@developeruche/runtime-sdk';
 import { SpendRewardDto } from './dto/spendRewardDto.dto';
 import { AxiosResponse } from 'axios';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 @Injectable()
 export class RewardManagementService {
@@ -57,6 +58,7 @@ export class RewardManagementService {
 
       return await this.rewardService.create(reward);
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, error.status, {
         cause: new Error(error.message),
       });
@@ -102,6 +104,7 @@ export class RewardManagementService {
 
       return await this.rewardService.save(reward);
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });
@@ -355,7 +358,7 @@ export class RewardManagementService {
         batch: savedBatch,
       };
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });
@@ -392,7 +395,7 @@ export class RewardManagementService {
 
       return distribute;
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });
@@ -461,7 +464,7 @@ export class RewardManagementService {
 
       return distribute;
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });
@@ -548,6 +551,7 @@ export class RewardManagementService {
         ],
       };
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });

@@ -18,6 +18,7 @@ import { PaymentOrigin } from '@src/utils/enums/PaymentOrigin';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { CostBatch } from '@src/globalServices/costManagement/entities/costBatch.entity';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 @Injectable()
 export class CostModuleManagementService {
@@ -53,6 +54,7 @@ export class CostModuleManagementService {
 
       return status;
     } catch (error) {
+      logger.error(error);
       throw new Error('Failed to check transaction status.');
     }
   }
@@ -72,6 +74,7 @@ export class CostModuleManagementService {
 
       // Create payment request
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, 400, {});
     }
   }
@@ -91,6 +94,7 @@ export class CostModuleManagementService {
 
       // Create payment request
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, 400, {});
     }
   }
@@ -173,6 +177,7 @@ export class CostModuleManagementService {
 
       // Create payment request
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, 400, {});
     }
   }
@@ -239,7 +244,7 @@ export class CostModuleManagementService {
 
       return true;
     } catch (error) {
-      console.log(error.message);
+      logger.error(error);
       return false;
     }
   }
@@ -328,7 +333,7 @@ export class CostModuleManagementService {
 
       return true;
     } catch (error) {
-      console.log(error.message);
+      logger.error(error);
       return false;
     }
   }
@@ -357,7 +362,7 @@ export class CostModuleManagementService {
           brand,
         );
       } catch (error) {
-        console.log(error);
+        logger.error(error);
       }
     }
 
@@ -382,7 +387,7 @@ export class CostModuleManagementService {
         amount,
       );
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(error.message, 400, {});
     }
   }

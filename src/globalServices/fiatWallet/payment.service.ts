@@ -3,6 +3,7 @@ import { FiatWallet } from './entities/fiatWallet.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaymentMethod } from './entities/paymentMethod';
 import { Repository } from 'typeorm';
+import { logger } from '../logger/logger.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -51,7 +52,7 @@ export class PaymentService {
         publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
       };
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(error.message, 400);
     }
   }
@@ -96,6 +97,7 @@ export class PaymentService {
 
       return 'ok';
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, 400);
     }
   }

@@ -6,6 +6,7 @@ import { OfferService } from '@src/globalServices/offer/offer.service';
 import { CollectionService } from '@src/globalServices/collections/collections.service';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
 import { FilterLikeDto } from './dto/FilterLikeDto.dto';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 @Injectable()
 export class LikeManagementService {
@@ -101,6 +102,7 @@ export class LikeManagementService {
 
       return createdLike;
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, 500, {
         cause: new Error(error.message),
       });
@@ -116,6 +118,7 @@ export class LikeManagementService {
 
       return 'Successfully unliked';
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, 500, {
         cause: new Error(error.message),
       });
@@ -135,6 +138,7 @@ export class LikeManagementService {
 
       return false;
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });
@@ -149,6 +153,7 @@ export class LikeManagementService {
       );
       return likes;
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });
