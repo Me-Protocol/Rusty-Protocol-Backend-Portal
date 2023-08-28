@@ -4,7 +4,6 @@ import { jwtConfigurations } from './config/jwt.config';
 import * as session from 'express-session';
 import { logger } from './globalServices/logger/logger.service';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const cloudinary_1 = require('cloudinary');
 
@@ -26,9 +25,6 @@ async function bootstrap() {
       resave: true,
     }),
   );
-
-  app.useLogger(app.get(Logger));
-  app.useGlobalInterceptors(new LoggerErrorInterceptor());
 
   const config = new DocumentBuilder()
     .addBearerAuth(

@@ -4,6 +4,7 @@ import { FollowService } from '@src/globalServices/follow/follow.service';
 import { UserService } from '@src/globalServices/user/user.service';
 import { FollowDto } from './dto/FollowDto.dto';
 import { FilteUserFollowDto, FilterFollowDto } from './dto/FilterFollowDto.dto';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 @Injectable()
 export class FollowManagementService {
@@ -32,6 +33,7 @@ export class FollowManagementService {
 
       return await this.followService.followBrand(brand.id, body.userId);
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, error.status, {
         cause: error,
       });
@@ -57,6 +59,7 @@ export class FollowManagementService {
 
       return await this.followService.unfollow(brand.id, body.userId);
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, error.status, {
         cause: error,
       });
@@ -77,6 +80,7 @@ export class FollowManagementService {
         query.limit,
       );
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, error.status, {
         cause: error,
       });
@@ -97,6 +101,7 @@ export class FollowManagementService {
         query.limit,
       );
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, error.status, {
         cause: error,
       });

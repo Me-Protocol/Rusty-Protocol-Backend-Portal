@@ -5,6 +5,7 @@ import { CategoryService } from '@src/globalServices/category/category.service';
 import { Product } from '@src/globalServices/product/entities/product.entity';
 import { UpdateProductDto } from './dto/UpdateProductDto';
 import { FilterDto } from './dto/FilterDto';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 @Injectable()
 export class ProductManagementService {
@@ -200,7 +201,7 @@ export class ProductManagementService {
 
       return products;
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(error.message, 400);
     }
   }

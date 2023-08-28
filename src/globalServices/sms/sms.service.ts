@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { logger } from '../logger/logger.service';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require('dotenv').config();
 const { TWILIO_SID, TWILIO_TOKEN } = process.env;
@@ -21,6 +22,7 @@ export class SmsService {
         .then((message: { sid: any }) => console.log(message.sid))
         .done();
     } catch (error) {
+      logger.error(error);
       throw new Error(error);
     }
   }

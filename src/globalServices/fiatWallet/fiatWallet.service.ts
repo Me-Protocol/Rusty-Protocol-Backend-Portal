@@ -11,6 +11,7 @@ import { BrandService } from '../brand/brand.service';
 import { SettingsService } from '../settings/settings.service';
 import { BrandSubscriptionService } from '../brand/brandSeviceSubscription.service';
 import { BrandSubServices } from '@src/utils/enums/BrandSubServices';
+import { logger } from '../logger/logger.service';
 
 @Injectable()
 export class FiatWalletService {
@@ -240,7 +241,7 @@ export class FiatWalletService {
           narration: 'Cost Reimbursement',
         });
       } catch (error) {
-        console.log(error);
+        logger.error(error);
         return false;
       }
     } else {

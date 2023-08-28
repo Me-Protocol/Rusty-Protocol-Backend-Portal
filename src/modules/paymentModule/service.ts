@@ -1,6 +1,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { PaymentService } from '@src/globalServices/fiatWallet/payment.service';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 @Injectable()
 export class PaymentModuleService {
@@ -18,6 +19,7 @@ export class PaymentModuleService {
         wallet,
       );
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, 400);
     }
   }

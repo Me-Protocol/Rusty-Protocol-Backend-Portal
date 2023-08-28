@@ -1,5 +1,6 @@
 import axios from 'axios';
 import symbolRetriever, { supportedNetworks } from './symbol-finder.service';
+import { logger } from '../logger/logger.service';
 
 const retrieveCost = (
   costKey: string,
@@ -88,6 +89,10 @@ const getPolygonMumbaiCost = async (
       },
     })
     .then((response) => {
+      if (!response?.data?.result?.gas) {
+        throw new Error('Failed to retrieve cost');
+      }
+
       const gas = response.data.result.gas;
       const gasPriceInGWei = response.data.result.gasPrice / 1000000000;
       const cost = calculateTransactionFee(gas, gasPriceInGWei);
@@ -95,7 +100,7 @@ const getPolygonMumbaiCost = async (
       return cost;
     })
     .catch((error) => {
-      console.log(error);
+      logger.error(error);
       throw new Error('Failed to retrieve cost');
     });
 };

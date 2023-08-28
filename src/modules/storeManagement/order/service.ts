@@ -11,6 +11,7 @@ import { UseCouponDto } from './dto/UseCouponDto.dto';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
 import { RewardManagementService } from '../reward/service';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 @Injectable()
 export class OrderManagementService {
@@ -116,6 +117,7 @@ export class OrderManagementService {
         couponCode: coupon.code,
       };
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
@@ -124,6 +126,7 @@ export class OrderManagementService {
     try {
       return this.orderService.getOrders(userId, page, limit);
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
@@ -132,6 +135,7 @@ export class OrderManagementService {
     try {
       return this.orderService.getOrderById(userId, id);
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
@@ -152,6 +156,7 @@ export class OrderManagementService {
 
       return await this.orderService.saveOrder(order);
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
@@ -160,6 +165,7 @@ export class OrderManagementService {
     try {
       return this.couponService.useCoupon(body);
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
@@ -223,6 +229,7 @@ export class OrderManagementService {
 
       return spend;
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }

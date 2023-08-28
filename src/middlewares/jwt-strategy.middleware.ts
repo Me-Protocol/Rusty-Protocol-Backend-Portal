@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { JwtPayload, jwtConfigurations } from 'src/config/jwt.config';
 import { UserService } from '@src/globalServices/user/user.service';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -69,6 +70,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         deviceToken,
       };
     } catch (error) {
+      logger.error(error);
       throw new UnauthorizedException('Unauthorized. Please login');
     }
   }

@@ -1,6 +1,7 @@
 import { Strategy } from 'passport-facebook';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 const { FACEBOOK_CLIENT_ID, FACEBOOK_REDIRECT_URI, FACEBOOK_SECRET } =
   process.env;
@@ -32,7 +33,7 @@ export class FacebookStrategy extends PassportStrategy(Strategy) {
             refreshToken,
           });
         } catch (err) {
-          console.log(err);
+          logger.error(err);
           done(new UnauthorizedException(), false);
         }
       },

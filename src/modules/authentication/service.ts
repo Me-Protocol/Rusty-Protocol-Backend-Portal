@@ -26,6 +26,7 @@ import { BrandService } from '@src/globalServices/brand/brand.service';
 import { UserAppType } from '@src/utils/enums/UserAppType';
 import { Role } from '@src/utils/enums/Role';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -148,6 +149,7 @@ export class AuthenticationService {
         `,
       });
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
@@ -170,6 +172,7 @@ export class AuthenticationService {
         body: `Hello 👋🏻, Use the code below to verify your phone number. Code: ${user.accountVerificationCode}`,
       });
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });
@@ -248,7 +251,7 @@ export class AuthenticationService {
 
       return token;
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });
@@ -309,7 +312,7 @@ export class AuthenticationService {
 
       return token;
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
@@ -380,6 +383,7 @@ export class AuthenticationService {
 
       return token;
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
@@ -430,7 +434,7 @@ export class AuthenticationService {
 
       return token;
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
@@ -526,6 +530,7 @@ export class AuthenticationService {
 
       return token;
     } catch (error) {
+      logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });
@@ -563,7 +568,7 @@ export class AuthenticationService {
 
       return 'Logged out! See you soon :)';
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
@@ -584,7 +589,7 @@ export class AuthenticationService {
 
       return user;
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
@@ -623,7 +628,7 @@ export class AuthenticationService {
 
       return 'Password changed';
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
@@ -652,7 +657,7 @@ export class AuthenticationService {
 
       return 'Please verify your current email';
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
@@ -681,7 +686,7 @@ export class AuthenticationService {
 
       return 'Email changed';
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
@@ -715,7 +720,7 @@ export class AuthenticationService {
 
       return 'Please verify your current phone number';
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
@@ -748,7 +753,7 @@ export class AuthenticationService {
 
       return 'Phone number changed';
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
