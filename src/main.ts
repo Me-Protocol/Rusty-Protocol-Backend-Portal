@@ -62,6 +62,6 @@ async function bootstrap() {
   });
 
   // logger.warn(`Application is now running on: ${await app.getUrl()}`);
-  // console.log(`Application is now running on: ${await app.getUrl()}`);
+  console.log(`Application is now running on: ${await app.getUrl()}`);
 }
 bootstrap();
