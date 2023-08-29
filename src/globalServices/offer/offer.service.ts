@@ -282,7 +282,7 @@ export class OfferService {
       .leftJoinAndSelect('offer.product', 'product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.subCategory', 'subCategory')
-      .leftJoinAndSelect('offer.productImages', 'productImages')
+      .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
       .where('offer.brandId = :brandId', { brandId });
 

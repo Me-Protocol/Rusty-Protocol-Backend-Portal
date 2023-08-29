@@ -61,7 +61,7 @@ export class OfferManagementService {
     await this.offerService.bulkAddOfferImage(
       body.brandId,
       saveOffer.id,
-      body.productImages,
+      body.offerImages,
     );
 
     return saveOffer;

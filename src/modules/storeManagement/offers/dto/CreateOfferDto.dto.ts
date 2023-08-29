@@ -17,7 +17,7 @@ export class CreateOfferDto {
 
   @ApiProperty()
   @IsArray()
-  productImages: string[];
+  offerImages: string[];
 
   @ApiProperty()
   @IsNumber()

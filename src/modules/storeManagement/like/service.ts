@@ -83,7 +83,7 @@ export class LikeManagementService {
             name: 'My Collection',
             userId: body.userId,
             description: 'My Collection',
-            image: offer.productImages[0]?.url,
+            image: offer.offerImages[0]?.url,
             status: ItemStatus.PRIVATE,
           });
 

@@ -38,7 +38,7 @@ export class Offer extends BaseEntity {
   product: Product;
 
   @OneToMany(() => ProductImage, (productImage) => productImage.offer)
-  productImages: ProductImage[];
+  offerImages: ProductImage[];
 
   @Column({
     type: 'decimal',

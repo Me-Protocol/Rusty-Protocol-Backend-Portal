@@ -21,7 +21,7 @@ export class ProductImage extends BaseEntity {
   @Column({ nullable: true })
   productId: string;
 
-  @ManyToOne(() => Offer, (offer) => offer.productImages)
+  @ManyToOne(() => Offer, (offer) => offer.offerImages)
   @JoinColumn({ name: 'offerId' })
   offer: Offer;
 
