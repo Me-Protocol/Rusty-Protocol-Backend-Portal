@@ -49,7 +49,7 @@ export class CategoryManagementController {
   }
 
   @Get('')
-  async getAllCategories(@Query() query: FilterCategoryDto) {
+  async getAllCategories(@Query(ValidationPipe) query: FilterCategoryDto) {
     return await this.categoryManagementService.findAllCategory(query);
   }
 }

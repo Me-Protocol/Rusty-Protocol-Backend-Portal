@@ -41,13 +41,20 @@ export class FiatWalletService {
     brand?: Brand;
   }): Promise<FiatWallet> {
     const wallet = new FiatWallet();
+    let checkWallet: FiatWallet;
 
     if (user) {
       wallet.userId = user.id;
+      checkWallet = await this.walletRepo.findOneBy({ userId: user.id });
     }
 
     if (brand) {
       wallet.brandId = brand.id;
+      checkWallet = await this.walletRepo.findOneBy({ brandId: brand.id });
+    }
+
+    if (checkWallet) {
+      return checkWallet;
     }
 
     const stripeAccount = await this.paymentService.createAccount();

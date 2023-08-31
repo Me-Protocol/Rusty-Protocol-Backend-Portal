@@ -3,3 +3,12 @@ export enum OfferFilter {
   MOST_SALES = 'MOST_SALES',
   MOST_RECENT = 'MOST_RECENT',
 }
+
+export enum OfferSort {
+  TRENDING = 'TRENDING',
+  NEW = 'NEW',
+  PRICE_HIGH_TO_LOW = 'PRICE_HIGH_TO_LOW',
+  PRICE_LOW_TO_HIGH = 'PRICE_LOW_TO_HIGH',
+  POPULAR = 'POPULAR',
+  EXPIRING = 'EXPIRING',
+}

@@ -6,7 +6,7 @@ import { UserService } from '../user/user.service';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
 import { ProductImage } from '../product/entities/productImage.entity';
 import { ViewsService } from '../views/view.service';
-import { OfferFilter } from '@src/utils/enums/OfferFiilter';
+import { OfferFilter, OfferSort } from '@src/utils/enums/OfferFiilter';
 
 @Injectable()
 export class OfferService {
@@ -106,50 +106,75 @@ export class OfferService {
     category,
     subCategory,
     brandId,
+    sort,
   }: {
     page: number;
     limit: number;
     category?: string;
     subCategory?: string;
     brandId?: string;
+    sort: OfferSort;
   }) {
-    const offers = await this.offerRepo.find({
-      where: {
-        status: ItemStatus.PUBLISHED,
-        product: {
-          category: {
-            id: category,
-          },
-          subCategory: {
-            id: subCategory,
-          },
-        },
-        brandId,
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-      relations: [
-        'brand',
-        'product',
-        'product.category',
-        'product.subCategory',
-      ],
-    });
+    const offersQuery = this.offerRepo
+      .createQueryBuilder('offer')
+      .leftJoinAndSelect('offer.product', 'product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.subCategory', 'subCategory')
+      .leftJoinAndSelect('offer.offerImages', 'offerImages')
+      .leftJoinAndSelect('offer.brand', 'brand')
+      .where('offer.status = :status', { status: ItemStatus.PUBLISHED });
 
-    const total = await this.offerRepo.count({
-      where: {
-        status: ItemStatus.PUBLISHED,
-        product: {
-          category: {
-            id: category,
-          },
-          subCategory: {
-            id: subCategory,
-          },
-        },
-        brandId,
-      },
-    });
+    if (category) {
+      offersQuery.andWhere('product.categoryId = :categoryId', {
+        categoryId: category,
+      });
+    }
+
+    if (subCategory) {
+      offersQuery.andWhere('product.subCategoryId = :subCategoryId', {
+        subCategoryId: subCategory,
+      });
+    }
+
+    if (brandId) {
+      offersQuery.andWhere('offer.brandId = :brandId', { brandId });
+    }
+
+    if (sort === OfferSort.TRENDING) {
+      offersQuery.orderBy('offer.viewCount', 'DESC');
+      offersQuery.addOrderBy('offer.likeCount', 'DESC');
+      offersQuery.addOrderBy('offer.updatedAt', 'DESC');
+    }
+
+    if (sort === OfferSort.POPULAR) {
+      offersQuery.orderBy('offer.viewCount', 'DESC');
+      offersQuery.addOrderBy('offer.likeCount', 'DESC');
+    }
+
+    if (sort === OfferSort.NEW) {
+      offersQuery.orderBy('offer.createdAt', 'DESC');
+    }
+
+    if (sort === OfferSort.PRICE_HIGH_TO_LOW) {
+      offersQuery.orderBy('offer.tokens', 'DESC');
+    }
+
+    if (sort === OfferSort.PRICE_LOW_TO_HIGH) {
+      offersQuery.orderBy('offer.tokens', 'ASC');
+    }
+
+    if (sort === OfferSort.EXPIRING) {
+      offersQuery.andWhere('offer.endDate > :endDate', {
+        endDate: new Date(),
+      });
+      offersQuery.orderBy('offer.endDate', 'ASC');
+    }
+
+    offersQuery.skip((page - 1) * limit);
+    offersQuery.take(limit);
+
+    const offers = await offersQuery.getMany();
+    const total = await offersQuery.getCount();
 
     return {
       offers,
@@ -232,7 +257,7 @@ export class OfferService {
           status: ItemStatus.PUBLISHED,
           product: {
             category: {
-              id: interests[0],
+              id: In(interests),
             },
           },
         },
@@ -255,7 +280,7 @@ export class OfferService {
           status: ItemStatus.PUBLISHED,
           product: {
             category: {
-              id: interests[0],
+              id: In(interests),
             },
           },
         },

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
-import { OfferFilter } from '@src/utils/enums/OfferFiilter';
+import { OfferFilter, OfferSort } from '@src/utils/enums/OfferFiilter';
 import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class FilterOfferDto {
@@ -44,4 +44,12 @@ export class FilterOfferDto {
   @IsOptional()
   @IsEnum(OfferFilter)
   orderBy: OfferFilter;
+
+  @ApiProperty({
+    type: 'enum',
+    enum: OfferSort,
+  })
+  @IsOptional()
+  @IsEnum(OfferSort)
+  sort: OfferSort;
 }
