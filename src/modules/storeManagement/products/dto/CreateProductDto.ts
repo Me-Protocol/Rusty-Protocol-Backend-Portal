@@ -86,4 +86,11 @@ export class CreateProductDto {
     price: number;
     inventory: number;
   }[];
+
+  @ApiProperty()
+  @IsOptional()
+  @IsArray({
+    message: 'Product images must be an array of strings',
+  })
+  collections: string[];
 }

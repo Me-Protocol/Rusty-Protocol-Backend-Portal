@@ -6,6 +6,9 @@ import { ProductService } from '@src/globalServices/product/product.service';
 import { UpdateOfferDto } from './dto/UpdateOfferDto.dto';
 import { FilterOfferDto } from './dto/FilterOfferDto.dto';
 import { RewardService } from '@src/globalServices/reward/reward.service';
+import { ElasticIndex } from '@src/modules/search/index/search.index';
+import { offerIndex } from '@src/modules/search/interface/search.interface';
+import { ItemStatus } from '@src/utils/enums/ItemStatus';
 
 @Injectable()
 export class OfferManagementService {
@@ -13,6 +16,7 @@ export class OfferManagementService {
     private readonly offerService: OfferService,
     private readonly productService: ProductService,
     private readonly rewardService: RewardService,
+    private readonly elasticIndex: ElasticIndex,
   ) {}
 
   async createOffer(body: CreateOfferDto) {
@@ -64,7 +68,13 @@ export class OfferManagementService {
       body.offerImages,
     );
 
-    return saveOffer;
+    const findOne = await this.offerService.getOfferById(saveOffer.id);
+
+    if (saveOffer.status === ItemStatus.PUBLISHED) {
+      this.elasticIndex.insertDocument(findOne, offerIndex);
+    }
+
+    return findOne;
   }
 
   async updateOffer(id: string, body: UpdateOfferDto) {
@@ -121,7 +131,17 @@ export class OfferManagementService {
       body.productImages,
     );
 
-    return await this.offerService.saveOffer(offer);
+    const saveOffer = await this.offerService.saveOffer(offer);
+
+    const findOne = await this.offerService.getOfferById(offer.id);
+
+    if (saveOffer.status === ItemStatus.PUBLISHED) {
+      this.elasticIndex.updateDocument(findOne, offerIndex);
+    } else if (saveOffer.status === ItemStatus.ARCHIVED) {
+      this.elasticIndex.deleteDocument(offerIndex, offer.id);
+    }
+
+    return findOne;
   }
 
   async getOfferByofferCode(offerCode: string, sessionId: string) {

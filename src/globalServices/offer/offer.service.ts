@@ -35,6 +35,7 @@ export class OfferService {
         'product',
         'product.category',
         'product.subCategory',
+        'offerImages',
       ],
     });
   }
@@ -50,6 +51,7 @@ export class OfferService {
         'product',
         'product.category',
         'product.subCategory',
+        'offerImages',
       ],
     });
   }
@@ -68,6 +70,7 @@ export class OfferService {
         'product',
         'product.category',
         'product.subCategory',
+        'offerImages',
       ],
     });
 
