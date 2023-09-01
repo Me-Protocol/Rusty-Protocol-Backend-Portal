@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
 import { OfferFilter, OfferSort } from '@src/utils/enums/OfferFiilter';
 import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 
@@ -31,11 +31,11 @@ export class FilterOfferDto {
 
   @ApiProperty({
     type: 'enum',
-    enum: ItemStatus,
+    enum: ProductStatus,
   })
   @IsOptional()
-  @IsEnum(ItemStatus)
-  status: ItemStatus;
+  @IsEnum(ProductStatus)
+  status: ProductStatus;
 
   @ApiProperty({
     type: 'enum',

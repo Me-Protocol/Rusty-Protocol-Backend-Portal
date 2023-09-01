@@ -8,3 +8,11 @@ export enum ItemStatus {
   EXPIRED = 'expired',
   COMPLETED = 'completed',
 }
+
+export enum ProductStatus {
+  DRAFT = 'draft',
+  PUBLISHED = 'published',
+  ARCHIVED = 'archived',
+  PENDING = 'pending',
+  EXPIRED = 'expired',
+}

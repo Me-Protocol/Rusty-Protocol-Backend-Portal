@@ -9,7 +9,7 @@ import { logger } from '@src/globalServices/logger/logger.service';
 import { CollectionService } from '@src/globalServices/collections/collections.service';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { productIndex } from '@src/modules/search/interface/search.interface';
-import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import { ProductStatus } from '@src/utils/enums/ItemStatus';
 
 @Injectable()
 export class ProductManagementService {
@@ -43,7 +43,9 @@ export class ProductManagementService {
       }
     }
 
-    const productCode = await this.productService.generateProductCode();
+    const productCode = await this.productService.generateProductCode(
+      body.name,
+    );
 
     const product = new Product();
     product.brandId = body.brandId;
@@ -91,7 +93,7 @@ export class ProductManagementService {
       body.brandId,
     );
 
-    if (body.status === ItemStatus.PUBLISHED) {
+    if (body.status === ProductStatus.PUBLISHED) {
       // index product
       await this.elasticIndex.insertDocument(findOneProduct, productIndex);
     }
@@ -127,8 +129,8 @@ export class ProductManagementService {
       }
     }
 
-    if (product.status === ItemStatus.ARCHIVED) {
-      if (body.status === ItemStatus.PUBLISHED) {
+    if (product.status === ProductStatus.ARCHIVED) {
+      if (body.status === ProductStatus.PUBLISHED) {
         await this.productService.unarchiveProduct(product.id, body.brandId);
       }
     }

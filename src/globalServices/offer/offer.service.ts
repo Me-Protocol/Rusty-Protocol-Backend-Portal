@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Offer } from './entities/offer.entity';
 import { UserService } from '../user/user.service';
-import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
 import { ProductImage } from '../product/entities/productImage.entity';
 import { ViewsService } from '../views/view.service';
 import { OfferFilter, OfferSort } from '@src/utils/enums/OfferFiilter';
@@ -197,7 +197,7 @@ export class OfferService {
 
       const trendingOffers = await this.offerRepo.find({
         where: {
-          status: ItemStatus.PUBLISHED,
+          status: ProductStatus.PUBLISHED,
           updatedAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
         },
         take: 10,
@@ -220,7 +220,7 @@ export class OfferService {
 
       const offers = await this.offerRepo.find({
         where: {
-          status: ItemStatus.PUBLISHED,
+          status: ProductStatus.PUBLISHED,
           product: {
             categoryId: In(categories),
             subCategoryId: In(subCategories),
@@ -242,7 +242,7 @@ export class OfferService {
 
       const total = await this.offerRepo.count({
         where: {
-          status: ItemStatus.PUBLISHED,
+          status: ProductStatus.PUBLISHED,
           product: {},
         },
       });
@@ -257,7 +257,7 @@ export class OfferService {
       // Get offers based on users first interest
       const offers = await this.offerRepo.find({
         where: {
-          status: ItemStatus.PUBLISHED,
+          status: ProductStatus.PUBLISHED,
           product: {
             category: {
               id: In(interests),
@@ -280,7 +280,7 @@ export class OfferService {
 
       const total = await this.offerRepo.count({
         where: {
-          status: ItemStatus.PUBLISHED,
+          status: ProductStatus.PUBLISHED,
           product: {
             category: {
               id: In(interests),
@@ -302,7 +302,7 @@ export class OfferService {
     page: number,
     limit: number,
     brandId: string,
-    status: ItemStatus,
+    status: ProductStatus,
     orderBy: OfferFilter,
   ) {
     const offersQuery = this.offerRepo
@@ -365,19 +365,28 @@ export class OfferService {
     return this.productImageRepo.save(productImages);
   }
 
-  async generateOfferCode() {
+  async generateOfferCode(name: string) {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // get caps from name
+    const caps = name
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase())
+      .join('');
+
+    const codeWithCaps = `${code}_${caps}`;
+
     const offer = await this.offerRepo.findOne({
       where: {
-        offerCode: code,
+        offerCode: codeWithCaps,
       },
     });
 
     if (offer) {
-      return this.generateOfferCode();
+      return this.generateOfferCode(name);
     }
 
-    return code;
+    return codeWithCaps;
   }
 
   async deleteOffer(offerId: string, brandId: string) {

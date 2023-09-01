@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ItemStatus } from '@src/utils/enums/ItemStatus';
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { ProductStatus } from '@src/utils/enums/ItemStatus';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class FilterDto {
   @ApiProperty()
@@ -16,10 +16,10 @@ export class FilterDto {
 
   @ApiProperty()
   @IsOptional()
-  @IsEnum(ItemStatus, {
+  @IsEnum(ProductStatus, {
     message: 'Please provide a valid status',
   })
-  status?: ItemStatus;
+  status?: ProductStatus;
 
   @ApiProperty()
   @IsOptional()

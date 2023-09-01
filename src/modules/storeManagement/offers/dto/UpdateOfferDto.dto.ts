@@ -1,13 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import { ProductStatus } from '@src/utils/enums/ItemStatus';
 import { IsArray, IsEnum, IsNumber, IsString, IsUUID } from 'class-validator';
 
 export class UpdateOfferDto {
   @ApiProperty()
-  @IsEnum(ItemStatus, {
+  @IsEnum(ProductStatus, {
     message: 'Please provide a valid status',
   })
-  status: ItemStatus;
+  status: ProductStatus;
 
   brandId: string;
 

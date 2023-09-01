@@ -2,7 +2,7 @@
 
 import { BaseEntity } from '@src/common/entities/base.entity';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
-import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import { ProductStatus } from '@src/utils/enums/ItemStatus';
 import { Product } from '@src/globalServices/product/entities/product.entity';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { ProductImage } from '@src/globalServices/product/entities/productImage.entity';
@@ -19,10 +19,10 @@ import { Coupon } from '@src/globalServices/order/entities/coupon.entity';
 export class Offer extends BaseEntity {
   @Column({
     type: 'enum',
-    enum: ItemStatus,
-    default: ItemStatus.DRAFT,
+    enum: ProductStatus,
+    default: ProductStatus.DRAFT,
   })
-  status: ItemStatus;
+  status: ProductStatus;
 
   @ManyToOne(() => Brand, (brand) => brand.products)
   @JoinColumn({ name: 'brandId' })

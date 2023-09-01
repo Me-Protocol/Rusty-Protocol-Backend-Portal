@@ -8,7 +8,7 @@ import { FilterOfferDto } from './dto/FilterOfferDto.dto';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { offerIndex } from '@src/modules/search/interface/search.interface';
-import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
 
 @Injectable()
 export class OfferManagementService {
@@ -42,7 +42,7 @@ export class OfferManagementService {
       });
     }
 
-    const offerCode = await this.offerService.generateOfferCode();
+    const offerCode = await this.offerService.generateOfferCode(body.name);
 
     const offer = new Offer();
     offer.offerCode = offerCode;
@@ -70,7 +70,7 @@ export class OfferManagementService {
 
     const findOne = await this.offerService.getOfferById(saveOffer.id);
 
-    if (saveOffer.status === ItemStatus.PUBLISHED) {
+    if (saveOffer.status === ProductStatus.PUBLISHED) {
       this.elasticIndex.insertDocument(findOne, offerIndex);
     }
 
@@ -135,9 +135,9 @@ export class OfferManagementService {
 
     const findOne = await this.offerService.getOfferById(offer.id);
 
-    if (saveOffer.status === ItemStatus.PUBLISHED) {
+    if (saveOffer.status === ProductStatus.PUBLISHED) {
       this.elasticIndex.updateDocument(findOne, offerIndex);
-    } else if (saveOffer.status === ItemStatus.ARCHIVED) {
+    } else if (saveOffer.status === ProductStatus.ARCHIVED) {
       this.elasticIndex.deleteDocument(offerIndex, offer.id);
     }
 

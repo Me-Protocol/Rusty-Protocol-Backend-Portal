@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { ProductImage } from './entities/productImage.entity';
-import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
 import { Variant } from './entities/variants.entity';
 import { VarientType } from '@src/utils/enums/VarientType';
 
@@ -118,7 +118,7 @@ export class ProductService {
     brandId: string,
     page: number,
     limit: number,
-    status?: ItemStatus,
+    status?: ProductStatus,
   ) {
     const products = await this.productRepo.find({
       where: {
@@ -159,7 +159,7 @@ export class ProductService {
         brandId,
       },
       {
-        status: ItemStatus.ARCHIVED,
+        status: ProductStatus.ARCHIVED,
       },
     );
   }
@@ -171,7 +171,7 @@ export class ProductService {
         brandId,
       },
       {
-        status: ItemStatus.DRAFT,
+        status: ProductStatus.DRAFT,
       },
     );
   }
@@ -194,19 +194,27 @@ export class ProductService {
     });
   }
 
-  async generateProductCode() {
+  async generateProductCode(name: string) {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // get caps from name
+    const caps = name
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase())
+      .join('');
+
+    const codeWithCaps = `${code}_${caps}`;
+
     const product = await this.productRepo.findOne({
       where: {
-        productCode: code,
+        productCode: codeWithCaps,
       },
     });
 
     if (product) {
-      return this.generateProductCode();
+      return this.generateProductCode(name);
     }
 
-    return code;
+    return codeWithCaps;
   }
 
   async deleteProduct(productId: string, brandId: string) {
@@ -225,7 +233,7 @@ export class ProductService {
   }: {
     page: number;
     limit: number;
-    status?: ItemStatus;
+    status?: ProductStatus;
     brandId?: string;
     categoryId?: string;
   }) {
