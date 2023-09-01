@@ -36,6 +36,7 @@ export class OfferService {
         'product.category',
         'product.subCategory',
         'offerImages',
+        'reward',
       ],
     });
   }
@@ -52,6 +53,7 @@ export class OfferService {
         'product.category',
         'product.subCategory',
         'offerImages',
+        'reward',
       ],
     });
   }
@@ -71,6 +73,7 @@ export class OfferService {
         'product.category',
         'product.subCategory',
         'offerImages',
+        'reward',
       ],
     });
 
@@ -125,6 +128,7 @@ export class OfferService {
       .leftJoinAndSelect('product.subCategory', 'subCategory')
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
+      .leftJoinAndSelect('offer.reward', 'reward')
       .where('offer.status = :status', { status: ItemStatus.PUBLISHED });
 
     if (category) {
@@ -233,6 +237,8 @@ export class OfferService {
           'product',
           'product.category',
           'product.subCategory',
+          'offerImages',
+          'reward',
         ],
         order: {
           likeCount: 'DESC',
@@ -271,6 +277,8 @@ export class OfferService {
           'product',
           'product.category',
           'product.subCategory',
+          'offerImages',
+          'reward',
         ],
         order: {
           likeCount: 'DESC',
@@ -312,6 +320,7 @@ export class OfferService {
       .leftJoinAndSelect('product.subCategory', 'subCategory')
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
+      .leftJoinAndSelect('offer.reward', 'reward')
       .where('offer.brandId = :brandId', { brandId });
 
     if (status) {
