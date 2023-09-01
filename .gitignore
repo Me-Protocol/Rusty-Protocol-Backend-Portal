@@ -44,5 +44,5 @@ ethereum/.env
 dump.rdb
 
 # lock files
-# package-lock.json
-# yarn.lock
+package-lock.json
+yarn.lock
