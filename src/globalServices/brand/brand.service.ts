@@ -4,7 +4,7 @@ import { Brand } from './entities/brand.entity';
 import { Repository } from 'typeorm';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { brandIndex } from '@src/modules/search/interface/search.interface';
-import { UpdateBrandDto } from '@src/modules/accountManagement/brandAccountManagement/dto/UpdateBrandDto';
+import { UpdateBrandDto } from '@src/modules/accountManagement/brandAccountManagement/dto/UpdateBrandDto.dto';
 import { getSlug } from '@src/utils/helpers/getSlug';
 
 @Injectable()
@@ -56,8 +56,37 @@ export class BrandService {
     return this.brandRepo.findOneBy({ userId });
   }
 
-  getAllBrands() {
+  async getAllBrands() {
     return this.brandRepo.find();
+  }
+
+  async getAllFilteredBrands({
+    categoryId,
+    page,
+    limit,
+  }: {
+    categoryId: string;
+    page: number;
+    limit: number;
+  }) {
+    const brandQuery = this.brandRepo
+      .createQueryBuilder('brand')
+      .leftJoinAndSelect('brand.category', 'category');
+
+    if (categoryId) {
+      brandQuery.where('brand.categoryId = :categoryId', { categoryId });
+    }
+
+    brandQuery.skip((page - 1) * limit).take(limit);
+    const brands = await brandQuery.getMany();
+    const total = await brandQuery.getCount();
+
+    return {
+      brands,
+      total,
+      nextPage: total > page * limit ? page + 1 : null,
+      previousPage: page > 1 ? page - 1 : null,
+    };
   }
 
   getBrandByName(name: string) {

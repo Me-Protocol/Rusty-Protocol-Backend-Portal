@@ -6,13 +6,15 @@ import {
   ValidationPipe,
   Req,
   Put,
+  Query,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import { BrandAccountManagementService } from './service';
-import { UpdateBrandDto } from './dto/UpdateBrandDto';
+import { UpdateBrandDto } from './dto/UpdateBrandDto.dto';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { ApiTags } from '@nestjs/swagger';
+import { FilterBrandDto } from './dto/FilterBrandDto.dto';
 
 @ApiTags('Brand')
 @UseInterceptors(ResponseInterceptor)
@@ -34,5 +36,9 @@ export class BrandManagementController {
       updateBrandDto,
       userId,
     );
+  }
+
+  async getAllBrands(@Query(ValidationPipe) query: FilterBrandDto) {
+    return await this.brandAccountManagementService.getAllBrands(query);
   }
 }

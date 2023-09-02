@@ -26,6 +26,9 @@ async function bootstrap() {
     }),
   );
 
+  // const httpServer = app.getHttpServer();
+  // createWebSocketServer(httpServer);
+
   const config = new DocumentBuilder()
     .addBearerAuth(
       {
