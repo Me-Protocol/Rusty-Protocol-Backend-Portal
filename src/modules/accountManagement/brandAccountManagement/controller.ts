@@ -7,6 +7,8 @@ import {
   Req,
   Put,
   Query,
+  Param,
+  Get,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
@@ -38,7 +40,14 @@ export class BrandManagementController {
     );
   }
 
+  @Get()
   async getAllBrands(@Query(ValidationPipe) query: FilterBrandDto) {
     return await this.brandAccountManagementService.getAllBrands(query);
+  }
+
+  @UseGuards(AuthGuard())
+  @Get(':id')
+  async getBrandById(@Param('id') id: string) {
+    return await this.brandAccountManagementService.getBrandById(id);
   }
 }

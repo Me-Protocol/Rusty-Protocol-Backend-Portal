@@ -49,7 +49,12 @@ export class BrandService {
   }
 
   getBrandById(id: string) {
-    return this.brandRepo.findOneBy({ id });
+    return this.brandRepo.findOne({
+      where: {
+        id,
+      },
+      relations: ['category'],
+    });
   }
 
   getBrandByUserId(userId: string) {

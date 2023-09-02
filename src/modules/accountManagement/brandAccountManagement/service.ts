@@ -32,4 +32,19 @@ export class BrandAccountManagementService {
       throw new HttpException(error.message, 400);
     }
   }
+
+  async getBrandById(id: string) {
+    try {
+      const brand = await this.brandService.getBrandById(id);
+
+      if (!brand) {
+        throw new HttpException('Brand not found', 404);
+      }
+
+      return brand;
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
 }
