@@ -61,13 +61,13 @@ export class RewardManagementService {
         publicKey: 'publicKey',
       };
 
-      // Encrypt private key
-      const encryptedKey = await this.keyManagementService.encryptKey(
-        privateKey,
-      );
+      // // Encrypt private key
+      // const encryptedKey = await this.keyManagementService.encryptKey(
+      //   privateKey,
+      // );
 
       reward.publicKey = publicKey;
-      reward.keyIdentifier = encryptedKey;
+      reward.keyIdentifier = 'encryptedKey';
 
       return await this.rewardService.create(reward);
     } catch (error) {
