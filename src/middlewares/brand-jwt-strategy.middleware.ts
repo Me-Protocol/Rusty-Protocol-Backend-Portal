@@ -83,7 +83,7 @@ export class BrandJwtStrategy implements CanActivate {
 
       request.user = {
         ...user,
-        brand: user?.brandMember?.brand,
+        brand: user?.brandMember?.brand ?? user.brand,
       };
 
       return true;
