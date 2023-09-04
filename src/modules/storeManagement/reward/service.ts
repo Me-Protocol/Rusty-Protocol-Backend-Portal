@@ -460,7 +460,9 @@ export class RewardManagementService {
 
       await this.syncService.saveBatch(batch);
 
-      return 'distributed';
+      return {
+        message: 'distributed',
+      };
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400, {
