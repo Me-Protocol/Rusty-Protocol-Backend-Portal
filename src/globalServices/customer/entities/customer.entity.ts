@@ -67,4 +67,7 @@ export class Customer extends BaseEntity {
 
   @Column({ nullable: true, default: NotificationFormat.NONE })
   other_notifications: NotificationFormat;
+
+  @Column({ nullable: true })
+  walletAddress: string;
 }

@@ -128,7 +128,12 @@ export class UserService {
   }
 
   async getUserByEmail(email: string): Promise<User> {
-    return await this.userRepository.findOneBy({ email });
+    return await this.userRepository.findOne({
+      where: {
+        email,
+      },
+      relations: ['customer', 'brand'],
+    });
   }
 
   async getUserByUsername(username: string): Promise<User> {

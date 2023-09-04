@@ -221,9 +221,4 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Coupon, (coupon) => coupon.user)
   coupons: Coupon[];
-
-  @Column({
-    nullable: true,
-  })
-  walletAddress: string;
 }

@@ -519,7 +519,7 @@ export class RewardManagementService {
           if (!user) {
             aggregateSumOfNonExistingUsers += syncData.amount;
           } else {
-            if (!user.walletAddress) {
+            if (!user.customer.walletAddress) {
               aggregateSumOfNonExistingUsers += syncData.amount;
             } else {
               const registry =
@@ -530,7 +530,7 @@ export class RewardManagementService {
 
               if (registry) {
                 users.push({
-                  walletAddress: user.walletAddress,
+                  walletAddress: user.customer.walletAddress,
                   amount: syncData.amount,
                 });
               }

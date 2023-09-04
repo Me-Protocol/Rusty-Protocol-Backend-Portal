@@ -154,8 +154,6 @@ export class AuthenticationController {
 
     const {
       password,
-      emailVerified,
-      phoneVerified,
       createdAt,
       updatedAt,
       accountVerificationCode,
