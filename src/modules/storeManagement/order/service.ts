@@ -227,7 +227,7 @@ export class OrderManagementService {
 
       // TODO: send notification to user
 
-      return spend;
+      return 'spend';
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
