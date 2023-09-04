@@ -35,13 +35,11 @@ export class RewardService {
   async findAll({
     category_id,
     brand_id,
-    reward_type,
     page,
     limit,
   }: {
     category_id: string;
     brand_id: string;
-    reward_type: RewardType;
     page: number;
     limit: number;
   }) {
@@ -55,10 +53,6 @@ export class RewardService {
 
     if (brand_id) {
       rewards.andWhere('brand.id = :brand_id', { brand_id });
-    }
-
-    if (reward_type) {
-      rewards.andWhere('reward.rewardType = :reward_type', { reward_type });
     }
 
     rewards.skip((page - 1) * limit).take(limit);

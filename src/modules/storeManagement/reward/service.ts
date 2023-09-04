@@ -19,6 +19,7 @@ import { mutate, mutate_n_format } from '@developeruche/runtime-sdk';
 import { SpendRewardDto } from './dto/spendRewardDto.dto';
 import { AxiosResponse } from 'axios';
 import { logger } from '@src/globalServices/logger/logger.service';
+import { KeyManagementService } from '@src/globalServices/key-management/key-management.service';
 
 @Injectable()
 export class RewardManagementService {
@@ -26,6 +27,7 @@ export class RewardManagementService {
     private readonly rewardService: RewardService,
     private readonly syncService: SyncRewardService,
     private readonly userService: UserService,
+    private readonly keyManagementService: KeyManagementService,
   ) {}
 
   async createReward(body: CreateRewardDto) {
@@ -43,18 +45,29 @@ export class RewardManagementService {
       reward.slug = slug;
       reward.brandId = body.brandId;
       reward.description = body.description;
-      reward.rewardType = body.rewardType;
       reward.rewardImage = body.rewardImage;
       reward.rewardSymbol = body.rewardSymbol;
       reward.rewardName = body.rewardName;
       reward.autoSyncEnabled = body.autoSyncEnabled;
       reward.acceptedCustomerIdentitytypes = body.acceptedCustomerIdentitytypes;
 
-      if (body.rewardType === RewardType.TOKEN) {
-        reward.contractAddress = body.contractAddress;
-        reward.isBounty = body.isBounty;
-        reward.blockchain = body.blockchain;
-      }
+      reward.contractAddress = body.contractAddress;
+      reward.isBounty = body.isBounty;
+      reward.blockchain = body.blockchain;
+
+      // TODO generate private key and public key
+      const { privateKey, publicKey } = {
+        privateKey: 'privateKey',
+        publicKey: 'publicKey',
+      };
+
+      // Encrypt private key
+      const encryptedKey = await this.keyManagementService.encryptKey(
+        privateKey,
+      );
+
+      reward.publicKey = publicKey;
+      reward.keyIdentifier = encryptedKey;
 
       return await this.rewardService.create(reward);
     } catch (error) {
@@ -89,18 +102,15 @@ export class RewardManagementService {
       reward.slug = slug;
       reward.brandId = body.brandId;
       reward.description = body.description;
-      reward.rewardType = body.rewardType;
       reward.rewardImage = body.rewardImage;
       reward.rewardSymbol = body.rewardSymbol;
       reward.rewardName = body.rewardName;
       reward.autoSyncEnabled = body.autoSyncEnabled;
       reward.acceptedCustomerIdentitytypes = body.acceptedCustomerIdentitytypes;
 
-      if (body.rewardType === RewardType.TOKEN) {
-        reward.contractAddress = body.contractAddress;
-        reward.isBounty = body.isBounty;
-        reward.blockchain = body.blockchain;
-      }
+      reward.contractAddress = body.contractAddress;
+      reward.isBounty = body.isBounty;
+      reward.blockchain = body.blockchain;
 
       return await this.rewardService.save(reward);
     } catch (error) {
@@ -130,7 +140,6 @@ export class RewardManagementService {
   async getRewards(query: FilterRewardDto) {
     return await this.rewardService.findAll({
       brand_id: query.brandId,
-      reward_type: query.rewardType,
       category_id: query.category,
       page: query.page,
       limit: query.limit,

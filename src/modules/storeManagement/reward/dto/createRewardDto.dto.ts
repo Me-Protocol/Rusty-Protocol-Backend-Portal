@@ -11,12 +11,6 @@ export class CreateRewardDto {
   description: string;
 
   @ApiProperty()
-  @IsEnum(RewardType, {
-    message: 'Reward type is invalid',
-  })
-  rewardType: RewardType;
-
-  @ApiProperty()
   @IsString()
   rewardImage: string;
 
