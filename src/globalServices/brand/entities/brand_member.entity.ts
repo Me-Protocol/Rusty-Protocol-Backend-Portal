@@ -27,7 +27,9 @@ export class BrandMember extends BaseEntity {
   })
   role: BrandRole;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   userId: string;
 
   @OneToOne(() => User, (user) => user.brandMember)

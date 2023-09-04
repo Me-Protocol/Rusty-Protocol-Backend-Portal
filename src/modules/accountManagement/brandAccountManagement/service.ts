@@ -13,6 +13,8 @@ import { UserAppType } from '@src/utils/enums/UserAppType';
 import { BrandMember } from '@src/globalServices/brand/entities/brand_member.entity';
 import { MailService } from '@src/globalServices/mail/mail.service';
 import { emailButton } from '@src/utils/helpers/emailButton';
+import { CustomerService } from '@src/globalServices/customer/customer.service';
+import { BrandRole } from '@src/utils/enums/BrandRole';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -20,6 +22,7 @@ export class BrandAccountManagementService {
     private readonly brandService: BrandService,
     private readonly userService: UserService,
     private readonly mailService: MailService,
+    private readonly customerService: CustomerService,
   ) {}
 
   async updateBrand(body: UpdateBrandDto, userId: string) {
@@ -134,10 +137,45 @@ export class BrandAccountManagementService {
     email = email.toLowerCase();
     try {
       const brand = await this.brandService.getBrandById(brandId);
-
       const user = await this.userService.getUserByEmail(email);
+
       if (user) {
-        // TODO: Check if user is already a member of the brand
+        const checkBrandMember = await this.brandService.getBrandMember(
+          brandId,
+          user.id,
+        );
+
+        if (checkBrandMember) {
+          throw new HttpException('Brand member already exists', 400);
+        }
+
+        const brandMember = new BrandMember();
+        brandMember.brandId = brandId;
+        brandMember.name = name;
+        brandMember.role = role;
+
+        await this.brandService.saveBrandMember(brandMember);
+
+        await this.mailService.sendMail({
+          to: email,
+          subject: `Join ${brand.name} on Me Protocol`,
+          text: `Join ${brand.name} on Me Protocol`,
+          html: `
+            <p>Hello ${name},</p>
+            <p>${
+              brand.name
+            } has invited you to join their brand on Me Protocol. Click the link below to verify your email address and join the brand.</p>
+            
+            ${emailButton({
+              text: 'Accept Invitation',
+              url: `${process.env.SERVER_URL}/brand/member/verify-email/${user.email}/${brandId}`,
+            })}
+          `,
+        });
+
+        return {
+          message: 'Brand member created successfully',
+        };
       }
 
       const newUser = new User();
@@ -153,40 +191,46 @@ export class BrandAccountManagementService {
       newUser.password = hashedPassword;
       newUser.salt = salt;
       newUser.userType = UserAppType.BRAND_MEMBER;
+      newUser.accountVerificationCode = Math.floor(1000 + Math.random() * 9000);
 
       const saveUser = await this.userService.saveUser(newUser);
+
+      await this.customerService.create({
+        name,
+        userId: saveUser.id,
+      });
 
       const brandMember = new BrandMember();
       brandMember.brandId = brandId;
       brandMember.name = name;
       brandMember.role = role;
-      brandMember.userId = saveUser.id;
 
       await this.brandService.saveBrandMember(brandMember);
-
-      await this.userService.saveUser(saveUser);
-
-      user.accountVerificationCode = Math.floor(1000 + Math.random() * 9000);
-      await this.userService.saveUser(user);
 
       await this.mailService.sendMail({
         to: email,
         subject: 'Verify your email address',
         text: 'Verify your email address',
         html: `
-        <p>Hello ${name},</p><br/>
+        <p>Hello ${name},</p>
         <p>${
           brand.name
-        } has invited you to join their brand on Me Protocol.</p><br/>
-        <p>Click the link below to verify your email address and join the brand.</p><br/>
+        } has invited you to join their brand on Me Protocol. Click the link below to verify your email address and join the brand.</p>
+        <p>
+          Login Details:<br/>
+          Email: ${email}<br/>
+          Password: ${password}
+        </p>
         ${emailButton({
           text: 'Verify Email',
-          url: `${process.env.SERVER_URL}/brand/member/verify-email/${user.accountVerificationCode}`,
+          url: `${process.env.SERVER_URL}/brand/member/verify-email/${user.accountVerificationCode}/${brandId}`,
         })}
         `,
       });
 
-      return user;
+      return {
+        message: 'Brand member created successfully',
+      };
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400, {
@@ -195,7 +239,7 @@ export class BrandAccountManagementService {
     }
   }
 
-  async verifyBrandMemberEmail(code: number) {
+  async verifyBrandMemberEmail(code: number, brandId: string) {
     try {
       const user = await this.userService.getUserByVerificationCode(code);
 
@@ -207,6 +251,42 @@ export class BrandAccountManagementService {
       user.emailVerified = true;
 
       await this.userService.saveUser(user);
+
+      const brandMember = await this.brandService.getBrandMember(
+        brandId,
+        user.brandMember.id,
+      );
+      brandMember.userId = user.id;
+
+      await this.brandService.saveBrandMember(brandMember);
+
+      return user;
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async verifyBrandMemberExistingUser(email: string, brandId: string) {
+    try {
+      const user = await this.userService.getUserByEmail(email);
+
+      if (!user) {
+        throw new HttpException('User not found', 404);
+      }
+
+      user.accountVerificationCode = null;
+      user.emailVerified = true;
+
+      await this.userService.saveUser(user);
+
+      const brandMember = await this.brandService.getBrandMember(
+        brandId,
+        user.brandMember.id,
+      );
+      brandMember.userId = user.id;
+
+      await this.brandService.saveBrandMember(brandMember);
 
       return user;
     } catch (error) {

@@ -107,13 +107,32 @@ export class BrandManagementController {
     return await this.brandAccountManagementService.createBrandMember(body);
   }
 
-  @Get('member/verify-email/:code')
+  @Get('member/verify-email/:code/:brandId')
   async verifyBrandMemberEmail(
     @Param('code') code: number,
+    @Param('brandId') brandId: string,
     @Req() req: any,
     @Res() res: any,
   ) {
-    await this.brandAccountManagementService.verifyBrandMemberEmail(code);
+    await this.brandAccountManagementService.verifyBrandMemberEmail(
+      code,
+      brandId,
+    );
+
+    return res.redirect(process.env.CLIENT_APP_URI);
+  }
+
+  @Get('member/verify-email/:email/:brandId')
+  async verifyBrandMemberExistingUser(
+    @Param('email') email: string,
+    @Param('brandId') brandId: string,
+    @Req() req: any,
+    @Res() res: any,
+  ) {
+    await this.brandAccountManagementService.verifyBrandMemberExistingUser(
+      email,
+      brandId,
+    );
 
     return res.redirect(process.env.CLIENT_APP_URI);
   }

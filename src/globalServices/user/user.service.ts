@@ -5,14 +5,6 @@ import { User } from './entities/user.entity';
 import { Device } from './entities/device.entity';
 import { selectUser } from '@src/utils/helpers/selectUser';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const geoip = require('geoip-lite');
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const DeviceDetector = require('node-device-detector');
-
-const deviceDetector = new DeviceDetector();
-
 @Injectable()
 export class UserService {
   constructor(
@@ -114,7 +106,7 @@ export class UserService {
       where: {
         id,
       },
-      relations: ['customer', 'brand', 'brandMember'],
+      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
     });
   }
 
@@ -132,7 +124,7 @@ export class UserService {
       where: {
         email,
       },
-      relations: ['customer', 'brand', 'brandMember'],
+      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
     });
   }
 
@@ -201,6 +193,7 @@ export class UserService {
       where: {
         accountVerificationCode: code,
       },
+      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
     });
   }
 }

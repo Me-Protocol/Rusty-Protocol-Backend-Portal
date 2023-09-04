@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { BrandRole } from '@src/utils/enums/BrandRole';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsString } from 'class-validator';
 
 export class CreateMemberDto {
   @ApiProperty()
@@ -13,8 +13,7 @@ export class CreateMemberDto {
     type: 'enum',
     enum: BrandRole,
   })
-  @IsEnum({
-    enum: BrandRole,
+  @IsEnum(BrandRole, {
     message: 'Enter a valid role',
   })
   role: BrandRole;

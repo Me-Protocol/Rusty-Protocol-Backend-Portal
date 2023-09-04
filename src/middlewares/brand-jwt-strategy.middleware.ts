@@ -47,7 +47,7 @@ export class BrandJwtStrategy implements CanActivate {
         );
       }
 
-      if (user.userType !== UserAppType.BRAND || UserAppType.BRAND_MEMBER) {
+      if (user.userType !== UserAppType.BRAND) {
         throw new UnauthorizedException('Unauthorized. Please login');
       }
 
