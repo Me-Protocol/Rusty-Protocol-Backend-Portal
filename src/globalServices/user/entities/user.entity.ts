@@ -18,6 +18,7 @@ import { TaskResponse } from '@src/globalServices/task/entities/taskResponse.ent
 import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
 import { Order } from '@src/globalServices/order/entities/order.entity';
 import { Coupon } from '@src/globalServices/order/entities/coupon.entity';
+import { BrandMember } from '@src/globalServices/brand/entities/brand_member.entity';
 // import { TaskResponseEntity } from '@src/models/taskResponse.entity';
 
 @Entity('user')
@@ -176,6 +177,12 @@ export class User extends BaseEntity {
     nullable: true,
   })
   customer: Customer;
+
+  @OneToOne(() => BrandMember, (brandMember) => brandMember.user, {
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
+  brandMember: BrandMember;
 
   @OneToOne(() => Brand, (brand) => brand.user, {
     onDelete: 'CASCADE',

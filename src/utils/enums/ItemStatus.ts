@@ -3,6 +3,7 @@ export enum ItemStatus {
   PUBLISHED = 'published',
   ARCHIVED = 'archived',
   PRIVATE = 'private',
+  PAUSED = 'paused',
   PENDING = 'pending',
   ACTIVE = 'active',
   EXPIRED = 'expired',
@@ -13,6 +14,6 @@ export enum ProductStatus {
   DRAFT = 'draft',
   PUBLISHED = 'published',
   ARCHIVED = 'archived',
-  PENDING = 'pending',
+  PAUSED = 'paused',
   EXPIRED = 'expired',
 }

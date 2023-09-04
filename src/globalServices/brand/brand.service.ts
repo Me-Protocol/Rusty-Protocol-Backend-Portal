@@ -6,23 +6,40 @@ import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { brandIndex } from '@src/modules/search/interface/search.interface';
 import { UpdateBrandDto } from '@src/modules/accountManagement/brandAccountManagement/dto/UpdateBrandDto.dto';
 import { getSlug } from '@src/utils/helpers/getSlug';
+import { BrandMember } from './entities/brand_member.entity';
+import { async } from 'rxjs';
+import { BrandRole } from '@src/utils/enums/BrandRole';
 
 @Injectable()
 export class BrandService {
   constructor(
     @InjectRepository(Brand)
     private readonly brandRepo: Repository<Brand>,
+
+    @InjectRepository(BrandMember)
+    private readonly brandMemberRepo: Repository<BrandMember>,
+
     private readonly elasticIndex: ElasticIndex,
   ) {}
 
-  create({ userId, name }: { userId: string; name: string }) {
+  async create({ userId, name }: { userId: string; name: string }) {
     const slug = getSlug(name);
 
     const brand = this.brandRepo.create({ userId, name, slug });
 
     this.elasticIndex.insertDocument(brand, brandIndex);
 
-    return this.brandRepo.save(brand);
+    const saveBrand = await this.brandRepo.save(brand);
+
+    const brandMember = new BrandMember();
+    brandMember.brandId = saveBrand.id;
+    brandMember.name = saveBrand.name;
+    brandMember.role = BrandRole.OWNER;
+    brandMember.userId = userId;
+
+    await this.brandMemberRepo.save(brandMember);
+
+    return saveBrand;
   }
 
   save(brand: Brand) {
@@ -96,5 +113,34 @@ export class BrandService {
 
   getBrandByName(name: string) {
     return this.brandRepo.findOneBy({ name });
+  }
+
+  async saveBrandMember(brandMember: BrandMember) {
+    return await this.brandMemberRepo.save(brandMember);
+  }
+
+  async getBrandMember(brandId: string, userId: string) {
+    return await this.brandMemberRepo.findOne({
+      where: {
+        brandId,
+        userId,
+      },
+    });
+  }
+
+  async getBrandMemberById(id: string) {
+    return await this.brandMemberRepo.findOne({
+      where: {
+        id,
+      },
+    });
+  }
+
+  async getBrandMembers(brandId: string) {
+    return await this.brandMemberRepo.find({
+      where: {
+        brandId,
+      },
+    });
   }
 }

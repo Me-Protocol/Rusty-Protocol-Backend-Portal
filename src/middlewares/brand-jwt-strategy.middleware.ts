@@ -47,7 +47,7 @@ export class BrandJwtStrategy implements CanActivate {
         );
       }
 
-      if (user.userType !== UserAppType.BRAND) {
+      if (user.userType !== UserAppType.BRAND || UserAppType.BRAND_MEMBER) {
         throw new UnauthorizedException('Unauthorized. Please login');
       }
 
@@ -81,7 +81,10 @@ export class BrandJwtStrategy implements CanActivate {
 
       delete deviceToken.token;
 
-      request.user = user;
+      request.user = {
+        ...user,
+        brand: user?.brandMember?.brand,
+      };
 
       return true;
     } catch (error) {

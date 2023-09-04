@@ -114,7 +114,7 @@ export class UserService {
       where: {
         id,
       },
-      relations: ['customer', 'brand'],
+      relations: ['customer', 'brand', 'brandMember'],
     });
   }
 
@@ -132,7 +132,7 @@ export class UserService {
       where: {
         email,
       },
-      relations: ['customer', 'brand'],
+      relations: ['customer', 'brand', 'brandMember'],
     });
   }
 
@@ -194,5 +194,13 @@ export class UserService {
     if (!user) throw new HttpException('User not found', 404);
 
     return user.user_category_interests || [];
+  }
+
+  async getUserByVerificationCode(code: number): Promise<User> {
+    return await this.userRepository.findOne({
+      where: {
+        accountVerificationCode: code,
+      },
+    });
   }
 }

@@ -18,7 +18,7 @@ export class InAppApiKeyJwtStrategy implements CanActivate {
     const headers = context.switchToHttp().getRequest().headers;
     const access_token = headers?.authorization?.split(' ')[1];
 
-    // check if the request is coming from the in-app
+    //TODO check if the request is coming from the in-app
     const IN_APP_API_KEY = process.env.IN_APP_API_KEY;
 
     if (access_token !== IN_APP_API_KEY) {

@@ -20,6 +20,7 @@ import { PaymentRequest } from '@src/globalServices/costManagement/entities/paym
 import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection';
 import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.entity';
 import { BrandSubServices } from '@src/utils/enums/BrandSubServices';
+import { BrandMember } from './brand_member.entity';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -192,4 +193,7 @@ export class Brand extends BaseEntity {
     default: true, // TODO: put back to false
   })
   enableAutoTopup: boolean;
+
+  @OneToMany(() => BrandMember, (member) => member.brand)
+  members: BrandMember[];
 }

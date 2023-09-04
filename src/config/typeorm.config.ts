@@ -32,6 +32,7 @@ import { User } from '@src/globalServices/user/entities/user.entity';
 import { View } from '@src/globalServices/views/entities/view.entity';
 import { PaymentMethod } from '@src/globalServices/fiatWallet/entities/paymentMethod';
 import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.entity';
+import { BrandMember } from '@src/globalServices/brand/entities/brand_member.entity';
 
 export const typeOrmConfig: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -73,6 +74,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     CostCollection,
     PaymentRequest,
     PaymentMethod,
+    BrandMember,
   ],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   extra: {

@@ -103,6 +103,8 @@ import { PaymentModuleController } from './modules/paymentModule/controller';
 import { InAppApiKeyJwtStrategy } from './middlewares/inapp-api-jwt-strategy.middleware';
 import { SettingsService } from './globalServices/settings/settings.service';
 import { BrandSubscriptionService } from './globalServices/brand/brandSeviceSubscription.service';
+import { BrandMember } from './globalServices/brand/entities/brand_member.entity';
+import { KeyManagementService } from './globalServices/key-management/key-management.service';
 
 @Module({
   imports: [
@@ -136,6 +138,7 @@ import { BrandSubscriptionService } from './globalServices/brand/brandSeviceSubs
       PaymentRequest,
       Transaction,
       PaymentMethod,
+      BrandMember,
     ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
@@ -234,6 +237,7 @@ import { BrandSubscriptionService } from './globalServices/brand/brandSeviceSubs
     InAppApiKeyJwtStrategy,
     SettingsService,
     BrandSubscriptionService,
+    KeyManagementService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

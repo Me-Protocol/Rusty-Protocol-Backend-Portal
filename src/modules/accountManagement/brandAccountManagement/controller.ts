@@ -9,6 +9,8 @@ import {
   Query,
   Param,
   Get,
+  Post,
+  Res,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
@@ -17,6 +19,9 @@ import { UpdateBrandDto } from './dto/UpdateBrandDto.dto';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { ApiTags } from '@nestjs/swagger';
 import { FilterBrandDto } from './dto/FilterBrandDto.dto';
+import { UpdateMemberDto } from './dto/UpdateMemberDto.dto';
+import { User } from '@src/globalServices/user/entities/user.entity';
+import { CreateMemberDto } from './dto/CreateMemberDto.dto';
 
 @ApiTags('Brand')
 @UseInterceptors(ResponseInterceptor)
@@ -49,5 +54,67 @@ export class BrandManagementController {
   @Get(':id')
   async getBrandById(@Param('id') id: string) {
     return await this.brandAccountManagementService.getBrandById(id);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Get('owner')
+  async getBrandOwner(@Req() req: any) {
+    const brandId = req.user.brand.id;
+    return await this.brandAccountManagementService.getBrandOwner(brandId);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Get('members')
+  async getBrandMembers(@Req() req: any) {
+    const brandId = req.user.brand.id;
+    return await this.brandAccountManagementService.getBrandMembers(brandId);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Put('member/:id')
+  async updateBrandMemberRole(
+    @Param('id') id: string,
+    @Req() req: any,
+    @Body(ValidationPipe) body: UpdateMemberDto,
+  ) {
+    body.brandMemberId = id;
+    body.brandId = req.user.brand.id;
+    return await this.brandAccountManagementService.updateBrandMemberRole(body);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Put('member')
+  async updateBrandMember(
+    @Req() req: any,
+    @Body(ValidationPipe) body: UpdateMemberDto,
+  ) {
+    const user = req.user as User;
+    body.brandId = user.brand.id;
+    body.brandMemberId = user.brandMember.id;
+
+    return await this.brandAccountManagementService.updateBrandMemberRole(body);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Post('member')
+  async createBrandMember(
+    @Req() req: any,
+    @Body(ValidationPipe) body: CreateMemberDto,
+  ) {
+    const user = req.user as User;
+    body.brandId = user.brand.id;
+
+    return await this.brandAccountManagementService.createBrandMember(body);
+  }
+
+  @Get('member/verify-email/:code')
+  async verifyBrandMemberEmail(
+    @Param('code') code: number,
+    @Req() req: any,
+    @Res() res: any,
+  ) {
+    await this.brandAccountManagementService.verifyBrandMemberEmail(code);
+
+    return res.redirect(process.env.CLIENT_APP_URI);
   }
 }
