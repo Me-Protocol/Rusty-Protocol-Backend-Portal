@@ -24,9 +24,6 @@ export class Reward extends BaseEntity {
   @Column()
   slug: string;
 
-  @Column({ type: 'enum', enum: RewardType })
-  rewardType: RewardType;
-
   @Column()
   rewardImage: string;
 
@@ -91,4 +88,14 @@ export class Reward extends BaseEntity {
     identifierType: SyncIdentifierType;
     amount: number;
   }[];
+
+  @Column({
+    nullable: true,
+  })
+  publicKey: string;
+
+  @Column({
+    nullable: true,
+  })
+  keyIdentifier: string;
 }
