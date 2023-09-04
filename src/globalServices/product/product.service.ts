@@ -230,12 +230,14 @@ export class ProductService {
     status,
     brandId,
     categoryId,
+    order,
   }: {
     page: number;
     limit: number;
     status?: ProductStatus;
     brandId?: string;
     categoryId?: string;
+    order: string;
   }) {
     const products = this.productRepo
       .createQueryBuilder('product')
@@ -253,6 +255,19 @@ export class ProductService {
 
     if (categoryId) {
       products.andWhere('product.categoryId = :categoryId', { categoryId });
+    }
+
+    if (order) {
+      const formatedOrder = order.split(':')[0];
+      const acceptedOrder = new Product();
+      if (!acceptedOrder.hasOwnProperty(formatedOrder)) {
+        throw new Error('Invalid order param');
+      }
+
+      products.orderBy(
+        `product.${order.split(':')[0]}`,
+        order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+      );
     }
 
     const total = await products.getCount();

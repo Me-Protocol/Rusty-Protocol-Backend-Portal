@@ -173,13 +173,18 @@ export class OfferManagementService {
   }
 
   async getBrandOffers(query: FilterOfferDto) {
-    return await this.offerService.getBrandOffers(
-      query.page,
-      query.limit,
-      query.brandId,
-      query.status,
-      query.orderBy,
-    );
+    try {
+      return await this.offerService.getBrandOffers(
+        query.page,
+        query.limit,
+        query.brandId,
+        query.status,
+        query.orderBy,
+        query.order,
+      );
+    } catch (error) {
+      throw new HttpException(error.message, 400);
+    }
   }
 
   async deleteOffer(id: string, brandId: string) {

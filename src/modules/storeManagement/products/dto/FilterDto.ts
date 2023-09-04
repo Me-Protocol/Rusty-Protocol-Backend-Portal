@@ -30,4 +30,13 @@ export class FilterDto {
   @IsOptional()
   @IsString()
   subCategoryId: string;
+
+  @ApiProperty({
+    description: 'order must be of this format "name:ASC" or "name:DESC"',
+  })
+  @IsOptional()
+  @IsString({
+    message: 'order must be of this format "name:ASC" or "name:DESC"',
+  })
+  order: string;
 }

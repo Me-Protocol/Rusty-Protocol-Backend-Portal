@@ -100,23 +100,40 @@ export class CollectionService {
     return await this.collectionRepo.save(collection);
   }
 
-  async findAll(userId: string, brandId: string, page: number, limit: number) {
-    const data = await this.collectionRepo.find({
-      where: {
-        userId,
-        brandId,
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-      relations: ['products'],
-    });
+  async findAll(
+    userId: string,
+    brandId: string,
+    page: number,
+    limit: number,
+    order: string,
+  ) {
+    const collectionQuery =
+      this.collectionRepo.createQueryBuilder('collection');
 
-    const total = await this.collectionRepo.count({
-      where: {
-        userId,
-        brandId,
-      },
-    });
+    if (userId) {
+      collectionQuery.andWhere('collection.userId = :userId', { userId });
+    }
+
+    if (brandId) {
+      collectionQuery.andWhere('collection.brandId = :brandId', { brandId });
+    }
+
+    collectionQuery.skip((page - 1) * limit).take(limit);
+
+    if (order) {
+      const formatedOrder = order.split(':')[0];
+      const acceptedOrder = new Collection();
+      if (!acceptedOrder.hasOwnProperty(formatedOrder)) {
+        throw new Error('Invalid order param');
+      }
+
+      collectionQuery.orderBy(
+        `collection.${order.split(':')[0]}`,
+        order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+      );
+    }
+
+    const [data, total] = await collectionQuery.getManyAndCount();
 
     return {
       collections: data,

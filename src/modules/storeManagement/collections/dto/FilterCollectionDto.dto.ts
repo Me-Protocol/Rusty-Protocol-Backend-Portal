@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class FIlterCollectionDto {
   userId: string;
@@ -13,4 +13,13 @@ export class FIlterCollectionDto {
   limit: number;
 
   brandId: string;
+
+  @ApiProperty({
+    description: 'order must be of this format "name:ASC" or "name:DESC"',
+  })
+  @IsOptional()
+  @IsString({
+    message: 'order must be of this format "name:ASC" or "name:DESC"',
+  })
+  order: string;
 }

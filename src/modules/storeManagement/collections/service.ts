@@ -28,6 +28,7 @@ export class CollectionManagementService {
       query.brandId,
       query.page,
       query.limit,
+      query.order,
     );
   }
 

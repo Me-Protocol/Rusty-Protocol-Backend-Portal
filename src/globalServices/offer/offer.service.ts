@@ -312,6 +312,7 @@ export class OfferService {
     brandId: string,
     status: ProductStatus,
     orderBy: OfferFilter,
+    order: string,
   ) {
     const offersQuery = this.offerRepo
       .createQueryBuilder('offer')
@@ -337,6 +338,19 @@ export class OfferService {
 
     if (orderBy === OfferFilter.MOST_RECENT) {
       offersQuery.orderBy('offer.createdAt', 'DESC');
+    }
+
+    if (order) {
+      const formatedOrder = order.split(':')[0];
+      const acceptedOrder = new Offer();
+      if (!acceptedOrder.hasOwnProperty(formatedOrder)) {
+        throw new Error('Invalid order param');
+      }
+
+      offersQuery.orderBy(
+        `offer.${order.split(':')[0]}`,
+        order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+      );
     }
 
     offersQuery.skip((page - 1) * limit);
