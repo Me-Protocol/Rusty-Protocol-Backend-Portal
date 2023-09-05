@@ -27,13 +27,19 @@ export class FollowManagementController {
 
   @UseGuards(AuthGuard())
   @Post()
-  async follow(@Body(ValidationPipe) body: FollowDto) {
+  async follow(@Body(ValidationPipe) body: FollowDto, @Req() req: any) {
+    const userId = req.user.id;
+    body.userId = userId;
+
     await this.followManagementService.followBrand(body);
   }
 
   @UseGuards(AuthGuard())
   @Post('unfollow')
-  async unfollow(@Body(ValidationPipe) body: FollowDto) {
+  async unfollow(@Body(ValidationPipe) body: FollowDto, @Req() req: any) {
+    const userId = req.user.id;
+    body.userId = userId;
+
     await this.followManagementService.unfollowBrand(body);
   }
 
