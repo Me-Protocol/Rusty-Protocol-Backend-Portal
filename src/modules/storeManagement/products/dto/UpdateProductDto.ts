@@ -13,10 +13,12 @@ import {
 
 export class UpdateProductDto {
   @ApiProperty()
+  @IsOptional()
   @IsString()
   name: string;
 
   @ApiProperty()
+  @IsOptional()
   @IsString()
   description: string;
 
@@ -24,24 +26,29 @@ export class UpdateProductDto {
   brandId: string;
 
   @ApiProperty()
+  @IsOptional()
   @IsUUID()
   categoryId: string;
 
   @ApiProperty()
+  @IsOptional()
   @IsArray({ message: 'Product images must be an array of strings' })
   productImages: string[];
 
   @ApiProperty()
+  @IsOptional()
   @IsEnum(ProductStatus, {
     message: 'Please provide a valid status',
   })
   status: ProductStatus;
 
   @ApiProperty()
+  @IsOptional()
   @IsNumber()
   price: number;
 
   @ApiProperty()
+  @IsOptional()
   @IsNumber()
   inventory: number;
 
@@ -75,6 +82,7 @@ export class UpdateProductDto {
       },
     },
   })
+  @IsOptional()
   @IsArray({
     message: 'Variants must be an array of objects',
     // each: true,
