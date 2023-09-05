@@ -86,7 +86,7 @@ export class OfferManagementService {
       });
     }
 
-    if (body.productId !== offer.productId) {
+    if (body.productId && body.productId !== offer.productId) {
       const product = await this.productService.getOneProduct(
         body.productId,
         body.brandId,
@@ -106,7 +106,7 @@ export class OfferManagementService {
       body.brandId,
     );
 
-    if (!reward) {
+    if (body.rewardId && !reward) {
       throw new HttpException('Reward not found', 404, {
         cause: new Error('Reward not found'),
       });
