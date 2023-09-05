@@ -128,6 +128,14 @@ export class BrandService {
     });
   }
 
+  async getBrandMemberByUserEmail(email: string) {
+    return await this.brandMemberRepo.findOne({
+      where: {
+        verifyingEmail: email,
+      },
+    });
+  }
+
   async getBrandMemberById(id: string) {
     return await this.brandMemberRepo.findOne({
       where: {
@@ -140,6 +148,14 @@ export class BrandService {
     return await this.brandMemberRepo.find({
       where: {
         brandId,
+      },
+    });
+  }
+
+  async getBrandMemberByUserId(userId: string) {
+    return await this.brandMemberRepo.findOne({
+      where: {
+        userId,
       },
     });
   }

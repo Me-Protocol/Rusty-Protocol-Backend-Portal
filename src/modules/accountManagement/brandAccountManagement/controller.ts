@@ -92,6 +92,8 @@ export class BrandManagementController {
     body.brandId = user.brand.id;
     body.brandMemberId = user.brandMember.id;
 
+    console.log(user.brandMember);
+
     return await this.brandAccountManagementService.updateBrandMemberRole(body);
   }
 
@@ -122,7 +124,7 @@ export class BrandManagementController {
     return res.redirect(process.env.CLIENT_APP_URI);
   }
 
-  @Get('member/verify-email/:email/:brandId')
+  @Get('member/join/:email/:brandId')
   async verifyBrandMemberExistingUser(
     @Param('email') email: string,
     @Param('brandId') brandId: string,

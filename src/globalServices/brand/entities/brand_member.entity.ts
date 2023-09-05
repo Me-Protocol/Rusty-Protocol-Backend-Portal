@@ -35,4 +35,14 @@ export class BrandMember extends BaseEntity {
   @OneToOne(() => User, (user) => user.brandMember)
   @JoinColumn({ name: 'userId' })
   user: User;
+
+  @Column({
+    default: false,
+  })
+  isAccepted: boolean;
+
+  @Column({
+    nullable: true,
+  })
+  verifyingEmail: string;
 }
