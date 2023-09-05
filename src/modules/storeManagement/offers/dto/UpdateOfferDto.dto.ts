@@ -25,6 +25,7 @@ export class UpdateOfferDto {
   productId: string;
 
   @ApiProperty()
+  @IsOptional()
   @IsArray()
   offerImages: string[];
 
