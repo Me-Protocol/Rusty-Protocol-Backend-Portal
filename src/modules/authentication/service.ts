@@ -156,13 +156,18 @@ export class AuthenticationService {
     }
   }
 
-  async sendPhoneVerificationCode(phoneNumber: string): Promise<any> {
+  async sendPhoneVerificationCode(
+    phoneNumber: string,
+    user?: User,
+  ): Promise<any> {
     try {
       const phone = phoneNumber.replace(/\D/g, '');
 
-      const user = await this.userService.getUserByPhone(phone);
+      if (!user) {
+        user = await this.userService.getUserByPhone(phone);
 
-      if (!user) throw new Error('User not found');
+        if (!user) throw new Error('User not found');
+      }
 
       user.accountVerificationCode = Math.floor(1000 + Math.random() * 9000);
       await this.userService.saveUser(user);
@@ -698,13 +703,13 @@ export class AuthenticationService {
       }
 
       if (!user.phone) {
-        await this.sendPhoneVerificationCode(phone);
+        await this.sendPhoneVerificationCode(phone, user);
 
         return 'Please verify your new phone number';
       }
 
       if (user.phone === phoneNumber) {
-        throw new Error('Phone number already exists');
+        throw new Error('You are already using this phone number');
       }
 
       await this.sendPhoneVerificationCode(user.phone);
