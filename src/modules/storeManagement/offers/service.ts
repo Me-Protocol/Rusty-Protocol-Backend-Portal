@@ -88,19 +88,22 @@ export class OfferManagementService {
         });
       }
 
-      if (body.productId && body.productId !== offer.productId) {
-        const product = await this.productService.getOneProduct(
-          body.productId,
-          body.brandId,
-        );
+      if (body.productId) {
+        console.log('Has product id');
+        if (body.productId !== offer.productId) {
+          const product = await this.productService.getOneProduct(
+            body.productId,
+            body.brandId,
+          );
 
-        if (!product) {
-          throw new HttpException('Product not found', 404, {
-            cause: new Error('Product not found'),
-          });
+          if (!product) {
+            throw new HttpException('Product not found', 404, {
+              cause: new Error('Product not found'),
+            });
+          }
+
+          offer.productId = body.productId;
         }
-
-        offer.productId = body.productId;
       }
 
       const reward = await this.rewardService.findOneByIdAndBrand(
