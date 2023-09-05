@@ -123,11 +123,11 @@ export class BrandService {
     return await this.brandMemberRepo.save(brandMember);
   }
 
-  async getBrandMember(brandId: string, userId: string) {
+  async getBrandMember(brandId: string, id: string) {
     return await this.brandMemberRepo.findOne({
       where: {
         brandId,
-        userId,
+        id,
       },
     });
   }
