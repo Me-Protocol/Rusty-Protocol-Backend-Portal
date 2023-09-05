@@ -12,7 +12,7 @@ import { Verify2FADto } from './dto/Verify2FADto.dto';
 import { UpdateUserDto } from './dto/UpdateUserDto.dto';
 import { PasswordDto } from './dto/PasswordDto.dto';
 import { ChangeEmailDto } from './dto/ChangeEmailDto.dto';
-import { ChangePhoneDto } from './dto/ChangePhoneDto.dto';
+import { ChangePhoneDto, StartChangePhoneDto } from './dto/ChangePhoneDto.dto';
 import { ForgotPasswordDto } from './dto/ForgotPasswordDto.dto';
 import { ResetPasswordDto } from './dto/ResetPasswordDto.dto';
 import { UpdateDeviceTokenDto } from './dto/UpdateDeviceTokenDto.dto';
@@ -339,7 +339,7 @@ export class AuthenticationService {
       const newUser = new User();
       newUser.phone = phone.replace(/\D/g, '').replace(countryCode, '');
       newUser.countryCode = countryCode;
-      newUser.countryAbbr = countryAbbr;
+      newUser.countryName = countryAbbr;
       newUser.username = Math.random().toString(36).substring(7);
       newUser.twoFAType = TwoFAType.SMS;
 
@@ -686,7 +686,7 @@ export class AuthenticationService {
 
   async changePhone(
     user: User,
-    { phone, countryCode }: PhoneSignupDto,
+    { phone, countryCode }: StartChangePhoneDto,
   ): Promise<any> {
     try {
       const phoneNumber = phone.replace(/\D/g, '').replace(countryCode, '');
@@ -720,7 +720,7 @@ export class AuthenticationService {
 
   async verifyAndChangePhone(
     user: User,
-    { phone, code, countryAbbr, countryCode }: ChangePhoneDto,
+    { phone, code, countryName, countryCode }: ChangePhoneDto,
   ): Promise<any> {
     try {
       const phoneNumber = phone.replace(/\D/g, '');
@@ -735,7 +735,7 @@ export class AuthenticationService {
       }
 
       user.phone = phoneNumber.replace(/\D/g, '').replace(countryCode, '');
-      user.countryAbbr = countryAbbr;
+      user.countryName = countryName;
       user.countryCode = countryCode;
       user.phoneVerified = true;
       user.accountVerificationCode = null;

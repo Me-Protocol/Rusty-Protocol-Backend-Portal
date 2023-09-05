@@ -170,7 +170,7 @@ export class User extends BaseEntity {
   @Column({
     nullable: true,
   })
-  countryAbbr: string;
+  countryName: string;
 
   @OneToOne(() => Customer, (customer) => customer.user, {
     onDelete: 'CASCADE',

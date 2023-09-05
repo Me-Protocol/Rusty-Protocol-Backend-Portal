@@ -21,7 +21,23 @@ export class ChangePhoneDto {
   @IsString()
   countryCode: string;
 
+  // @ApiProperty()
+  // @IsString()
+  // countryAbbr: string;
+
   @ApiProperty()
   @IsString()
-  countryAbbr: string;
+  countryName: string;
+}
+
+export class StartChangePhoneDto {
+  @ApiProperty()
+  @IsPhoneNumber(undefined, {
+    message: 'Phone number is invalid',
+  })
+  phone: string;
+
+  @ApiProperty()
+  @IsString()
+  countryCode: string;
 }
