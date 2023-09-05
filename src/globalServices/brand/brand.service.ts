@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
 import { Repository } from 'typeorm';
@@ -47,22 +47,26 @@ export class BrandService {
   }
 
   async update(body: UpdateBrandDto, brandId: string) {
-    if (body.name) {
-      body.slug = body.name.toLowerCase().replace(/\s/g, '-');
+    try {
+      if (body.name) {
+        body.slug = body.name.toLowerCase().replace(/\s/g, '-');
 
-      const checkSlug = await this.brandRepo.findOneBy({ slug: body.slug });
-      if (checkSlug) {
-        throw new Error('Name/Slug already exists');
+        const checkSlug = await this.brandRepo.findOneBy({ slug: body.slug });
+        if (checkSlug) {
+          throw new Error('Name/Slug already exists');
+        }
       }
+
+      await this.brandRepo.update({ id: brandId }, body);
+
+      const brand = await this.brandRepo.findOneBy({ id: brandId });
+
+      this.elasticIndex.updateDocument(brand, brandIndex);
+
+      return brand;
+    } catch (error) {
+      throw new HttpException(error.message, 400);
     }
-
-    await this.brandRepo.update({ id: brandId }, body);
-
-    const brand = await this.brandRepo.findOneBy({ id: brandId });
-
-    this.elasticIndex.updateDocument(brand, brandIndex);
-
-    return brand;
   }
 
   getBrandById(id: string) {
