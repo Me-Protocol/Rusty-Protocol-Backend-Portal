@@ -71,7 +71,7 @@ export class BrandManagementController {
   }
 
   @UseGuards(BrandJwtStrategy)
-  @Put('member/:id')
+  @Put('member/:id/role')
   async updateBrandMemberRole(
     @Param('id') id: string,
     @Req() req: any,
@@ -83,18 +83,27 @@ export class BrandManagementController {
   }
 
   @UseGuards(BrandJwtStrategy)
-  @Put('member')
+  @Put('member/:id')
   async updateBrandMember(
+    @Param('id') id: string,
     @Req() req: any,
     @Body(ValidationPipe) body: UpdateMemberDto,
   ) {
-    const user = req.user as User;
-    body.brandId = user.brand.id;
-    body.brandMemberId = user.brandMember.id;
+    body.brandMemberId = id;
+    body.brandId = req.user.brand.id;
+    return await this.brandAccountManagementService.updateBrandMember(body);
+  }
 
-    console.log(user);
-
-    return await this.brandAccountManagementService.updateBrandMemberRole(body);
+  @UseGuards(BrandJwtStrategy)
+  @Put('member')
+  async updateBrandMemberDetail(
+    @Param('id') id: string,
+    @Req() req: any,
+    @Body(ValidationPipe) body: UpdateMemberDto,
+  ) {
+    body.brandMemberId = id;
+    body.brandId = req.user.brand.id;
+    return await this.brandAccountManagementService.updateBrandMember(body);
   }
 
   @UseGuards(BrandJwtStrategy)

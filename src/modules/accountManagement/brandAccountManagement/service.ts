@@ -122,7 +122,6 @@ export class BrandAccountManagementService {
 
       if (body.name) brandMember.name = body.name;
       if (body.profilePicture) brandMember.profilePicture = body.profilePicture;
-      if (body.role) brandMember.role = body.role;
 
       return await this.brandService.saveBrandMember(brandMember);
     } catch (error) {
