@@ -20,3 +20,14 @@ export class ChangeEmailDto {
   )
   email: string;
 }
+
+export class StartChangeEmailDto {
+  @ApiProperty()
+  @IsEmail(
+    {},
+    {
+      message: 'Email is invalid',
+    },
+  )
+  email: string;
+}

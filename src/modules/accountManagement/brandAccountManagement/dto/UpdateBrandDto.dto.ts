@@ -79,4 +79,46 @@ export class UpdateBrandDto {
     name: string;
     link: string;
   }[];
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString({
+    message: 'Enter a valid logo_icon',
+  })
+  logo_icon: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString({
+    message: 'Enter a valid description',
+  })
+  description: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString({
+    message: 'Enter a valid slogan',
+  })
+  logo_white: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString({
+    message: 'Enter a valid slogan',
+  })
+  logo_white_icon: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString({
+    message: 'Enter a valid slogan',
+  })
+  logo: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsArray({
+    message: 'Enter a valid banners',
+  })
+  banners: string[];
 }

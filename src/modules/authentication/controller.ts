@@ -27,7 +27,7 @@ import { LoginDto } from './dto/LoginDto.dto';
 import { Verify2FADto } from './dto/Verify2FADto.dto';
 import { UpdateUserDto } from './dto/UpdateUserDto.dto';
 import { PasswordDto } from './dto/PasswordDto.dto';
-import { ChangeEmailDto } from './dto/ChangeEmailDto.dto';
+import { ChangeEmailDto, StartChangeEmailDto } from './dto/ChangeEmailDto.dto';
 import { ChangePhoneDto, StartChangePhoneDto } from './dto/ChangePhoneDto.dto';
 import { ForgotPasswordDto } from './dto/ForgotPasswordDto.dto';
 import { ResetPasswordDto } from './dto/ResetPasswordDto.dto';
@@ -219,7 +219,7 @@ export class AuthenticationController {
   @Put('me/email')
   async updateEmail(
     @Req() req: any,
-    @Body(ValidationPipe) body: EmailSignupDto,
+    @Body(ValidationPipe) body: StartChangeEmailDto,
   ): Promise<any> {
     const user = req.user as User;
 
