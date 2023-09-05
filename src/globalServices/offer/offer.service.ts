@@ -373,17 +373,29 @@ export class OfferService {
         id: offerId,
         brandId,
       },
+      relations: ['offerImages'],
     });
     if (!offer) {
       throw new Error('Offer not found');
     }
 
-    const productImages = images.map((image) =>
-      this.productImageRepo.create({
-        url: image,
-        offer,
-      }),
-    );
+    const productImages = [];
+
+    for (const image of images) {
+      // check if image already exists
+      const existingImage = offer.offerImages.find(
+        (offerImage) => offerImage.url === image,
+      );
+
+      if (!existingImage) {
+        productImages.push(
+          this.productImageRepo.create({
+            url: image,
+            offer,
+          }),
+        );
+      }
+    }
 
     return this.productImageRepo.save(productImages);
   }

@@ -57,17 +57,29 @@ export class ProductService {
         id: productId,
         brandId,
       },
+      relations: ['productImages'],
     });
     if (!product) {
       throw new Error('Product not found');
     }
 
-    const productImages = images.map((image) =>
-      this.productImageRepo.create({
-        url: image,
-        product,
-      }),
-    );
+    const productImages = [];
+
+    for (const image of images) {
+      // check if image already exists
+      const imageExists = product.productImages.find(
+        (productImage) => productImage.url === image,
+      );
+
+      if (!imageExists) {
+        productImages.push(
+          this.productImageRepo.create({
+            url: image,
+            product,
+          }),
+        );
+      }
+    }
 
     return this.productImageRepo.save(productImages);
   }

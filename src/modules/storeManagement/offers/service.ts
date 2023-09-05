@@ -132,10 +132,10 @@ export class OfferManagementService {
       if (body.rewardId) offer.rewardId = body.rewardId;
 
       // upload images
-      await this.productService.bulkAddProductImage(
+      await this.offerService.bulkAddOfferImage(
         body.brandId,
         offer.id,
-        body.productImages,
+        body.offerImages,
       );
 
       const saveOffer = await this.offerService.saveOffer(offer);
