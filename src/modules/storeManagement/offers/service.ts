@@ -9,6 +9,7 @@ import { RewardService } from '@src/globalServices/reward/reward.service';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { offerIndex } from '@src/modules/search/interface/search.interface';
 import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 @Injectable()
 export class OfferManagementService {
@@ -78,70 +79,75 @@ export class OfferManagementService {
   }
 
   async updateOffer(id: string, body: UpdateOfferDto) {
-    const offer = await this.offerService.getBrandOfferById(id, body.brandId);
+    try {
+      const offer = await this.offerService.getBrandOfferById(id, body.brandId);
 
-    if (!offer) {
-      throw new HttpException('Offer not found', 404, {
-        cause: new Error('Offer not found'),
-      });
-    }
-
-    if (body.productId && body.productId !== offer.productId) {
-      const product = await this.productService.getOneProduct(
-        body.productId,
-        body.brandId,
-      );
-
-      if (!product) {
-        throw new HttpException('Product not found', 404, {
-          cause: new Error('Product not found'),
+      if (!offer) {
+        throw new HttpException('Offer not found', 404, {
+          cause: new Error('Offer not found'),
         });
       }
 
-      offer.productId = body.productId;
+      if (body.productId && body.productId !== offer.productId) {
+        const product = await this.productService.getOneProduct(
+          body.productId,
+          body.brandId,
+        );
+
+        if (!product) {
+          throw new HttpException('Product not found', 404, {
+            cause: new Error('Product not found'),
+          });
+        }
+
+        offer.productId = body.productId;
+      }
+
+      const reward = await this.rewardService.findOneByIdAndBrand(
+        body.rewardId,
+        body.brandId,
+      );
+
+      if (body.rewardId && !reward) {
+        throw new HttpException('Reward not found', 404, {
+          cause: new Error('Reward not found'),
+        });
+      }
+
+      if (body.name) offer.name = body.name;
+      if (body.status) offer.status = body.status;
+      if (body.originalPrice) offer.originalPrice = body.originalPrice;
+      if (body.discountPercentage)
+        offer.discountPercentage = body.discountPercentage;
+      if (body.tokens) offer.tokens = body.tokens;
+      if (body.description) offer.description = body.description;
+      if (body.startDate) offer.startDate = body.startDate;
+      if (body.endDate) offer.endDate = body.endDate;
+      if (body.idOnBrandsite) offer.idOnBrandsite = body.idOnBrandsite;
+      if (body.rewardId) offer.rewardId = body.rewardId;
+
+      // upload images
+      await this.productService.bulkAddProductImage(
+        body.brandId,
+        offer.id,
+        body.productImages,
+      );
+
+      const saveOffer = await this.offerService.saveOffer(offer);
+
+      const findOne = await this.offerService.getOfferById(offer.id);
+
+      if (saveOffer.status === ProductStatus.PUBLISHED) {
+        this.elasticIndex.updateDocument(findOne, offerIndex);
+      } else if (saveOffer.status === ProductStatus.ARCHIVED) {
+        this.elasticIndex.deleteDocument(offerIndex, offer.id);
+      }
+
+      return findOne;
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400);
     }
-
-    const reward = await this.rewardService.findOneByIdAndBrand(
-      body.rewardId,
-      body.brandId,
-    );
-
-    if (body.rewardId && !reward) {
-      throw new HttpException('Reward not found', 404, {
-        cause: new Error('Reward not found'),
-      });
-    }
-
-    if (body.name) offer.name = body.name;
-    if (body.status) offer.status = body.status;
-    if (body.originalPrice) offer.originalPrice = body.originalPrice;
-    if (body.discountPercentage)
-      offer.discountPercentage = body.discountPercentage;
-    if (body.tokens) offer.tokens = body.tokens;
-    if (body.description) offer.description = body.description;
-    if (body.startDate) offer.startDate = body.startDate;
-    if (body.endDate) offer.endDate = body.endDate;
-    if (body.idOnBrandsite) offer.idOnBrandsite = body.idOnBrandsite;
-    if (body.rewardId) offer.rewardId = body.rewardId;
-
-    // upload images
-    await this.productService.bulkAddProductImage(
-      body.brandId,
-      offer.id,
-      body.productImages,
-    );
-
-    const saveOffer = await this.offerService.saveOffer(offer);
-
-    const findOne = await this.offerService.getOfferById(offer.id);
-
-    if (saveOffer.status === ProductStatus.PUBLISHED) {
-      this.elasticIndex.updateDocument(findOne, offerIndex);
-    } else if (saveOffer.status === ProductStatus.ARCHIVED) {
-      this.elasticIndex.deleteDocument(offerIndex, offer.id);
-    }
-
-    return findOne;
   }
 
   async getOfferByofferCode(offerCode: string, sessionId: string) {
