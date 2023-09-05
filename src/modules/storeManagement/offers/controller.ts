@@ -52,6 +52,7 @@ export class OfferManagementController {
   ) {
     const brandId = req.user.brand.id;
     body.brandId = brandId;
+    console.log('body', body);
     return await this.offerManagementService.updateOffer(offerId, body);
   }
 
