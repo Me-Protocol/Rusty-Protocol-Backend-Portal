@@ -92,7 +92,7 @@ export class BrandManagementController {
     body.brandId = user.brand.id;
     body.brandMemberId = user.brandMember.id;
 
-    console.log(user.brandMember);
+    console.log(user);
 
     return await this.brandAccountManagementService.updateBrandMemberRole(body);
   }
