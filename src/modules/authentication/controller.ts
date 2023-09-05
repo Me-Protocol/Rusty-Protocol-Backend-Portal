@@ -28,7 +28,7 @@ import { Verify2FADto } from './dto/Verify2FADto.dto';
 import { UpdateUserDto } from './dto/UpdateUserDto.dto';
 import { PasswordDto } from './dto/PasswordDto.dto';
 import { ChangeEmailDto } from './dto/ChangeEmailDto.dto';
-import { ChangePhoneDto } from './dto/ChangePhoneDto.dto';
+import { ChangePhoneDto, StartChangePhoneDto } from './dto/ChangePhoneDto.dto';
 import { ForgotPasswordDto } from './dto/ForgotPasswordDto.dto';
 import { ResetPasswordDto } from './dto/ResetPasswordDto.dto';
 import { UpdateDeviceTokenDto } from './dto/UpdateDeviceTokenDto.dto';
@@ -243,7 +243,7 @@ export class AuthenticationController {
   @Put('me/phone')
   async updatePhone(
     @Req() req: any,
-    @Body(ValidationPipe) body: PhoneSignupDto,
+    @Body(ValidationPipe) body: StartChangePhoneDto,
   ): Promise<any> {
     const user = req.user as User;
 
