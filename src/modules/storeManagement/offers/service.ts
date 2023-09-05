@@ -96,8 +96,6 @@ export class OfferManagementService {
             body.brandId,
           );
 
-          console.log('Checking');
-
           if (!product) {
             throw new HttpException('Product not found', 404, {
               cause: new Error('Product not found'),
