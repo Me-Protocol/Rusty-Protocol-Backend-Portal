@@ -39,7 +39,7 @@ export class UserService {
 
     if (!device) throw new HttpException('Device not found', 404);
 
-    await this.deviceRepository.delete({
+    await this.deviceRepository.softDelete({
       id,
       userId,
     });

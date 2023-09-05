@@ -230,7 +230,7 @@ export class ProductService {
   }
 
   async deleteProduct(productId: string, brandId: string) {
-    return await this.productRepo.delete({
+    return await this.productRepo.softDelete({
       id: productId,
       brandId,
     });

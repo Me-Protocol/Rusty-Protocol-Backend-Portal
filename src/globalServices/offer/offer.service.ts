@@ -425,7 +425,7 @@ export class OfferService {
   }
 
   async deleteOffer(offerId: string, brandId: string) {
-    return await this.offerRepo.delete({
+    return await this.offerRepo.softDelete({
       id: offerId,
       brandId,
     });

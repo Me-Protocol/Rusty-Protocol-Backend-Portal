@@ -27,6 +27,8 @@ import { UserAppType } from '@src/utils/enums/UserAppType';
 import { Role } from '@src/utils/enums/Role';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { logger } from '@src/globalServices/logger/logger.service';
+import { RewardService } from '@src/globalServices/reward/reward.service';
+import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -46,6 +48,7 @@ export class AuthenticationService {
     private customerService: CustomerService,
     private brandService: BrandService,
     private walletService: FiatWalletService,
+    private syncService: SyncRewardService,
   ) {}
 
   // Signs a token
@@ -286,6 +289,19 @@ export class AuthenticationService {
       user.emailVerified = true;
       user.accountVerificationCode = null;
       await this.userService.saveUser(user);
+
+      // check if user has any reward registry
+      const rewardRegistry =
+        await this.syncService.getAllRegistryRecordsByIdentifer(user.email);
+
+      if (rewardRegistry.length > 0) {
+        for (const registry of rewardRegistry) {
+          if (!registry.userId) {
+            registry.userId = user.id;
+            await this.syncService.saveRegistry(registry);
+          }
+        }
+      }
 
       if (!is2Fa) {
         if (user.userType === UserAppType.BRAND) {

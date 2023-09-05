@@ -33,7 +33,11 @@ export class Product extends BaseEntity {
   @Column()
   brandId: string;
 
-  @ManyToOne(() => Category, (category) => category.products)
+  @ManyToOne(() => Category, (category) => category.products, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+    cascade: true,
+  })
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 
@@ -79,7 +83,11 @@ export class Product extends BaseEntity {
   @JoinColumn({ name: 'subCategoryId' })
   subCategory: Category;
 
-  @OneToMany(() => Offer, (offer) => offer.product)
+  @OneToMany(() => Offer, (offer) => offer.product, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+    cascade: true,
+  })
   offers: Offer[];
 
   @OneToMany(() => Variant, (variant) => variant.product)

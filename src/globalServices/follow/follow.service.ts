@@ -62,7 +62,7 @@ export class FollowService {
 
   // delete follower
   async unfollow(brandId: string, userId: string): Promise<string> {
-    await this.followerRepository.delete({
+    await this.followerRepository.softDelete({
       userId,
       brandId,
     });

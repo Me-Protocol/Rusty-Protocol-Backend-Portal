@@ -38,7 +38,7 @@ export class LikeService {
   }
 
   async deleteLike(id: number): Promise<any> {
-    const result = await this.likeRepo.delete(id);
+    const result = await this.likeRepo.softDelete(id);
     return result;
   }
 
@@ -80,7 +80,7 @@ export class LikeService {
     offerId: string,
     userId: string,
   ): Promise<any> {
-    const result = await this.likeRepo.delete({
+    const result = await this.likeRepo.softDelete({
       offerId,
       userId,
     });

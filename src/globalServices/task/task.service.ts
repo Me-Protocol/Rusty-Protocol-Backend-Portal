@@ -594,7 +594,7 @@ export class TasksService {
       throw new HttpException('Task is already active or completed', 400);
     }
 
-    await this.taskRepository.delete(id);
+    await this.taskRepository.softDelete(id);
     return { deleted: true };
   }
 

@@ -196,4 +196,9 @@ export class Brand extends BaseEntity {
 
   @OneToMany(() => BrandMember, (member) => member.brand)
   members: BrandMember[];
+
+  @Column({
+    nullable: true,
+  })
+  supportPhoneNumber: string;
 }

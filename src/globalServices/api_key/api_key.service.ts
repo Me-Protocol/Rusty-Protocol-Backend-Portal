@@ -53,7 +53,7 @@ export class ApiKeyService {
   }
 
   async deleteApiKey(id: string, brandId: string): Promise<void> {
-    await this.apiKeyRepository.delete({
+    await this.apiKeyRepository.softDelete({
       id,
       brandId,
     });

@@ -44,7 +44,7 @@ export class CouponService {
   }
 
   async remove(id: number): Promise<any> {
-    return await this.couponRepository.delete(id);
+    return await this.couponRepository.softDelete(id);
   }
 
   async validateCoupon(code: string): Promise<any> {

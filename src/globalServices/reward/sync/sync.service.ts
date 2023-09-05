@@ -369,6 +369,14 @@ export class SyncRewardService {
     });
   }
 
+  async getAllRegistryRecordsByIdentifer(identifier: string) {
+    return this.rewardRegistryRepo.find({
+      where: {
+        customerIdentiyOnBrandSite: identifier,
+      },
+    });
+  }
+
   // getUserRegistry(userId: string, rewardId: string) {
   //   return this.rewardRegistryRepo.findOne({
   //     where: {

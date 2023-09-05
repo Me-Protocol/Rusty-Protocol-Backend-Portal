@@ -74,7 +74,7 @@ export class RewardService {
   }
 
   async delete(rewardId: string, brandId: string): Promise<boolean> {
-    await this.rewardsRepo.delete({ id: rewardId, brandId: brandId });
+    await this.rewardsRepo.softDelete({ id: rewardId, brandId: brandId });
 
     this.elasticIndex.deleteDocument(rewardIndex, rewardId);
 

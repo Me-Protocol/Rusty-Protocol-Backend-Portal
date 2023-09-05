@@ -121,4 +121,11 @@ export class UpdateBrandDto {
     message: 'Enter a valid banners',
   })
   banners: string[];
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString({
+    message: 'Enter a valid supportPhoneNumber',
+  })
+  supportPhoneNumber: string;
 }
