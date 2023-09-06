@@ -36,6 +36,7 @@ import { AuthenticationService } from './service';
 import { UserAppType } from '@src/utils/enums/UserAppType';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Enable2FADto } from './dto/Enable2FADto.dto';
+import { UpdatePreferenceDto } from './dto/UpdatePreferenceDto.dto';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const requestIp = require('request-ip');
@@ -262,6 +263,19 @@ export class AuthenticationController {
     body.userId = user.id;
 
     return await this.authService.enableDisable2FA(body);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard())
+  @Put('me/preferences')
+  async updatePreferences(
+    @Req() req: any,
+    @Body(ValidationPipe) body: UpdatePreferenceDto,
+  ): Promise<any> {
+    const user = req.user as User;
+    body.userId = user.id;
+
+    return await this.authService.updatePreferences(body);
   }
 
   @ApiBearerAuth()

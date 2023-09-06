@@ -30,6 +30,7 @@ import { logger } from '@src/globalServices/logger/logger.service';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
 import { Enable2FADto } from './dto/Enable2FADto.dto';
+import { UpdatePreferenceDto } from './dto/UpdatePreferenceDto.dto';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -1004,5 +1005,13 @@ export class AuthenticationService {
       message: body.enable ? '2FA enabled' : '2FA disabled',
       enable: body.enable,
     };
+  }
+
+  async updatePreferences(body: UpdatePreferenceDto) {
+    const user = await this.userService.getUserById(body.userId);
+    if (body.language) user.language = body.language;
+    if (body.currency) user.currency = body.currency;
+    if (body.timezone) user.timezone = body.timezone;
+    if (body.region) user.region = body.region;
   }
 }

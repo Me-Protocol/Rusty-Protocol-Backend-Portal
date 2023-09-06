@@ -228,4 +228,24 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Coupon, (coupon) => coupon.user)
   coupons: Coupon[];
+
+  @Column({
+    nullable: true,
+  })
+  language: string;
+
+  @Column({
+    nullable: true,
+  })
+  timezone: string;
+
+  @Column({
+    nullable: true,
+  })
+  region: string;
+
+  @Column({
+    nullable: true,
+  })
+  currency: string;
 }
