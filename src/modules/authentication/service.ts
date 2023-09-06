@@ -29,6 +29,7 @@ import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.ser
 import { logger } from '@src/globalServices/logger/logger.service';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
+import { Enable2FADto } from './dto/Enable2FADto.dto';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -989,5 +990,19 @@ export class AuthenticationService {
     await this.userService.saveUser(user);
 
     return 'Password changed';
+  }
+
+  async enableDisable2FA(body: Enable2FADto): Promise<any> {
+    const user = await this.userService.getUserById(body.userId);
+
+    user.is2faEnabled = body.enable;
+    user.twoFAType = body.twoFAType;
+
+    await this.userService.saveUser(user);
+
+    return {
+      message: body.enable ? '2FA enabled' : '2FA disabled',
+      enable: body.enable,
+    };
   }
 }

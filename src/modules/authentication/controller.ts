@@ -35,6 +35,7 @@ import { UpdateDeviceTokenDto } from './dto/UpdateDeviceTokenDto.dto';
 import { AuthenticationService } from './service';
 import { UserAppType } from '@src/utils/enums/UserAppType';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Enable2FADto } from './dto/Enable2FADto.dto';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const requestIp = require('request-ip');
@@ -248,6 +249,19 @@ export class AuthenticationController {
     const user = req.user as User;
 
     return await this.authService.changePhone(user, body);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard())
+  @Put('me/2fa')
+  async enableDisable2FA(
+    @Req() req: any,
+    @Body(ValidationPipe) body: Enable2FADto,
+  ): Promise<any> {
+    const user = req.user as User;
+    body.userId = user.id;
+
+    return await this.authService.enableDisable2FA(body);
   }
 
   @ApiBearerAuth()

@@ -6,11 +6,7 @@ export class KeyManagementService {
   private readonly kms: KMS;
 
   constructor() {
-    this.kms = new KMS({
-      accessKeyId: 'AKCVBTRNOSMLTIA7RPQQ', //credentials for your IAM user
-      secretAccessKey: 'lJQtdIfH/Cup9AyaaHV8h2NnR/eKFIsZea5Vn0k', //credentials for your IAM user
-      region: 'ap-southeast-1',
-    });
+    this.kms = new KMS();
   }
 
   async encryptKey(privateKey: string): Promise<string> {
