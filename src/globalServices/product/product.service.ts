@@ -271,7 +271,7 @@ export class ProductService {
 
     if (order) {
       const formatedOrder = order.split(':')[0];
-      const acceptedOrder = new Product();
+      const acceptedOrder = Product;
 
       console.log(acceptedOrder, formatedOrder);
 
