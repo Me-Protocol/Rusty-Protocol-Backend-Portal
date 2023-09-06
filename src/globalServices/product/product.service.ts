@@ -279,9 +279,9 @@ export class ProductService {
         'inventory',
         'isUnlimited',
         'productCode',
+        'createdAt',
+        'updatedAt',
       ];
-
-      console.log('formatedOrder', formatedOrder);
 
       if (!acceptedOrder.includes(formatedOrder)) {
         throw new Error('Invalid order param');
