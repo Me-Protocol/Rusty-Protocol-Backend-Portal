@@ -37,7 +37,6 @@ const geoip = require('geoip-lite');
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const DeviceDetector = require('node-device-detector');
-
 const deviceDetector = new DeviceDetector();
 
 @Injectable()
@@ -71,7 +70,8 @@ export class AuthenticationService {
   ): Promise<any> {
     const deviceData = deviceDetector.detect(userAgent);
 
-    const location = geoip.lookup(clientIp);
+    const response = await fetch(`http://ip-api.com/json/${clientIp}`);
+    const location = await response.json();
 
     const device = new Device();
     device.user = user;
@@ -82,8 +82,8 @@ export class AuthenticationService {
     device.ip = clientIp;
     device.location = `${location?.city ?? ''}, ${location?.country ?? ''}`;
     device.timezone = location?.timezone;
-    device.lat_lng = location?.ll;
-    device.range = location?.range;
+    device.lat_lng = [location?.lat, location?.lon];
+    device.range = [location?.lat, location?.lon];
 
     const checkDevice = await this.userService.checkDevice(
       clientIp,
@@ -92,6 +92,19 @@ export class AuthenticationService {
     );
 
     if (checkDevice) {
+      checkDevice.name = deviceData.device.name;
+      checkDevice.type = deviceData.device.type;
+      checkDevice.agent = deviceData.client.name;
+      checkDevice.ip = clientIp;
+      checkDevice.location = `${location?.city ?? ''}, ${
+        location?.country ?? ''
+      }`;
+      checkDevice.timezone = location?.timezone;
+      checkDevice.lat_lng = [location?.lat, location?.lon];
+      checkDevice.range = [location?.lat, location?.lon];
+
+      await this.userService.saveDevice(checkDevice);
+
       return checkDevice.token;
     }
 
@@ -1013,5 +1026,9 @@ export class AuthenticationService {
     if (body.currency) user.currency = body.currency;
     if (body.timezone) user.timezone = body.timezone;
     if (body.region) user.region = body.region;
+
+    await this.userService.saveUser(user);
+
+    return 'ok';
   }
 }

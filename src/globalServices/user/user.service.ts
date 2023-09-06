@@ -61,6 +61,7 @@ export class UserService {
         'location',
         'createdAt',
         'device_token',
+        'updatedAt',
       ],
     });
     return devices;
