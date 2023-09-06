@@ -1,18 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { KMS } from 'aws-sdk';
 
+const { AWS_KMS_KEY_ID, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION } =
+  process.env;
+
 @Injectable()
 export class KeyManagementService {
   private readonly kms: KMS;
 
   constructor() {
-    this.kms = new KMS();
+    this.kms = new KMS({
+      accessKeyId: AWS_ACCESS_KEY_ID,
+      secretAccessKey: AWS_SECRET_ACCESS_KEY,
+      region: AWS_REGION,
+    });
   }
 
   async encryptKey(privateKey: string): Promise<string> {
-    const kmsKeyId = process.env.KMS_KEY_ID;
     const params = {
-      KeyId: kmsKeyId,
+      KeyId: AWS_KMS_KEY_ID,
       Plaintext: privateKey,
     };
 
