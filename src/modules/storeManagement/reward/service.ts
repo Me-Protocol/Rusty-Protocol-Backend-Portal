@@ -2,10 +2,8 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { CreateRewardDto } from './dto/createRewardDto.dto';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { Reward } from '@src/globalServices/reward/entities/reward.entity';
-import { RewardType } from '@src/utils/enums/RewardType';
 import { FilterRewardDto } from './dto/filterRewardDto.dto';
 import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
-import { AddBatchDto } from './dto/addBatchDto.dto';
 import { SyncBatch } from '@src/globalServices/reward/entities/syncBatch.entity';
 import { UpdateBatchDto } from './dto/updateBatchDto';
 import { UserService } from '@src/globalServices/user/user.service';
@@ -20,6 +18,10 @@ import { SpendRewardDto } from './dto/spendRewardDto.dto';
 import { AxiosResponse } from 'axios';
 import { logger } from '@src/globalServices/logger/logger.service';
 import { KeyManagementService } from '@src/globalServices/key-management/key-management.service';
+import {
+  generateWalletRandom,
+  generateWalletWithApiKey,
+} from '@developeruche/protocol-core';
 
 @Injectable()
 export class RewardManagementService {
@@ -56,20 +58,18 @@ export class RewardManagementService {
       reward.blockchain = body.blockchain;
 
       // TODO generate private key and public key
-      const { privateKey, publicKey } = {
-        privateKey: 'privateKey',
-        publicKey: 'publicKey',
-      };
+      const createRedistributionKey = generateWalletRandom();
+      const { pubKey, privKey } = createRedistributionKey;
 
       // Encrypt private key
-      const encryptedKey = await this.keyManagementService.encryptKey(
-        privateKey,
-      );
+      const redistributionEncryptedKey =
+        await this.keyManagementService.encryptKey(privKey);
 
-      reward.publicKey = publicKey;
-      reward.keyIdentifier = encryptedKey;
+      reward.redistributionPublicKey = pubKey;
 
-      return await this.rewardService.create(reward);
+      const newReward = await this.rewardService.create(reward);
+
+      return newReward;
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, error.status, {
@@ -426,9 +426,7 @@ export class RewardManagementService {
         throw new Error('Batch already distributed');
       }
 
-      // if body.params.data starts with 0x00000001
-
-      const distribute = await this.spendReward(body);
+      await this.spendReward(body);
 
       // Pick the rewards whose users exists and update balacne to 0
       await Promise.all(
@@ -498,6 +496,7 @@ export class RewardManagementService {
   async getBatchUserWalletsAndAmount(brandId: string, rewardId: string) {
     try {
       const batch = await this.syncService.checkActiveBatch(brandId, rewardId);
+      const reward = await this.rewardService.findOneById(rewardId);
 
       if (!batch) {
         throw new Error('No batch to distribute');
@@ -554,7 +553,7 @@ export class RewardManagementService {
         users: [
           ...users,
           {
-            walletAddress: process.env.MEPRO_WALLET_ADDRESS,
+            walletAddress: reward.redistributionPublicKey,
             amount: aggregateSumOfNonExistingUsers,
           },
         ],

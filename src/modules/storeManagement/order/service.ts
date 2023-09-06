@@ -203,7 +203,7 @@ export class OrderManagementService {
       const totalAmount = amount * quantity;
 
       // Spend reward
-      const spend = await this.rewardManagementService.spendReward({
+      await this.rewardManagementService.spendReward({
         rewardId: offer.rewardId,
         params,
       });

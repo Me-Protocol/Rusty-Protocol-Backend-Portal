@@ -25,10 +25,27 @@ export class RewardRegistry extends BaseEntity {
 
   @Column({
     type: 'decimal',
-    precision: 10,
+    precision: 20,
     scale: 2,
+    default: 0,
   })
   balance: number;
+
+  @Column({
+    type: 'decimal',
+    precision: 20,
+    scale: 2,
+    default: 0,
+  })
+  pendingBalance: number;
+
+  @Column({
+    type: 'decimal',
+    precision: 20,
+    scale: 2,
+    default: 0,
+  })
+  totalBalance: number;
 
   @Column({
     nullable: true,

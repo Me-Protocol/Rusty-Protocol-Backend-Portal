@@ -8,6 +8,8 @@ import { Reward } from './entities/reward.entity';
 import { RewardType } from '@src/utils/enums/RewardType';
 import { rewardIndex } from '@src/modules/search/interface/search.interface';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
+import { KeyIdentifier } from './entities/keyIdentifier.entity';
+import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 
 @Injectable()
 export class RewardService {
@@ -16,6 +18,9 @@ export class RewardService {
 
     @InjectRepository(Reward)
     private readonly rewardsRepo: Repository<Reward>,
+
+    @InjectRepository(KeyIdentifier)
+    private readonly keyIdentifierRepo: Repository<KeyIdentifier>,
   ) {}
 
   async create(reward: Reward): Promise<Reward> {
@@ -120,6 +125,21 @@ export class RewardService {
     return this.rewardsRepo.findOne({
       where: { contractAddress: contractAddress },
       relations: ['brand'],
+    });
+  }
+
+  async createKeyIdentifer(
+    keyIdentifier: KeyIdentifier,
+  ): Promise<KeyIdentifier> {
+    return this.keyIdentifierRepo.save(keyIdentifier);
+  }
+
+  async getKeyIdentifier(id: string, type: KeyIdentifierType) {
+    return this.keyIdentifierRepo.findOne({
+      where: {
+        identifier: id,
+        identifierType: type,
+      },
     });
   }
 }
