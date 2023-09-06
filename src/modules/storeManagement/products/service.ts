@@ -59,6 +59,8 @@ export class ProductManagementService {
     if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
     product.productCode = productCode;
 
+    const productCollections = [];
+
     if (body.collections && body.collections.length > 0) {
       for (const collectionId of body?.collections) {
         const collection = await this.collectionService.findOne({
@@ -67,10 +69,12 @@ export class ProductManagementService {
         });
 
         if (collection) {
-          product.collections.push(collection);
+          productCollections.push(collection);
         }
       }
     }
+
+    product.collections = productCollections;
 
     const newProduct = await this.productService.createProduct(product);
 
