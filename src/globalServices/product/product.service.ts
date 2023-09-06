@@ -271,11 +271,19 @@ export class ProductService {
 
     if (order) {
       const formatedOrder = order.split(':')[0];
-      const acceptedOrder = Product;
+      const acceptedOrder = [
+        'name',
+        'description',
+        'status',
+        'price',
+        'inventory',
+        'isUnlimited',
+        'productCode',
+      ];
 
-      console.log(acceptedOrder, formatedOrder);
+      console.log('formatedOrder', formatedOrder);
 
-      if (!acceptedOrder.hasOwnProperty(formatedOrder)) {
+      if (!acceptedOrder.includes(formatedOrder)) {
         throw new Error('Invalid order param');
       }
 
