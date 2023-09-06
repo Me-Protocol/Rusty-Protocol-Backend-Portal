@@ -37,6 +37,7 @@ import { UserAppType } from '@src/utils/enums/UserAppType';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Enable2FADto } from './dto/Enable2FADto.dto';
 import { UpdatePreferenceDto } from './dto/UpdatePreferenceDto.dto';
+import { LogoutDeviceDto } from './dto/LogoutDeviceDto.dto';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const requestIp = require('request-ip');
@@ -181,7 +182,7 @@ export class AuthenticationController {
   @Post('logout')
   async logout(
     @Req() req: any,
-    @Body() params: { deviceId: string },
+    @Body(ValidationPipe) params: LogoutDeviceDto,
   ): Promise<any> {
     const user = req.user as User;
 
