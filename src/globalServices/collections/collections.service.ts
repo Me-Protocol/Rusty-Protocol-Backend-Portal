@@ -158,7 +158,7 @@ export class CollectionService {
         userId,
         brandId,
       },
-      relations: ['products', 'offer'],
+      relations: ['products', 'products.productImages'],
     });
   }
 
