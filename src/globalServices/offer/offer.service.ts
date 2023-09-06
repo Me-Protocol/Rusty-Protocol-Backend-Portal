@@ -356,8 +356,27 @@ export class OfferService {
 
     if (order) {
       const formatedOrder = order.split(':')[0];
-      const acceptedOrder = new Offer();
-      if (!acceptedOrder.hasOwnProperty(formatedOrder)) {
+      const acceptedOrder = [
+        'status',
+        'originalPrice',
+        'discountPercentage',
+        'tokens',
+        'offerCode',
+        'name',
+        'description',
+        'viewCount',
+        'likeCount',
+        'shareCount',
+        'commentCount',
+        'startDate',
+        'endDate',
+        'idOnBrandsite',
+        'totalSales',
+        'totalOrders',
+        'createdAt',
+        'updatedAt',
+      ];
+      if (!acceptedOrder.includes(formatedOrder)) {
         throw new Error('Invalid order param');
       }
 

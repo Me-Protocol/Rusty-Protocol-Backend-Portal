@@ -122,8 +122,14 @@ export class CollectionService {
 
     if (order) {
       const formatedOrder = order.split(':')[0];
-      const acceptedOrder = new Collection();
-      if (!acceptedOrder.hasOwnProperty(formatedOrder)) {
+      const acceptedOrder = [
+        'name',
+        'description',
+        'status',
+        'createdAt',
+        'updatedAt',
+      ];
+      if (!acceptedOrder.includes(formatedOrder)) {
         throw new Error('Invalid order param');
       }
 
