@@ -329,15 +329,29 @@ export class OfferService {
     }
 
     if (orderBy === OfferFilter.MOST_SALES) {
-      offersQuery.orderBy('offer.viewCount', 'DESC');
+      offersQuery.orWhere('offer.totalOrders > :totalOrders', {
+        totalOrders: 4, // TODO: Change this to 100,,
+      });
     }
 
-    if (orderBy === OfferFilter.MOST_SALES) {
-      offersQuery.orderBy('offer.totalOrders', 'DESC');
+    if (orderBy === OfferFilter.MOST_VIEWED) {
+      offersQuery.orWhere('offer.viewCount > :viewCount', {
+        viewCount: 10, // TODO: Change this to 100,
+      });
     }
 
     if (orderBy === OfferFilter.MOST_RECENT) {
-      offersQuery.orderBy('offer.createdAt', 'DESC');
+      // where createdAt is less than 7 days
+      offersQuery.andWhere('offer.createdAt > :createdAt', {
+        createdAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
+      });
+    }
+
+    if (orderBy === OfferFilter.LOW_IN_STOCK) {
+      //  where offer product stock is less than 10
+      offersQuery.andWhere('product.inventory < :inventory', {
+        stock: 10,
+      });
     }
 
     if (order) {

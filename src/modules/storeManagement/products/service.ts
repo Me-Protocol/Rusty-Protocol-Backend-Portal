@@ -145,7 +145,7 @@ export class ProductManagementService {
     if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
     if (body.categoryId) product.categoryId = body.categoryId;
 
-    if (body.productImages.length > product.productImages.length) {
+    if (body.productImages && body.productImages.length > 0) {
       // upload images
       await this.productService.bulkAddProductImage(
         body.brandId,
@@ -154,7 +154,7 @@ export class ProductManagementService {
       );
     }
 
-    if (body.variants.length > product.variants.length) {
+    if (body.variants && body.variants.length > 0) {
       // add variants
       await this.productService.addVariants(
         body.brandId,
