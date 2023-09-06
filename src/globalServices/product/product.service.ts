@@ -6,6 +6,7 @@ import { ProductImage } from './entities/productImage.entity';
 import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
 import { Variant } from './entities/variants.entity';
 import { VarientType } from '@src/utils/enums/VarientType';
+import { ProductFilter } from '@src/utils/enums/OfferFiilter';
 
 @Injectable()
 export class ProductService {
@@ -243,6 +244,7 @@ export class ProductService {
     brandId,
     categoryId,
     order,
+    filterBy,
   }: {
     page: number;
     limit: number;
@@ -250,6 +252,7 @@ export class ProductService {
     brandId?: string;
     categoryId?: string;
     order: string;
+    filterBy?: string;
   }) {
     const products = this.productRepo
       .createQueryBuilder('product')
@@ -267,6 +270,16 @@ export class ProductService {
 
     if (categoryId) {
       products.andWhere('product.categoryId = :categoryId', { categoryId });
+    }
+
+    if (filterBy === ProductFilter.LOW_IN_STOCK) {
+      products.andWhere('product.inventory <= 5');
+    }
+
+    if (filterBy === ProductFilter.MOST_RECENT) {
+      products.andWhere('product.createdAt > :createdAt', {
+        createdAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
+      });
     }
 
     if (order) {

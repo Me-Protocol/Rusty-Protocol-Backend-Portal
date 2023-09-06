@@ -13,3 +13,8 @@ export enum OfferSort {
   POPULAR = 'POPULAR',
   EXPIRING = 'EXPIRING',
 }
+
+export enum ProductFilter {
+  MOST_RECENT = 'MOST_RECENT',
+  LOW_IN_STOCK = 'LOW_IN_STOCK',
+}

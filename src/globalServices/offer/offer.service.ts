@@ -329,13 +329,13 @@ export class OfferService {
     }
 
     if (orderBy === OfferFilter.MOST_SALES) {
-      offersQuery.orWhere('offer.totalOrders > :totalOrders', {
+      offersQuery.andWhere('offer.totalOrders > :totalOrders', {
         totalOrders: 4, // TODO: Change this to 100,,
       });
     }
 
     if (orderBy === OfferFilter.MOST_VIEWED) {
-      offersQuery.orWhere('offer.viewCount > :viewCount', {
+      offersQuery.andWhere('offer.viewCount > :viewCount', {
         viewCount: 10, // TODO: Change this to 100,
       });
     }
@@ -379,8 +379,6 @@ export class OfferService {
       if (!acceptedOrder.includes(formatedOrder)) {
         throw new Error('Invalid order param');
       }
-
-      console.log('formatedOrder', formatedOrder, acceptedOrder);
 
       offersQuery.orderBy(
         `offer.${order.split(':')[0]}`,
