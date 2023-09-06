@@ -167,6 +167,8 @@ export class ProductManagementService {
       );
     }
 
+    const productCollections = product.collections ?? [];
+
     if (body.collections && body.collections.length > 0) {
       for (const collectionId of body.collections) {
         const collection = await this.collectionService.findOne({
@@ -180,11 +182,13 @@ export class ProductManagementService {
           );
 
           if (!checkIfCollectionExists) {
-            product.collections.push(collection);
+            productCollections.push(collection);
           }
         }
       }
     }
+
+    product.collections = productCollections;
 
     await this.productService.updateProduct(product);
 
