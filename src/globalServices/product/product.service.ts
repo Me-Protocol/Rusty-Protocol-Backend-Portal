@@ -119,7 +119,7 @@ export class ProductService {
   }
 
   async updateProduct(product: Product) {
-    return this.productRepo.update({ id: product.id }, product);
+    return this.productRepo.save(product);
   }
 
   async saveProduct(product: Product) {
