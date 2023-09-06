@@ -361,6 +361,8 @@ export class OfferService {
         throw new Error('Invalid order param');
       }
 
+      console.log('formatedOrder', formatedOrder, acceptedOrder);
+
       offersQuery.orderBy(
         `offer.${order.split(':')[0]}`,
         order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
