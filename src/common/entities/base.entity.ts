@@ -15,4 +15,9 @@ export class BaseEntity extends Base {
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updatedAt: Date;
+
+  // soft delete columns
+
+  @Column({ type: 'timestamp', nullable: true })
+  deletedAt: Date;
 }
