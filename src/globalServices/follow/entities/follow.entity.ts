@@ -5,10 +5,10 @@ import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 
 @Entity('follow')
 export class Follow extends BaseEntity {
-  @Column({ name: 'brandId' })
+  @Column()
   brandId: string;
 
-  @Column({ name: 'userId' })
+  @Column()
   userId: string;
 
   @ManyToOne(() => Brand, (brand) => brand.followers)
