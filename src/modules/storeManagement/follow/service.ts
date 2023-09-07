@@ -75,7 +75,6 @@ export class FollowManagementService {
       }
 
       const followers = await this.followService.getBrandsFollowers(query);
-      console.log(followers);
 
       return followers;
     } catch (error) {

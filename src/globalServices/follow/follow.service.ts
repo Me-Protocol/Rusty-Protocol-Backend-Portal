@@ -38,10 +38,9 @@ export class FollowService {
         },
         createdAt: true,
       },
-      skip: page * limit,
+      skip: (page - 1) * limit,
       take: limit,
     });
-
     const total = await this.countBrandFollowers(brandId);
 
     return {
@@ -122,7 +121,7 @@ export class FollowService {
           },
         },
       },
-      skip: page * limit,
+      skip: (page - 1) * limit,
       take: limit,
     });
 
