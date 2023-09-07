@@ -6,6 +6,7 @@ import {
   Column,
   Entity,
   JoinColumn,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   OneToOne,
@@ -21,6 +22,7 @@ import { CostCollection } from '@src/globalServices/costManagement/entities/cost
 import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.entity';
 import { BrandSubServices } from '@src/utils/enums/BrandSubServices';
 import { BrandMember } from './brand_member.entity';
+import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -206,4 +208,7 @@ export class Brand extends BaseEntity {
     nullable: true, //TODO:: Remove nullable
   })
   brandProtocolId: string;
+
+  @ManyToMany(() => Notification, (notification) => notification.brands)
+  notifications: Notification[];
 }

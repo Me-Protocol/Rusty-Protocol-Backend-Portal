@@ -1,8 +1,16 @@
 import { BaseEntity } from '@src/common/entities/base.entity';
 import { Offer } from '@src/globalServices/offer/entities/offer.entity';
 import { User } from '@src/globalServices/user/entities/user.entity';
-import { Entity, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToOne,
+  OneToMany,
+} from 'typeorm';
 import { Coupon } from './coupon.entity';
+import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 
 @Entity('order')
 export class Order extends BaseEntity {
@@ -41,4 +49,7 @@ export class Order extends BaseEntity {
   @OneToOne(() => Coupon, (coupon) => coupon.order)
   @JoinColumn({ name: 'couponId' })
   coupon: Coupon;
+
+  @OneToMany(() => Notification, (notification) => notification.order)
+  notifications: Notification[];
 }

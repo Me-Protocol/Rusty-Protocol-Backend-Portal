@@ -10,6 +10,7 @@ import {
   Query,
   Param,
   Res,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { ApiTags } from '@nestjs/swagger';
@@ -53,7 +54,7 @@ export class OrderManagementController {
 
   @UseGuards(AuthGuard())
   @Get(':id')
-  async getOrderById(@Req() req: any, @Param('id') id: string) {
+  async getOrderById(@Req() req: any, @Param('id', ParseUUIDPipe) id: string) {
     const userId = req.user.id;
 
     return await this.orderManagementService.getOrderById(userId, id);
@@ -61,7 +62,10 @@ export class OrderManagementController {
 
   @UseGuards(AuthGuard())
   @Post('/mark-as-redeemed/:id')
-  async markOrderAsRedeemed(@Req() req: any, @Param('id') id: string) {
+  async markOrderAsRedeemed(
+    @Req() req: any,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     const userId = req.user.id;
 
     return await this.orderManagementService.markOrderAsRedeemed(userId, id);

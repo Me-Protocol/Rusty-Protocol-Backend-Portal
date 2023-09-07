@@ -1,7 +1,14 @@
 // offer entity
 
 import { BaseEntity } from '@src/common/entities/base.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { ProductStatus } from '@src/utils/enums/ItemStatus';
 import { Product } from '@src/globalServices/product/entities/product.entity';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
@@ -14,6 +21,7 @@ import { Like } from '@src/globalServices/like/entities/like.entity';
 import { Task } from '@src/globalServices/task/entities/task.entity';
 import { Order } from '@src/globalServices/order/entities/order.entity';
 import { Coupon } from '@src/globalServices/order/entities/coupon.entity';
+import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 
 @Entity('offer')
 export class Offer extends BaseEntity {
@@ -142,4 +150,7 @@ export class Offer extends BaseEntity {
 
   @OneToMany(() => Coupon, (coupon) => coupon.offer)
   coupons: Coupon[];
+
+  @ManyToMany(() => Notification, (notification) => notification.offers)
+  notifications: Notification[];
 }

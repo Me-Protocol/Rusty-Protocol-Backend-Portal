@@ -20,6 +20,7 @@ import { Order } from '@src/globalServices/order/entities/order.entity';
 import { Coupon } from '@src/globalServices/order/entities/coupon.entity';
 import { BrandMember } from '@src/globalServices/brand/entities/brand_member.entity';
 import { BrandCustomer } from '@src/globalServices/brand/entities/brand_customer.entity';
+import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 // import { TaskResponseEntity } from '@src/models/taskResponse.entity';
 
 @Entity('user')
@@ -252,4 +253,7 @@ export class User extends BaseEntity {
 
   @OneToMany(() => BrandCustomer, (customer) => customer.user)
   brandCustomers: BrandCustomer[];
+
+  @OneToMany(() => Notification, (notification) => notification.user)
+  notifications: Notification[];
 }

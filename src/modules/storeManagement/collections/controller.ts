@@ -10,6 +10,7 @@ import {
   Get,
   Query,
   Req,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
@@ -48,7 +49,7 @@ export class CollectionManagementController {
   async createCategory(
     @Body(ValidationPipe) updateCollectionDto: UpdateCollectionDto,
     @Req() req: any,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ) {
     const user = req.user as User;
     updateCollectionDto.brandId = user.brand.id;
@@ -72,7 +73,7 @@ export class CollectionManagementController {
 
   @UseGuards(AuthGuard())
   @Get(':id')
-  async getById(@Param('id') id: string, @Req() req: any) {
+  async getById(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
     const user = req.user as User;
     return await this.collectionManagementService.findOne(
       id,

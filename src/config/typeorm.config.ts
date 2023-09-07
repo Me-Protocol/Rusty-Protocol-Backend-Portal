@@ -35,6 +35,7 @@ import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.e
 import { BrandMember } from '@src/globalServices/brand/entities/brand_member.entity';
 import { KeyIdentifier } from '@src/globalServices/reward/entities/keyIdentifier.entity';
 import { BrandCustomer } from '@src/globalServices/brand/entities/brand_customer.entity';
+import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 
 export const typeOrmConfig: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -79,6 +80,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     BrandMember,
     KeyIdentifier,
     BrandCustomer,
+    Notification,
   ],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   extra: {

@@ -1,4 +1,11 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { BaseEntity } from '@src/common/entities/base.entity';
 import { Offer } from '@src/globalServices/offer/entities/offer.entity';
@@ -8,6 +15,7 @@ import { Task } from '@src/globalServices/task/entities/task.entity';
 import { SyncBatch } from './syncBatch.entity';
 import { RewardRegistry } from './registry.entity';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
+import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 
 @Entity('reward')
 export class Reward extends BaseEntity {
@@ -108,4 +116,7 @@ export class Reward extends BaseEntity {
     nullable: true,
   })
   bountyKeyIdentifierId: string;
+
+  @ManyToMany(() => Notification, (notification) => notification.rewards)
+  notifications: Notification[];
 }

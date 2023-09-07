@@ -11,6 +11,7 @@ import {
   Get,
   Post,
   Res,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
@@ -53,7 +54,7 @@ export class BrandManagementController {
 
   @UseGuards(AuthGuard())
   @Get(':id')
-  async getBrandById(@Param('id') id: string) {
+  async getBrandById(@Param('id', ParseUUIDPipe) id: string) {
     return await this.brandAccountManagementService.getBrandById(id);
   }
 
@@ -74,7 +75,7 @@ export class BrandManagementController {
   @UseGuards(BrandJwtStrategy)
   @Put('member/:id/role')
   async updateBrandMemberRole(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: any,
     @Body(ValidationPipe) body: UpdateMemberDto,
   ) {
@@ -86,7 +87,7 @@ export class BrandManagementController {
   @UseGuards(BrandJwtStrategy)
   @Put('member/:id')
   async updateBrandMember(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: any,
     @Body(ValidationPipe) body: UpdateMemberDto,
   ) {

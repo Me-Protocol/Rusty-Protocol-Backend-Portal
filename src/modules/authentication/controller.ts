@@ -6,6 +6,7 @@ import {
   HttpException,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
   Req,
@@ -494,7 +495,7 @@ export class AuthenticationController {
   @Put('me/devices/:id')
   async updateDevice(
     @Req() req: any,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body(ValidationPipe) body: UpdateDeviceTokenDto,
   ): Promise<any> {
     const user = req.user as User;

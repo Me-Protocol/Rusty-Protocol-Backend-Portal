@@ -9,6 +9,7 @@ import {
   Body,
   Delete,
   Param,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { ApiTags } from '@nestjs/swagger';
@@ -46,7 +47,7 @@ export class ApiKeyManagementController {
 
   @UseGuards(BrandJwtStrategy)
   @Delete(':id')
-  async deleteApiKey(@Req() req: any, @Param('id') id: string) {
+  async deleteApiKey(@Req() req: any, @Param('id', ParseUUIDPipe) id: string) {
     const brandId = req.user.brand.id;
 
     return await this.apiKeyManagementService.deleteApiKey(id, brandId);
