@@ -824,7 +824,7 @@ export class AuthenticationService {
           user.facebookAuth = {
             accessToken,
             refreshToken,
-            username: username,
+            username: username ?? email,
           };
         }
 
@@ -837,19 +837,19 @@ export class AuthenticationService {
           user.facebookAuth = {
             accessToken,
             refreshToken,
-            username: username,
+            username: username ?? email,
           };
         } else if (provider === LoginType.GOOGLE) {
           user.googleAuth = {
             accessToken,
             refreshToken,
-            username: username,
+            username: username ?? email,
           };
         } else if (provider === LoginType.TWITTER) {
           user.twitterAuth = {
             accessToken,
             refreshToken,
-            username: username,
+            username: username ?? email,
           };
         }
 
@@ -864,24 +864,26 @@ export class AuthenticationService {
     const newUser = new User();
     newUser.email = email;
     newUser.emailVerified = true;
+    newUser.username = username ?? email.split('@')[0].toLowerCase();
+    newUser.loginType = provider;
 
     if (provider === LoginType.FACEBOOK) {
       newUser.facebookAuth = {
         accessToken,
         refreshToken,
-        username: username,
+        username: username ?? email,
       };
     } else if (provider === LoginType.GOOGLE) {
       newUser.googleAuth = {
         accessToken,
         refreshToken,
-        username: username,
+        username: username ?? email,
       };
     } else if (provider === LoginType.TWITTER) {
       newUser.twitterAuth = {
         accessToken,
         refreshToken,
-        username: username,
+        username: username ?? email,
       };
     }
 
