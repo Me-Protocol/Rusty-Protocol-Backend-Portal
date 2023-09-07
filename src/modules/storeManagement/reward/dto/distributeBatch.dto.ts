@@ -34,3 +34,9 @@ export interface SendTransactionData {
   v: string;
   hash: string;
 }
+
+export class DistributeBatchWithApiKeyDto {
+  @ApiProperty()
+  @IsUUID()
+  rewardId: string;
+}

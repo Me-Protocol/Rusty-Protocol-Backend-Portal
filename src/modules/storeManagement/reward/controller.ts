@@ -22,7 +22,10 @@ import { UpdateRewardDto } from './dto/updateRewardDto';
 import { FilterRewardDto } from './dto/filterRewardDto.dto';
 import { UpdateBatchDto } from './dto/updateBatchDto';
 import { GetCustomerPointDto } from './dto/getCustomerPointDto.dto';
-import { DistributeBatchDto } from './dto/distributeBatch.dto';
+import {
+  DistributeBatchDto,
+  DistributeBatchWithApiKeyDto,
+} from './dto/distributeBatch.dto';
 import { SpendRewardDto } from './dto/spendRewardDto.dto';
 import { InAppApiKeyJwtStrategy } from '@src/middlewares/inapp-api-jwt-strategy.middleware';
 import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
@@ -127,6 +130,18 @@ export class RewardManagementController {
     return await this.rewardManagementService.updateBatch(body);
   }
 
+  @UseGuards(ApiKeyJwtStrategy)
+  @Post('issue-reward')
+  async issueReward(
+    @Body(ValidationPipe) body: UpdateBatchDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.brand.id;
+    body.brandId = brandId;
+
+    return await this.rewardManagementService.updateBatch(body);
+  }
+
   @UseGuards(BrandJwtStrategy)
   @Get('batch/:batchId')
   async getBatch(@Param('batchId') batchId: string, @Req() req: any) {
@@ -167,6 +182,20 @@ export class RewardManagementController {
     const brandId = req.user.brand.id;
 
     return await this.rewardManagementService.distributeBatch(brandId, body);
+  }
+
+  @UseGuards(ApiKeyJwtStrategy)
+  @Post('distribute-reward')
+  async distributeWithApiKey(
+    @Req() req: any,
+    @Body(ValidationPipe) body: DistributeBatchWithApiKeyDto,
+  ) {
+    const apiKey = req.apiKey as ApiKey;
+
+    return await this.rewardManagementService.distributeWithApiKey(
+      apiKey,
+      body.rewardId,
+    );
   }
 
   @UseGuards(InAppApiKeyJwtStrategy)

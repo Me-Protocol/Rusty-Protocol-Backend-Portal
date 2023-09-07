@@ -136,49 +136,6 @@ export class RewardManagementService {
     }
   }
 
-  async updateReward(id: string, body: UpdateRewardDto) {
-    try {
-      const reward = await this.rewardService.findOneByIdAndBrand(
-        id,
-        body.brandId,
-      );
-
-      if (!reward) {
-        throw new Error('Reward not found');
-      }
-
-      const slug = getSlug(body.rewardName);
-
-      if (slug !== reward.slug) {
-        const checkReward = await this.rewardService.findOneRewardBySlug(slug);
-
-        if (checkReward) {
-          throw new Error('Looks like this reward already exists');
-        }
-      }
-
-      reward.slug = slug;
-      reward.brandId = body.brandId;
-      reward.description = body.description;
-      reward.rewardImage = body.rewardImage;
-      reward.rewardSymbol = body.rewardSymbol;
-      reward.rewardName = body.rewardName;
-      reward.autoSyncEnabled = body.autoSyncEnabled;
-      reward.acceptedCustomerIdentitytypes = body.acceptedCustomerIdentitytypes;
-
-      reward.contractAddress = body.contractAddress;
-      reward.isBounty = body.isBounty;
-      reward.blockchain = body.blockchain;
-
-      return await this.rewardService.save(reward);
-    } catch (error) {
-      logger.error(error);
-      throw new HttpException(error.message, 400, {
-        cause: new Error(error.message),
-      });
-    }
-  }
-
   async deleteReward(id: string, brandId: string) {
     return await this.rewardService.delete(id, brandId);
   }
@@ -292,8 +249,6 @@ export class RewardManagementService {
         rewardId,
       );
 
-      console.log(checkRegistry);
-
       if (checkRegistry) {
         // create transaction
         await this.syncService.fullBalanceUpdate({
@@ -317,7 +272,10 @@ export class RewardManagementService {
 
   async updateBatch(body: UpdateBatchDto) {
     try {
-      const checkReward = await this.rewardService.findOneById(body.rewardId);
+      const checkReward = await this.rewardService.findOneByIdAndBrand(
+        body.rewardId,
+        body.brandId,
+      );
 
       if (!checkReward) {
         throw new Error('Reward not found');
@@ -444,6 +402,48 @@ export class RewardManagementService {
     });
   }
 
+  async updateUsersRewardRegistryAfterDistribution({
+    batch,
+    rewardId,
+  }: {
+    batch: SyncBatch;
+    rewardId: string;
+  }) {
+    // Pick the rewards whose users exists and update balacne to 0
+    return await Promise.all(
+      batch.syncData.map(async (syncDataJSON) => {
+        // @ts-ignore
+        const syncData = JSON.parse(syncDataJSON) as typeof syncDataJSON;
+
+        let user: User;
+
+        if (syncData.identifierType === SyncIdentifierType.EMAIL) {
+          user = await this.userService.getUserByEmail(syncData.identifier);
+        }
+
+        if (syncData.identifierType === SyncIdentifierType.PHONE) {
+          user = await this.userService.getUserByPhone(syncData.identifier);
+        }
+
+        if (user) {
+          // Get users rewardRegistry
+          const registry = await this.syncService.getRegistryRecordByIdentifer(
+            syncData.identifier,
+            rewardId,
+          );
+
+          if (registry) {
+            await this.syncService.clearBalance({
+              registryId: registry.id,
+              amount: syncData.amount,
+              description: 'Reward distribution',
+            });
+          }
+        }
+      }),
+    );
+  }
+
   async distributeBatch(brandId: string, body: DistributeBatchDto) {
     try {
       const batch = await this.syncService.checkActiveBatch(
@@ -459,7 +459,10 @@ export class RewardManagementService {
         throw new Error('Batch already distributed');
       }
 
-      const reward = this.rewardService.findOneById(body.rewardId);
+      const reward = this.rewardService.findOneByIdAndBrand(
+        body.rewardId,
+        brandId,
+      );
 
       if (!reward) {
         throw new Error('Reward not found');
@@ -467,40 +470,10 @@ export class RewardManagementService {
 
       await this.syncService.pushTransactionToRuntime(body.params);
 
-      // Pick the rewards whose users exists and update balacne to 0
-      await Promise.all(
-        batch.syncData.map(async (syncDataJSON) => {
-          // @ts-ignore
-          const syncData = JSON.parse(syncDataJSON) as typeof syncDataJSON;
-
-          let user: User;
-
-          if (syncData.identifierType === SyncIdentifierType.EMAIL) {
-            user = await this.userService.getUserByEmail(syncData.identifier);
-          }
-
-          if (syncData.identifierType === SyncIdentifierType.PHONE) {
-            user = await this.userService.getUserByPhone(syncData.identifier);
-          }
-
-          if (user) {
-            // Get users rewardRegistry
-            const registry =
-              await this.syncService.getRegistryRecordByIdentifer(
-                syncData.identifier,
-                body.rewardId,
-              );
-
-            if (registry) {
-              await this.syncService.clearBalance({
-                registryId: registry.id,
-                amount: syncData.amount,
-                description: 'Reward distribution',
-              });
-            }
-          }
-        }),
-      );
+      await this.updateUsersRewardRegistryAfterDistribution({
+        batch,
+        rewardId: body.rewardId,
+      });
 
       batch.isDistributed = true;
 
@@ -532,12 +505,74 @@ export class RewardManagementService {
     return register;
   }
 
+  async getDistributionUsersAndAmount({
+    rewardId,
+    syncData,
+  }: {
+    rewardId: string;
+    syncData: {
+      id: string;
+      identifier: string;
+      identifierType: SyncIdentifierType;
+      amount: number;
+    }[];
+  }) {
+    const users = [];
+    const amounts = [];
+    let aggregateSumOfNonExistingUsers = 0;
+
+    await Promise.all(
+      syncData.map(async (syncDataJSON) => {
+        // @ts-ignore
+        const syncData = JSON.parse(syncDataJSON);
+
+        let user: User;
+
+        if (syncData.identifierType === SyncIdentifierType.EMAIL) {
+          user = await this.userService.getUserByEmail(syncData.identifier);
+        }
+
+        if (syncData.identifierType === SyncIdentifierType.PHONE) {
+          user = await this.userService.getUserByPhone(syncData.identifier);
+        }
+
+        if (!user) {
+          aggregateSumOfNonExistingUsers += syncData.amount;
+        } else {
+          if (!user.customer.walletAddress) {
+            aggregateSumOfNonExistingUsers += syncData.amount;
+          } else {
+            const registry =
+              await this.syncService.getRegistryRecordByIdentifer(
+                syncData.identifier,
+                rewardId,
+              );
+
+            if (registry) {
+              users.push(user.customer.walletAddress);
+              amounts.push(ethers.utils.parseEther(syncData.amount.toString()));
+            }
+          }
+        }
+      }),
+    );
+
+    return {
+      users,
+      amounts,
+      aggregateSumOfNonExistingUsers,
+    };
+  }
+
   async distributeWithApiKey(apiKey: ApiKey, rewardId: string) {
     try {
       const { privateKey, brandId } = apiKey;
 
       const batch = await this.syncService.checkActiveBatch(brandId, rewardId);
-      const reward = await this.rewardService.findOneById(rewardId);
+      const reward = await this.rewardService.findOneByIdAndBrand(
+        rewardId,
+        brandId,
+      );
 
       if (!batch) {
         throw new Error('No batch to distribute');
@@ -553,10 +588,6 @@ export class RewardManagementService {
 
       const syncData = batch.syncData;
 
-      let aggregateSumOfNonExistingUsers = 0;
-      const users = [];
-      const amounts = [];
-
       const { privKey, pubKey } = generateWalletWithApiKey(
         privateKey,
         process.env.API_KEY_SALT,
@@ -564,43 +595,11 @@ export class RewardManagementService {
 
       const wallet = new ethers.Wallet(privKey);
 
-      await Promise.all(
-        syncData.map(async (syncDataJSON) => {
-          // @ts-ignore
-          const syncData = JSON.parse(syncDataJSON);
-
-          let user: User;
-
-          if (syncData.identifierType === SyncIdentifierType.EMAIL) {
-            user = await this.userService.getUserByEmail(syncData.identifier);
-          }
-
-          if (syncData.identifierType === SyncIdentifierType.PHONE) {
-            user = await this.userService.getUserByPhone(syncData.identifier);
-          }
-
-          if (!user) {
-            aggregateSumOfNonExistingUsers += syncData.amount;
-          } else {
-            if (!user.customer.walletAddress) {
-              aggregateSumOfNonExistingUsers += syncData.amount;
-            } else {
-              const registry =
-                await this.syncService.getRegistryRecordByIdentifer(
-                  syncData.identifier,
-                  rewardId,
-                );
-
-              if (registry) {
-                users.push(user.customer.walletAddress);
-                amounts.push(
-                  ethers.utils.parseEther(syncData.amount.toString()),
-                );
-              }
-            }
-          }
-        }),
-      );
+      const { users, amounts, aggregateSumOfNonExistingUsers } =
+        await this.getDistributionUsersAndAmount({
+          rewardId,
+          syncData,
+        });
 
       const recipients = [...users, reward.redistributionPublicKey];
       const reward_amounts = [
@@ -608,14 +607,25 @@ export class RewardManagementService {
         ethers.utils.parseEther(aggregateSumOfNonExistingUsers.toString()),
       ];
 
-      const distributionData = await this.syncService.distributeRewardWithKey({
+      await this.syncService.distributeRewardWithKey({
         contractAddress: reward.contractAddress,
         recipients,
         amounts: reward_amounts,
         signer: wallet,
       });
 
-      return distributionData;
+      await this.updateUsersRewardRegistryAfterDistribution({
+        batch,
+        rewardId: rewardId,
+      });
+
+      batch.isDistributed = true;
+
+      await this.syncService.saveBatch(batch);
+
+      return {
+        message: 'distributed',
+      };
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400, {
@@ -627,7 +637,10 @@ export class RewardManagementService {
   async getBatchUserWalletsAndAmount(brandId: string, rewardId: string) {
     try {
       const batch = await this.syncService.checkActiveBatch(brandId, rewardId);
-      const reward = await this.rewardService.findOneById(rewardId);
+      const reward = await this.rewardService.findOneByIdAndBrand(
+        rewardId,
+        brandId,
+      );
 
       if (!batch) {
         throw new Error('No batch to distribute');
@@ -643,55 +656,21 @@ export class RewardManagementService {
 
       const syncData = batch.syncData;
 
-      let aggregateSumOfNonExistingUsers = 0;
-      const users = [];
+      const { users, amounts, aggregateSumOfNonExistingUsers } =
+        await this.getDistributionUsersAndAmount({
+          rewardId,
+          syncData,
+        });
 
-      await Promise.all(
-        syncData.map(async (syncDataJSON) => {
-          // @ts-ignore
-          const syncData = JSON.parse(syncDataJSON);
-
-          let user: User;
-
-          if (syncData.identifierType === SyncIdentifierType.EMAIL) {
-            user = await this.userService.getUserByEmail(syncData.identifier);
-          }
-
-          if (syncData.identifierType === SyncIdentifierType.PHONE) {
-            user = await this.userService.getUserByPhone(syncData.identifier);
-          }
-
-          if (!user) {
-            aggregateSumOfNonExistingUsers += syncData.amount;
-          } else {
-            if (!user.customer.walletAddress) {
-              aggregateSumOfNonExistingUsers += syncData.amount;
-            } else {
-              const registry =
-                await this.syncService.getRegistryRecordByIdentifer(
-                  syncData.identifier,
-                  rewardId,
-                );
-
-              if (registry) {
-                users.push({
-                  walletAddress: user.customer.walletAddress,
-                  amount: syncData.amount,
-                });
-              }
-            }
-          }
-        }),
-      );
+      const recipients = [...users, reward.redistributionPublicKey];
+      const reward_amounts = [
+        ...amounts,
+        ethers.utils.parseEther(aggregateSumOfNonExistingUsers.toString()),
+      ];
 
       return {
-        users: [
-          ...users,
-          {
-            walletAddress: reward.redistributionPublicKey,
-            amount: aggregateSumOfNonExistingUsers,
-          },
-        ],
+        recipients,
+        reward_amounts,
       };
     } catch (error) {
       logger.error(error);

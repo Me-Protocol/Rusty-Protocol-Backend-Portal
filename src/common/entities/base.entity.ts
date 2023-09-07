@@ -12,7 +12,7 @@ export class BaseEntity extends Base {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @DeleteDateColumn({ nullable: true })
+  @DeleteDateColumn({ nullable: true, select: false })
   deletedAt: Date;
 
   @CreateDateColumn({ type: 'timestamp' })

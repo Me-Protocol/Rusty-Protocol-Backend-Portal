@@ -223,6 +223,8 @@ export class SyncRewardService {
     }
 
     registry.balance = 0;
+    registry.pendingBalance = 0;
+    registry.totalBalance = registry.totalBalance + amount;
 
     await this.rewardRegistryRepo.save(registry);
 
@@ -304,6 +306,7 @@ export class SyncRewardService {
     }
 
     registry.balance = amount;
+    registry.pendingBalance = amount;
 
     await this.rewardRegistryRepo.save(registry);
 
@@ -425,7 +428,16 @@ export class SyncRewardService {
       signer,
     );
 
-    return distributionData;
+    console.log(distributionData?.data, 'Req');
+
+    if (distributionData?.data?.error) {
+      throw new Error(
+        distributionData.data.error?.message ??
+          'Error distributing reward on protocol',
+      );
+    } else {
+      return distributionData;
+    }
   }
 
   // getUserRegistry(userId: string, rewardId: string) {
