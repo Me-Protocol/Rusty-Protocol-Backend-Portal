@@ -1,23 +1,27 @@
 // base entity
 
-import { BaseEntity as Base, Column, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BaseEntity as Base,
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export class BaseEntity extends Base {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
-
-  @Column({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
-  updatedAt: Date;
-
-  // soft delete columns
-
-  @Column({ type: 'timestamp', nullable: true })
+  @DeleteDateColumn()
+  @Column({ nullable: true })
   deletedAt: Date;
+
+  @CreateDateColumn({ type: 'timestamp' })
+  @Column()
+  createdAt!: Date;
+
+  @UpdateDateColumn({ type: 'timestamp' })
+  @Column()
+  updatedAt!: Date;
 }
