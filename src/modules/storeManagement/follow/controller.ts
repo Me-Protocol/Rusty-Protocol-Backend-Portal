@@ -17,7 +17,7 @@ import { FollowManagementService } from './service';
 import { FollowDto } from './dto/FollowDto.dto';
 import { FilteUserFollowDto, FilterFollowDto } from './dto/FilterFollowDto.dto';
 
-@ApiTags('Follow')
+@ApiTags('Followers')
 @UseInterceptors(ResponseInterceptor)
 @Controller('follow')
 export class FollowManagementController {

@@ -74,7 +74,10 @@ export class FollowManagementService {
         throw new Error('Brand not found');
       }
 
-      return await this.followService.getBrandsFollowers(query);
+      const followers = await this.followService.getBrandsFollowers(query);
+      console.log(followers);
+
+      return followers;
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, error.status, {
