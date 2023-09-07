@@ -19,6 +19,7 @@ import { RewardRegistry } from '@src/globalServices/reward/entities/registry.ent
 import { Order } from '@src/globalServices/order/entities/order.entity';
 import { Coupon } from '@src/globalServices/order/entities/coupon.entity';
 import { BrandMember } from '@src/globalServices/brand/entities/brand_member.entity';
+import { BrandCustomer } from '@src/globalServices/brand/entities/brand_customer.entity';
 // import { TaskResponseEntity } from '@src/models/taskResponse.entity';
 
 @Entity('user')
@@ -248,4 +249,7 @@ export class User extends BaseEntity {
     nullable: true,
   })
   currency: string;
+
+  @OneToMany(() => BrandCustomer, (customer) => customer.user)
+  brandCustomers: BrandCustomer[];
 }

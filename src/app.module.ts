@@ -106,6 +106,7 @@ import { BrandSubscriptionService } from './globalServices/brand/brandSeviceSubs
 import { BrandMember } from './globalServices/brand/entities/brand_member.entity';
 import { KeyManagementService } from './globalServices/key-management/key-management.service';
 import { KeyIdentifier } from './globalServices/reward/entities/keyIdentifier.entity';
+import { BrandCustomer } from './globalServices/brand/entities/brand_customer.entity';
 
 @Module({
   imports: [
@@ -141,6 +142,7 @@ import { KeyIdentifier } from './globalServices/reward/entities/keyIdentifier.en
       PaymentMethod,
       BrandMember,
       KeyIdentifier,
+      BrandCustomer,
     ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),

@@ -347,8 +347,8 @@ export class AuthenticationController {
   //   // This will redirect the user to Twitter for authentication
   // }
 
-  @Get('google/callback')
   @UseGuards(AuthGuard('google'))
+  @Get('google/callback')
   async googleCallback(
     @Req() req: any,
     @Res({ passthrough: true }) res: any,

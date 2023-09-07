@@ -9,6 +9,8 @@ import { getSlug } from '@src/utils/helpers/getSlug';
 import { BrandMember } from './entities/brand_member.entity';
 import { async } from 'rxjs';
 import { BrandRole } from '@src/utils/enums/BrandRole';
+import { BrandCustomer } from './entities/brand_customer.entity';
+import { FilterBrandCustomer } from '@src/utils/enums/FilterBrandCustomer';
 
 @Injectable()
 export class BrandService {
@@ -18,6 +20,9 @@ export class BrandService {
 
     @InjectRepository(BrandMember)
     private readonly brandMemberRepo: Repository<BrandMember>,
+
+    @InjectRepository(BrandCustomer)
+    private readonly brandCustomerRepo: Repository<BrandCustomer>,
 
     private readonly elasticIndex: ElasticIndex,
   ) {}
@@ -150,6 +155,81 @@ export class BrandService {
         id,
       },
     });
+  }
+
+  async createBrandCustomer(userId: string, brandId: string) {
+    const checkCustomer = await this.brandCustomerRepo.findOne({
+      where: {
+        userId,
+        brandId,
+      },
+      relations: ['brand', 'user', 'user.customer'],
+    });
+
+    if (checkCustomer) {
+      return checkCustomer;
+    }
+
+    const brandCustomer = new BrandCustomer();
+    brandCustomer.brandId = brandId;
+    brandCustomer.userId = userId;
+
+    await this.brandCustomerRepo.save(brandCustomer);
+
+    return await this.brandCustomerRepo.findOne({
+      where: {
+        userId,
+        brandId,
+      },
+      relations: ['brand', 'user', 'user.customer'],
+    });
+  }
+
+  async getBrandCustomer(brandId: string, userId: string) {
+    return await this.brandCustomerRepo.findOne({
+      where: {
+        brandId,
+        userId,
+      },
+      relations: ['brand', 'user', 'user.customer'],
+    });
+  }
+
+  async getBrandCustomers(
+    brandId: string,
+    page: number,
+    limit: number,
+    filterBy: FilterBrandCustomer,
+  ) {
+    const brandCustomerQuery = this.brandCustomerRepo
+      .createQueryBuilder('brandCustomer')
+      .leftJoinAndSelect('brandCustomer.brand', 'brand')
+      .leftJoinAndSelect('brandCustomer.user', 'user')
+      .leftJoinAndSelect('user.customer', 'customer');
+
+    if (filterBy === FilterBrandCustomer.MOST_ACTIVE) {
+      // where customer redeemed greater than 2
+      brandCustomerQuery.where('customer.totalRedeemed > 2');
+    }
+
+    if (filterBy === FilterBrandCustomer.MOST_RECENT) {
+      // brand customer createdAt 7 days ago
+      const date = new Date();
+      date.setDate(date.getDate() - 7);
+      brandCustomerQuery.where('brandCustomer.createdAt > :date', { date });
+    }
+
+    brandCustomerQuery.where('brandCustomer.brandId = :brandId', { brandId });
+    brandCustomerQuery.skip((page - 1) * limit).take(limit);
+    const brandCustomers = await brandCustomerQuery.getMany();
+    const total = await brandCustomerQuery.getCount();
+
+    return {
+      data: brandCustomers,
+      total,
+      nextPage: total > page * limit ? page + 1 : null,
+      previousPage: page > 1 ? page - 1 : null,
+    };
   }
 
   async getBrandMemberByUserEmail(email: string) {

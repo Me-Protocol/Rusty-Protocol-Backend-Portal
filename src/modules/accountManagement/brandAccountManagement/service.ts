@@ -15,6 +15,7 @@ import { MailService } from '@src/globalServices/mail/mail.service';
 import { emailButton } from '@src/utils/helpers/emailButton';
 import { CustomerService } from '@src/globalServices/customer/customer.service';
 import { BrandRole } from '@src/utils/enums/BrandRole';
+import { FilterCustomerDto } from './dto/FilterCustomerDto.dto';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -329,6 +330,22 @@ export class BrandAccountManagementService {
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400);
+    }
+  }
+
+  async getCustomer(query: FilterCustomerDto) {
+    try {
+      return await this.brandService.getBrandCustomers(
+        query.brandId,
+        query.page,
+        query.limit,
+        query.filterBy,
+      );
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
     }
   }
 }
