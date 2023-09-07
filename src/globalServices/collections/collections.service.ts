@@ -51,9 +51,14 @@ export class CollectionService {
       products: collectionProducts,
     });
 
-    console.log(collection);
+    const newCollection = await this.collectionRepo.save(collection);
 
-    return await this.collectionRepo.save(collection);
+    return await this.collectionRepo.findOne({
+      where: {
+        id: newCollection.id,
+      },
+      relations: ['products', 'products.productImages'],
+    });
   }
 
   async update(
