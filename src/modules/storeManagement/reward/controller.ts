@@ -28,6 +28,7 @@ import { InAppApiKeyJwtStrategy } from '@src/middlewares/inapp-api-jwt-strategy.
 import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
 import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
 import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
+import { PushTransactionDto } from './dto/PushTransactionDto.dto';
 
 @ApiTags('Reward')
 @UseInterceptors(ResponseInterceptor)
@@ -172,7 +173,7 @@ export class RewardManagementController {
   @Post('push-transaction')
   async spendReward(
     @Req() req: any,
-    @Body(ValidationPipe) body: SpendRewardDto,
+    @Body(ValidationPipe) body: PushTransactionDto,
   ) {
     return await this.syncService.pushTransactionToRuntime(body.params);
   }

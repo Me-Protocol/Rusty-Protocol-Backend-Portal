@@ -11,6 +11,8 @@ import { UseCouponDto } from './dto/UseCouponDto.dto';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
 import { logger } from '@src/globalServices/logger/logger.service';
+import { BrandService } from '@src/globalServices/brand/brand.service';
+import { CustomerService } from '@src/globalServices/customer/customer.service';
 
 @Injectable()
 export class OrderManagementService {
@@ -21,6 +23,8 @@ export class OrderManagementService {
     private readonly userService: UserService,
     private readonly orderService: OrderService,
     private readonly rewardService: RewardService,
+    private readonly brandService: BrandService,
+    private readonly customerService: CustomerService,
   ) {}
 
   randomCode() {
@@ -110,9 +114,22 @@ export class OrderManagementService {
 
       // TODO: send notification to user
 
+      // return {
+      //   qrImage: `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${order.coupon.code}&choe=UTF-8`,
+      //   couponCode: coupon.code,
+      // };
+
+      // create customer
+      await this.brandService.createBrandCustomer(userId, offer.brandId);
+
+      // update customer total redeem
+      const customer = await this.customerService.getByUserId(userId);
+      customer.totalRedeemed += 1;
+
+      await this.customerService.save(customer);
+
       return {
-        qrImage: `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${order.coupon.code}&choe=UTF-8`,
-        couponCode: coupon.code,
+        message: 'redeem',
       };
     } catch (error) {
       logger.error(error);

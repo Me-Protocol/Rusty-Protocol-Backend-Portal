@@ -354,7 +354,6 @@ export class AuthenticationController {
     @Res({ passthrough: true }) res: any,
   ): Promise<any> {
     const user = req.user;
-    console.log(user);
 
     if (!user) {
       return res
