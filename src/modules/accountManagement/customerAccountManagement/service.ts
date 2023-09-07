@@ -2,10 +2,14 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { CustomerService } from '@src/globalServices/customer/customer.service';
 import { UpdateCustomerDto } from '../customerAccountManagement/dto/UpdateCustomerDto';
 import { logger } from '@src/globalServices/logger/logger.service';
+import { RewardService } from '@src/globalServices/reward/reward.service';
 
 @Injectable()
 export class CustomerAccountManagementService {
-  constructor(private readonly customerService: CustomerService) {}
+  constructor(
+    private readonly customerService: CustomerService,
+    private readonly rewardService: RewardService,
+  ) {}
 
   async updateCustomer(body: UpdateCustomerDto, userId: string) {
     try {
@@ -41,6 +45,22 @@ export class CustomerAccountManagementService {
         customer.other_notifications = body.other_notifications;
 
       return this.customerService.update(customer, customer.id);
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async setWalletAddress(walletAddress: string, userId: string) {
+    try {
+      const customer = await this.customerService.getByUserId(userId);
+      if (!customer) throw new HttpException('Customer not found', 404);
+
+      customer.walletAddress = walletAddress;
+
+      await this.customerService.update(customer, customer.id);
+
+      // Check if user has undistributed points
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400);

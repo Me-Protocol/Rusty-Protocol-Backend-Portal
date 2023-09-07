@@ -58,6 +58,7 @@ export class FollowManagementController {
     @Query(ValidationPipe) query: FilteUserFollowDto,
     @Req() req: any,
   ) {
+    query.userId = req.user.id;
     return await this.followManagementService.getUserFollowedBrands(query);
   }
 

@@ -42,8 +42,6 @@ export class FollowService {
       take: limit,
     });
 
-    console.log(followers);
-
     const total = await this.countBrandFollowers(brandId);
 
     return {
