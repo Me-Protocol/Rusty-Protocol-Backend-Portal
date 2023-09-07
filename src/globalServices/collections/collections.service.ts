@@ -51,6 +51,8 @@ export class CollectionService {
       products: collectionProducts,
     });
 
+    console.log(collection);
+
     return await this.collectionRepo.save(collection);
   }
 
@@ -107,8 +109,11 @@ export class CollectionService {
     limit: number,
     order: string,
   ) {
-    const collectionQuery =
-      this.collectionRepo.createQueryBuilder('collection');
+    const collectionQuery = this.collectionRepo
+      .createQueryBuilder('collection')
+      .leftJoinAndSelect('collection.products', 'products')
+      .leftJoinAndSelect('products.productImages', 'productImages')
+      .leftJoinAndSelect('collection.brand', 'brand');
 
     if (userId) {
       collectionQuery.andWhere('collection.userId = :userId', { userId });
