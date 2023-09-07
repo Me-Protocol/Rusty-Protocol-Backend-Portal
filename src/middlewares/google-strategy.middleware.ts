@@ -25,8 +25,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
         done: Function,
       ) => {
         try {
-          const userType = req.query.userType;
-          console.log(userType);
+          // const userType = req.query.userType;
+          // console.log(userType);
 
           done(null, {
             profile,
@@ -35,6 +35,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
           });
         } catch (err) {
           logger.error(err);
+          console.log(err);
           done(new UnauthorizedException(), false);
         }
       },
