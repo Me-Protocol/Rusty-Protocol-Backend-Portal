@@ -120,7 +120,7 @@ export class BrandManagementController {
   }
 
   @UseGuards(BrandJwtStrategy)
-  @Get('customers')
+  @Get('customers/all')
   async getCustomers(
     @Req() req: any,
     @Query(ValidationPipe) body: FilterCustomerDto,
