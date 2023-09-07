@@ -23,25 +23,25 @@ export class FollowService {
     page: number;
     limit: number;
   }) {
-    const followers = await this.followerRepository.find({
-      where: {
-        brandId,
-      },
-      relations: ['user', 'user.customer'],
-      select: {
-        user: {
-          username: true,
-          customer: {
-            name: true,
-            profilePicture: true,
-          },
-        },
-        createdAt: true,
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-    const total = await this.countBrandFollowers(brandId);
+    const followerQuery = this.followerRepository
+      .createQueryBuilder('follow')
+      .leftJoinAndSelect('follow.user', 'user')
+      .leftJoinAndSelect('user.customer', 'customer')
+      .select([
+        'follow.id',
+        'follow.createdAt',
+        'follow.updatedAt',
+        'user.id',
+        'user.username',
+        'customer.name',
+        'customer.profilePicture',
+      ])
+      .where('follow.brandId = :brandId', { brandId })
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const followers = await followerQuery.getMany();
+    const total = await followerQuery.getCount();
 
     return {
       total,
@@ -107,25 +107,25 @@ export class FollowService {
 
   // get users following
   async getUsersFollowing(userId: string, page: number, limit: number) {
-    const following = await this.followerRepository.find({
-      where: {
-        userId,
-      },
-      relations: ['user', 'user.customer'],
-      select: {
-        user: {
-          username: true,
-          customer: {
-            name: true,
-            profilePicture: true,
-          },
-        },
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    const followerQuery = this.followerRepository
+      .createQueryBuilder('follow')
+      .leftJoinAndSelect('follow.user', 'user')
+      .leftJoinAndSelect('user.customer', 'customer')
+      .select([
+        'follow.id',
+        'follow.createdAt',
+        'follow.updatedAt',
+        'user.id',
+        'user.username',
+        'customer.name',
+        'customer.profilePicture',
+      ])
+      .where('follow.userId = :userId', { userId })
+      .skip((page - 1) * limit)
+      .take(limit);
 
-    const total = await this.countUserFollowing(userId);
+    const following = await followerQuery.getMany();
+    const total = await followerQuery.getCount();
 
     return {
       total,
