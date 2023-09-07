@@ -201,4 +201,9 @@ export class Brand extends BaseEntity {
     nullable: true,
   })
   supportPhoneNumber: string;
+
+  @Column({
+    nullable: true, //TODO:: Remove nullable
+  })
+  brandProtocolId: string;
 }

@@ -7,10 +7,10 @@ import { brandIndex } from '@src/modules/search/interface/search.interface';
 import { UpdateBrandDto } from '@src/modules/accountManagement/brandAccountManagement/dto/UpdateBrandDto.dto';
 import { getSlug } from '@src/utils/helpers/getSlug';
 import { BrandMember } from './entities/brand_member.entity';
-import { async } from 'rxjs';
 import { BrandRole } from '@src/utils/enums/BrandRole';
 import { BrandCustomer } from './entities/brand_customer.entity';
 import { FilterBrandCustomer } from '@src/utils/enums/FilterBrandCustomer';
+import { generateBrandIdBytes10 } from '@developeruche/protocol-core';
 
 @Injectable()
 export class BrandService {
@@ -44,7 +44,11 @@ export class BrandService {
 
     await this.brandMemberRepo.save(brandMember);
 
-    return saveBrand;
+    // Generate brand id on protocol
+    const brandId = generateBrandIdBytes10(saveBrand.id);
+    saveBrand.brandProtocolId = brandId.toString();
+
+    return await this.brandRepo.save(saveBrand);
   }
 
   save(brand: Brand) {
