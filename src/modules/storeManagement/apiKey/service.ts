@@ -18,4 +18,19 @@ export class ApiKeyManagementService {
   async getApiKeysByBrandId(brandId: string) {
     return await this.apiKeyService.getApiKeysByBrandId(brandId);
   }
+
+  async deleteApiKey(id: string, brandId: string) {
+    const apiKey = await this.apiKeyService.get(id, brandId);
+
+    if (!apiKey)
+      throw new HttpException('Api key not found', 404, {
+        cause: new Error('Api key not found'),
+      });
+
+    await this.apiKeyService.deleteApiKey(id, brandId);
+
+    return {
+      protocolPublicKey: apiKey.protocolPublicKey,
+    };
+  }
 }

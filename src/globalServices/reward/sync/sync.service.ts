@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Raw, Repository } from 'typeorm';
 import slugify from 'slugify';
@@ -8,6 +8,10 @@ import { RewardRegistry } from '../entities/registry.entity';
 import { TransactionsType } from '@src/utils/enums/Transactions';
 import { RewardService } from '../reward.service';
 import { UserService } from '@src/globalServices/user/user.service';
+import { AxiosResponse } from 'axios';
+import { SendTransactionData } from '@src/modules/storeManagement/reward/dto/distributeBatch.dto';
+import { mutate, mutate_n_format } from '@developeruche/runtime-sdk';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 @Injectable()
 export class SyncRewardService {
@@ -375,6 +379,25 @@ export class SyncRewardService {
         customerIdentiyOnBrandSite: identifier,
       },
     });
+  }
+
+  async pushTransactionToRuntime(params: SendTransactionData) {
+    try {
+      let spend: AxiosResponse<any>;
+
+      if (params.data.startsWith('0x00000001')) {
+        spend = await mutate_n_format(params);
+      } else {
+        spend = await mutate(params);
+      }
+
+      return spend;
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
+    }
   }
 
   // getUserRegistry(userId: string, rewardId: string) {

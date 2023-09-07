@@ -34,6 +34,7 @@ export class ApiKeyJwtStrategy implements CanActivate {
     }
 
     request.brand = brand;
+    request.apiKey = apiKey;
 
     return true;
   }

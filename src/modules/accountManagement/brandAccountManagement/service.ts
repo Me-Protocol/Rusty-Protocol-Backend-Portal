@@ -28,6 +28,7 @@ export class BrandAccountManagementService {
   async updateBrand(body: UpdateBrandDto, userId: string) {
     try {
       const brand = await this.brandService.getBrandByUserId(userId);
+
       return this.brandService.update(body, brand.id);
     } catch (error) {
       logger.error(error);

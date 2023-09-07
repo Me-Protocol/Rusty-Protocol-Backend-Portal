@@ -12,8 +12,16 @@ import { RewardRegistry } from '@src/globalServices/reward/entities/registry.ent
 import { UpdateRewardDto } from './dto/updateRewardDto';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { getSlug } from '@src/utils/helpers/getSlug';
-import { DistributeBatchDto } from './dto/distributeBatch.dto';
-import { mutate, mutate_n_format } from '@developeruche/runtime-sdk';
+import {
+  DistributeBatchDto,
+  SendTransactionData,
+} from './dto/distributeBatch.dto';
+import {
+  distribute_reward_specific,
+  distribute_reward_specific_magic,
+  mutate,
+  mutate_n_format,
+} from '@developeruche/runtime-sdk';
 import { SpendRewardDto } from './dto/spendRewardDto.dto';
 import { AxiosResponse } from 'axios';
 import { logger } from '@src/globalServices/logger/logger.service';
@@ -22,6 +30,10 @@ import {
   generateWalletRandom,
   generateWalletWithApiKey,
 } from '@developeruche/protocol-core';
+import { KeyIdentifier } from '@src/globalServices/reward/entities/keyIdentifier.entity';
+import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
+import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
+import { ethers } from 'ethers';
 
 @Injectable()
 export class RewardManagementService {
@@ -42,6 +54,59 @@ export class RewardManagementService {
         throw new Error('Looks like this reward already exists');
       }
 
+      // TODO generate private key and public key
+      let createRedistributionKey: {
+        pubKey: string;
+        privKey: string;
+      };
+      let createBountyKey: {
+        pubKey: string;
+        privKey: string;
+      };
+
+      if (body.apiKey) {
+        createBountyKey = generateWalletWithApiKey(
+          body.apiKey,
+          process.env.API_KEY_SALT,
+        );
+        createRedistributionKey = generateWalletWithApiKey(
+          body.apiKey,
+          process.env.API_KEY_SALT,
+        );
+      } else {
+        createBountyKey = generateWalletRandom();
+        createRedistributionKey = generateWalletRandom();
+      }
+
+      const { pubKey, privKey } = createRedistributionKey;
+      const { pubKey: bountyPubKey, privKey: bountyPrivKey } = createBountyKey;
+
+      // Encrypt private key
+      const redistributionEncryptedKey =
+        await this.keyManagementService.encryptKey(privKey);
+      const bountyEncryptedKey = await this.keyManagementService.encryptKey(
+        bountyPrivKey,
+      );
+
+      // Create key identifier
+
+      const redistributionKeyIdentifier = new KeyIdentifier();
+      redistributionKeyIdentifier.identifier = redistributionEncryptedKey;
+      redistributionKeyIdentifier.identifierType =
+        KeyIdentifierType.REDISTRIBUTION;
+
+      const newRedistributionKeyIdentifier =
+        await this.rewardService.createKeyIdentifer(
+          redistributionKeyIdentifier,
+        );
+
+      const bountyKeyIdentifier = new KeyIdentifier();
+      bountyKeyIdentifier.identifier = bountyEncryptedKey;
+      bountyKeyIdentifier.identifierType = KeyIdentifierType.BOUNTY;
+
+      const newBountyKeyIdentifier =
+        await this.rewardService.createKeyIdentifer(bountyKeyIdentifier);
+
       const reward = new Reward();
 
       reward.slug = slug;
@@ -56,16 +121,10 @@ export class RewardManagementService {
       reward.contractAddress = body.contractAddress;
       reward.isBounty = body.isBounty;
       reward.blockchain = body.blockchain;
-
-      // TODO generate private key and public key
-      const createRedistributionKey = generateWalletRandom();
-      const { pubKey, privKey } = createRedistributionKey;
-
-      // Encrypt private key
-      const redistributionEncryptedKey =
-        await this.keyManagementService.encryptKey(privKey);
-
       reward.redistributionPublicKey = pubKey;
+      reward.bountyPublicKey = bountyPubKey;
+      reward.redistributionKeyIdentifierId = newRedistributionKeyIdentifier.id;
+      reward.bountyKeyIdentifierId = newBountyKeyIdentifier.id;
 
       const newReward = await this.rewardService.create(reward);
 
@@ -386,31 +445,6 @@ export class RewardManagementService {
     });
   }
 
-  async spendReward(body: SpendRewardDto) {
-    try {
-      const reward = this.rewardService.findOneById(body.rewardId);
-
-      if (!reward) {
-        throw new Error('Reward not found');
-      }
-
-      let distribute: AxiosResponse<any>;
-
-      if (body.params.data.startsWith('0x00000001')) {
-        distribute = await mutate_n_format(body.params);
-      } else {
-        distribute = await mutate(body.params);
-      }
-
-      return distribute;
-    } catch (error) {
-      logger.error(error);
-      throw new HttpException(error.message, 400, {
-        cause: new Error(error.message),
-      });
-    }
-  }
-
   async distributeBatch(brandId: string, body: DistributeBatchDto) {
     try {
       const batch = await this.syncService.checkActiveBatch(
@@ -426,7 +460,13 @@ export class RewardManagementService {
         throw new Error('Batch already distributed');
       }
 
-      await this.spendReward(body);
+      const reward = this.rewardService.findOneById(body.rewardId);
+
+      if (!reward) {
+        throw new Error('Reward not found');
+      }
+
+      await this.syncService.pushTransactionToRuntime(body.params);
 
       // Pick the rewards whose users exists and update balacne to 0
       await Promise.all(
@@ -493,6 +533,98 @@ export class RewardManagementService {
     return register;
   }
 
+  async distributeWithApiKey(apiKey: ApiKey, rewardId: string) {
+    try {
+      const { privateKey, brandId } = apiKey;
+
+      const batch = await this.syncService.checkActiveBatch(brandId, rewardId);
+      const reward = await this.rewardService.findOneById(rewardId);
+
+      if (!batch) {
+        throw new Error('No batch to distribute');
+      }
+
+      if (batch.isDistributed) {
+        throw new Error('Batch already distributed');
+      }
+
+      if (!reward) {
+        throw new Error('Reward not found');
+      }
+
+      const syncData = batch.syncData;
+
+      let aggregateSumOfNonExistingUsers = 0;
+      const users = [];
+      const amounts = [];
+
+      const { privKey, pubKey } = generateWalletWithApiKey(
+        privateKey,
+        process.env.API_KEY_SALT,
+      );
+
+      const wallet = new ethers.Wallet(privKey);
+
+      await Promise.all(
+        syncData.map(async (syncDataJSON) => {
+          // @ts-ignore
+          const syncData = JSON.parse(syncDataJSON);
+
+          let user: User;
+
+          if (syncData.identifierType === SyncIdentifierType.EMAIL) {
+            user = await this.userService.getUserByEmail(syncData.identifier);
+          }
+
+          if (syncData.identifierType === SyncIdentifierType.PHONE) {
+            user = await this.userService.getUserByPhone(syncData.identifier);
+          }
+
+          if (!user) {
+            aggregateSumOfNonExistingUsers += syncData.amount;
+          } else {
+            if (!user.customer.walletAddress) {
+              aggregateSumOfNonExistingUsers += syncData.amount;
+            } else {
+              const registry =
+                await this.syncService.getRegistryRecordByIdentifer(
+                  syncData.identifier,
+                  rewardId,
+                );
+
+              if (registry) {
+                users.push(user.customer.walletAddress);
+                amounts.push(
+                  ethers.utils.parseEther(syncData.amount.toString()),
+                );
+              }
+            }
+          }
+        }),
+      );
+
+      const recipients = [...users, reward.redistributionPublicKey];
+      const reward_amounts = [
+        ...amounts,
+        ethers.utils.parseEther(aggregateSumOfNonExistingUsers.toString()),
+      ];
+
+      const distributionData = await distribute_reward_specific(
+        reward.contractAddress,
+        recipients,
+        reward_amounts,
+        wallet,
+      );
+
+      return distributionData;
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
+    }
+  }
+
   async getBatchUserWalletsAndAmount(brandId: string, rewardId: string) {
     try {
       const batch = await this.syncService.checkActiveBatch(brandId, rewardId);
@@ -504,6 +636,10 @@ export class RewardManagementService {
 
       if (batch.isDistributed) {
         throw new Error('Batch already distributed');
+      }
+
+      if (!reward) {
+        throw new Error('Reward not found');
       }
 
       const syncData = batch.syncData;

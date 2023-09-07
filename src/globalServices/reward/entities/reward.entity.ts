@@ -98,4 +98,14 @@ export class Reward extends BaseEntity {
     nullable: true,
   })
   bountyPublicKey: string;
+
+  @Column({
+    nullable: true,
+  })
+  redistributionKeyIdentifierId: string;
+
+  @Column({
+    nullable: true,
+  })
+  bountyKeyIdentifierId: string;
 }

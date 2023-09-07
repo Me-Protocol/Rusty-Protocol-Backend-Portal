@@ -43,4 +43,6 @@ export class CreateRewardDto {
   @ApiProperty()
   @IsArray()
   acceptedCustomerIdentitytypes: string[];
+
+  apiKey: string;
 }

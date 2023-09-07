@@ -10,7 +10,6 @@ import { FilterOrderDto } from './dto/FilterOrderDto.dto';
 import { UseCouponDto } from './dto/UseCouponDto.dto';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
-import { RewardManagementService } from '../reward/service';
 import { logger } from '@src/globalServices/logger/logger.service';
 
 @Injectable()
@@ -22,7 +21,6 @@ export class OrderManagementService {
     private readonly userService: UserService,
     private readonly orderService: OrderService,
     private readonly rewardService: RewardService,
-    private readonly rewardManagementService: RewardManagementService,
   ) {}
 
   randomCode() {
@@ -203,10 +201,7 @@ export class OrderManagementService {
       const totalAmount = amount * quantity;
 
       // Spend reward
-      await this.rewardManagementService.spendReward({
-        rewardId: offer.rewardId,
-        params,
-      });
+      await this.syncService.pushTransactionToRuntime(params);
 
       const coupon = await this.couponService.create(user.id, offerId);
 

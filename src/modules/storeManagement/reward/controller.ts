@@ -25,6 +25,9 @@ import { GetCustomerPointDto } from './dto/getCustomerPointDto.dto';
 import { DistributeBatchDto } from './dto/distributeBatch.dto';
 import { SpendRewardDto } from './dto/spendRewardDto.dto';
 import { InAppApiKeyJwtStrategy } from '@src/middlewares/inapp-api-jwt-strategy.middleware';
+import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
+import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
+import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
 
 @ApiTags('Reward')
 @UseInterceptors(ResponseInterceptor)
@@ -32,6 +35,7 @@ import { InAppApiKeyJwtStrategy } from '@src/middlewares/inapp-api-jwt-strategy.
 export class RewardManagementController {
   constructor(
     private readonly rewardManagementService: RewardManagementService,
+    private readonly syncService: SyncRewardService,
   ) {}
 
   @UseGuards(BrandJwtStrategy)
@@ -46,17 +50,31 @@ export class RewardManagementController {
     return await this.rewardManagementService.createReward(createRewardDto);
   }
 
-  @UseGuards(BrandJwtStrategy)
-  @Put(':rewardId')
-  async updateReward(
-    @Body(ValidationPipe) body: UpdateRewardDto,
-    @Param('rewardId') rewardId: string,
+  @UseGuards(ApiKeyJwtStrategy)
+  @Post()
+  async createRewardUseApiKey(
+    @Body(ValidationPipe) createRewardDto: CreateRewardDto,
     @Req() req: any,
   ) {
     const brandId = req.user.brand.id;
-    body.brandId = brandId;
-    return await this.rewardManagementService.updateReward(rewardId, body);
+    createRewardDto.brandId = brandId;
+    const apiKey = req.apiKey as ApiKey;
+    createRewardDto.apiKey = apiKey.protocolPublicKey;
+
+    return await this.rewardManagementService.createReward(createRewardDto);
   }
+
+  // @UseGuards(BrandJwtStrategy)
+  // @Put(':rewardId')
+  // async updateReward(
+  //   @Body(ValidationPipe) body: UpdateRewardDto,
+  //   @Param('rewardId') rewardId: string,
+  //   @Req() req: any,
+  // ) {
+  //   const brandId = req.user.brand.id;
+  //   body.brandId = brandId;
+  //   return await this.rewardManagementService.updateReward(rewardId, body);
+  // }
 
   @UseGuards(BrandJwtStrategy)
   @Delete(':rewardId')
@@ -151,12 +169,12 @@ export class RewardManagementController {
   }
 
   @UseGuards(InAppApiKeyJwtStrategy)
-  @Post('spend')
+  @Post('push-transaction')
   async spendReward(
     @Req() req: any,
     @Body(ValidationPipe) body: SpendRewardDto,
   ) {
-    return await this.rewardManagementService.spendReward(body);
+    return await this.syncService.pushTransactionToRuntime(body.params);
   }
 
   @UseGuards(BrandJwtStrategy)

@@ -57,9 +57,29 @@ export class BrandService {
         }
       }
 
-      await this.brandRepo.update({ id: brandId }, body);
+      let brand = await this.brandRepo.findOneBy({ id: brandId });
 
-      const brand = await this.brandRepo.findOneBy({ id: brandId });
+      if (body.name) brand.name = body.name;
+      if (body.website) brand.website = body.website;
+      if (body.location) brand.location = body.location;
+      if (body.categoryId) brand.categoryId = body.categoryId;
+      if (body.revenueRange) brand.revenueRange = body.revenueRange;
+      if (body.vatTaxId) brand.vatTaxId = body.vatTaxId;
+      if (body.ecommercePlatform)
+        brand.ecommercePlatform = body.ecommercePlatform;
+      if (body.loyaltyProgram) brand.loyaltyProgram = body.loyaltyProgram;
+      if (body.slogan) brand.slogan = body.slogan;
+      if (body.socialMediaLinks) brand.socialMediaLinks = body.socialMediaLinks;
+      if (body.logo_icon) brand.logo_icon = body.logo_icon;
+      if (body.description) brand.description = body.description;
+      if (body.logo_white) brand.logo_white = body.logo_white;
+      if (body.logo_white_icon) brand.logo_white_icon = body.logo_white_icon;
+      if (body.logo) brand.logo = body.logo;
+      if (body.banners) brand.banners = body.banners;
+      if (body.supportPhoneNumber)
+        brand.supportPhoneNumber = body.supportPhoneNumber;
+
+      await this.brandRepo.update({ id: brandId }, brand);
 
       this.elasticIndex.updateDocument(brand, brandIndex);
 
