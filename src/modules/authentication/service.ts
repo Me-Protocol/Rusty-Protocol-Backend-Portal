@@ -801,7 +801,7 @@ export class AuthenticationService {
     bio: string;
     location: string;
     website: string;
-    username: string;
+    username?: string;
     userAgent: string;
     ip: string;
     userType: UserAppType;
@@ -819,6 +819,7 @@ export class AuthenticationService {
     } = data;
 
     const user = await this.userService.getUserByEmail(email);
+    const userNameFromEmail = email.split('@')[0].toLowerCase();
 
     if (user) {
       if (user.loginType !== provider) {
@@ -826,7 +827,7 @@ export class AuthenticationService {
           user.facebookAuth = {
             accessToken,
             refreshToken,
-            username: username ?? email,
+            username: username,
           };
         }
 
@@ -839,19 +840,19 @@ export class AuthenticationService {
           user.facebookAuth = {
             accessToken,
             refreshToken,
-            username: username ?? email,
+            username: username,
           };
         } else if (provider === LoginType.GOOGLE) {
           user.googleAuth = {
             accessToken,
             refreshToken,
-            username: username ?? email,
+            username: username,
           };
         } else if (provider === LoginType.TWITTER) {
           user.twitterAuth = {
             accessToken,
             refreshToken,
-            username: username ?? email,
+            username: username,
           };
         }
 
@@ -866,26 +867,26 @@ export class AuthenticationService {
     const newUser = new User();
     newUser.email = email;
     newUser.emailVerified = true;
-    newUser.username = username ?? email.split('@')[0].toLowerCase();
+    newUser.username = username ?? userNameFromEmail;
     newUser.loginType = provider;
 
     if (provider === LoginType.FACEBOOK) {
       newUser.facebookAuth = {
         accessToken,
         refreshToken,
-        username: username ?? email,
+        username: username,
       };
     } else if (provider === LoginType.GOOGLE) {
       newUser.googleAuth = {
         accessToken,
         refreshToken,
-        username: username ?? email,
+        username: username,
       };
     } else if (provider === LoginType.TWITTER) {
       newUser.twitterAuth = {
         accessToken,
         refreshToken,
-        username: username ?? email,
+        username: username,
       };
     }
 
