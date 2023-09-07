@@ -410,7 +410,7 @@ export class AuthenticationController {
         bio: '',
         location: '',
         website: '',
-        username: '',
+        username: user.profile._json.email.split('@')[0],
         userAgent: req.headers['user-agent'],
         ip: requestIp.getClientIp(req),
         userType: UserAppType.BRAND,

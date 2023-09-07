@@ -22,6 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: JwtPayload) {
     try {
+      console.log('payload', payload);
       if (!payload.id) {
         throw new UnauthorizedException('Unauthorized. Please login');
       }
@@ -50,9 +51,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         );
       }
 
-      if (!user.password) {
-        throw new HttpException('Please create a password', 400);
-      }
+      // if (!user.password) {
+      //   throw new HttpException('Please create a password', 400);
+      // }
 
       const deviceToken = await this.userService.getDeviceById(
         payload.id,
