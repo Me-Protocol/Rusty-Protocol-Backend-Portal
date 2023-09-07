@@ -14,7 +14,15 @@ export class FollowService {
   ) {}
 
   // get brands followers
-  async getBrandsFollowers(brandId: string, page: number, limit: number) {
+  async getBrandsFollowers({
+    brandId,
+    page,
+    limit,
+  }: {
+    brandId: string;
+    page: number;
+    limit: number;
+  }) {
     const followers = await this.followerRepository.find({
       where: {
         brandId,
@@ -28,10 +36,13 @@ export class FollowService {
             profilePicture: true,
           },
         },
+        createdAt: true,
       },
       skip: page * limit,
       take: limit,
     });
+
+    console.log(followers);
 
     const total = await this.countBrandFollowers(brandId);
 
