@@ -10,8 +10,13 @@ import { RewardService } from '../reward.service';
 import { UserService } from '@src/globalServices/user/user.service';
 import { AxiosResponse } from 'axios';
 import { SendTransactionData } from '@src/modules/storeManagement/reward/dto/distributeBatch.dto';
-import { mutate, mutate_n_format } from '@developeruche/runtime-sdk';
+import {
+  distribute_reward_specific,
+  mutate,
+  mutate_n_format,
+} from '@developeruche/runtime-sdk';
 import { logger } from '@src/globalServices/logger/logger.service';
+import { BigNumber, Wallet } from 'ethers';
 
 @Injectable()
 export class SyncRewardService {
@@ -398,6 +403,27 @@ export class SyncRewardService {
         cause: new Error(error.message),
       });
     }
+  }
+
+  async distributeRewardWithKey({
+    recipients,
+    amounts,
+    contractAddress,
+    signer,
+  }: {
+    recipients: string[];
+    amounts: BigNumber[];
+    contractAddress: string;
+    signer: Wallet;
+  }) {
+    const distributionData = await distribute_reward_specific(
+      contractAddress,
+      recipients,
+      amounts,
+      signer,
+    );
+
+    return distributionData;
   }
 
   // getUserRegistry(userId: string, rewardId: string) {

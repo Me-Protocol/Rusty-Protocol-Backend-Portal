@@ -21,12 +21,12 @@ export class InAppApiKeyJwtStrategy implements CanActivate {
     //TODO check if the request is coming from the in-app
     const IN_APP_API_KEY = process.env.IN_APP_API_KEY;
 
-    if (access_token !== IN_APP_API_KEY) {
-      throw new UnauthorizedException('Invalid api key or api key is expired');
-    }
-
     if (!access_token)
       throw new UnauthorizedException('Invalid api key or api key is expired');
+
+    if (access_token !== IN_APP_API_KEY) {
+      throw new UnauthorizedException('Invalid api key');
+    }
 
     const apiKey = await this.apiKeyService.getApiKeyByPrivateKey(access_token);
 

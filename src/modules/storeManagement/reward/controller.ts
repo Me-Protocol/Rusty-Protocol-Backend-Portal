@@ -52,7 +52,7 @@ export class RewardManagementController {
   }
 
   @UseGuards(ApiKeyJwtStrategy)
-  @Post()
+  @Post('api_key')
   async createRewardUseApiKey(
     @Body(ValidationPipe) createRewardDto: CreateRewardDto,
     @Req() req: any,

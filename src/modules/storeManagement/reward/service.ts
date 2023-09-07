@@ -89,7 +89,6 @@ export class RewardManagementService {
       );
 
       // Create key identifier
-
       const redistributionKeyIdentifier = new KeyIdentifier();
       redistributionKeyIdentifier.identifier = redistributionEncryptedKey;
       redistributionKeyIdentifier.identifierType =
@@ -609,12 +608,12 @@ export class RewardManagementService {
         ethers.utils.parseEther(aggregateSumOfNonExistingUsers.toString()),
       ];
 
-      const distributionData = await distribute_reward_specific(
-        reward.contractAddress,
+      const distributionData = await this.syncService.distributeRewardWithKey({
+        contractAddress: reward.contractAddress,
         recipients,
-        reward_amounts,
-        wallet,
-      );
+        amounts: reward_amounts,
+        signer: wallet,
+      });
 
       return distributionData;
     } catch (error) {

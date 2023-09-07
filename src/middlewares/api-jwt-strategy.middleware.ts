@@ -23,6 +23,8 @@ export class ApiKeyJwtStrategy implements CanActivate {
 
     const apiKey = await this.apiKeyService.getApiKeyByPrivateKey(access_token);
 
+    console.log(apiKey);
+
     if (!apiKey) {
       throw new UnauthorizedException('Invalid api key or api key is expired');
     }
