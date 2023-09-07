@@ -8,6 +8,7 @@ import { BaseEntity } from '@src/common/entities/base.entity';
 export class Device extends BaseEntity {
   @Column({
     nullable: true,
+    select: false,
   })
   token: string;
 
@@ -45,6 +46,7 @@ export class Device extends BaseEntity {
 
   @Column({
     nullable: true,
+    select: false,
   })
   device_token: string;
 

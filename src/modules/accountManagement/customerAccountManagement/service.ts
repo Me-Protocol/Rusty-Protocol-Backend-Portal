@@ -3,12 +3,14 @@ import { CustomerService } from '@src/globalServices/customer/customer.service';
 import { UpdateCustomerDto } from '../customerAccountManagement/dto/UpdateCustomerDto';
 import { logger } from '@src/globalServices/logger/logger.service';
 import { RewardService } from '@src/globalServices/reward/reward.service';
+import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
 
 @Injectable()
 export class CustomerAccountManagementService {
   constructor(
     private readonly customerService: CustomerService,
     private readonly rewardService: RewardService,
+    private readonly syncService: SyncRewardService,
   ) {}
 
   async updateCustomer(body: UpdateCustomerDto, userId: string) {
@@ -61,6 +63,24 @@ export class CustomerAccountManagementService {
       await this.customerService.update(customer, customer.id);
 
       // Check if user has undistributed points
+
+      const undistributedRewards =
+        await this.syncService.getUndistributedReward(userId);
+
+      if (undistributedRewards.length > 0) {
+        for (const point of undistributedRewards) {
+          this.syncService.distributeRewardWithPrivateKey({
+            rewardId: point.rewardId,
+            walletAddress: walletAddress,
+            amount: point.pendingBalance,
+            userId: userId,
+          });
+        }
+      }
+
+      return {
+        message: 'Wallet address updated successfully',
+      };
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400);

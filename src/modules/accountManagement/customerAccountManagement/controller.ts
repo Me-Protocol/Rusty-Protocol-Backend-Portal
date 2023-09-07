@@ -35,4 +35,18 @@ export class CustomerManagementController {
       userId,
     );
   }
+
+  @UseGuards(AuthGuard())
+  @Put()
+  async setWalletAddress(
+    @Body(ValidationPipe) body: UpdateCustomerDto,
+    @Req() req: any,
+  ) {
+    const userId = req.user.id;
+
+    return await this.customerAccountManagementService.setWalletAddress(
+      body.walletAddress,
+      userId,
+    );
+  }
 }

@@ -433,12 +433,18 @@ export class RewardManagementService {
           );
 
           if (registry) {
-            await this.syncService.clearBalance({
+            await this.syncService.disbutributeRewardToExistingUsers({
               registryId: registry.id,
               amount: syncData.amount,
               description: 'Reward distribution',
             });
           }
+        } else {
+          await this.syncService.moveRewardPointToUndistribted({
+            customerIdentiyOnBrandSite: syncData.identifier,
+            amount: syncData.amount,
+            description: 'Moved reward to undistributed balance',
+          });
         }
       }),
     );

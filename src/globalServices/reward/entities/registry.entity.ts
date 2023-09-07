@@ -45,6 +45,14 @@ export class RewardRegistry extends BaseEntity {
     scale: 2,
     default: 0,
   })
+  undistributedBalance: number;
+
+  @Column({
+    type: 'decimal',
+    precision: 20,
+    scale: 2,
+    default: 0,
+  })
   totalBalance: number;
 
   @Column({

@@ -109,12 +109,14 @@ export class AuthenticationService {
       return checkDevice.token;
     }
 
+    const saveDevice = await this.userService.saveDevice(device);
+
     const token = await this.signToken({
       email: user.email,
       id: user.id,
       phone: user.phone,
       username: user.username,
-      device: device.id,
+      device: saveDevice.id,
     });
 
     device.token = token;

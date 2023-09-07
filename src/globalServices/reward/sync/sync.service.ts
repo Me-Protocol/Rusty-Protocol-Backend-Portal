@@ -14,9 +14,12 @@ import {
   distribute_reward_specific,
   mutate,
   mutate_n_format,
+  transfer_reward,
 } from '@developeruche/runtime-sdk';
 import { logger } from '@src/globalServices/logger/logger.service';
-import { BigNumber, Wallet } from 'ethers';
+import { BigNumber, Wallet, ethers } from 'ethers';
+import { KeyManagementService } from '@src/globalServices/key-management/key-management.service';
+import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 
 @Injectable()
 export class SyncRewardService {
@@ -32,6 +35,7 @@ export class SyncRewardService {
 
     private readonly rewardService: RewardService,
     private readonly userService: UserService,
+    private readonly keyManagementService: KeyManagementService,
   ) {}
 
   async createBatch(batch: SyncBatch) {
@@ -203,7 +207,7 @@ export class SyncRewardService {
   }
 
   // debit reward
-  async clearBalance({
+  async disbutributeRewardToExistingUsers({
     registryId,
     amount,
     description,
@@ -224,6 +228,85 @@ export class SyncRewardService {
 
     registry.balance = 0;
     registry.pendingBalance = 0;
+    registry.totalBalance = registry.totalBalance + amount;
+
+    await this.rewardRegistryRepo.save(registry);
+
+    // add registry history
+
+    const registryHistory = this.registryHistoryRepo.create({
+      balance: registry.balance,
+      description,
+      transactionType: TransactionsType.DEBIT,
+      rewardRegistryId: registry.id,
+      amount: amount,
+    });
+
+    await this.registryHistoryRepo.save(registryHistory);
+
+    return registry;
+  }
+
+  async moveRewardPointToUndistribted({
+    customerIdentiyOnBrandSite,
+    amount,
+    description,
+  }: {
+    customerIdentiyOnBrandSite: string;
+    amount: number;
+    description: string;
+  }) {
+    const registry = await this.rewardRegistryRepo.findOne({
+      where: {
+        customerIdentiyOnBrandSite,
+      },
+    });
+
+    if (!registry) {
+      throw new Error('Registry not found');
+    }
+
+    registry.balance = 0;
+    registry.pendingBalance = 0;
+    registry.undistributedBalance = registry.undistributedBalance + amount;
+
+    await this.rewardRegistryRepo.save(registry);
+
+    // add registry history
+
+    const registryHistory = this.registryHistoryRepo.create({
+      balance: registry.balance,
+      description,
+      transactionType: TransactionsType.DEBIT,
+      rewardRegistryId: registry.id,
+      amount: amount,
+    });
+
+    await this.registryHistoryRepo.save(registryHistory);
+
+    return registry;
+  }
+
+  async clearUndistributedBalance({
+    registryId,
+    amount,
+    description,
+  }: {
+    registryId: string;
+    amount: number;
+    description: string;
+  }) {
+    const registry = await this.rewardRegistryRepo.findOne({
+      where: {
+        id: registryId,
+      },
+    });
+
+    if (!registry) {
+      throw new Error('Registry not found');
+    }
+
+    registry.undistributedBalance = 0;
     registry.totalBalance = registry.totalBalance + amount;
 
     await this.rewardRegistryRepo.save(registry);
@@ -428,8 +511,6 @@ export class SyncRewardService {
       signer,
     );
 
-    console.log(distributionData?.data, 'Req');
-
     if (distributionData?.data?.error) {
       throw new Error(
         distributionData.data.error?.message ??
@@ -438,6 +519,59 @@ export class SyncRewardService {
     } else {
       return distributionData;
     }
+  }
+
+  async distributeRewardWithPrivateKey({
+    rewardId,
+    walletAddress,
+    amount,
+    userId,
+  }: {
+    rewardId: string;
+    walletAddress: string;
+    amount: number;
+    userId: string;
+  }) {
+    const reward = await this.rewardService.findOneById(rewardId);
+    const keyIdentifier = await this.rewardService.getKeyIdentifier(
+      reward.redistributionKeyIdentifierId,
+      KeyIdentifierType.REDISTRIBUTION,
+    );
+    const decryptedPrivateKey = await this.keyManagementService.decryptKey(
+      keyIdentifier.identifier,
+    );
+    const signer = new Wallet(decryptedPrivateKey);
+
+    const distributionData = await transfer_reward(
+      reward.contractAddress,
+      walletAddress,
+      ethers.utils.parseEther(amount.toString()),
+      signer,
+    );
+
+    if (distributionData?.data?.error) {
+      return 'Undistributed balance';
+    } else {
+      const registry = await this.findOneRegistryByUserId(userId, rewardId);
+
+      await this.clearUndistributedBalance({
+        registryId: registry.id,
+        amount: amount,
+        description: `Reward distributed`,
+      });
+
+      return distributionData;
+    }
+  }
+
+  async getUndistributedReward(userId: string) {
+    const rewardRegistry = await this.rewardRegistryRepo.find({
+      where: {
+        userId,
+      },
+    });
+
+    return rewardRegistry.filter((registry) => registry.pendingBalance > 0);
   }
 
   // getUserRegistry(userId: string, rewardId: string) {
