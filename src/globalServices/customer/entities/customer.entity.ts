@@ -75,4 +75,9 @@ export class Customer extends BaseEntity {
     default: 0,
   })
   totalRedeemed: number;
+
+  @Column({
+    default: 0,
+  })
+  totalRedemptionAmount: number;
 }

@@ -274,12 +274,14 @@ export class ProductService {
 
     if (filterBy === ProductFilter.LOW_IN_STOCK) {
       products.andWhere('product.inventory <= 5');
+      products.orderBy('product.inventory', 'ASC');
     }
 
     if (filterBy === ProductFilter.MOST_RECENT) {
       products.andWhere('product.createdAt > :createdAt', {
         createdAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
       });
+      products.orderBy('product.createdAt', 'DESC');
     }
 
     if (order) {

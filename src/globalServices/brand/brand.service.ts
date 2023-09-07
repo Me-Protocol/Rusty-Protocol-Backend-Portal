@@ -211,19 +211,21 @@ export class BrandService {
       .leftJoinAndSelect('brandCustomer.user', 'user')
       .leftJoinAndSelect('user.customer', 'customer');
 
+    brandCustomerQuery.where('brandCustomer.brandId = :brandId', { brandId });
+
     if (filterBy === FilterBrandCustomer.MOST_ACTIVE) {
       // where customer redeemed greater than 2
-      brandCustomerQuery.where('customer.totalRedeemed > 2');
+      brandCustomerQuery.andWhere('customer.totalRedeemed > 2');
+      brandCustomerQuery.orderBy('customer.totalRedeemed', 'DESC');
     }
 
     if (filterBy === FilterBrandCustomer.MOST_RECENT) {
       // brand customer createdAt 7 days ago
       const date = new Date();
       date.setDate(date.getDate() - 7);
-      brandCustomerQuery.where('brandCustomer.createdAt > :date', { date });
+      brandCustomerQuery.andWhere('brandCustomer.createdAt > :date', { date });
     }
 
-    brandCustomerQuery.where('brandCustomer.brandId = :brandId', { brandId });
     brandCustomerQuery.skip((page - 1) * limit).take(limit);
     const brandCustomers = await brandCustomerQuery.getMany();
     const total = await brandCustomerQuery.getCount();

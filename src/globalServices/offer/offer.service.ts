@@ -332,12 +332,14 @@ export class OfferService {
       offersQuery.andWhere('offer.totalOrders > :totalOrders', {
         totalOrders: 4, // TODO: Change this to 100,,
       });
+      offersQuery.orderBy('offer.totalOrders', 'DESC');
     }
 
     if (orderBy === OfferFilter.MOST_VIEWED) {
       offersQuery.andWhere('offer.viewCount > :viewCount', {
         viewCount: 10, // TODO: Change this to 100,
       });
+      offersQuery.orderBy('offer.viewCount', 'DESC');
     }
 
     if (orderBy === OfferFilter.MOST_RECENT) {
@@ -345,6 +347,7 @@ export class OfferService {
       offersQuery.andWhere('offer.createdAt > :createdAt', {
         createdAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
       });
+      offersQuery.orderBy('offer.createdAt', 'DESC');
     }
 
     if (orderBy === OfferFilter.LOW_IN_STOCK) {
@@ -352,6 +355,7 @@ export class OfferService {
       offersQuery.andWhere('product.inventory < :inventory', {
         stock: 10,
       });
+      offersQuery.orderBy('product.inventory', 'ASC');
     }
 
     if (order) {

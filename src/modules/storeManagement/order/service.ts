@@ -125,8 +125,11 @@ export class OrderManagementService {
       // update customer total redeem
       const customer = await this.customerService.getByUserId(userId);
       customer.totalRedeemed += 1;
+      customer.totalRedemptionAmount += totalAmount;
 
       await this.customerService.save(customer);
+
+      await this.markOrderAsRedeemed(userId, order.id);
 
       return {
         message: 'redeem',
