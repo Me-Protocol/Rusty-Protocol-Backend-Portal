@@ -2,7 +2,6 @@
 
 import {
   BaseEntity as Base,
-  Column,
   CreateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
@@ -13,15 +12,12 @@ export class BaseEntity extends Base {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @DeleteDateColumn()
-  @Column({ nullable: true })
+  @DeleteDateColumn({ nullable: true })
   deletedAt: Date;
 
   @CreateDateColumn({ type: 'timestamp' })
-  @Column()
   createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamp' })
-  @Column()
   updatedAt!: Date;
 }
