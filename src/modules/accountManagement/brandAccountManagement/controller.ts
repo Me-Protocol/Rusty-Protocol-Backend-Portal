@@ -22,6 +22,7 @@ import { FilterBrandDto } from './dto/FilterBrandDto.dto';
 import { UpdateMemberDto } from './dto/UpdateMemberDto.dto';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { CreateMemberDto } from './dto/CreateMemberDto.dto';
+import { FilterCustomerDto } from './dto/FilterCustomerDto.dto';
 
 @ApiTags('Brand')
 @UseInterceptors(ResponseInterceptor)
@@ -116,6 +117,18 @@ export class BrandManagementController {
     body.brandId = user.brand.id;
 
     return await this.brandAccountManagementService.createBrandMember(body);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Get('customers')
+  async getCustomers(
+    @Req() req: any,
+    @Query(ValidationPipe) body: FilterCustomerDto,
+  ) {
+    const user = req.user as User;
+    body.brandId = user.brand.id;
+
+    return await this.brandAccountManagementService.getCustomers(body);
   }
 
   @Get('member/verify-email/:code/:brandId')

@@ -333,7 +333,7 @@ export class BrandAccountManagementService {
     }
   }
 
-  async getCustomer(query: FilterCustomerDto) {
+  async getCustomers(query: FilterCustomerDto) {
     try {
       return await this.brandService.getBrandCustomers(
         query.brandId,
