@@ -92,8 +92,6 @@ export class AuthenticationService {
       device.type,
     );
 
-    console.log(checkDevice);
-
     if (checkDevice) {
       checkDevice.name = deviceData.device.name;
       checkDevice.type = deviceData.device.type;
