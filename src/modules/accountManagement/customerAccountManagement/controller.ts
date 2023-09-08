@@ -37,7 +37,7 @@ export class CustomerManagementController {
   }
 
   @UseGuards(AuthGuard())
-  @Put()
+  @Put('/setup-wallet-address')
   async setWalletAddress(
     @Body(ValidationPipe) body: UpdateCustomerDto,
     @Req() req: any,

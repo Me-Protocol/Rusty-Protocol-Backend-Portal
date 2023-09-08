@@ -25,7 +25,6 @@ export class CustomerAccountManagementService {
       if (body.location) customer.location = body.location;
       if (body.weight) customer.weight = body.weight;
       if (body.height) customer.height = body.height;
-      if (body.walletAddress) customer.walletAddress = body.walletAddress;
       if (body.login_2fa) customer.login_2fa = body.login_2fa;
       if (body.deposit_2fa) customer.deposit_2fa = body.deposit_2fa;
       if (body.withdraw_2fa) customer.withdraw_2fa = body.withdraw_2fa;
