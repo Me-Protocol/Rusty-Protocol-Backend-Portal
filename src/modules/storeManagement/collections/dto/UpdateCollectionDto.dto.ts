@@ -4,14 +4,17 @@ import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class UpdateCollectionDto {
   @ApiProperty()
+  @IsOptional()
   @IsString()
   name: string;
 
   @ApiProperty()
+  @IsOptional()
   @IsString()
   description: string;
 
   @ApiProperty()
+  @IsOptional()
   @IsString()
   image: string;
 
@@ -21,6 +24,7 @@ export class UpdateCollectionDto {
   @ApiProperty({
     enum: ItemStatus,
   })
+  @IsOptional()
   @IsEnum(ItemStatus, {
     message: 'Please provide a valid status',
   })
