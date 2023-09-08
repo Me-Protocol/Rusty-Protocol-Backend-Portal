@@ -45,7 +45,7 @@ export class CustomerAccountManagementService {
       if (body.other_notifications)
         customer.other_notifications = body.other_notifications;
 
-      return this.customerService.update(customer, customer.id);
+      return this.customerService.save(customer);
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400);
@@ -59,7 +59,7 @@ export class CustomerAccountManagementService {
 
       customer.walletAddress = walletAddress;
 
-      await this.customerService.update(customer, customer.id);
+      await this.customerService.save(customer);
 
       // Check if user has undistributed points
 

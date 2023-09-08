@@ -94,12 +94,12 @@ export class OrderManagementService {
       // }
 
       //create deposit history
-      await this.syncService.debitReward({
-        rewardId: offer.rewardId,
-        userId,
-        amount: totalAmount,
-        description: `Redeem offer ${offer.name}`,
-      });
+      // await this.syncService.debitReward({
+      //   rewardId: offer.rewardId,
+      //   userId,
+      //   amount: totalAmount,
+      //   description: `Redeem offer ${offer.name}`,
+      // });
 
       const coupon = await this.couponService.create(user.id, offerId);
 
@@ -140,9 +140,9 @@ export class OrderManagementService {
     }
   }
 
-  async getOrders({ userId, page, limit }: FilterOrderDto) {
+  async getOrders({ userId, page, limit, filterBy }: FilterOrderDto) {
     try {
-      return this.orderService.getOrders(userId, page, limit);
+      return this.orderService.getOrders(userId, page, limit, filterBy);
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);

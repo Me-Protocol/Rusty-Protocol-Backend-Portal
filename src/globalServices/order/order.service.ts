@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { CouponService } from './coupon.service';
 import { pagination } from '@src/utils/types/pagination';
+import { OrderFilter } from '@src/utils/enums/OrderFilter';
 
 @Injectable()
 export class OrderService {
@@ -27,27 +28,41 @@ export class OrderService {
     });
   }
 
-  async getOrders(userId: string, page: number, limit = 10) {
-    const orders = await this.orderRepo.find({
-      where: { userId: userId },
-      skip: +page === 1 ? 0 : (+page - 1) * limit,
-      take: limit ? limit : 10,
-      relations: ['coupon'],
-    });
+  async getOrders(
+    userId: string,
+    page: number,
+    limit = 10,
+    filterBy: OrderFilter,
+  ) {
+    const orderQuery = this.orderRepo
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.coupon', 'coupon')
+      .leftJoinAndSelect('order.offer', 'offer')
+      .leftJoinAndSelect('offer.reward', 'reward')
+      .leftJoinAndSelect('reward.brand', 'brand');
 
-    const count = await this.orderRepo.count({
-      where: { userId: userId },
-    });
+    if (filterBy === OrderFilter.REDEEMED) {
+      orderQuery.andWhere('order.isRedeemed = :isRedeemed', {
+        isRedeemed: true,
+      });
+    } else if (filterBy === OrderFilter.UNREDEEMED) {
+      orderQuery.andWhere('order.isRedeemed = :isRedeemed', {
+        isRedeemed: false,
+      });
+    }
 
-    const pagination: pagination = {
-      currentPage: page,
-      limit: limit,
-      totalPage: Math.ceil(count / limit),
-      nextPage: Math.ceil(count / limit) > page ? page + 1 : null,
-      previousPage: page === 1 ? null : page - 1,
+    const orders = await orderQuery
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
+    const total = await this.orderRepo.count();
+
+    return {
+      orders,
+      total,
+      nextPage: total > page * limit ? page + 1 : null,
+      previousPage: page > 1 ? page - 1 : null,
     };
-
-    return { orders, pagination };
   }
 
   async getOrderById(userId: string, id: string) {
