@@ -93,13 +93,13 @@ export class OrderManagementService {
       //   throw new Error('Insufficient point to redeem');
       // }
 
-      //create deposit history
-      // await this.syncService.debitReward({
-      //   rewardId: offer.rewardId,
-      //   userId,
-      //   amount: totalAmount,
-      //   description: `Redeem offer ${offer.name}`,
-      // });
+      // create deposit history
+      await this.syncService.debitReward({
+        rewardId: offer.rewardId,
+        userId,
+        amount: totalAmount,
+        description: `Redeem offer ${offer.name}`,
+      });
 
       const coupon = await this.couponService.create(user.id, offerId);
 

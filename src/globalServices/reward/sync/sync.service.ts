@@ -171,11 +171,13 @@ export class SyncRewardService {
     userId,
     amount,
     description,
+    checkBalance,
   }: {
     rewardId: string;
     userId: string;
     amount: number;
     description: string;
+    checkBalance?: boolean;
   }) {
     const registry = await this.findOneRegistryByUserId(userId, rewardId);
 
@@ -183,16 +185,16 @@ export class SyncRewardService {
       throw new Error('Registry not found');
     }
 
-    if (registry.balance < amount) {
+    if (checkBalance && registry.balance < amount) {
       throw new Error('Insufficient balance');
     }
 
-    registry.balance -= amount;
-
-    await this.rewardRegistryRepo.save(registry);
+    if (checkBalance && registry.balance >= amount) {
+      registry.balance -= amount;
+      await this.rewardRegistryRepo.save(registry);
+    }
 
     // add registry history
-
     const registryHistory = this.registryHistoryRepo.create({
       balance: registry.balance,
       description,

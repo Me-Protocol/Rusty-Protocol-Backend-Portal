@@ -55,7 +55,15 @@ export class CustomerAccountManagementService {
   async setWalletAddress(walletAddress: string, userId: string) {
     try {
       const customer = await this.customerService.getByUserId(userId);
-      if (!customer) throw new HttpException('Customer not found', 404);
+      if (!customer)
+        throw new HttpException('Customer not found', 404, {
+          cause: new Error('Customer not found'),
+        });
+
+      if (customer.walletAddress)
+        throw new HttpException('Wallet address already set', 400, {
+          cause: new Error('Wallet address already set'),
+        });
 
       customer.walletAddress = walletAddress;
 
