@@ -79,14 +79,34 @@ export class CollectionService {
       products: string[];
     },
   ) {
-    const collection = await this.collectionRepo.findOne({
-      where: {
-        id,
-      },
-    });
+    let collection: Collection;
+
+    if (userId) {
+      collection = await this.collectionRepo.findOne({
+        where: {
+          id,
+          userId,
+        },
+        relations: ['products', 'products.productImages'],
+      });
+    }
+
+    if (brandId) {
+      collection = await this.collectionRepo.findOne({
+        where: {
+          id,
+          brandId,
+        },
+        relations: ['products', 'products.productImages'],
+      });
+    }
+
+    if (!collection) {
+      throw new Error('Collection not found');
+    }
 
     await this.collectionRepo.update(
-      { id, userId },
+      { id: collection.id },
       { name, description, image, status },
     );
 

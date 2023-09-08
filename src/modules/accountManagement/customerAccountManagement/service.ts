@@ -71,7 +71,7 @@ export class CustomerAccountManagementService {
           this.syncService.distributeRewardWithPrivateKey({
             rewardId: point.rewardId,
             walletAddress: walletAddress,
-            amount: point.pendingBalance,
+            amount: point.undistributedBalance,
             userId: userId,
           });
         }

@@ -436,7 +436,7 @@ export class RewardManagementService {
             await this.syncService.disbutributeRewardToExistingUsers({
               registryId: registry.id,
               amount: syncData.amount,
-              description: 'Reward distribution',
+              description: `Reward distributed to ${user.customer.walletAddress}`,
             });
           }
         } else {

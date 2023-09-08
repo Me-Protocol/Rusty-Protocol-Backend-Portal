@@ -226,9 +226,12 @@ export class SyncRewardService {
       throw new Error('Registry not found');
     }
 
+    const totalBalance = Number(amount) + Number(registry.totalBalance);
+    const formattedSum = totalBalance.toFixed(2);
+
     registry.balance = 0;
     registry.pendingBalance = 0;
-    registry.totalBalance = registry.totalBalance + amount;
+    registry.totalBalance = Number(formattedSum);
 
     await this.rewardRegistryRepo.save(registry);
 
@@ -266,11 +269,15 @@ export class SyncRewardService {
       throw new Error('Registry not found');
     }
 
+    const totalDistribution =
+      Number(amount) + Number(registry.undistributedBalance);
+    const formattedSum = totalDistribution.toFixed(2);
+
     registry.balance = 0;
     registry.pendingBalance = 0;
-    registry.undistributedBalance = registry.undistributedBalance + amount;
+    registry.undistributedBalance = Number(formattedSum);
 
-    await this.rewardRegistryRepo.save(registry);
+    const newReg = await this.rewardRegistryRepo.save(registry);
 
     // add registry history
 
@@ -306,8 +313,11 @@ export class SyncRewardService {
       throw new Error('Registry not found');
     }
 
-    registry.undistributedBalance = 0;
-    registry.totalBalance = registry.totalBalance + amount;
+    const totalBalance = Number(amount) + Number(registry.totalBalance);
+    const formattedSum = totalBalance.toFixed(2);
+
+    registry.undistributedBalance = 0.0;
+    registry.totalBalance = Number(formattedSum);
 
     await this.rewardRegistryRepo.save(registry);
 
@@ -549,6 +559,8 @@ export class SyncRewardService {
       signer,
     );
 
+    console.log(distributionData.data);
+
     if (distributionData?.data?.error) {
       return 'Undistributed balance';
     } else {
@@ -557,7 +569,7 @@ export class SyncRewardService {
       await this.clearUndistributedBalance({
         registryId: registry.id,
         amount: amount,
-        description: `Reward distributed`,
+        description: `Reward distributed to ${walletAddress}`,
       });
 
       return distributionData;
@@ -571,7 +583,9 @@ export class SyncRewardService {
       },
     });
 
-    return rewardRegistry.filter((registry) => registry.pendingBalance > 0);
+    return rewardRegistry.filter(
+      (registry) => Number(registry.undistributedBalance) > 0,
+    );
   }
 
   // getUserRegistry(userId: string, rewardId: string) {

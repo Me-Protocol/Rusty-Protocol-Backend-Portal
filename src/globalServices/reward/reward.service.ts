@@ -137,7 +137,7 @@ export class RewardService {
   async getKeyIdentifier(id: string, type: KeyIdentifierType) {
     return this.keyIdentifierRepo.findOne({
       where: {
-        identifier: id,
+        id,
         identifierType: type,
       },
     });

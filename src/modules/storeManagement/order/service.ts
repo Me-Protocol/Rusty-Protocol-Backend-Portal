@@ -49,49 +49,49 @@ export class OrderManagementService {
       }
       const user = await this.userService.getUserById(userId);
 
-      let registry = await this.syncService.findOneRegistryByUserId(
-        userId,
-        offer.rewardId,
-      );
+      // let registry = await this.syncService.findOneRegistryByUserId(
+      //   userId,
+      //   offer.rewardId,
+      // );
 
-      if (!registry) {
-        const syncData = await this.rewardService.getRegistryByIdentifer(
-          user.email,
-          offer.rewardId,
-        );
+      // if (!registry) {
+      //   const syncData = await this.rewardService.getRegistryByIdentifer(
+      //     user.email,
+      //     offer.rewardId,
+      //   );
 
-        if (syncData) {
-          //  create registry
-          const registryRecord = new RewardRegistry();
-          registryRecord.rewardId = offer.rewardId;
-          registryRecord.customerIdentiyOnBrandSite = syncData.identifier;
-          registryRecord.customerIdentityType = syncData.identifierType;
-          registryRecord.balance = 0;
-          registryRecord.userId = user.id;
+      //   if (syncData) {
+      //     //  create registry
+      //     const registryRecord = new RewardRegistry();
+      //     registryRecord.rewardId = offer.rewardId;
+      //     registryRecord.customerIdentiyOnBrandSite = syncData.identifier;
+      //     registryRecord.customerIdentityType = syncData.identifierType;
+      //     registryRecord.balance = 0;
+      //     registryRecord.userId = user.id;
 
-          registry = await this.syncService.addRegistry(registryRecord);
+      //     registry = await this.syncService.addRegistry(registryRecord);
 
-          // create transaction
-          await this.syncService.creditReward({
-            rewardId: offer.rewardId,
-            identifier: syncData.identifier,
-            amount: syncData.amount,
-            description: `Reward sync`,
-          });
-        } else {
-          throw new Error('Reward not sync or user not found on brand site');
-        }
-      }
+      //     // create transaction
+      //     await this.syncService.creditReward({
+      //       rewardId: offer.rewardId,
+      //       identifier: syncData.identifier,
+      //       amount: syncData.amount,
+      //       description: `Reward sync`,
+      //     });
+      //   } else {
+      //     throw new Error('Reward not sync or user not found on brand site');
+      //   }
+      // }
 
       const discount = (offer.tokens * offer.discountPercentage) / 100;
       const amount = offer.tokens - discount;
 
       const totalAmount = amount * quantity;
 
-      //check if the user has enough point to redeem
-      if (registry.balance < +totalAmount) {
-        throw new Error('Insufficient point to redeem');
-      }
+      // //check if the user has enough point to redeem
+      // if (registry.balance < +totalAmount) {
+      //   throw new Error('Insufficient point to redeem');
+      // }
 
       //create deposit history
       await this.syncService.debitReward({
