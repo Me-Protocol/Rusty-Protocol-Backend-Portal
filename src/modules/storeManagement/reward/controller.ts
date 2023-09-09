@@ -11,6 +11,7 @@ import {
   Query,
   Req,
   Delete,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
@@ -185,12 +186,14 @@ export class RewardManagementController {
   }
 
   @UseGuards(ApiKeyJwtStrategy)
-  @Post('distribute-reward')
+  @Post('distribute/:rewardId')
   async distributeWithApiKey(
     @Req() req: any,
+    @Param('rewardId', ParseUUIDPipe) rewardId: string,
     @Body(ValidationPipe) body: DistributeBatchWithApiKeyDto,
   ) {
     const apiKey = req.apiKey as ApiKey;
+    body.rewardId = rewardId;
 
     return await this.rewardManagementService.distributeWithApiKey(
       apiKey,

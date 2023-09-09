@@ -36,7 +36,5 @@ export interface SendTransactionData {
 }
 
 export class DistributeBatchWithApiKeyDto {
-  @ApiProperty()
-  @IsUUID()
   rewardId: string;
 }

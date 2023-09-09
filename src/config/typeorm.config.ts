@@ -36,6 +36,7 @@ import { BrandMember } from '@src/globalServices/brand/entities/brand_member.ent
 import { KeyIdentifier } from '@src/globalServices/reward/entities/keyIdentifier.entity';
 import { BrandCustomer } from '@src/globalServices/brand/entities/brand_customer.entity';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
+import { RedisOptions } from 'ioredis';
 
 export const typeOrmConfig: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -86,6 +87,38 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
   extra: {
     charset: 'utf8mb4_unicode_ci',
   },
+  // cache: {
+  //   type: 'redis',
+  //   provider: (redisOptions: RedisOptions) =>
+  //     require('cache-manager-ioredis').createCacheManager({
+  //       ...redisOptions,
+  //       isCacheableValue: () => true,
+  //       storeClient: require('ioredis').createClient({
+  //         ...redisOptions,
+  //         lazyConnect: true,
+  //       }),
+  //       retryStrategy: (times) => {
+  //         const delay = Math.min(times * 50, 2000);
+  //         return delay;
+  //       },
+  //     }),
+  //   options: {
+  //     retryAttempts: 5,
+  //     cachePrefix: process.env.REDIS_PREFIX,
+  //     enableReadyCheck: true,
+  //     connectTimeout: 10000,
+  //     maxRetriesPerRequest: 3,
+  //     reconnectOnError: (err: { message: string }) => {
+  //       const targetErrors = [/READONLY/, /ETIMEDOUT/];
+  //       targetErrors.forEach((targetError) => {
+  //         if (targetError.test(err.message)) {
+  //           return true;
+  //         }
+  //       });
+  //       return false;
+  //     },
+  //   },
+  // },
   synchronize: true,
   autoLoadEntities: true,
   logging: false,

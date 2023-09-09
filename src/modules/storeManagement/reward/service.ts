@@ -49,8 +49,12 @@ export class RewardManagementService {
       const slug = getSlug(body.rewardName);
 
       const checkReward = await this.rewardService.findOneRewardBySlug(slug);
+      const checkContractAddress =
+        await this.rewardService.getRewardByContractAddress(
+          body.contractAddress,
+        );
 
-      if (checkReward) {
+      if (checkReward || checkContractAddress) {
         throw new Error('Looks like this reward already exists');
       }
 
@@ -594,7 +598,7 @@ export class RewardManagementService {
 
       const syncData = batch.syncData;
 
-      const { privKey, pubKey } = generateWalletWithApiKey(
+      const { privKey } = generateWalletWithApiKey(
         privateKey,
         process.env.API_KEY_SALT,
       );
