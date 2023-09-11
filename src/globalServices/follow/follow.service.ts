@@ -60,7 +60,7 @@ export class FollowService {
 
     await this.followerRepository.save(following);
 
-    const brand = await this.brandService.getBrandById(userId);
+    const brand = await this.brandService.getBrandById(brandId);
     brand.followersCount += 1;
 
     await this.brandService.save(brand);
@@ -75,7 +75,7 @@ export class FollowService {
       brandId,
     });
 
-    const brand = await this.brandService.getBrandById(userId);
+    const brand = await this.brandService.getBrandById(brandId);
     brand.followersCount -= 1;
 
     await this.brandService.save(brand);

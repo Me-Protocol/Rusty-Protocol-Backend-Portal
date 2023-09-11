@@ -27,7 +27,7 @@ export class LikeManagementService {
       }
 
       // Check if there is collection id
-      if (body.collectionId) {
+      if (body?.collectionId) {
         const collection = await this.collectionService.findOne({
           userId: body.userId,
           id: body.collectionId,

@@ -33,11 +33,13 @@ export class CollectionService {
   }) {
     const collectionProducts = [];
 
-    for (const productId of products) {
-      const product = await this.productService.findOneProduct(productId);
+    if (products && products?.length > 0) {
+      for (const productId of products) {
+        const product = await this.productService.findOneProduct(productId);
 
-      if (product) {
-        collectionProducts.push(product);
+        if (product) {
+          collectionProducts.push(product);
+        }
       }
     }
 
@@ -110,16 +112,18 @@ export class CollectionService {
       { name, description, image, status },
     );
 
-    for (const productId of products) {
-      const product = await this.productService.findOneProduct(productId);
+    if (products && products?.length > 0) {
+      for (const productId of products) {
+        const product = await this.productService.findOneProduct(productId);
 
-      if (product) {
-        const checkProduct = collection.products.find(
-          (product) => product.id === productId,
-        );
+        if (product) {
+          const checkProduct = collection.products.find(
+            (product) => product.id === productId,
+          );
 
-        if (!checkProduct) {
-          collection.products.push(product);
+          if (!checkProduct) {
+            collection.products.push(product);
+          }
         }
       }
     }
