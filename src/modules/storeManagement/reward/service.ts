@@ -34,6 +34,7 @@ import { KeyIdentifier } from '@src/globalServices/reward/entities/keyIdentifier
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
 import { ethers } from 'ethers';
+import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 
 @Injectable()
 export class RewardManagementService {
@@ -42,6 +43,7 @@ export class RewardManagementService {
     private readonly syncService: SyncRewardService,
     private readonly userService: UserService,
     private readonly keyManagementService: KeyManagementService,
+    private readonly fiatWalletService: FiatWalletService,
   ) {}
 
   async createReward(body: CreateRewardDto) {
@@ -478,6 +480,12 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
+      const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
+
+      if (!canPayCost) {
+        throw new Error('Brand cannot pay cost');
+      }
+
       await this.syncService.pushTransactionToRuntime(body.params);
 
       await this.updateUsersRewardRegistryAfterDistribution({
@@ -596,6 +604,12 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
+      const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
+
+      if (!canPayCost) {
+        throw new Error('Brand cannot pay cost');
+      }
+
       const syncData = batch.syncData;
 
       const { privKey } = generateWalletWithApiKey(
@@ -662,6 +676,12 @@ export class RewardManagementService {
 
       if (!reward) {
         throw new Error('Reward not found');
+      }
+
+      const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
+
+      if (!canPayCost) {
+        throw new Error('Brand cannot pay cost');
       }
 
       const syncData = batch.syncData;

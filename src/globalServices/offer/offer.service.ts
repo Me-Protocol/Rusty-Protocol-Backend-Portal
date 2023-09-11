@@ -7,6 +7,7 @@ import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
 import { ProductImage } from '../product/entities/productImage.entity';
 import { ViewsService } from '../views/view.service';
 import { OfferFilter, OfferSort } from '@src/utils/enums/OfferFiilter';
+import { CustomerService } from '../customer/customer.service';
 
 @Injectable()
 export class OfferService {
@@ -19,6 +20,7 @@ export class OfferService {
 
     private readonly userService: UserService,
     private readonly viewService: ViewsService,
+    private readonly customerService: CustomerService,
   ) {}
 
   async saveOffer(offer: Offer) {
@@ -471,13 +473,24 @@ export class OfferService {
   async increaseOfferSales({
     offer,
     amount,
+    userId,
   }: {
     offer: Offer;
     amount: number;
+    userId: string;
   }) {
     offer.totalOrders = offer.totalOrders + 1;
     offer.totalSales = offer.totalSales + amount;
 
-    return await this.offerRepo.save(offer);
+    // update customer total redeem
+    const customer = await this.customerService.getByUserId(userId);
+    customer.totalRedeemed += 1;
+    customer.totalRedemptionAmount += amount;
+
+    await this.offerRepo.save(offer);
+
+    await this.customerService.save(customer);
+
+    return 'done';
   }
 }

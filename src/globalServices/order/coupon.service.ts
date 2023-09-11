@@ -10,7 +10,15 @@ export class CouponService {
     private couponRepository: Repository<Coupon>,
   ) {}
 
-  create(user_id: string, offer_id: string) {
+  create({
+    user_id,
+    offer_id,
+    isUsed,
+  }: {
+    user_id: string;
+    offer_id: string;
+    isUsed?: boolean;
+  }) {
     // 6 characters coupon code
     const couponCode = `${process.env.COUPON_CODE_PREFIX}_${Math.random()
       .toString(36)
@@ -18,7 +26,7 @@ export class CouponService {
       .toUpperCase()}`;
     const coupon = new Coupon();
     coupon.code = couponCode;
-    coupon.isUsed = false;
+    coupon.isUsed = isUsed ?? false;
     coupon.offerId = offer_id;
     coupon.userId = user_id;
     coupon.expiryDate = new Date();

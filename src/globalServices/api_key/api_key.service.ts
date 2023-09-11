@@ -7,7 +7,6 @@ import { KeyManagementService } from '../key-management/key-management.service';
 import { RewardService } from '../reward/reward.service';
 import { KeyIdentifier } from '../reward/entities/keyIdentifier.entity';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
-import { SendTransactionData } from '@src/modules/storeManagement/reward/dto/distributeBatch.dto';
 import { SyncRewardService } from '../reward/sync/sync.service';
 
 @Injectable()

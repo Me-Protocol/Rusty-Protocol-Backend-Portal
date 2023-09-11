@@ -20,6 +20,7 @@ import { logger } from '@src/globalServices/logger/logger.service';
 import { BigNumber, Wallet, ethers } from 'ethers';
 import { KeyManagementService } from '@src/globalServices/key-management/key-management.service';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
+import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 
 @Injectable()
 export class SyncRewardService {
@@ -36,6 +37,7 @@ export class SyncRewardService {
     private readonly rewardService: RewardService,
     private readonly userService: UserService,
     private readonly keyManagementService: KeyManagementService,
+    private readonly fiatWalletService: FiatWalletService,
   ) {}
 
   async createBatch(batch: SyncBatch) {
@@ -545,6 +547,15 @@ export class SyncRewardService {
     userId: string;
   }) {
     const reward = await this.rewardService.findOneById(rewardId);
+
+    const canPayCost = await this.fiatWalletService.checkCanPayCost(
+      reward.brandId,
+    );
+
+    if (!canPayCost) {
+      return 'Brand cannot pay cost';
+    }
+
     const keyIdentifier = await this.rewardService.getKeyIdentifier(
       reward.redistributionKeyIdentifierId,
       KeyIdentifierType.REDISTRIBUTION,
@@ -560,8 +571,6 @@ export class SyncRewardService {
       ethers.utils.parseEther(amount.toString()),
       signer,
     );
-
-    console.log(distributionData.data);
 
     if (distributionData?.data?.error) {
       return 'Undistributed balance';

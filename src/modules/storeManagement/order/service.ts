@@ -8,8 +8,6 @@ import { UserService } from '@src/globalServices/user/user.service';
 import { Order } from '@src/globalServices/order/entities/order.entity';
 import { FilterOrderDto } from './dto/FilterOrderDto.dto';
 import { UseCouponDto } from './dto/UseCouponDto.dto';
-import { RewardService } from '@src/globalServices/reward/reward.service';
-import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
 import { logger } from '@src/globalServices/logger/logger.service';
 import { BrandService } from '@src/globalServices/brand/brand.service';
 import { CustomerService } from '@src/globalServices/customer/customer.service';
@@ -22,7 +20,6 @@ export class OrderManagementService {
     private readonly offerService: OfferService,
     private readonly userService: UserService,
     private readonly orderService: OrderService,
-    private readonly rewardService: RewardService,
     private readonly brandService: BrandService,
     private readonly customerService: CustomerService,
   ) {}
@@ -101,7 +98,11 @@ export class OrderManagementService {
         description: `Redeem offer ${offer.name}`,
       });
 
-      const coupon = await this.couponService.create(user.id, offerId);
+      const coupon = await this.couponService.create({
+        user_id: user.id,
+        offer_id: offerId,
+        isUsed: false,
+      });
 
       const orderRecord = new Order();
       orderRecord.userId = user.id;
@@ -188,12 +189,7 @@ export class OrderManagementService {
     }
   }
 
-  async redeemWithRewardSpend({
-    userId,
-    offerId,
-    quantity,
-    params,
-  }: CreateOrderDto) {
+  async redeemWithRewardSpend({ userId, offerId, quantity }: CreateOrderDto) {
     try {
       const offer = await this.offerService.getOfferById(offerId);
 
@@ -220,10 +216,11 @@ export class OrderManagementService {
 
       const totalAmount = amount * quantity;
 
-      // Spend reward
-      await this.syncService.pushTransactionToRuntime(params);
-
-      const coupon = await this.couponService.create(user.id, offerId);
+      const coupon = await this.couponService.create({
+        user_id: user.id,
+        offer_id: offerId,
+        isUsed: true,
+      });
 
       const orderRecord = new Order();
       orderRecord.userId = user.id;
@@ -231,13 +228,13 @@ export class OrderManagementService {
       orderRecord.points = totalAmount;
       orderRecord.couponId = coupon.id;
       orderRecord.quantity = quantity;
-      orderRecord.isRedeemed = true;
 
       await this.orderService.saveOrder(orderRecord);
 
       await this.offerService.increaseOfferSales({
         offer,
         amount: totalAmount,
+        userId: user.id,
       });
 
       // TODO: send notification to user
