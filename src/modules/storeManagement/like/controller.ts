@@ -47,4 +47,13 @@ export class LikeManagementController {
 
     return await this.likeManagementService.getUserLikes(query);
   }
+
+  @UseGuards(AuthGuard())
+  @Get('check')
+  async checkLike(@Query(ValidationPipe) body: LikeDto, @Req() req: any) {
+    const userId = req.user.id;
+    body.userId = userId;
+
+    return await this.likeManagementService.checkIfOfferIsLiked(body);
+  }
 }
