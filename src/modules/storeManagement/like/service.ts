@@ -102,6 +102,7 @@ export class LikeManagementService {
 
       return createdLike;
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 500, {
         cause: new Error(error.message),
