@@ -24,13 +24,15 @@ export class LikeManagementController {
 
   @UseGuards(AuthGuard())
   @Post()
-  async like(@Body(ValidationPipe) body: LikeDto) {
+  async like(@Body(ValidationPipe) body: LikeDto, @Req() req: any) {
+    body.userId = req.user.user.id;
     await this.likeManagementService.createLike(body);
   }
 
   @UseGuards(AuthGuard())
   @Post('unlike')
-  async unlike(@Body(ValidationPipe) body: LikeDto) {
+  async unlike(@Body(ValidationPipe) body: LikeDto, @Req() req: any) {
+    body.userId = req.user.user.id;
     await this.likeManagementService.unlike(body);
   }
 
