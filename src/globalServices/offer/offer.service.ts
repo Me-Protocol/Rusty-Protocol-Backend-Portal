@@ -115,6 +115,7 @@ export class OfferService {
     subCategory,
     brandId,
     sort,
+    search,
   }: {
     page: number;
     limit: number;
@@ -122,6 +123,7 @@ export class OfferService {
     subCategory?: string;
     brandId?: string;
     sort: OfferSort;
+    search: string;
   }) {
     const offersQuery = this.offerRepo
       .createQueryBuilder('offer')
@@ -177,6 +179,12 @@ export class OfferService {
         endDate: new Date(),
       });
       offersQuery.orderBy('offer.endDate', 'ASC');
+    }
+
+    if (search) {
+      offersQuery.andWhere('offer.name ILIKE :search', {
+        search: `%${search}%`,
+      });
     }
 
     offersQuery.skip((page - 1) * limit);

@@ -137,6 +137,7 @@ export class CollectionService {
     page: number,
     limit: number,
     order: string,
+    search: string,
   ) {
     const collectionQuery = this.collectionRepo
       .createQueryBuilder('collection')
@@ -150,6 +151,12 @@ export class CollectionService {
 
     if (brandId) {
       collectionQuery.andWhere('collection.brandId = :brandId', { brandId });
+    }
+
+    if (search) {
+      collectionQuery.andWhere('offer.name ILIKE :search', {
+        search: `%${search}%`,
+      });
     }
 
     collectionQuery.skip((page - 1) * limit).take(limit);

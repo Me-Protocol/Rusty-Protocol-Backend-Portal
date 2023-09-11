@@ -50,4 +50,9 @@ export class FilterDto {
     message: 'Please provide a valid filter',
   })
   filterBy: ProductFilter;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  search: string;
 }

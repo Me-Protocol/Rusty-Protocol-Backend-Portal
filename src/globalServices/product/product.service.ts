@@ -245,6 +245,7 @@ export class ProductService {
     categoryId,
     order,
     filterBy,
+    search,
   }: {
     page: number;
     limit: number;
@@ -252,6 +253,7 @@ export class ProductService {
     brandId?: string;
     categoryId?: string;
     order: string;
+    search: string;
     filterBy?: string;
   }) {
     const products = this.productRepo
@@ -282,6 +284,12 @@ export class ProductService {
         createdAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
       });
       products.orderBy('product.createdAt', 'DESC');
+    }
+
+    if (search) {
+      products.andWhere('offer.name ILIKE :search', {
+        search: `%${search}%`,
+      });
     }
 
     if (order) {

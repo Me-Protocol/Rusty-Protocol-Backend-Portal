@@ -29,6 +29,7 @@ export class CollectionManagementService {
       query.page,
       query.limit,
       query.order,
+      query.search,
     );
   }
 

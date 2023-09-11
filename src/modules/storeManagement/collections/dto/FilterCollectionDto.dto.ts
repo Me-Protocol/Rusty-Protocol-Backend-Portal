@@ -22,4 +22,9 @@ export class FIlterCollectionDto {
     message: 'order must be of this format "name:ASC" or "name:DESC"',
   })
   order: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  search: string;
 }
