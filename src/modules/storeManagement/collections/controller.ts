@@ -65,8 +65,8 @@ export class CollectionManagementController {
   @Get()
   async get(@Query() filterDto: FIlterCollectionDto, @Req() req: any) {
     const user = req.user as User;
-    filterDto.brandId = user.brand.id;
-    filterDto.userId = user.id;
+    filterDto.brandId = user?.brand?.id;
+    filterDto.userId = user?.id;
 
     return await this.collectionManagementService.findAll(filterDto);
   }
