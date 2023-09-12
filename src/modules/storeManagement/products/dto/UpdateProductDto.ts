@@ -9,6 +9,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  IsUrl,
 } from 'class-validator';
 
 export class UpdateProductDto {
@@ -100,4 +101,9 @@ export class UpdateProductDto {
     message: 'Product images must be an array of strings',
   })
   collections: string[];
+
+  @ApiProperty()
+  @IsOptional()
+  @IsUrl()
+  productUrl: string;
 }

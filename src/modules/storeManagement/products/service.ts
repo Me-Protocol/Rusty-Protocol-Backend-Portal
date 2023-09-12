@@ -57,6 +57,7 @@ export class ProductManagementService {
     if (body.inventory) product.inventory = body.inventory;
     if (body.isUnlimited) product.isUnlimited = body.isUnlimited;
     if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
+    if (body.productUrl) product.productUrl = body.productUrl;
     product.productCode = productCode;
 
     const productCollections = [];
@@ -148,6 +149,7 @@ export class ProductManagementService {
     if (body.isUnlimited) product.isUnlimited = body.isUnlimited;
     if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
     if (body.categoryId) product.categoryId = body.categoryId;
+    if (body.productUrl) product.productUrl = body.productUrl;
 
     if (body.productImages && body.productImages.length > 0) {
       // upload images
