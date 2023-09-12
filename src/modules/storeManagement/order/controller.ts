@@ -22,6 +22,8 @@ import { FilterOrderDto } from './dto/FilterOrderDto.dto';
 import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
 import { UseCouponDto } from './dto/UseCouponDto.dto';
 import { ServerGuard } from '@src/middlewares/server-guard';
+import { InAppApiKeyJwtStrategy } from '@src/middlewares/inapp-api-jwt-strategy.middleware';
+import { CompleteOrderDto } from './dto/CompleteOrderDto.dto';
 
 @ApiTags('Order')
 @UseInterceptors(ResponseInterceptor)
@@ -79,6 +81,19 @@ export class OrderManagementController {
     body.brandId = brandId;
 
     return await this.orderManagementService.useCoupon(body);
+  }
+
+  @UseGuards(InAppApiKeyJwtStrategy)
+  @Post('/complete')
+  @UseGuards(ServerGuard)
+  async completeOrder(
+    @Req() req: any,
+    @Body(ValidationPipe) body: CompleteOrderDto,
+  ) {
+    return await this.orderManagementService.completeOrder(
+      body.orderId,
+      body.taskId,
+    );
   }
 
   @Get('/redeem/confirm-redeem-mock')
