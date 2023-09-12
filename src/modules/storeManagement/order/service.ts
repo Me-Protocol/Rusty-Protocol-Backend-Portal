@@ -277,7 +277,7 @@ export class OrderManagementService {
         const customer = await this.customerService.getByUserId(order.userId);
 
         if (status !== 'CheckPending') {
-          if (status === 'success') {
+          if (status === 'ExecSuccess') {
             await this.offerService.increaseOfferSales({
               offer,
               amount: order.points,
