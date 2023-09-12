@@ -496,9 +496,9 @@ export class SyncRewardService {
         spend = await mutate(params);
       }
 
-      console.log(spend);
-
-      return spend?.data;
+      return {
+        data: spend?.data,
+      };
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400, {
