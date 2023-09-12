@@ -486,13 +486,21 @@ export class OfferService {
     amount: number;
     userId: string;
   }) {
+    const totalSales = Number(offer.totalSales) + Number(amount);
+    const totalSalesParse = totalSales.toFixed(2);
+
     offer.totalOrders = offer.totalOrders + 1;
-    offer.totalSales = offer.totalSales + amount;
+    offer.totalSales = Number(totalSalesParse);
 
     // update customer total redeem
     const customer = await this.customerService.getByUserId(userId);
+
+    const totalRedemptionAmount =
+      Number(customer.totalRedemptionAmount) + Number(amount);
+    const totalRedemptionAmountParse = totalRedemptionAmount.toFixed(3);
+
     customer.totalRedeemed += 1;
-    customer.totalRedemptionAmount += amount;
+    customer.totalRedemptionAmount = Number(totalRedemptionAmountParse);
 
     await this.offerRepo.save(offer);
 
