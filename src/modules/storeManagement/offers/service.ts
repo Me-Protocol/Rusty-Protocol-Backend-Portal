@@ -192,6 +192,7 @@ export class OfferManagementService {
         query.status,
         query.orderBy,
         query.order,
+        query.search,
       );
     } catch (error) {
       throw new HttpException(error.message, 400);

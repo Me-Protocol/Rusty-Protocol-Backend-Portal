@@ -108,4 +108,9 @@ export class Product extends BaseEntity {
     },
   })
   collections: Collection[];
+
+  @Column({
+    default: 'N/A',
+  })
+  productUrl: string;
 }

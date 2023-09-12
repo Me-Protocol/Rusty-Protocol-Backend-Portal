@@ -1,10 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { CouponService } from './coupon.service';
-import { pagination } from '@src/utils/types/pagination';
 import { OrderFilter } from '@src/utils/enums/OrderFilter';
+import { StatusType } from '@src/utils/enums/Transactions';
 
 @Injectable()
 export class OrderService {
@@ -68,6 +68,23 @@ export class OrderService {
   async getOrderById(userId: string, id: string) {
     return await this.orderRepo.findOne({
       where: { id: id, userId: userId },
+      relations: ['coupon'],
+    });
+  }
+
+  async getOrderByOrderId(orderId: string) {
+    return await this.orderRepo.findOne({
+      where: { id: orderId },
+      relations: ['coupon'],
+    });
+  }
+
+  async getPendingOrders() {
+    return await this.orderRepo.find({
+      where: {
+        status: StatusType.PROCESSING,
+        taskId: Not(IsNull()),
+      },
       relations: ['coupon'],
     });
   }

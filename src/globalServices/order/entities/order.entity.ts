@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { Coupon } from './coupon.entity';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
+import { StatusType } from '@src/utils/enums/Transactions';
 
 @Entity('order')
 export class Order extends BaseEntity {
@@ -52,4 +53,13 @@ export class Order extends BaseEntity {
 
   @OneToMany(() => Notification, (notification) => notification.order)
   notifications: Notification[];
+
+  @Column({ nullable: true })
+  taskId: string;
+
+  @Column({
+    enum: StatusType,
+    default: StatusType.PROCESSING,
+  })
+  status: StatusType;
 }

@@ -154,7 +154,7 @@ export class CollectionService {
     }
 
     if (search) {
-      collectionQuery.andWhere('offer.name ILIKE :search', {
+      collectionQuery.andWhere('offer.name LIKE :search', {
         search: `%${search}%`,
       });
     }

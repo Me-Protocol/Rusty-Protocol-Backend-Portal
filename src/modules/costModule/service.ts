@@ -39,26 +39,6 @@ export class CostModuleManagementService {
     return 'ok';
   }
 
-  async checkTransactionStatusWithRetry({
-    attempt,
-    taskId,
-  }: {
-    taskId: string;
-    attempt?: number;
-  }): Promise<string> {
-    const apiUrl = process.env.GELATO_RELAYER_STATUS_URL + taskId;
-
-    try {
-      const response = await axios.get(apiUrl);
-      const status = response.data.task.taskState;
-
-      return status;
-    } catch (error) {
-      logger.error(error);
-      throw new Error('Failed to check transaction status.');
-    }
-  }
-
   async createPaymentRequestApi(body: PaymentRequestDto) {
     try {
       const { minimumBalanceApi } = this.settingsService.getCostSettings();
@@ -144,10 +124,10 @@ export class CostModuleManagementService {
 
         console.log(transactionHash);
 
-        const status = await this.checkTransactionStatusWithRetry({
-          taskId: relayResponse.taskId,
-          attempt: 1,
-        });
+        const status =
+          await this.costModuleService.checkTransactionStatusWithRetry({
+            taskId: relayResponse.taskId,
+          });
 
         req.sourceReference = relayResponse.taskId;
         await this.paymentRequestService.save(req);

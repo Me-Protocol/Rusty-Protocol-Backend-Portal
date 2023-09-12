@@ -108,6 +108,8 @@ import { KeyManagementService } from './globalServices/key-management/key-manage
 import { KeyIdentifier } from './globalServices/reward/entities/keyIdentifier.entity';
 import { BrandCustomer } from './globalServices/brand/entities/brand_customer.entity';
 import { Notification } from './globalServices/notification/entities/notification.entity';
+import { NotificationController } from './modules/notification/controller';
+import { NotificationService } from './globalServices/notification/notification.service';
 
 @Module({
   imports: [
@@ -191,6 +193,7 @@ import { Notification } from './globalServices/notification/entities/notificatio
     OrderManagementController,
     CostManagementController,
     PaymentModuleController,
+    NotificationController,
   ],
   providers: [
     ElasticIndex,
@@ -244,6 +247,7 @@ import { Notification } from './globalServices/notification/entities/notificatio
     SettingsService,
     BrandSubscriptionService,
     KeyManagementService,
+    NotificationService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

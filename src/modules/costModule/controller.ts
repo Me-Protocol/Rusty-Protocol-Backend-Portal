@@ -22,6 +22,7 @@ import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware
 import { SetAutoTopupAmountDto } from './dto/SetAutoTopupAmountDto.dto';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { ManualTopupDto } from './dto/ManualTopupDto.dto';
+import { CostModuleService } from '@src/globalServices/costManagement/costModule.service';
 
 @ApiTags('Cost Module')
 @UseInterceptors(ResponseInterceptor)
@@ -29,6 +30,7 @@ import { ManualTopupDto } from './dto/ManualTopupDto.dto';
 export class CostManagementController {
   constructor(
     private readonly costModuleManagementService: CostModuleManagementService,
+    private readonly costModuleService: CostModuleService,
   ) {}
 
   @UseGuards(ApiKeyJwtStrategy)
@@ -56,12 +58,9 @@ export class CostManagementController {
   @UseGuards(ApiKeyJwtStrategy)
   @Get('/request/check-status/:taskId')
   async checkStatus(@Req() req: any, @Param('taskId') taskId: string) {
-    return await this.costModuleManagementService.checkTransactionStatusWithRetry(
-      {
-        taskId: taskId,
-        attempt: 1,
-      },
-    );
+    return await this.costModuleService.checkTransactionStatusWithRetry({
+      taskId: taskId,
+    });
   }
 
   @UseGuards(BrandJwtStrategy)

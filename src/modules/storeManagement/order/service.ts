@@ -11,6 +11,13 @@ import { UseCouponDto } from './dto/UseCouponDto.dto';
 import { logger } from '@src/globalServices/logger/logger.service';
 import { BrandService } from '@src/globalServices/brand/brand.service';
 import { CustomerService } from '@src/globalServices/customer/customer.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { CostModuleService } from '@src/globalServices/costManagement/costModule.service';
+import { NotificationService } from '@src/globalServices/notification/notification.service';
+import { StatusType } from '@src/utils/enums/Transactions';
+import { Notification } from '@src/globalServices/notification/entities/notification.entity';
+import { NotificationType } from '@src/utils/enums/notification.enum';
+import { emailButton } from '@src/utils/helpers/emailButton';
 
 @Injectable()
 export class OrderManagementService {
@@ -22,6 +29,8 @@ export class OrderManagementService {
     private readonly orderService: OrderService,
     private readonly brandService: BrandService,
     private readonly customerService: CustomerService,
+    private readonly costModuleService: CostModuleService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   randomCode() {
@@ -216,34 +225,130 @@ export class OrderManagementService {
 
       const totalAmount = amount * quantity;
 
-      const coupon = await this.couponService.create({
-        user_id: user.id,
-        offer_id: offerId,
-        isUsed: true,
-      });
-
       const orderRecord = new Order();
       orderRecord.userId = user.id;
       orderRecord.offerId = offerId;
       orderRecord.points = totalAmount;
-      orderRecord.couponId = coupon.id;
       orderRecord.quantity = quantity;
 
-      await this.orderService.saveOrder(orderRecord);
-
-      await this.offerService.increaseOfferSales({
-        offer,
-        amount: totalAmount,
-        userId: user.id,
-      });
-
-      // TODO: send notification to user
-      return {
-        message: 'spend',
-      };
+      return await this.orderService.saveOrder(orderRecord);
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async completeOrder(orderId: string, taskId: string) {
+    const order = await this.orderService.getOrderByOrderId(orderId);
+
+    if (!order) {
+      throw new HttpException('Order not found', HttpStatus.NOT_FOUND);
+    }
+
+    order.taskId = taskId;
+
+    return await this.orderService.saveOrder(order);
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async checkOrderStatus() {
+    const pendingOrders = await this.orderService.getPendingOrders();
+
+    if (pendingOrders.length > 0) {
+      for (const order of pendingOrders) {
+        const status =
+          await this.costModuleService.checkTransactionStatusWithRetry({
+            taskId: order.taskId,
+          });
+
+        const offer = await this.offerService.getOfferById(order.offerId);
+        const customer = await this.customerService.getByUserId(order.userId);
+
+        if (status !== 'CheckPending') {
+          if (status === 'success') {
+            await this.offerService.increaseOfferSales({
+              offer,
+              amount: order.points,
+              userId: order.userId,
+            });
+
+            const coupon = await this.couponService.create({
+              user_id: order.userId,
+              offer_id: order.offerId,
+            });
+
+            order.couponId = coupon.id;
+            order.status = StatusType.SUCCEDDED;
+
+            await this.orderService.saveOrder(order);
+
+            //  Send notification to user
+
+            const notification = new Notification();
+            notification.userId = order.userId;
+            notification.message = `Congratulations! You have successfully redeemed ${offer.name} from ${offer.brand.name}`;
+            notification.type = NotificationType.ORDER;
+            notification.title = 'Order Redeemed';
+            notification.orderId = order.id;
+            notification.emailMessage = /* html */ `
+              <div>
+                <p>Hello ${customer?.name},</p>
+                <p>Congratulations! You have successfully redeemed ${
+                  offer.name
+                } from ${offer.brand.name}</p> 
+                <p>Offer Details</p>
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                  <img src="${
+                    offer.offerImages?.[0].url
+                  }" alt="offer image" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; margin-bottom: 10px;" />
+                  <p style="font-size: 20px; font-weight: bold;">${
+                    offer.name
+                  }</p>
+                  <p style="font-size: 16px; font-weight: bold;">${
+                    offer.brand.name
+                  }</p>
+                </div>
+                <p>Redemption Details</p>
+                <p>Coupon Code: ${coupon.code}</p>
+                <p>Points: ${order.points}</p>
+                <p>Quantity: ${order.quantity}</p>
+                ${emailButton({
+                  text: 'Redeem now',
+                  url: `${offer.product.productUrl}?coupon=${coupon.code}`,
+                })}
+             `;
+
+            await this.notificationService.createNotification(notification);
+          } else {
+            order.status = StatusType.FAILED;
+
+            await this.orderService.saveOrder(order);
+
+            //  Send notification to user
+
+            const notification = new Notification();
+            notification.userId = order.userId;
+            notification.message = `Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed`;
+            notification.type = NotificationType.ORDER;
+            notification.title = 'Order Failed';
+            notification.orderId = order.id;
+            notification.emailMessage = /* html */ `
+              <div>
+                <p>Hello ${customer?.name},</p>
+                <p>Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed</p>
+                <p>Offer Details</p>
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                  <img src="${offer.offerImages?.[0].url}" alt="offer image" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; margin-bottom: 10px;" />
+                  <p style="font-size: 20px; font-weight: bold;">${offer.name}</p>
+                  <p style="font-size: 16px; font-weight: bold;">${offer.brand.name}</p>
+                </div>
+                <p>Redemption Details</p>
+                <p>Points: ${order.points}</p>
+                <p>Quantity: ${order.quantity}</p>
+              `;
+          }
+        }
+      }
     }
   }
 }

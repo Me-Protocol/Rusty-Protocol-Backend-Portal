@@ -287,7 +287,7 @@ export class ProductService {
     }
 
     if (search) {
-      products.andWhere('offer.name ILIKE :search', {
+      products.andWhere('offer.name LIKE :search', {
         search: `%${search}%`,
       });
     }

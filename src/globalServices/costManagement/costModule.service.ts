@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CostBatch } from './entities/costBatch.entity';
 import { CostCollection } from './entities/costCollection';
+import axios from 'axios';
+import { logger } from '../logger/logger.service';
 
 @Injectable()
 export class CostModuleService {
@@ -56,5 +58,23 @@ export class CostModuleService {
 
   async saveCostCollection(costCollection: CostCollection) {
     return await this.costCollectionRepo.save(costCollection);
+  }
+
+  async checkTransactionStatusWithRetry({
+    taskId,
+  }: {
+    taskId: string;
+  }): Promise<string> {
+    const apiUrl = process.env.GELATO_RELAYER_STATUS_URL + taskId;
+
+    try {
+      const response = await axios.get(apiUrl);
+      const status = response.data.task.taskState;
+
+      return status;
+    } catch (error) {
+      logger.error(error);
+      throw new Error('Failed to check transaction status.');
+    }
   }
 }
