@@ -38,16 +38,38 @@ export class OrderService {
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.coupon', 'coupon')
       .leftJoinAndSelect('order.offer', 'offer')
+      .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.reward', 'reward')
-      .leftJoinAndSelect('reward.brand', 'brand');
+      .leftJoinAndSelect('reward.brand', 'brand')
+      .orderBy('order.createdAt', 'DESC');
 
     if (filterBy === OrderFilter.REDEEMED) {
       orderQuery.andWhere('order.isRedeemed = :isRedeemed', {
         isRedeemed: true,
       });
-    } else if (filterBy === OrderFilter.UNREDEEMED) {
+    }
+
+    if (filterBy === OrderFilter.UNREDEEMED) {
       orderQuery.andWhere('order.isRedeemed = :isRedeemed', {
         isRedeemed: false,
+      });
+    }
+
+    if (filterBy === OrderFilter.PROCESSING) {
+      orderQuery.andWhere('order.status = :status', {
+        status: StatusType.PROCESSING,
+      });
+    }
+
+    if (filterBy === OrderFilter.SUCCEDDED) {
+      orderQuery.andWhere('order.status = :status', {
+        status: StatusType.SUCCEDDED,
+      });
+    }
+
+    if (filterBy === OrderFilter.FAILED) {
+      orderQuery.andWhere('order.status = :status', {
+        status: StatusType.FAILED,
       });
     }
 
