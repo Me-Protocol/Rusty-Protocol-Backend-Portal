@@ -18,6 +18,7 @@ import { StatusType } from '@src/utils/enums/Transactions';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 import { NotificationType } from '@src/utils/enums/notification.enum';
 import { emailButton } from '@src/utils/helpers/emailButton';
+import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 
 @Injectable()
 export class OrderManagementService {
@@ -31,6 +32,7 @@ export class OrderManagementService {
     private readonly customerService: CustomerService,
     private readonly costModuleService: CostModuleService,
     private readonly notificationService: NotificationService,
+    private readonly fiatWalletService: FiatWalletService,
   ) {}
 
   randomCode() {
@@ -218,6 +220,16 @@ export class OrderManagementService {
       if (offer.endDate < new Date()) {
         throw new Error('Offer has expired');
       }
+
+      const canPayCost = await this.fiatWalletService.checkCanPayCost(
+        offer.brandId,
+      );
+
+      // if (!canPayCost) {
+      //   throw new Error('Insufficient balance');
+      // }
+      // TODO: uncomment this
+
       const user = await this.userService.getUserById(userId);
 
       const discount = (offer.tokens * offer.discountPercentage) / 100;

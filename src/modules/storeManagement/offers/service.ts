@@ -195,6 +195,8 @@ export class OfferManagementService {
         query.search,
       );
     } catch (error) {
+      console.log(error);
+      logger.error(error);
       throw new HttpException(error.message, 400);
     }
   }

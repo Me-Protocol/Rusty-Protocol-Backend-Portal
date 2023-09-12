@@ -496,9 +496,7 @@ export class SyncRewardService {
         spend = await mutate(params);
       }
 
-      return {
-        message: 'Transaction signed',
-      };
+      return spend?.data;
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400, {
