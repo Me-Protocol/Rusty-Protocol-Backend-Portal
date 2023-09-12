@@ -108,7 +108,7 @@ export class OrderManagementController {
       idOnBrandSite: '5f88662dbfd923434345',
     });
 
-    // redirect to brand site
+    // redirect to brand sites
     return res.redirect('http://localhost:3000/test?success=true');
   }
 }
