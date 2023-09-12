@@ -11,7 +11,12 @@ export class FilterOrderDto {
   @IsString()
   limit: number;
 
-  @ApiProperty()
+  @ApiProperty({
+    enum: OrderFilter,
+    enumName: 'OrderFilter',
+    description: 'Filter by status',
+    required: false,
+  })
   @IsOptional()
   @IsEnum(OrderFilter, {
     message: 'Please provide a valid status',
