@@ -143,7 +143,10 @@ export class CollectionService {
       .createQueryBuilder('collection')
       .leftJoinAndSelect('collection.products', 'products')
       .leftJoinAndSelect('products.productImages', 'productImages')
-      .leftJoinAndSelect('collection.brand', 'brand');
+      .leftJoinAndSelect('collection.brand', 'brand')
+      .leftJoinAndSelect('collection.likes', 'likes')
+      .leftJoinAndSelect('likes.offer', 'offer')
+      .leftJoinAndSelect('offer.offerImages', 'offerImages');
 
     if (userId) {
       collectionQuery.andWhere('collection.userId = :userId', { userId });
@@ -205,7 +208,13 @@ export class CollectionService {
         userId,
         brandId,
       },
-      relations: ['products', 'products.productImages'],
+      relations: [
+        'products',
+        'products.productImages',
+        'likes',
+        'likes.offer',
+        'likes.offer.offerImages',
+      ],
     });
   }
 
