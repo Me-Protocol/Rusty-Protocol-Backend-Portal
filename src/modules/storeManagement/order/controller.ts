@@ -84,8 +84,8 @@ export class OrderManagementController {
   }
 
   @UseGuards(InAppApiKeyJwtStrategy)
-  @Post('/complete')
   @UseGuards(ServerGuard)
+  @Post('/complete')
   async completeOrder(
     @Req() req: any,
     @Body(ValidationPipe) body: CompleteOrderDto,

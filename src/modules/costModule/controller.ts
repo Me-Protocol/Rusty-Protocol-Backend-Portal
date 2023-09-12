@@ -23,6 +23,7 @@ import { SetAutoTopupAmountDto } from './dto/SetAutoTopupAmountDto.dto';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { ManualTopupDto } from './dto/ManualTopupDto.dto';
 import { CostModuleService } from '@src/globalServices/costManagement/costModule.service';
+import { ServerGuard } from '@src/middlewares/server-guard';
 
 @ApiTags('Cost Module')
 @UseInterceptors(ResponseInterceptor)
@@ -46,6 +47,7 @@ export class CostManagementController {
   }
 
   @UseGuards(InAppApiKeyJwtStrategy)
+  @UseGuards(ServerGuard)
   @Post('/request/in-app')
   async createPaymentRequestInApp(
     @Body(ValidationPipe) body: PaymentRequestInAppDto,
