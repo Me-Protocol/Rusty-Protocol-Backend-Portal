@@ -12,11 +12,18 @@ import {
 import { Coupon } from './coupon.entity';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 import { StatusType } from '@src/utils/enums/Transactions';
+import { OrderPaymentType } from '@src/utils/enums/OrderPaymentType';
 
 @Entity('order')
 export class Order extends BaseEntity {
   @Column()
   userId: string;
+
+  @Column({
+    unique: true,
+    default: () => `substr(uuid_generate_v4()::text, 1, 6)`,
+  })
+  orderCode: string;
 
   @Column()
   offerId: string;
@@ -62,4 +69,11 @@ export class Order extends BaseEntity {
     default: StatusType.PROCESSING,
   })
   status: StatusType;
+
+  @Column({
+    type: 'enum',
+    enum: OrderPaymentType,
+    default: OrderPaymentType.TOKEN,
+  })
+  paymentType: OrderPaymentType;
 }

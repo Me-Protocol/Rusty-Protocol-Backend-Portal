@@ -8,6 +8,7 @@ import { ProductImage } from '../product/entities/productImage.entity';
 import { ViewsService } from '../views/view.service';
 import { OfferFilter, OfferSort } from '@src/utils/enums/OfferFiilter';
 import { CustomerService } from '../customer/customer.service';
+import { ProductService } from '../product/product.service';
 
 @Injectable()
 export class OfferService {
@@ -21,6 +22,7 @@ export class OfferService {
     private readonly userService: UserService,
     private readonly viewService: ViewsService,
     private readonly customerService: CustomerService,
+    private readonly productService: ProductService,
   ) {}
 
   async saveOffer(offer: Offer) {
@@ -486,26 +488,36 @@ export class OfferService {
     amount: number;
     userId: string;
   }) {
-    const totalSales = Number(offer.totalSales) + Number(amount);
-    const totalSalesParse = totalSales.toFixed(2);
+    try {
+      const totalSales = Number(offer.totalSales) + Number(amount);
+      const totalSalesParse = totalSales.toFixed(2);
 
-    offer.totalOrders = offer.totalOrders + 1;
-    offer.totalSales = Number(totalSalesParse);
+      offer.totalOrders = offer.totalOrders + 1;
+      offer.totalSales = +totalSalesParse;
+      offer.inventory = -1;
 
-    // update customer total redeem
-    const customer = await this.customerService.getByUserId(userId);
+      const product = await this.productService.findOneProduct(offer.productId);
+      product.inventory = -1;
 
-    const totalRedemptionAmount =
-      Number(customer.totalRedemptionAmount) + Number(amount);
-    const totalRedemptionAmountParse = totalRedemptionAmount.toFixed(3);
+      await this.productService.saveProduct(product);
 
-    customer.totalRedeemed += 1;
-    customer.totalRedemptionAmount = Number(totalRedemptionAmountParse);
+      // update customer total redeem
+      const customer = await this.customerService.getByUserId(userId);
 
-    await this.offerRepo.save(offer);
+      const totalRedemptionAmount =
+        Number(customer.totalRedemptionAmount) + Number(amount);
+      const totalRedemptionAmountParse = totalRedemptionAmount.toFixed(3);
 
-    await this.customerService.save(customer);
+      customer.totalRedeemed += 1;
+      customer.totalRedemptionAmount = +totalRedemptionAmountParse;
 
-    return 'done';
+      await this.offerRepo.save(offer);
+
+      await this.customerService.save(customer);
+
+      return 'done';
+    } catch (error) {
+      console.log(error);
+    }
   }
 }

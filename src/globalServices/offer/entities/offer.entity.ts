@@ -49,6 +49,11 @@ export class Offer extends BaseEntity {
   offerImages: ProductImage[];
 
   @Column({
+    default: 0,
+  })
+  inventory: number;
+
+  @Column({
     type: 'decimal',
     precision: 10,
     scale: 2,
