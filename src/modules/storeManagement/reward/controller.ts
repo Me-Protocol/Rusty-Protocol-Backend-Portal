@@ -4,7 +4,6 @@ import {
   UseInterceptors,
   UseGuards,
   ValidationPipe,
-  Put,
   Post,
   Param,
   Get,
@@ -19,7 +18,6 @@ import { ApiTags } from '@nestjs/swagger';
 import { RewardManagementService } from './service';
 import { CreateRewardDto } from './dto/createRewardDto.dto';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
-import { UpdateRewardDto } from './dto/updateRewardDto';
 import { FilterRewardDto } from './dto/filterRewardDto.dto';
 import { UpdateBatchDto } from './dto/updateBatchDto';
 import { GetCustomerPointDto } from './dto/getCustomerPointDto.dto';
@@ -27,7 +25,6 @@ import {
   DistributeBatchDto,
   DistributeBatchWithApiKeyDto,
 } from './dto/distributeBatch.dto';
-import { SpendRewardDto } from './dto/spendRewardDto.dto';
 import { InAppApiKeyJwtStrategy } from '@src/middlewares/inapp-api-jwt-strategy.middleware';
 import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
 import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';

@@ -94,7 +94,7 @@ export class OrderService {
   async getOrderById(userId: string, id: string) {
     return await this.orderRepo.findOne({
       where: { id: id, userId: userId },
-      relations: ['coupon'],
+      relations: ['coupon', 'offer', 'offer.reward', 'offer.offerImages'],
     });
   }
 
