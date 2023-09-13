@@ -34,6 +34,7 @@ import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware'
 import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
 import { PushTransactionDto } from './dto/PushTransactionDto.dto';
 import { ServerGuard } from '@src/middlewares/server-guard';
+import { FilterRegistryHistoryDto } from './dto/filterRegistryHistoryDto.dto';
 
 @ApiTags('Reward')
 @UseInterceptors(ResponseInterceptor)
@@ -222,5 +223,17 @@ export class RewardManagementController {
       query.identifier,
       query.rewardId,
     );
+  }
+
+  @UseGuards(AuthGuard())
+  @Get('registry')
+  async getRegistry(
+    @Query(ValidationPipe) query: FilterRegistryHistoryDto,
+    @Req() req: any,
+  ) {
+    const userId = req.user.id;
+    query.userId = userId;
+
+    return await this.rewardManagementService.getRegistryHistory(query);
   }
 }

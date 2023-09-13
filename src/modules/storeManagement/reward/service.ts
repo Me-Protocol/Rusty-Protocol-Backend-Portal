@@ -35,6 +35,7 @@ import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
 import { ethers } from 'ethers';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
+import { FilterRegistryHistoryDto } from './dto/filterRegistryHistoryDto.dto';
 
 @Injectable()
 export class RewardManagementService {
@@ -521,6 +522,15 @@ export class RewardManagementService {
     }
 
     return register;
+  }
+
+  async getRegistryHistory(query: FilterRegistryHistoryDto) {
+    return await this.syncService.getRegistryHistory({
+      startDate: query.startDate,
+      endDate: query.endDate,
+      userId: query.userId,
+      transactionsType: query.transactionsType,
+    });
   }
 
   async getDistributionUsersAndAmount({

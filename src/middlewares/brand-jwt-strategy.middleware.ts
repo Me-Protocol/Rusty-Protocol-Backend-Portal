@@ -51,12 +51,6 @@ export class BrandJwtStrategy implements CanActivate {
         throw new UnauthorizedException('Unauthorized. Please login');
       }
 
-      if (user.suspended) {
-        throw new UnauthorizedException(
-          'You account is currently suspended. Please contact support',
-        );
-      }
-
       if (user.banned) {
         throw new UnauthorizedException(
           'You account has been banned. Please contact support',
@@ -67,10 +61,6 @@ export class BrandJwtStrategy implements CanActivate {
         throw new UnauthorizedException(
           'You account is not verified. Please verify your account',
         );
-      }
-
-      if (!user.password) {
-        throw new UnauthorizedException('Please create a password');
       }
 
       const deviceToken = await this.userService.getDeviceById(id, device);

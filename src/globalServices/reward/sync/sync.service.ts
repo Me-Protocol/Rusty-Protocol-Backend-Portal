@@ -605,4 +605,41 @@ export class SyncRewardService {
   //     },
   //   });
   // }
+
+  async getRegistryHistory({
+    userId,
+    startDate,
+    endDate,
+    transactionsType,
+  }: {
+    userId: string;
+    startDate: Date;
+    endDate: Date;
+    transactionsType: TransactionsType;
+  }) {
+    const registryQuery =
+      this.rewardRegistryRepo.createQueryBuilder('registry_history');
+
+    registryQuery.where('registry_history.rewardRegistry.userId = :userId', {
+      userId,
+    });
+
+    if (transactionsType) {
+      registryQuery.andWhere(
+        'registry_history.transactionType = :transactionsType',
+        { transactionsType },
+      );
+    }
+
+    if (startDate && endDate) {
+      registryQuery.andWhere(
+        'registry_history.createdAt BETWEEN :startDate AND :endDate',
+        { startDate, endDate },
+      );
+    }
+
+    const registries = await registryQuery.getMany();
+
+    return registries;
+  }
 }
