@@ -41,6 +41,10 @@ export class OrderService {
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.reward', 'reward')
       .leftJoinAndSelect('reward.brand', 'brand')
+      .leftJoinAndSelect('offer.product', 'product')
+      .leftJoinAndSelect('product.productImages', 'productImages')
+      .leftJoinAndSelect('product.variants', 'variants')
+      .leftJoinAndSelect('product.collections', 'collections')
       .orderBy('order.createdAt', 'DESC');
 
     if (filterBy === OrderFilter.REDEEMED) {
