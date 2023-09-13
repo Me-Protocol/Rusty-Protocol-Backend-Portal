@@ -29,8 +29,8 @@ export class PaymentRequestService {
       currentPage: page,
       limit: limit,
       totalPage: Math.ceil(count / limit),
-      nextPage: Math.ceil(count / limit) > page ? page + 1 : null,
-      previousPage: page === 1 ? null : page - 1,
+      nextPage: Math.ceil(count / limit) > page ? Number(page) + 1 : null,
+      previousPage: page === 1 ? null : Number(page) - 1,
     };
 
     return { requests, pagination };
