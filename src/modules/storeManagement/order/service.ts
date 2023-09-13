@@ -276,35 +276,32 @@ export class OrderManagementService {
         const offer = await this.offerService.getOfferById(order.offerId);
         const customer = await this.customerService.getByUserId(order.userId);
 
-        if (status !== 'CheckPending') {
-          console.log('status', status);
+        if (status === 'ExecSuccess') {
+          await this.offerService.increaseOfferSales({
+            offer,
+            amount: order.points,
+            userId: order.userId,
+          });
 
-          if (status === 'ExecSuccess') {
-            await this.offerService.increaseOfferSales({
-              offer,
-              amount: order.points,
-              userId: order.userId,
-            });
+          const coupon = await this.couponService.create({
+            user_id: order.userId,
+            offer_id: order.offerId,
+          });
 
-            const coupon = await this.couponService.create({
-              user_id: order.userId,
-              offer_id: order.offerId,
-            });
+          order.couponId = coupon.id;
+          order.status = StatusType.SUCCEDDED;
 
-            order.couponId = coupon.id;
-            order.status = StatusType.SUCCEDDED;
+          await this.orderService.saveOrder(order);
 
-            await this.orderService.saveOrder(order);
+          //  Send notification to user
 
-            //  Send notification to user
-
-            const notification = new Notification();
-            notification.userId = order.userId;
-            notification.message = `Congratulations! You have successfully redeemed ${offer.name} from ${offer.brand.name}`;
-            notification.type = NotificationType.ORDER;
-            notification.title = 'Order Redeemed';
-            notification.orderId = order.id;
-            notification.emailMessage = /* html */ `
+          const notification = new Notification();
+          notification.userId = order.userId;
+          notification.message = `Congratulations! You have successfully redeemed ${offer.name} from ${offer.brand.name}`;
+          notification.type = NotificationType.ORDER;
+          notification.title = 'Order Redeemed';
+          notification.orderId = order.id;
+          notification.emailMessage = /* html */ `
               <div>
                 <p>Hello ${customer?.name},</p>
                 <p>Congratulations! You have successfully redeemed ${
@@ -332,21 +329,21 @@ export class OrderManagementService {
                 })}
              `;
 
-            await this.notificationService.createNotification(notification);
-          } else {
-            order.status = StatusType.FAILED;
+          await this.notificationService.createNotification(notification);
+        } else if (status === 'ExecFailed') {
+          order.status = StatusType.FAILED;
 
-            await this.orderService.saveOrder(order);
+          await this.orderService.saveOrder(order);
 
-            //  Send notification to user
+          //  Send notification to user
 
-            const notification = new Notification();
-            notification.userId = order.userId;
-            notification.message = `Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed`;
-            notification.type = NotificationType.ORDER;
-            notification.title = 'Order Failed';
-            notification.orderId = order.id;
-            notification.emailMessage = /* html */ `
+          const notification = new Notification();
+          notification.userId = order.userId;
+          notification.message = `Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed`;
+          notification.type = NotificationType.ORDER;
+          notification.title = 'Order Failed';
+          notification.orderId = order.id;
+          notification.emailMessage = /* html */ `
               <div>
                 <p>Hello ${customer?.name},</p>
                 <p>Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed</p>
@@ -360,7 +357,6 @@ export class OrderManagementService {
                 <p>Points: ${order.points}</p>
                 <p>Quantity: ${order.quantity}</p>
               `;
-          }
         }
       }
     }
