@@ -5,7 +5,6 @@ import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Upload')
-@UseInterceptors(ResponseInterceptor)
 @Controller('upload')
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}

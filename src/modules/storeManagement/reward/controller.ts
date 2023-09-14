@@ -34,7 +34,6 @@ import { ServerGuard } from '@src/middlewares/server-guard';
 import { FilterRegistryHistoryDto } from './dto/filterRegistryHistoryDto.dto';
 
 @ApiTags('Reward')
-@UseInterceptors(ResponseInterceptor)
 @Controller('reward')
 export class RewardManagementController {
   constructor(

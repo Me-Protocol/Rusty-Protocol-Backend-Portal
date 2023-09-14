@@ -5,6 +5,7 @@ import { Order } from './entities/order.entity';
 import { CouponService } from './coupon.service';
 import { OrderFilter } from '@src/utils/enums/OrderFilter';
 import { StatusType } from '@src/utils/enums/Transactions';
+import { FilterOrderDto } from '@src/modules/storeManagement/order/dto/FilterOrderDto.dto';
 
 @Injectable()
 export class OrderService {
@@ -28,19 +29,9 @@ export class OrderService {
     });
   }
 
-  async getOrders({
-    limit = 10,
-    page,
-    filterBy,
-    userId,
-    brandId,
-  }: {
-    userId: string;
-    page: number;
-    limit: number;
-    filterBy: OrderFilter;
-    brandId: string;
-  }) {
+  async getOrders(query: FilterOrderDto) {
+    const { limit, page, filterBy, userId, brandId } = query;
+
     const orderQuery = this.orderRepo
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.coupon', 'coupon')
@@ -48,14 +39,17 @@ export class OrderService {
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.reward', 'reward')
       .leftJoinAndSelect('reward.brand', 'brand')
-      .leftJoinAndSelect('offer.product', 'product')
-      .leftJoinAndSelect('product.productImages', 'productImages')
-      .leftJoinAndSelect('product.variants', 'variants')
-      .leftJoinAndSelect('product.collections', 'collections')
       .orderBy('order.createdAt', 'DESC');
 
     if (brandId) {
-      orderQuery.where('order.offer.brandId = :brandId', { brandId: brandId });
+      orderQuery
+        .leftJoinAndSelect('offer.product', 'product')
+        .leftJoinAndSelect('product.productImages', 'productImages')
+        .leftJoinAndSelect('product.variants', 'variants')
+        .leftJoinAndSelect('product.collections', 'collections')
+        .andWhere('order.brandId = :brandId', {
+          brandId: brandId,
+        });
     }
 
     if (userId) {
@@ -92,11 +86,10 @@ export class OrderService {
       });
     }
 
-    const orders = await orderQuery
+    const [orders, total] = await orderQuery
       .skip((page - 1) * limit)
       .take(limit)
-      .getMany();
-    const total = await this.orderRepo.count();
+      .getManyAndCount();
 
     return {
       orders,

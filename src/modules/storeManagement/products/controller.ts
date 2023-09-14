@@ -21,7 +21,6 @@ import { ApiTags } from '@nestjs/swagger';
 import { UpdateProductDto } from './dto/UpdateProductDto';
 
 ApiTags('Products');
-@UseInterceptors(ResponseInterceptor)
 @Controller('store/product')
 export class ProductManagementController {
   constructor(

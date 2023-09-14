@@ -24,7 +24,6 @@ import { UpdateCollectionDto } from './dto/UpdateCollectionDto.dto';
 import { FIlterCollectionDto } from './dto/FilterCollectionDto.dto';
 
 ApiTags('Collection');
-@UseInterceptors(ResponseInterceptor)
 @Controller('collections')
 export class CollectionManagementController {
   constructor(

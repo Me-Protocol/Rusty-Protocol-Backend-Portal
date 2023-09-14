@@ -18,7 +18,6 @@ import { FollowDto } from './dto/FollowDto.dto';
 import { FilteUserFollowDto, FilterFollowDto } from './dto/FilterFollowDto.dto';
 
 @ApiTags('Followers')
-@UseInterceptors(ResponseInterceptor)
 @Controller('follow')
 export class FollowManagementController {
   constructor(

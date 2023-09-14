@@ -26,7 +26,6 @@ import { CreateMemberDto } from './dto/CreateMemberDto.dto';
 import { FilterCustomerDto } from './dto/FilterCustomerDto.dto';
 
 @ApiTags('Brand')
-@UseInterceptors(ResponseInterceptor)
 @Controller('brand')
 export class BrandManagementController {
   constructor(

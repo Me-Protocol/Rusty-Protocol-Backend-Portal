@@ -26,7 +26,6 @@ import { CostModuleService } from '@src/globalServices/costManagement/costModule
 import { ServerGuard } from '@src/middlewares/server-guard';
 
 @ApiTags('Cost Module')
-@UseInterceptors(ResponseInterceptor)
 @Controller('cost')
 export class CostManagementController {
   constructor(

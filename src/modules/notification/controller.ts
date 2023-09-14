@@ -18,7 +18,6 @@ import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { FilterNotificationDto } from './dto/FilterNotificationDto.dto';
 
 @ApiTags('Notification')
-@UseInterceptors(ResponseInterceptor)
 @Controller('notification')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}

@@ -26,7 +26,6 @@ import { InAppApiKeyJwtStrategy } from '@src/middlewares/inapp-api-jwt-strategy.
 import { CompleteOrderDto } from './dto/CompleteOrderDto.dto';
 
 @ApiTags('Order')
-@UseInterceptors(ResponseInterceptor)
 @Controller('order')
 export class OrderManagementController {
   constructor(

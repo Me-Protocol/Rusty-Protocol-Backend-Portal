@@ -17,7 +17,6 @@ import { LikeDto } from './dto/LikeDto.dto';
 import { FilterLikeDto } from './dto/FilterLikeDto.dto';
 
 @ApiTags('Like')
-@UseInterceptors(ResponseInterceptor)
 @Controller('like')
 export class LikeManagementController {
   constructor(private readonly likeManagementService: LikeManagementService) {}

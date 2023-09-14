@@ -15,7 +15,6 @@ import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { PaymentModuleService } from './service';
 
 @ApiTags('Payment')
-@UseInterceptors(ResponseInterceptor)
 @Controller('payment')
 export class PaymentModuleController {
   constructor(private readonly paymentService: PaymentModuleService) {}

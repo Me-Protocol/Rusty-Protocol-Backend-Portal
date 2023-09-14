@@ -19,7 +19,6 @@ import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware'
 import { CreateApiDto } from './dto/createApiDto';
 
 @ApiTags('API Key')
-@UseInterceptors(ResponseInterceptor)
 @Controller('api_key')
 export class ApiKeyManagementController {
   constructor(

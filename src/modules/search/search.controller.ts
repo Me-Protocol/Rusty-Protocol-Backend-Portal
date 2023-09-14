@@ -20,7 +20,6 @@ import { SearchDto } from './dto/SearchDto.dto';
 import { ElasticIndex } from './index/search.index';
 import * as _ from 'lodash';
 
-@UseInterceptors(ResponseInterceptor)
 @Controller('/search')
 export class SearchController {
   constructor(

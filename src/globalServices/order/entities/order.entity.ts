@@ -13,6 +13,7 @@ import { Coupon } from './coupon.entity';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 import { StatusType } from '@src/utils/enums/Transactions';
 import { OrderPaymentType } from '@src/utils/enums/OrderPaymentType';
+import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 
 @Entity('order')
 export class Order extends BaseEntity {
@@ -27,6 +28,13 @@ export class Order extends BaseEntity {
 
   @Column()
   offerId: string;
+
+  @Column({ nullable: true })
+  brandId: string;
+
+  @ManyToOne(() => Brand, (brand) => brand.orders)
+  @JoinColumn({ name: 'brandId' })
+  brand: Brand;
 
   @Column({
     type: 'decimal',

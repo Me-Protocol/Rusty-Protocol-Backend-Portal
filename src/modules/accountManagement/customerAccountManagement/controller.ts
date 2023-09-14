@@ -15,7 +15,6 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Customer')
 @ApiBearerAuth()
-@UseInterceptors(ResponseInterceptor)
 @Controller('customer')
 export class CustomerManagementController {
   constructor(

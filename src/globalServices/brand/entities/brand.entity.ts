@@ -23,6 +23,7 @@ import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.e
 import { BrandSubServices } from '@src/utils/enums/BrandSubServices';
 import { BrandMember } from './brand_member.entity';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
+import { Order } from '@src/globalServices/order/entities/order.entity';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -211,4 +212,7 @@ export class Brand extends BaseEntity {
 
   @ManyToMany(() => Notification, (notification) => notification.brands)
   notifications: Notification[];
+
+  @OneToMany(() => Order, (order) => order.brand)
+  orders: Order[];
 }
