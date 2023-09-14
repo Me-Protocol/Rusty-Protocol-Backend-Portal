@@ -30,7 +30,7 @@ export class OrderService {
 
   async getOrders({
     limit = 10,
-    page = 1,
+    page,
     filterBy,
     userId,
     brandId,
