@@ -29,7 +29,7 @@ export class Order extends BaseEntity {
   @Column()
   offerId: string;
 
-  @Column({ nullable: true })
+  @Column()
   brandId: string;
 
   @ManyToOne(() => Brand, (brand) => brand.orders)

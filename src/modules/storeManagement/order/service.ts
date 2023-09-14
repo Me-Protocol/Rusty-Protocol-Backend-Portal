@@ -121,6 +121,7 @@ export class OrderManagementService {
       orderRecord.points = totalAmount;
       orderRecord.couponId = coupon.id;
       orderRecord.quantity = quantity;
+      orderRecord.brandId = offer.brandId;
 
       const order = await this.orderService.saveOrder(orderRecord);
 
@@ -255,6 +256,7 @@ export class OrderManagementService {
       orderRecord.offerId = offerId;
       orderRecord.points = totalAmount;
       orderRecord.quantity = quantity;
+      orderRecord.brandId = offer.brandId;
 
       return await this.orderService.saveOrder(orderRecord);
     } catch (error) {

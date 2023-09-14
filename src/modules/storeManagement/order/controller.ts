@@ -1,6 +1,5 @@
 import {
   Controller,
-  UseInterceptors,
   UseGuards,
   Post,
   Get,
@@ -12,7 +11,6 @@ import {
   Res,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { ApiTags } from '@nestjs/swagger';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { OrderManagementService } from './service';
