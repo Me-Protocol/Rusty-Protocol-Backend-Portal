@@ -139,8 +139,8 @@ export class BrandService {
     return {
       brands,
       total,
-      nextPage: total > page * limit ? page + 1 : null,
-      previousPage: page > 1 ? page - 1 : null,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
     };
   }
 
@@ -233,8 +233,8 @@ export class BrandService {
     return {
       data: brandCustomers,
       total,
-      nextPage: total > page * limit ? page + 1 : null,
-      previousPage: page > 1 ? page - 1 : null,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
     };
   }
 

@@ -46,8 +46,8 @@ export class FollowService {
     return {
       total,
       followers,
-      nextPage: total > page * limit ? page + 1 : null,
-      previousPage: page > 1 ? page - 1 : null,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
     };
   }
 
@@ -130,8 +130,8 @@ export class FollowService {
     return {
       total,
       following,
-      nextPage: total > page * limit ? page + 1 : null,
-      previousPage: page > 1 ? page - 1 : null,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
     };
   }
 
