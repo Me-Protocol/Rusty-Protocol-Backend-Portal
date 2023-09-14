@@ -44,7 +44,6 @@ import { LogoutDeviceDto } from './dto/LogoutDeviceDto.dto';
 const requestIp = require('request-ip');
 
 @ApiTags('Authentication')
-@UseInterceptors(ResponseInterceptor)
 @Controller('user')
 export class AuthenticationController {
   constructor(private readonly authService: AuthenticationService) {}

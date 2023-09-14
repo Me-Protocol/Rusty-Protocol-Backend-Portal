@@ -110,6 +110,8 @@ import { BrandCustomer } from './globalServices/brand/entities/brand_customer.en
 import { Notification } from './globalServices/notification/entities/notification.entity';
 import { NotificationController } from './modules/notification/controller';
 import { NotificationService } from './globalServices/notification/notification.service';
+import { TracingModule } from '@dollarsign/nestjs-jaeger-tracing';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
@@ -174,6 +176,22 @@ import { NotificationService } from './globalServices/notification/notification.
     AuthenticationModule,
     UploadModule,
     ScheduleModule.forRoot(),
+    TracingModule.forRoot({
+      exporterConfig: {
+        serviceName: 'core-service', // service name that will be shown in jaeger dashboard
+      },
+      isSimpleSpanProcessor: true, // true for development.
+    }),
+    ClientsModule.register([
+      {
+        name: 'tracking-service',
+        transport: Transport.TCP,
+        options: {
+          port: parseInt(process.env.APP_SERVER_LISTEN_PORT, 10),
+          ...TracingModule.getParserOptions(), // this method will return serializer that inject tracing id to microservice payload.
+        },
+      },
+    ]),
   ],
   controllers: [
     AppController,

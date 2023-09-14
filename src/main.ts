@@ -4,6 +4,7 @@ import { jwtConfigurations } from './config/jwt.config';
 import * as session from 'express-session';
 import { logger } from './globalServices/logger/logger.service';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ResponseInterceptor } from './interceptors/response.interceptor';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const cloudinary_1 = require('cloudinary');
 
@@ -25,6 +26,7 @@ async function bootstrap() {
       resave: true,
     }),
   );
+  app.useGlobalInterceptors(new ResponseInterceptor());
 
   // const httpServer = app.getHttpServer();
   // createWebSocketServer(httpServer);

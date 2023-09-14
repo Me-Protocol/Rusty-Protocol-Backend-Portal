@@ -152,9 +152,15 @@ export class OrderManagementService {
     }
   }
 
-  async getOrders({ userId, page, limit, filterBy }: FilterOrderDto) {
+  async getOrders({ userId, page, limit, filterBy, brandId }: FilterOrderDto) {
     try {
-      return this.orderService.getOrders(userId, page, limit, filterBy);
+      return this.orderService.getOrders({
+        userId,
+        page,
+        limit,
+        filterBy,
+        brandId,
+      });
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);

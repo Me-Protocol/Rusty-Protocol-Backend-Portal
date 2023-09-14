@@ -24,4 +24,6 @@ export class FilterOrderDto {
   filterBy: OrderFilter;
 
   userId: string;
+
+  brandId: string;
 }

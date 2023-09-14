@@ -43,13 +43,25 @@ export class OrderManagementController {
   }
 
   @UseGuards(AuthGuard())
-  @Get()
-  async getOrders(
+  @Get('/user')
+  async getUserOrders(
     @Req() req: any,
     @Query(ValidationPipe) query: FilterOrderDto,
   ) {
     const userId = req.user.id;
     query.userId = userId;
+
+    return await this.orderManagementService.getOrders(query);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Get('/brand')
+  async getBranOrders(
+    @Req() req: any,
+    @Query(ValidationPipe) query: FilterOrderDto,
+  ) {
+    const brandId = req.user.brand.id;
+    query.brandId = brandId;
 
     return await this.orderManagementService.getOrders(query);
   }

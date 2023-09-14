@@ -22,6 +22,7 @@
   "dependencies": {
     "@developeruche/protocol-core": "^0.1.4",
     "@developeruche/runtime-sdk": "^0.2.1",
+    "@dollarsign/nestjs-jaeger-tracing": "^1.0.8",
     "@elastic/elasticsearch": "^8.6.0",
     "@gelatonetwork/relay-sdk": "^4.0.0",
     "@nestjs-modules/mailer": "^1.8.1",

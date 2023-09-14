@@ -28,12 +28,19 @@ export class OrderService {
     });
   }
 
-  async getOrders(
-    userId: string,
-    page: number,
+  async getOrders({
     limit = 10,
-    filterBy: OrderFilter,
-  ) {
+    page = 1,
+    filterBy,
+    userId,
+    brandId,
+  }: {
+    userId: string;
+    page: number;
+    limit: number;
+    filterBy: OrderFilter;
+    brandId: string;
+  }) {
     const orderQuery = this.orderRepo
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.coupon', 'coupon')
@@ -46,6 +53,14 @@ export class OrderService {
       .leftJoinAndSelect('product.variants', 'variants')
       .leftJoinAndSelect('product.collections', 'collections')
       .orderBy('order.createdAt', 'DESC');
+
+    if (brandId) {
+      orderQuery.where('order.offer.brandId = :brandId', { brandId: brandId });
+    }
+
+    if (userId) {
+      orderQuery.andWhere('order.userId = :userId', { userId: userId });
+    }
 
     if (filterBy === OrderFilter.REDEEMED) {
       orderQuery.andWhere('order.isRedeemed = :isRedeemed', {
