@@ -216,6 +216,13 @@ export class OrderManagementService {
         throw new Error('Offer is out of stock');
       }
 
+      // Check that after removing the quantity, the inventory is still greater than 0
+      if (offer.product.inventory - quantity < 0) {
+        throw new Error(
+          `You cannot redeem more than ${offer.product.inventory} at the moment`,
+        );
+      }
+
       // check if offer has expired
       if (offer.endDate < new Date()) {
         throw new Error('Offer has expired');
