@@ -30,6 +30,7 @@ export class CollectionManagementService {
       query.limit,
       query.order,
       query.search,
+      query.status,
     );
   }
 

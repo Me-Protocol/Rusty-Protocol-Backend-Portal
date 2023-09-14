@@ -138,6 +138,7 @@ export class CollectionService {
     limit: number,
     order: string,
     search: string,
+    status: ItemStatus,
   ) {
     const collectionQuery = this.collectionRepo
       .createQueryBuilder('collection')
@@ -147,6 +148,10 @@ export class CollectionService {
       .leftJoinAndSelect('collection.likes', 'likes')
       .leftJoinAndSelect('likes.offer', 'offer')
       .leftJoinAndSelect('offer.offerImages', 'offerImages');
+
+    if (status) {
+      collectionQuery.andWhere('collection.status = :status', { status });
+    }
 
     if (userId) {
       collectionQuery.andWhere('collection.userId = :userId', { userId });
