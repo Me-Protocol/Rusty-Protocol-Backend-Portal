@@ -232,9 +232,9 @@ export class OrderManagementService {
         offer.brandId,
       );
 
-      // if (!canPayCost) {
-      //   throw new Error('Insufficient balance');
-      // }
+      if (!canPayCost) {
+        throw new Error('Brand cannot pay cost');
+      }
       // TODO: uncomment this
 
       const user = await this.userService.getUserById(userId);
