@@ -142,4 +142,12 @@ export class RewardService {
       },
     });
   }
+
+  async activeDraftReward(brandId: string) {
+    return this.rewardsRepo.findOne({
+      where: {
+        brandId,
+      },
+    });
+  }
 }

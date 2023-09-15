@@ -112,6 +112,8 @@ import { NotificationController } from './modules/notification/controller';
 import { NotificationService } from './globalServices/notification/notification.service';
 import { TracingModule } from '@dollarsign/nestjs-jaeger-tracing';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
+import { SettingsModule } from './globalServices/settings/settings.module';
 
 @Module({
   imports: [
@@ -149,7 +151,9 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       KeyIdentifier,
       BrandCustomer,
       Notification,
+      AdminSettings,
     ]),
+    SettingsModule,
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),

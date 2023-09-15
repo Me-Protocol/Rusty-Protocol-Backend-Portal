@@ -174,7 +174,7 @@ export class FiatWalletService {
     let triggerTopup: boolean = false;
 
     for (const service of brandServices) {
-      const cost = this.brandServiceSubscription.getServiceCost(service);
+      const cost = await this.brandServiceSubscription.getServiceCost(service);
 
       const canPay = wallet.balance < cost ? false : true;
 
@@ -203,7 +203,7 @@ export class FiatWalletService {
     brand: Brand,
     amount?: number,
   ) {
-    const { topupAmountFactor } = this.settingsService.getCostSettings();
+    const { topupAmountFactor } = await this.settingsService.getCostSettings();
 
     const maximumCost = await this.brandServiceSubscription.getMaxServiceCost(
       brand.id,

@@ -37,6 +37,7 @@ import { KeyIdentifier } from '@src/globalServices/reward/entities/keyIdentifier
 import { BrandCustomer } from '@src/globalServices/brand/entities/brand_customer.entity';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 import { RedisOptions } from 'ioredis';
+import { AdminSettings } from '@src/globalServices/settings/entities/admin_settings.entity';
 
 export const typeOrmConfig: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -82,6 +83,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     KeyIdentifier,
     BrandCustomer,
     Notification,
+    AdminSettings,
   ],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   extra: {

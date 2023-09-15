@@ -54,10 +54,12 @@ export class NotificationService {
       notificationQuery.andWhere('notification.type = :type', { type });
     }
 
-    notificationQuery.skip(page * limit).take(limit);
+    notificationQuery.skip((page - 1) * limit).take(limit);
 
     const notifications = await notificationQuery.getMany();
     const total = await notificationQuery.getCount();
+
+    console.log(notifications);
 
     return {
       notifications,

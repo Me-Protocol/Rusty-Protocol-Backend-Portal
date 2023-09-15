@@ -41,7 +41,8 @@ export class CostModuleManagementService {
 
   async createPaymentRequestApi(body: PaymentRequestDto) {
     try {
-      const { minimumBalanceApi } = this.settingsService.getCostSettings();
+      const { minimumBalanceApi } =
+        await this.settingsService.getCostSettings();
 
       const brand = await this.brandService.getBrandById(body.brandId);
       const wallet = await this.walletService.getWalletByBrandId(body.brandId);
@@ -61,7 +62,8 @@ export class CostModuleManagementService {
 
   async createPaymentRequestInApp(body: PaymentRequestDto) {
     try {
-      const { minimumBalanceInApp } = this.settingsService.getCostSettings();
+      const { minimumBalanceInApp } =
+        await this.settingsService.getCostSettings();
 
       const brand = await this.brandService.getBrandById(body.brandId);
       const wallet = await this.walletService.getWalletByBrandId(body.brandId);

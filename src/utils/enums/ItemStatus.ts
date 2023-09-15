@@ -17,3 +17,8 @@ export enum ProductStatus {
   PAUSED = 'paused',
   EXPIRED = 'expired',
 }
+
+export enum RewardStatus {
+  DRAFT = 'draft',
+  PUBLISHED = 'published',
+}
