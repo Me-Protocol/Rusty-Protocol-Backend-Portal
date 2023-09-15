@@ -617,29 +617,17 @@ export class SyncRewardService {
     endDate: Date;
     transactionsType: TransactionsType;
   }) {
-    const registryQuery =
-      this.registryHistoryRepo.createQueryBuilder('registry_history');
-
-    registryQuery.where('registry_history.rewardRegistry.userId = :userId', {
-      userId,
+    return this.registryHistoryRepo.find({
+      where: {
+        rewardRegistry: {
+          userId,
+        },
+        transactionType: transactionsType,
+        createdAt: Raw(
+          (alias) => `DATE(${alias}) BETWEEN '${startDate}' AND '${endDate}'`,
+        ),
+      },
+      relations: ['rewardRegistry', 'rewardRegistry.reward'],
     });
-
-    if (transactionsType) {
-      registryQuery.andWhere(
-        'registry_history.transactionType = :transactionsType',
-        { transactionsType },
-      );
-    }
-
-    if (startDate && endDate) {
-      registryQuery.andWhere(
-        'registry_history.createdAt BETWEEN :startDate AND :endDate',
-        { startDate, endDate },
-      );
-    }
-
-    const registries = await registryQuery.getMany();
-
-    return registries;
   }
 }
