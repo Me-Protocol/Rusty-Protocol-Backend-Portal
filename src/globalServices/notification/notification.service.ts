@@ -59,8 +59,6 @@ export class NotificationService {
     const notifications = await notificationQuery.getMany();
     const total = await notificationQuery.getCount();
 
-    console.log(notifications);
-
     return {
       notifications,
       total,
