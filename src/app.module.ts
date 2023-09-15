@@ -114,6 +114,7 @@ import { TracingModule } from '@dollarsign/nestjs-jaeger-tracing';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
 import { SettingsModule } from './globalServices/settings/settings.module';
+import { DebugController } from './debug/debug.controller';
 
 @Module({
   imports: [
@@ -216,6 +217,7 @@ import { SettingsModule } from './globalServices/settings/settings.module';
     CostManagementController,
     PaymentModuleController,
     NotificationController,
+    DebugController,
   ],
   providers: [
     ElasticIndex,

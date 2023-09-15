@@ -46,3 +46,5 @@ dump.rdb
 # lock files
 package-lock.json
 yarn.lock
+# Sentry Auth Token
+.sentryclirc
