@@ -618,7 +618,7 @@ export class SyncRewardService {
     transactionsType: TransactionsType;
   }) {
     const registryQuery =
-      this.rewardRegistryRepo.createQueryBuilder('registry_history');
+      this.registryHistoryRepo.createQueryBuilder('registry_history');
 
     registryQuery.where('registry_history.rewardRegistry.userId = :userId', {
       userId,
