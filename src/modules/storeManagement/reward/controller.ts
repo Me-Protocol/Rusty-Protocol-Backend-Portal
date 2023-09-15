@@ -94,12 +94,6 @@ export class RewardManagementController {
   }
 
   @UseGuards(AuthGuard())
-  @Get(':rewardId')
-  async getReward(@Param('rewardId') rewardId: string) {
-    return await this.rewardManagementService.getReward(rewardId);
-  }
-
-  @UseGuards(AuthGuard())
   @Get()
   async getRewards(@Query(ValidationPipe) query: FilterRewardDto) {
     return await this.rewardManagementService.getRewards(query);
@@ -231,5 +225,11 @@ export class RewardManagementController {
     query.userId = userId;
 
     return await this.rewardManagementService.getRegistryHistory(query);
+  }
+
+  @UseGuards(AuthGuard())
+  @Get(':rewardId')
+  async getReward(@Param('rewardId') rewardId: string) {
+    return await this.rewardManagementService.getReward(rewardId);
   }
 }
