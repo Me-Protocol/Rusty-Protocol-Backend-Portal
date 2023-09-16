@@ -141,4 +141,16 @@ export class OrderService {
 
     return await this.orderRepo.save(order);
   }
+
+  async getOrdersByOfferRewardId(offerRewardId: string, userId: string) {
+    return await this.orderRepo.findOne({
+      where: {
+        offer: {
+          rewardId: offerRewardId,
+        },
+        userId: userId,
+      },
+      relations: ['coupon'],
+    });
+  }
 }

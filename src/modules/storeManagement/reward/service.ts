@@ -9,21 +9,9 @@ import { UpdateBatchDto } from './dto/updateBatchDto';
 import { UserService } from '@src/globalServices/user/user.service';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
-import { UpdateRewardDto } from './dto/updateRewardDto';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { getSlug } from '@src/utils/helpers/getSlug';
-import {
-  DistributeBatchDto,
-  SendTransactionData,
-} from './dto/distributeBatch.dto';
-import {
-  distribute_reward_specific,
-  distribute_reward_specific_magic,
-  mutate,
-  mutate_n_format,
-} from '@developeruche/runtime-sdk';
-import { SpendRewardDto } from './dto/spendRewardDto.dto';
-import { AxiosResponse } from 'axios';
+import { DistributeBatchDto } from './dto/distributeBatch.dto';
 import { logger } from '@src/globalServices/logger/logger.service';
 import { KeyManagementService } from '@src/globalServices/key-management/key-management.service';
 import {

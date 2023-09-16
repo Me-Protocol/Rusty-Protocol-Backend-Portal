@@ -67,3 +67,19 @@ export class FilterOfferDto {
   @IsString()
   search: string;
 }
+
+export class FilterUserOfferDto {
+  @ApiProperty()
+  @IsString()
+  page: number;
+
+  @ApiProperty()
+  @IsString()
+  limit: number;
+
+  @ApiProperty()
+  @IsUUID()
+  rewardId?: string;
+
+  userId: string;
+}

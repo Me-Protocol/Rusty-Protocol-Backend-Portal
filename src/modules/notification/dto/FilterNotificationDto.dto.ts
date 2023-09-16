@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { NotificationType } from '@src/utils/enums/notification.enum';
-import { IsString } from 'class-validator';
+import { IsArray, IsOptional, IsString } from 'class-validator';
 
 export class FilterNotificationDto {
   @ApiProperty()
@@ -12,10 +12,12 @@ export class FilterNotificationDto {
   limit: number;
 
   @ApiProperty({
-    type: 'enum',
-    enum: NotificationType,
+    type: 'array',
+    description: 'Array of notification types',
   })
-  type: NotificationType;
+  @IsArray()
+  @IsOptional()
+  types: NotificationType[];
 
   userId: string;
 }

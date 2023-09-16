@@ -40,7 +40,7 @@ export class NotificationService {
 
   // get all notifications
   async getAllNotifications(query: FilterNotificationDto) {
-    const { userId, page, limit, type } = query;
+    const { userId, page, limit, types } = query;
 
     const notificationQuery = this.notificationRepository
       .createQueryBuilder('notification')
@@ -50,8 +50,10 @@ export class NotificationService {
       .leftJoinAndSelect('notification.rewards', 'rewards')
       .leftJoinAndSelect('notification.brands', 'brands');
 
-    if (type) {
-      notificationQuery.andWhere('notification.type = :type', { type });
+    if (types && types.length > 0) {
+      notificationQuery.andWhere('notification.type IN (:...types)', {
+        types,
+      });
     }
 
     notificationQuery.skip((page - 1) * limit).take(limit);

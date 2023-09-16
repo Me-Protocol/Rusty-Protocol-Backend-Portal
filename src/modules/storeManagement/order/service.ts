@@ -14,11 +14,12 @@ import { CustomerService } from '@src/globalServices/customer/customer.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { CostModuleService } from '@src/globalServices/costManagement/costModule.service';
 import { NotificationService } from '@src/globalServices/notification/notification.service';
-import { StatusType } from '@src/utils/enums/Transactions';
+import { StatusType, TransactionsType } from '@src/utils/enums/Transactions';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 import { NotificationType } from '@src/utils/enums/notification.enum';
 import { emailButton } from '@src/utils/helpers/emailButton';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
+import { RegistryHistory } from '@src/globalServices/reward/entities/registryHistory.entity';
 
 @Injectable()
 export class OrderManagementService {
@@ -316,6 +317,8 @@ export class OrderManagementService {
           notification.type = NotificationType.ORDER;
           notification.title = 'Order Redeemed';
           notification.orderId = order.id;
+          notification.icon = offer.brand.logo;
+          notification.image = offer.offerImages?.[0].url;
           notification.emailMessage = /* html */ `
               <div>
                 <p>Hello ${customer?.name},</p>
@@ -344,6 +347,28 @@ export class OrderManagementService {
                 })}
              `;
 
+          //   balance: registry.balance,
+          //   description,
+          //   transactionType: TransactionsType.CREDIT,
+          //   rewardRegistryId: registry.id,
+          //   amount: amount,
+
+          // create history
+
+          const registry = await this.syncService.findOneRegistryByUserId(
+            order.userId,
+            offer.rewardId,
+          );
+
+          const history = new RegistryHistory();
+          history.rewardRegistryId = registry.id;
+          history.amount = order.points;
+          history.description = `Redeem ${offer.name} from ${offer.brand.name}`;
+          history.transactionType = TransactionsType.DEBIT;
+          history.balance = 0;
+
+          await this.syncService.saveRegistryHistory(history);
+
           await this.notificationService.createNotification(notification);
         } else if (status === 'ExecFailed') {
           order.status = StatusType.FAILED;
@@ -358,6 +383,8 @@ export class OrderManagementService {
           notification.type = NotificationType.ORDER;
           notification.title = 'Order Failed';
           notification.orderId = order.id;
+          notification.icon = offer.brand.logo;
+          notification.image = offer.offerImages?.[0].url;
           notification.emailMessage = /* html */ `
               <div>
                 <p>Hello ${customer?.name},</p>

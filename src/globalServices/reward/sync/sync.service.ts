@@ -197,15 +197,15 @@ export class SyncRewardService {
     }
 
     // add registry history
-    const registryHistory = this.registryHistoryRepo.create({
-      balance: registry.balance,
-      description,
-      transactionType: TransactionsType.DEBIT,
-      rewardRegistryId: registry.id,
-      amount: amount,
-    });
+    // const registryHistory = this.registryHistoryRepo.create({
+    //   balance: registry.balance,
+    //   description,
+    //   transactionType: TransactionsType.DEBIT,
+    //   rewardRegistryId: registry.id,
+    //   amount: amount,
+    // });
 
-    await this.registryHistoryRepo.save(registryHistory);
+    // await this.registryHistoryRepo.save(registryHistory);
 
     return registry;
   }
@@ -244,7 +244,7 @@ export class SyncRewardService {
     const registryHistory = this.registryHistoryRepo.create({
       balance: registry.balance,
       description,
-      transactionType: TransactionsType.DEBIT,
+      transactionType: TransactionsType.CREDIT,
       rewardRegistryId: registry.id,
       amount: amount,
     });
@@ -285,17 +285,17 @@ export class SyncRewardService {
 
     // add registry history
 
-    const registryHistory = this.registryHistoryRepo.create({
-      balance: registry.balance,
-      description,
-      transactionType: TransactionsType.DEBIT,
-      rewardRegistryId: registry.id,
-      amount: amount,
-    });
+    // const registryHistory = this.registryHistoryRepo.create({
+    //   balance: registry.balance,
+    //   description,
+    //   transactionType: TransactionsType.DEBIT,
+    //   rewardRegistryId: registry.id,
+    //   amount: amount,
+    // });
 
-    await this.registryHistoryRepo.save(registryHistory);
+    // await this.registryHistoryRepo.save(registryHistory);
 
-    return registry;
+    return newReg;
   }
 
   async clearUndistributedBalance({
@@ -327,15 +327,15 @@ export class SyncRewardService {
 
     // add registry history
 
-    const registryHistory = this.registryHistoryRepo.create({
-      balance: registry.balance,
-      description,
-      transactionType: TransactionsType.DEBIT,
-      rewardRegistryId: registry.id,
-      amount: amount,
-    });
+    // const registryHistory = this.registryHistoryRepo.create({
+    //   balance: registry.balance,
+    //   description,
+    //   transactionType: TransactionsType.DEBIT,
+    //   rewardRegistryId: registry.id,
+    //   amount: amount,
+    // });
 
-    await this.registryHistoryRepo.save(registryHistory);
+    // await this.registryHistoryRepo.save(registryHistory);
 
     return registry;
   }
@@ -367,15 +367,15 @@ export class SyncRewardService {
 
     // add registry history
 
-    const registryHistory = this.registryHistoryRepo.create({
-      balance: registry.balance,
-      description,
-      transactionType: TransactionsType.CREDIT,
-      rewardRegistryId: registry.id,
-      amount: amount,
-    });
+    // const registryHistory = this.registryHistoryRepo.create({
+    //   balance: registry.balance,
+    //   description,
+    //   transactionType: TransactionsType.CREDIT,
+    //   rewardRegistryId: registry.id,
+    //   amount: amount,
+    // });
 
-    await this.registryHistoryRepo.save(registryHistory);
+    // await this.registryHistoryRepo.save(registryHistory);
 
     return registry;
   }
@@ -409,17 +409,21 @@ export class SyncRewardService {
 
     // add registry history
 
-    const registryHistory = this.registryHistoryRepo.create({
-      balance: registry.balance,
-      description,
-      transactionType: TransactionsType.CREDIT,
-      rewardRegistryId: registry.id,
-      amount: amount,
-    });
+    // const registryHistory = this.registryHistoryRepo.create({
+    //   balance: registry.balance,
+    //   description,
+    //   transactionType: TransactionsType.CREDIT,
+    //   rewardRegistryId: registry.id,
+    //   amount: amount,
+    // });
 
-    await this.registryHistoryRepo.save(registryHistory);
+    // await this.registryHistoryRepo.save(registryHistory);
 
     return registry;
+  }
+
+  async saveRegistryHistory(registryHistory: RegistryHistory) {
+    return this.registryHistoryRepo.save(registryHistory);
   }
 
   async checkActiveBatch(brandId: string, rewardId: string) {

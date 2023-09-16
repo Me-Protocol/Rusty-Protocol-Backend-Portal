@@ -110,6 +110,40 @@ export class OfferService {
     return offer;
   }
 
+  async getOfferByRewardId({
+    rewardId,
+    page,
+    limit,
+  }: {
+    rewardId: string;
+    page: number;
+    limit: number;
+  }) {
+    const offersQuery = this.offerRepo
+      .createQueryBuilder('offer')
+      .leftJoinAndSelect('offer.product', 'product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.subCategory', 'subCategory')
+      .leftJoinAndSelect('offer.offerImages', 'offerImages')
+      .leftJoinAndSelect('offer.brand', 'brand')
+      .leftJoinAndSelect('offer.reward', 'reward')
+      .where('offer.status = :status', { status: ItemStatus.PUBLISHED })
+      .andWhere('offer.rewardId = :rewardId', { rewardId });
+
+    offersQuery.skip((page - 1) * limit);
+    offersQuery.take(limit);
+
+    const offers = await offersQuery.getMany();
+    const total = await offersQuery.getCount();
+
+    return {
+      offers,
+      total,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
+    };
+  }
+
   async getOffers({
     page,
     limit,
