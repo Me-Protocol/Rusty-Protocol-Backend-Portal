@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { RevenueRange } from '@src/utils/enums/RevenueRange';
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsOptional,
   IsString,
@@ -128,4 +129,11 @@ export class UpdateBrandDto {
     message: 'Enter a valid supportPhoneNumber',
   })
   supportPhoneNumber: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsBoolean({
+    message: 'Enter a valid boolean value',
+  })
+  listOnStore: boolean;
 }

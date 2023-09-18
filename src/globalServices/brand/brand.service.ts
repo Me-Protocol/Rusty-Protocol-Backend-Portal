@@ -87,6 +87,7 @@ export class BrandService {
       if (body.banners) brand.banners = body.banners;
       if (body.supportPhoneNumber)
         brand.supportPhoneNumber = body.supportPhoneNumber;
+      if (body.listOnStore) brand.listOnStore = body.listOnStore;
 
       await this.brandRepo.update({ id: brandId }, brand);
 

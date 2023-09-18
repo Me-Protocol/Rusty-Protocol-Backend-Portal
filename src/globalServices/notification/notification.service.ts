@@ -56,7 +56,9 @@ export class NotificationService {
       });
     }
 
-    notificationQuery.skip((page - 1) * limit).take(limit);
+    const skip = (page - 1) * limit;
+
+    notificationQuery.skip(skip).take(limit);
 
     const notifications = await notificationQuery.getMany();
     const total = await notificationQuery.getCount();
