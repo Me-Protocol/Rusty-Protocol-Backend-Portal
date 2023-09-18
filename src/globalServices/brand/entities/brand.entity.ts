@@ -220,4 +220,9 @@ export class Brand extends BaseEntity {
     default: true,
   })
   listOnStore: boolean;
+
+  @Column({
+    nullable: true,
+  })
+  walletAddress: string;
 }

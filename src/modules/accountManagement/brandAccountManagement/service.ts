@@ -348,4 +348,15 @@ export class BrandAccountManagementService {
       });
     }
   }
+
+  async onboardBrand({
+    brandId,
+    walletAddress,
+  }: {
+    brandId: string;
+    walletAddress: string;
+  }) {
+    const brand = await this.brandService.getBrandById(brandId);
+    brand.walletAddress = walletAddress;
+  }
 }

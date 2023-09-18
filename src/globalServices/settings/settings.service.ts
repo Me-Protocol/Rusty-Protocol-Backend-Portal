@@ -17,14 +17,21 @@ export class SettingsService {
   }
 
   async settingsInit() {
-    const settings = await this.adminSettingsRepo.findOne({
+    let settings = await this.adminSettingsRepo.findOne({
       where: { isDefault: true },
     });
 
     if (!settings) {
       const adminSettings = new AdminSettings();
-      await this.adminSettingsRepo.save(adminSettings);
+      settings = await this.adminSettingsRepo.save(adminSettings);
     }
+
+    if (!settings.meDispenser || !settings.onboardWallet) {
+      settings.meDispenser = process.env.ME_DISPENSER;
+      settings.onboardWallet = process.env.ONBOARD_WALLET;
+    }
+
+    await this.adminSettingsRepo.save(settings);
 
     return await this.adminSettingsRepo.findOne({
       where: { isDefault: true },

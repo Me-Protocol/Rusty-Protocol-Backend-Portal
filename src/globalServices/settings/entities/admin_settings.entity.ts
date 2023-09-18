@@ -39,4 +39,14 @@ export class AdminSettings extends BaseEntity {
     default: true,
   })
   isDefault: boolean;
+
+  @Column({
+    nullable: true,
+  })
+  meDispenser: string;
+
+  @Column({
+    nullable: true,
+  })
+  onboardWallet: string;
 }

@@ -127,10 +127,11 @@ export class BrandService {
   }) {
     const brandQuery = this.brandRepo
       .createQueryBuilder('brand')
-      .leftJoinAndSelect('brand.category', 'category');
+      .leftJoinAndSelect('brand.category', 'category')
+      .where('brand.listOnStore = :listOnStore', { listOnStore: true });
 
     if (categoryId) {
-      brandQuery.where('brand.categoryId = :categoryId', { categoryId });
+      brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
     }
 
     brandQuery.skip((page - 1) * limit).take(limit);
