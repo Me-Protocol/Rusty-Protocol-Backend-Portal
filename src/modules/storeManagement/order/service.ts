@@ -405,6 +405,8 @@ export class OrderManagementService {
                 <p>Points: ${order.points}</p>
                 <p>Quantity: ${order.quantity}</p>
               `;
+
+          await this.notificationService.createNotification(notification);
         }
       }
     }
