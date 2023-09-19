@@ -556,7 +556,7 @@ export class OfferService {
     // offer.inventory = -order.quantity; TODO: check if this is needed
 
     const product = await this.productService.findOneProduct(offer.productId);
-    product.inventory = -order.quantity;
+    product.inventory = product.inventory - +order.quantity;
 
     await this.productService.saveProduct(product);
 
@@ -567,7 +567,7 @@ export class OfferService {
     // offer.inventory = +order.quantity; TODO: check if this is needed
 
     const product = await this.productService.findOneProduct(offer.productId);
-    product.inventory = +order.quantity;
+    product.inventory = product.inventory + +order.quantity;
 
     await this.productService.saveProduct(product);
 

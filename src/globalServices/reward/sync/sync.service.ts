@@ -574,6 +574,8 @@ export class SyncRewardService {
       signer,
     );
 
+    console.log(distributionData.data);
+
     if (distributionData?.data?.error) {
       return 'Undistributed balance';
     } else {
@@ -584,6 +586,8 @@ export class SyncRewardService {
         amount: amount,
         description: `Reward distributed to ${walletAddress}`,
       });
+
+      console.log('Success', distributionData.data);
 
       return distributionData;
     }
