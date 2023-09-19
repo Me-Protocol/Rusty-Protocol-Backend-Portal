@@ -372,6 +372,8 @@ export class BrandAccountManagementService {
       const brand = await this.brandService.getBrandById(brandId);
       brand.walletAddress = walletAddress;
 
+      await this.brandService.save(brand);
+
       const { onboardWallet } = await this.settingsService.settingsInit();
 
       const provider = new ethers.providers.JsonRpcProvider(
@@ -429,8 +431,6 @@ export class BrandAccountManagementService {
       );
 
       return paymentRequest;
-
-      return 'iii';
     } catch (error) {
       console.log(error);
       logger.error(error);

@@ -102,10 +102,12 @@ export class OfferService {
     }
 
     // push category to user
-    await this.userService.updateUserCategoryInterests(
-      userId,
-      offer.product.category.id,
-    );
+    if (offer?.product?.category?.id) {
+      await this.userService.updateUserCategoryInterests(
+        userId,
+        offer?.product?.category?.id,
+      );
+    }
 
     return offer;
   }
