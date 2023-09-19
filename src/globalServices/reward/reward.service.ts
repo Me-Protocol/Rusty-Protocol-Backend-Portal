@@ -10,6 +10,7 @@ import { rewardIndex } from '@src/modules/search/interface/search.interface';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { KeyIdentifier } from './entities/keyIdentifier.entity';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
+import { RewardStatus } from '@src/utils/enums/ItemStatus';
 
 @Injectable()
 export class RewardService {
@@ -28,6 +29,15 @@ export class RewardService {
     const rewardRec = await this.save(createReward);
     this.elasticIndex.insertDocument(rewardRec, rewardIndex);
     return rewardRec;
+  }
+
+  async getDraftReward(brandId: string) {
+    return this.rewardsRepo.findOne({
+      where: {
+        brandId,
+        status: RewardStatus.DRAFT,
+      },
+    });
   }
 
   async save(reward: Reward): Promise<Reward> {

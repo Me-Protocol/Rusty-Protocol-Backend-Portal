@@ -11,12 +11,12 @@ import {
 } from 'class-validator';
 
 export class UpdateBrandDto {
-  @ApiProperty()
-  @IsOptional()
-  @IsString({
-    message: 'Enter a valid name',
-  })
-  name: string;
+  // @ApiProperty()
+  // @IsOptional()
+  // @IsString({
+  //   message: 'Enter a valid name',
+  // })
+  // name: string;
 
   @ApiProperty()
   @IsOptional()

@@ -37,6 +37,14 @@ export class RewardManagementService {
 
   async createReward(body: CreateRewardDto) {
     try {
+      const checkDraft = await this.rewardService.getDraftReward(body.brandId);
+
+      if (checkDraft) {
+        throw new Error(
+          'You already have a draft reward. Please delete it to create a new one',
+        );
+      }
+
       const slug = getSlug(body.rewardName);
 
       const checkReward = await this.rewardService.findOneRewardBySlug(slug);
