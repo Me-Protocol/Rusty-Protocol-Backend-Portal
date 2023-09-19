@@ -4,6 +4,7 @@ import { UpdateCustomerDto } from '../customerAccountManagement/dto/UpdateCustom
 import { logger } from '@src/globalServices/logger/logger.service';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
+import { UserService } from '@src/globalServices/user/user.service';
 
 @Injectable()
 export class CustomerAccountManagementService {
@@ -11,6 +12,7 @@ export class CustomerAccountManagementService {
     private readonly customerService: CustomerService,
     private readonly rewardService: RewardService,
     private readonly syncService: SyncRewardService,
+    private readonly userService: UserService,
   ) {}
 
   async updateCustomer(body: UpdateCustomerDto, userId: string) {
@@ -55,6 +57,20 @@ export class CustomerAccountManagementService {
   async setWalletAddress(walletAddress: string, userId: string) {
     try {
       const customer = await this.customerService.getByUserId(userId);
+      const user = await this.userService.getUserById(userId);
+
+      const rewardRegistry =
+        await this.syncService.getAllRegistryRecordsByIdentifer(user.email);
+
+      if (rewardRegistry.length > 0) {
+        for (const registry of rewardRegistry) {
+          if (!registry.userId) {
+            registry.userId = user.id;
+            await this.syncService.saveRegistry(registry);
+          }
+        }
+      }
+
       if (!customer)
         throw new HttpException('Customer not found', 404, {
           cause: new Error('Customer not found'),
@@ -80,7 +96,7 @@ export class CustomerAccountManagementService {
             rewardId: point.rewardId,
             walletAddress: walletAddress,
             amount: point.undistributedBalance,
-            userId: userId,
+            email: user.email,
           });
         }
       }

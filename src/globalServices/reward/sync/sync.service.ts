@@ -167,6 +167,16 @@ export class SyncRewardService {
     });
   }
 
+  async findOneRegistryByEmailIdentifier(email: string, rewardId: string) {
+    return this.rewardRegistryRepo.findOne({
+      where: {
+        customerIdentiyOnBrandSite: email,
+        rewardId,
+      },
+      relations: ['reward', 'reward.brand'],
+    });
+  }
+
   // debit reward
   async debitReward({
     rewardId,
@@ -541,12 +551,12 @@ export class SyncRewardService {
     rewardId,
     walletAddress,
     amount,
-    userId,
+    email,
   }: {
     rewardId: string;
     walletAddress: string;
     amount: number;
-    userId: string;
+    email: string;
   }) {
     const reward = await this.rewardService.findOneById(rewardId);
 
@@ -574,20 +584,19 @@ export class SyncRewardService {
       signer,
     );
 
-    console.log(distributionData.data);
-
     if (distributionData?.data?.error) {
       return 'Undistributed balance';
     } else {
-      const registry = await this.findOneRegistryByUserId(userId, rewardId);
+      const registry = await this.findOneRegistryByEmailIdentifier(
+        email,
+        rewardId,
+      );
 
       await this.clearUndistributedBalance({
         registryId: registry.id,
         amount: amount,
         description: `Reward distributed to ${walletAddress}`,
       });
-
-      console.log('Success', distributionData.data);
 
       return distributionData;
     }
