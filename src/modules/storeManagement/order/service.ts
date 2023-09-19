@@ -259,7 +259,11 @@ export class OrderManagementService {
       orderRecord.quantity = quantity;
       orderRecord.brandId = offer.brandId;
 
-      return await this.orderService.saveOrder(orderRecord);
+      const order = await this.orderService.saveOrder(orderRecord);
+
+      await this.offerService.reduceInventory(offer, order);
+
+      return order;
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
@@ -374,6 +378,8 @@ export class OrderManagementService {
           order.status = StatusType.FAILED;
 
           await this.orderService.saveOrder(order);
+
+          await this.offerService.increaseInventory(offer, order);
 
           //  Send notification to user
 

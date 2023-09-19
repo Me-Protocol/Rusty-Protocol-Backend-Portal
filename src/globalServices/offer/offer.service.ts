@@ -9,6 +9,7 @@ import { ViewsService } from '../views/view.service';
 import { OfferFilter, OfferSort } from '@src/utils/enums/OfferFiilter';
 import { CustomerService } from '../customer/customer.service';
 import { ProductService } from '../product/product.service';
+import { Order } from '../order/entities/order.entity';
 
 @Injectable()
 export class OfferService {
@@ -530,12 +531,6 @@ export class OfferService {
 
       offer.totalOrders = offer.totalOrders + 1;
       offer.totalSales = +totalSalesParse;
-      offer.inventory = -1;
-
-      const product = await this.productService.findOneProduct(offer.productId);
-      product.inventory = -1;
-
-      await this.productService.saveProduct(product);
 
       // update customer total redeem
       const customer = await this.customerService.getByUserId(userId);
@@ -555,5 +550,27 @@ export class OfferService {
     } catch (error) {
       console.log(error);
     }
+  }
+
+  async reduceInventory(offer: Offer, order: Order) {
+    // offer.inventory = -order.quantity; TODO: check if this is needed
+
+    const product = await this.productService.findOneProduct(offer.productId);
+    product.inventory = -order.quantity;
+
+    await this.productService.saveProduct(product);
+
+    await this.offerRepo.save(offer);
+  }
+
+  async increaseInventory(offer: Offer, order: Order) {
+    // offer.inventory = +order.quantity; TODO: check if this is needed
+
+    const product = await this.productService.findOneProduct(offer.productId);
+    product.inventory = +order.quantity;
+
+    await this.productService.saveProduct(product);
+
+    await this.offerRepo.save(offer);
   }
 }
