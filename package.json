@@ -20,8 +20,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@developeruche/protocol-core": "^0.1.6",
-    "@developeruche/runtime-sdk": "^0.2.2",
+    "@developeruche/protocol-core": "^0.1.7",
+    "@developeruche/runtime-sdk": "^0.2.3",
     "@dollarsign/nestjs-jaeger-tracing": "^1.0.8",
     "@elastic/elasticsearch": "^8.6.0",
     "@gelatonetwork/relay-sdk": "^4.0.0",
