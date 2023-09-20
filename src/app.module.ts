@@ -112,9 +112,14 @@ import { NotificationController } from './modules/notification/controller';
 import { NotificationService } from './globalServices/notification/notification.service';
 import { TracingModule } from '@dollarsign/nestjs-jaeger-tracing';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { DatabaseConfig } from './config/db/db.config';
+import { ElasticSearchConfig } from './config/elastic-search/elastic-search.config';
+import { ClientModuleConfig } from './config/client-module/client-module.config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    DatabaseConfig,
     //
     TypeOrmModule.forFeature([
       User,
@@ -150,26 +155,26 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       BrandCustomer,
       Notification,
     ]),
-    ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRoot(typeOrmConfig),
+    // TypeOrmModule.forRoot(typeOrmConfig),
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
     JwtModule.register(jwtConfigurations),
-    ElasticsearchModule.register({
-      node: process.env.ELASTIC_NODE,
-      auth: {
-        username: process.env.ELASTIC_USERNAME,
-        password: process.env.ELASTIC_PASSWORD,
-      },
-      tls: {
-        ca: process.env.ELASTIC_CA,
-        rejectUnauthorized: false,
-      },
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      requestTimeout: 30000,
-    }),
+    ElasticSearchConfig,
+    // ElasticsearchModule.register({
+    //   node: process.env.ELASTIC_NODE,
+    //   auth: {
+    //     username: process.env.ELASTIC_USERNAME,
+    //     password: process.env.ELASTIC_PASSWORD,
+    //   },
+    //   tls: {
+    //     ca: process.env.ELASTIC_CA,
+    //     rejectUnauthorized: false,
+    //   },
+    //   headers: {
+    //     Accept: 'application/json',
+    //     'Content-Type': 'application/json',
+    //   },
+    //   requestTimeout: 30000,
+    // }),
     MailModule,
     SmsModule,
     SearchModule,
@@ -182,16 +187,17 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       },
       isSimpleSpanProcessor: true, // true for development.
     }),
-    ClientsModule.register([
-      {
-        name: 'tracking-service',
-        transport: Transport.TCP,
-        options: {
-          port: parseInt(process.env.APP_SERVER_LISTEN_PORT, 10),
-          ...TracingModule.getParserOptions(), // this method will return serializer that inject tracing id to microservice payload.
-        },
-      },
-    ]),
+    // ClientsModule.register([
+    //   {
+    //     name: 'tracking-service',
+    //     transport: Transport.TCP,
+    //     options: {
+    //       port: parseInt(process.env.APP_SERVER_LISTEN_PORT, 10),
+    //       ...TracingModule.getParserOptions(), // this method will return serializer that inject tracing id to microservice payload.
+    //     },
+    //   },
+    // ]),
+    ClientModuleConfig,
   ],
   controllers: [
     AppController,

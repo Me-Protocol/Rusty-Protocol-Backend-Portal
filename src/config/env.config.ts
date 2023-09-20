@@ -9,6 +9,8 @@ export const API_VERSION = env.get('API_VERSION').asString();
 export const GLOBAL_PREFIX = env.get('GLOBAL_PREFIX').asString();
 export const CLIENT_APP_URI = env.get('CLIENT_APP_URI').asString();
 export const APP_NAME = env.get('APP_NAME').asString();
+export const API_ROOT = env.get('API_ROOT').asString();
+export const APP_DESCRIPTION = env.get('APP_DESCRIPTION').asString();
 export const SERVER_MONITOR_WEBSOCKET_URL = env.get('SERVER_MONITOR_WEBSOCKET_URL').asString();
 export const SERVER_URL = env.get('SERVER_URL').asString();
 
