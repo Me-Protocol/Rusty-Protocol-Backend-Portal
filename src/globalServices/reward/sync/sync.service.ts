@@ -510,6 +510,8 @@ export class SyncRewardService {
         spend = await mutate(params);
       }
 
+      console.log(spend);
+
       return spend;
     } catch (error) {
       logger.error(error);
