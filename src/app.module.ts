@@ -112,6 +112,7 @@ import { NotificationController } from './modules/notification/controller';
 import { NotificationService } from './globalServices/notification/notification.service';
 import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
 import { SettingsModule } from './globalServices/settings/settings.module';
+import { DebugController } from './debug/debug.controller';
 
 @Module({
   imports: [
@@ -198,6 +199,7 @@ import { SettingsModule } from './globalServices/settings/settings.module';
     CostManagementController,
     PaymentModuleController,
     NotificationController,
+    DebugController,
   ],
   providers: [
     ElasticIndex,
