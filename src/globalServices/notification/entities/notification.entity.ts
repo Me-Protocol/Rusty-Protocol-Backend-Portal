@@ -95,5 +95,11 @@ export class Notification extends BaseEntity {
   @Column({ nullable: true })
   news_id: string;
 
+  @Column({ nullable: true })
+  image: string;
+
+  @Column({ nullable: true })
+  icon: string;
+
   // TODO add news entity
 }

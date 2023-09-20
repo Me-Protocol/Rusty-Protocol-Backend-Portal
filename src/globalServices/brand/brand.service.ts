@@ -57,18 +57,18 @@ export class BrandService {
 
   async update(body: UpdateBrandDto, brandId: string) {
     try {
-      if (body.name) {
-        body.slug = body.name.toLowerCase().replace(/\s/g, '-');
+      // if (body.name) {
+      //   body.slug = body.name.toLowerCase().replace(/\s/g, '-');
 
-        const checkSlug = await this.brandRepo.findOneBy({ slug: body.slug });
-        if (checkSlug) {
-          throw new Error('Name/Slug already exists');
-        }
-      }
+      //   const checkSlug = await this.brandRepo.findOneBy({ slug: body.slug });
+      //   if (checkSlug) {
+      //     throw new Error('Name/Slug already exists');
+      //   }
+      // }
 
       let brand = await this.brandRepo.findOneBy({ id: brandId });
 
-      if (body.name) brand.name = body.name;
+      // if (body.name) brand.name = body.name;
       if (body.website) brand.website = body.website;
       if (body.location) brand.location = body.location;
       if (body.categoryId) brand.categoryId = body.categoryId;
@@ -87,6 +87,7 @@ export class BrandService {
       if (body.banners) brand.banners = body.banners;
       if (body.supportPhoneNumber)
         brand.supportPhoneNumber = body.supportPhoneNumber;
+      if (body.listOnStore) brand.listOnStore = body.listOnStore;
 
       await this.brandRepo.update({ id: brandId }, brand);
 
@@ -126,10 +127,11 @@ export class BrandService {
   }) {
     const brandQuery = this.brandRepo
       .createQueryBuilder('brand')
-      .leftJoinAndSelect('brand.category', 'category');
+      .leftJoinAndSelect('brand.category', 'category')
+      .where('brand.listOnStore = :listOnStore', { listOnStore: true });
 
     if (categoryId) {
-      brandQuery.where('brand.categoryId = :categoryId', { categoryId });
+      brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
     }
 
     brandQuery.skip((page - 1) * limit).take(limit);

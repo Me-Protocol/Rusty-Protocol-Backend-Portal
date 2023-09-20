@@ -9,8 +9,8 @@ import {
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
 
 /**
- * Database configuration module for reading properties from environment variables
- * Exported as DatabaseConfig
+ * Elastic search configuration module for reading properties from environment variables
+ * Exported as ElasticSearchConfig
  */
 @Module({
   imports: [

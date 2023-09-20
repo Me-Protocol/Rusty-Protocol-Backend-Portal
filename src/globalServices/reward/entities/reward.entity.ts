@@ -10,12 +10,12 @@ import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { BaseEntity } from '@src/common/entities/base.entity';
 import { Offer } from '@src/globalServices/offer/entities/offer.entity';
 import { TokenBlockchain } from '@src/utils/enums/reward.enum';
-import { RewardType } from '@src/utils/enums/RewardType';
 import { Task } from '@src/globalServices/task/entities/task.entity';
 import { SyncBatch } from './syncBatch.entity';
 import { RewardRegistry } from './registry.entity';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
+import { RewardStatus } from '@src/utils/enums/ItemStatus';
 
 @Entity('reward')
 export class Reward extends BaseEntity {
@@ -119,4 +119,11 @@ export class Reward extends BaseEntity {
 
   @ManyToMany(() => Notification, (notification) => notification.rewards)
   notifications: Notification[];
+
+  @Column({
+    type: 'enum',
+    enum: RewardStatus,
+    default: RewardStatus.DRAFT,
+  })
+  status: RewardStatus;
 }

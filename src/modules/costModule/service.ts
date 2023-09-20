@@ -41,7 +41,8 @@ export class CostModuleManagementService {
 
   async createPaymentRequestApi(body: PaymentRequestDto) {
     try {
-      const { minimumBalanceApi } = this.settingsService.getCostSettings();
+      const { minimumBalanceApi } =
+        await this.settingsService.getCostSettings();
 
       const brand = await this.brandService.getBrandById(body.brandId);
       const wallet = await this.walletService.getWalletByBrandId(body.brandId);
@@ -61,7 +62,8 @@ export class CostModuleManagementService {
 
   async createPaymentRequestInApp(body: PaymentRequestDto) {
     try {
-      const { minimumBalanceInApp } = this.settingsService.getCostSettings();
+      const { minimumBalanceInApp } =
+        await this.settingsService.getCostSettings();
 
       const brand = await this.brandService.getBrandById(body.brandId);
       const wallet = await this.walletService.getWalletByBrandId(body.brandId);
@@ -79,7 +81,11 @@ export class CostModuleManagementService {
     }
   }
 
-  async createPaymentRequest(body: PaymentRequestDto, origin: PaymentOrigin) {
+  async createPaymentRequest(
+    body: PaymentRequestDto,
+    origin: PaymentOrigin,
+    isOnboarding?: boolean,
+  ) {
     try {
       // check if network is supported
       const supportedNetworksArray = Object.values(supportedNetworks);
@@ -122,15 +128,15 @@ export class CostModuleManagementService {
         const gelatoResponse = await axios.get(url);
         const transactionHash = gelatoResponse.data;
 
-        console.log(transactionHash);
-
         const status =
           await this.costModuleService.checkTransactionStatusWithRetry({
             taskId: relayResponse.taskId,
           });
 
-        req.sourceReference = relayResponse.taskId;
-        await this.paymentRequestService.save(req);
+        if (!isOnboarding) {
+          req.sourceReference = relayResponse.taskId;
+          await this.paymentRequestService.save(req);
+        }
 
         if (status === 'CheckPending') {
           return {

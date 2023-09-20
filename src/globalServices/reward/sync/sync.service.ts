@@ -167,6 +167,16 @@ export class SyncRewardService {
     });
   }
 
+  async findOneRegistryByEmailIdentifier(email: string, rewardId: string) {
+    return this.rewardRegistryRepo.findOne({
+      where: {
+        customerIdentiyOnBrandSite: email,
+        rewardId,
+      },
+      relations: ['reward', 'reward.brand'],
+    });
+  }
+
   // debit reward
   async debitReward({
     rewardId,
@@ -197,15 +207,15 @@ export class SyncRewardService {
     }
 
     // add registry history
-    const registryHistory = this.registryHistoryRepo.create({
-      balance: registry.balance,
-      description,
-      transactionType: TransactionsType.DEBIT,
-      rewardRegistryId: registry.id,
-      amount: amount,
-    });
+    // const registryHistory = this.registryHistoryRepo.create({
+    //   balance: registry.balance,
+    //   description,
+    //   transactionType: TransactionsType.DEBIT,
+    //   rewardRegistryId: registry.id,
+    //   amount: amount,
+    // });
 
-    await this.registryHistoryRepo.save(registryHistory);
+    // await this.registryHistoryRepo.save(registryHistory);
 
     return registry;
   }
@@ -244,7 +254,7 @@ export class SyncRewardService {
     const registryHistory = this.registryHistoryRepo.create({
       balance: registry.balance,
       description,
-      transactionType: TransactionsType.DEBIT,
+      transactionType: TransactionsType.CREDIT,
       rewardRegistryId: registry.id,
       amount: amount,
     });
@@ -285,17 +295,17 @@ export class SyncRewardService {
 
     // add registry history
 
-    const registryHistory = this.registryHistoryRepo.create({
-      balance: registry.balance,
-      description,
-      transactionType: TransactionsType.DEBIT,
-      rewardRegistryId: registry.id,
-      amount: amount,
-    });
+    // const registryHistory = this.registryHistoryRepo.create({
+    //   balance: registry.balance,
+    //   description,
+    //   transactionType: TransactionsType.DEBIT,
+    //   rewardRegistryId: registry.id,
+    //   amount: amount,
+    // });
 
-    await this.registryHistoryRepo.save(registryHistory);
+    // await this.registryHistoryRepo.save(registryHistory);
 
-    return registry;
+    return newReg;
   }
 
   async clearUndistributedBalance({
@@ -327,15 +337,15 @@ export class SyncRewardService {
 
     // add registry history
 
-    const registryHistory = this.registryHistoryRepo.create({
-      balance: registry.balance,
-      description,
-      transactionType: TransactionsType.DEBIT,
-      rewardRegistryId: registry.id,
-      amount: amount,
-    });
+    // const registryHistory = this.registryHistoryRepo.create({
+    //   balance: registry.balance,
+    //   description,
+    //   transactionType: TransactionsType.DEBIT,
+    //   rewardRegistryId: registry.id,
+    //   amount: amount,
+    // });
 
-    await this.registryHistoryRepo.save(registryHistory);
+    // await this.registryHistoryRepo.save(registryHistory);
 
     return registry;
   }
@@ -367,15 +377,15 @@ export class SyncRewardService {
 
     // add registry history
 
-    const registryHistory = this.registryHistoryRepo.create({
-      balance: registry.balance,
-      description,
-      transactionType: TransactionsType.CREDIT,
-      rewardRegistryId: registry.id,
-      amount: amount,
-    });
+    // const registryHistory = this.registryHistoryRepo.create({
+    //   balance: registry.balance,
+    //   description,
+    //   transactionType: TransactionsType.CREDIT,
+    //   rewardRegistryId: registry.id,
+    //   amount: amount,
+    // });
 
-    await this.registryHistoryRepo.save(registryHistory);
+    // await this.registryHistoryRepo.save(registryHistory);
 
     return registry;
   }
@@ -409,17 +419,21 @@ export class SyncRewardService {
 
     // add registry history
 
-    const registryHistory = this.registryHistoryRepo.create({
-      balance: registry.balance,
-      description,
-      transactionType: TransactionsType.CREDIT,
-      rewardRegistryId: registry.id,
-      amount: amount,
-    });
+    // const registryHistory = this.registryHistoryRepo.create({
+    //   balance: registry.balance,
+    //   description,
+    //   transactionType: TransactionsType.CREDIT,
+    //   rewardRegistryId: registry.id,
+    //   amount: amount,
+    // });
 
-    await this.registryHistoryRepo.save(registryHistory);
+    // await this.registryHistoryRepo.save(registryHistory);
 
     return registry;
+  }
+
+  async saveRegistryHistory(registryHistory: RegistryHistory) {
+    return this.registryHistoryRepo.save(registryHistory);
   }
 
   async checkActiveBatch(brandId: string, rewardId: string) {
@@ -537,12 +551,12 @@ export class SyncRewardService {
     rewardId,
     walletAddress,
     amount,
-    userId,
+    email,
   }: {
     rewardId: string;
     walletAddress: string;
     amount: number;
-    userId: string;
+    email: string;
   }) {
     const reward = await this.rewardService.findOneById(rewardId);
 
@@ -573,7 +587,10 @@ export class SyncRewardService {
     if (distributionData?.data?.error) {
       return 'Undistributed balance';
     } else {
-      const registry = await this.findOneRegistryByUserId(userId, rewardId);
+      const registry = await this.findOneRegistryByEmailIdentifier(
+        email,
+        rewardId,
+      );
 
       await this.clearUndistributedBalance({
         registryId: registry.id,
@@ -617,29 +634,17 @@ export class SyncRewardService {
     endDate: Date;
     transactionsType: TransactionsType;
   }) {
-    const registryQuery =
-      this.rewardRegistryRepo.createQueryBuilder('registry_history');
-
-    registryQuery.where('registry_history.rewardRegistry.userId = :userId', {
-      userId,
+    return this.registryHistoryRepo.find({
+      where: {
+        rewardRegistry: {
+          userId,
+        },
+        transactionType: transactionsType,
+        createdAt: Raw(
+          (alias) => `DATE(${alias}) BETWEEN '${startDate}' AND '${endDate}'`,
+        ),
+      },
+      relations: ['rewardRegistry', 'rewardRegistry.reward'],
     });
-
-    if (transactionsType) {
-      registryQuery.andWhere(
-        'registry_history.transactionType = :transactionsType',
-        { transactionsType },
-      );
-    }
-
-    if (startDate && endDate) {
-      registryQuery.andWhere(
-        'registry_history.createdAt BETWEEN :startDate AND :endDate',
-        { startDate, endDate },
-      );
-    }
-
-    const registries = await registryQuery.getMany();
-
-    return registries;
   }
 }

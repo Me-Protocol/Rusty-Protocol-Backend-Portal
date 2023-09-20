@@ -9,6 +9,7 @@ import { ViewsService } from '../views/view.service';
 import { OfferFilter, OfferSort } from '@src/utils/enums/OfferFiilter';
 import { CustomerService } from '../customer/customer.service';
 import { ProductService } from '../product/product.service';
+import { Order } from '../order/entities/order.entity';
 
 @Injectable()
 export class OfferService {
@@ -102,12 +103,48 @@ export class OfferService {
     }
 
     // push category to user
-    await this.userService.updateUserCategoryInterests(
-      userId,
-      offer.product.category.id,
-    );
+    if (offer?.product?.category?.id) {
+      await this.userService.updateUserCategoryInterests(
+        userId,
+        offer?.product?.category?.id,
+      );
+    }
 
     return offer;
+  }
+
+  async getOfferByRewardId({
+    rewardId,
+    page,
+    limit,
+  }: {
+    rewardId: string;
+    page: number;
+    limit: number;
+  }) {
+    const offersQuery = this.offerRepo
+      .createQueryBuilder('offer')
+      .leftJoinAndSelect('offer.product', 'product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.subCategory', 'subCategory')
+      .leftJoinAndSelect('offer.offerImages', 'offerImages')
+      .leftJoinAndSelect('offer.brand', 'brand')
+      .leftJoinAndSelect('offer.reward', 'reward')
+      .where('offer.status = :status', { status: ItemStatus.PUBLISHED })
+      .andWhere('offer.rewardId = :rewardId', { rewardId });
+
+    offersQuery.skip((page - 1) * limit);
+    offersQuery.take(limit);
+
+    const offers = await offersQuery.getMany();
+    const total = await offersQuery.getCount();
+
+    return {
+      offers,
+      total,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
+    };
   }
 
   async getOffers({
@@ -494,12 +531,6 @@ export class OfferService {
 
       offer.totalOrders = offer.totalOrders + 1;
       offer.totalSales = +totalSalesParse;
-      offer.inventory = -1;
-
-      const product = await this.productService.findOneProduct(offer.productId);
-      product.inventory = -1;
-
-      await this.productService.saveProduct(product);
 
       // update customer total redeem
       const customer = await this.customerService.getByUserId(userId);
@@ -519,5 +550,27 @@ export class OfferService {
     } catch (error) {
       console.log(error);
     }
+  }
+
+  async reduceInventory(offer: Offer, order: Order) {
+    // offer.inventory = -order.quantity; TODO: check if this is needed
+
+    const product = await this.productService.findOneProduct(offer.productId);
+    product.inventory = product.inventory - +order.quantity;
+
+    await this.productService.saveProduct(product);
+
+    await this.offerRepo.save(offer);
+  }
+
+  async increaseInventory(offer: Offer, order: Order) {
+    // offer.inventory = +order.quantity; TODO: check if this is needed
+
+    const product = await this.productService.findOneProduct(offer.productId);
+    product.inventory = product.inventory + +order.quantity;
+
+    await this.productService.saveProduct(product);
+
+    await this.offerRepo.save(offer);
   }
 }

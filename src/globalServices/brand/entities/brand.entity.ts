@@ -215,4 +215,14 @@ export class Brand extends BaseEntity {
 
   @OneToMany(() => Order, (order) => order.brand)
   orders: Order[];
+
+  @Column({
+    default: true,
+  })
+  listOnStore: boolean;
+
+  @Column({
+    nullable: true,
+  })
+  walletAddress: string;
 }

@@ -4,12 +4,13 @@ import { CreateOfferDto } from './dto/CreateOfferDto.dto';
 import { Offer } from '@src/globalServices/offer/entities/offer.entity';
 import { ProductService } from '@src/globalServices/product/product.service';
 import { UpdateOfferDto } from './dto/UpdateOfferDto.dto';
-import { FilterOfferDto } from './dto/FilterOfferDto.dto';
+import { FilterOfferDto, FilterUserOfferDto } from './dto/FilterOfferDto.dto';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { offerIndex } from '@src/modules/search/interface/search.interface';
 import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
 import { logger } from '@src/globalServices/logger/logger.service';
+import { OrderService } from '@src/globalServices/order/order.service';
 
 @Injectable()
 export class OfferManagementService {
@@ -18,6 +19,7 @@ export class OfferManagementService {
     private readonly productService: ProductService,
     private readonly rewardService: RewardService,
     private readonly elasticIndex: ElasticIndex,
+    private readonly orderService: OrderService,
   ) {}
 
   async createOffer(body: CreateOfferDto) {
@@ -213,5 +215,30 @@ export class OfferManagementService {
     return {
       message: 'Offer deleted successfully',
     };
+  }
+
+  async geOffersBasedOnRedeemedOffers({
+    rewardId,
+    page,
+    limit,
+    userId,
+  }: FilterUserOfferDto) {
+    const checkIfUserHasRedeemedOffer =
+      await this.orderService.getOrdersByOfferRewardId(rewardId, userId);
+
+    if (!checkIfUserHasRedeemedOffer) {
+      return {
+        offers: [],
+        total: 0,
+        nextPage: null,
+        previousPage: null,
+      };
+    }
+
+    return await this.offerService.getOfferByRewardId({
+      rewardId,
+      page,
+      limit,
+    });
   }
 }

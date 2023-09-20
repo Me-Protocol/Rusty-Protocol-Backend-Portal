@@ -480,6 +480,12 @@ export class AuthenticationService {
     }
   }
 
+  async isPasswordValid(password: string, user: User): Promise<boolean> {
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    return isPasswordValid;
+  }
+
   async login(
     { identifier, password }: LoginDto,
     userAgent: string,
@@ -496,6 +502,10 @@ export class AuthenticationService {
           throw new Error('Invalid login details');
         }
 
+        if (user && !(await this.isPasswordValid(password, user))) {
+          throw new Error('Invalid login details');
+        }
+
         if (!user.emailVerified) {
           throw new Error('Email not verified');
         }
@@ -506,6 +516,10 @@ export class AuthenticationService {
           throw new Error('Invalid login details');
         }
 
+        if (user && (await this.isPasswordValid(password, user))) {
+          throw new Error('Invalid login details');
+        }
+
         if (!user.phoneVerified) {
           throw new Error('Phone not verified');
         }
@@ -513,6 +527,10 @@ export class AuthenticationService {
         user = await this.userService.getUserByUsername(identifier);
 
         if (!user) {
+          throw new Error('Invalid login details');
+        }
+
+        if (user && (await this.isPasswordValid(password, user))) {
           throw new Error('Invalid login details');
         }
 
@@ -535,9 +553,7 @@ export class AuthenticationService {
         );
       }
 
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-
-      if (!isPasswordValid) {
+      if (!(await this.isPasswordValid(password, user))) {
         throw new Error('Invalid login details');
       }
 
@@ -560,6 +576,7 @@ export class AuthenticationService {
 
       return token;
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),

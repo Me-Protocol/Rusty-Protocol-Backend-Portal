@@ -111,10 +111,11 @@ import { Notification } from './globalServices/notification/entities/notificatio
 import { NotificationController } from './modules/notification/controller';
 import { NotificationService } from './globalServices/notification/notification.service';
 import { TracingModule } from '@dollarsign/nestjs-jaeger-tracing';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 import { DatabaseConfig } from './config/db/db.config';
 import { ElasticSearchConfig } from './config/elastic-search/elastic-search.config';
 import { ClientModuleConfig } from './config/client-module/client-module.config';
+import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
+import { SettingsModule } from './globalServices/settings/settings.module';
 
 @Module({
   imports: [
@@ -154,8 +155,11 @@ import { ClientModuleConfig } from './config/client-module/client-module.config'
       KeyIdentifier,
       BrandCustomer,
       Notification,
+      AdminSettings,
     ]),
     // TypeOrmModule.forRoot(typeOrmConfig),
+    SettingsModule,
+    ConfigModule.forRoot({ isGlobal: true }),
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
     JwtModule.register(jwtConfigurations),
     ElasticSearchConfig,

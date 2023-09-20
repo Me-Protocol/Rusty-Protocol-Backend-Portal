@@ -16,6 +16,24 @@ import { emailButton } from '@src/utils/helpers/emailButton';
 import { CustomerService } from '@src/globalServices/customer/customer.service';
 import { BrandRole } from '@src/utils/enums/BrandRole';
 import { FilterCustomerDto } from './dto/FilterCustomerDto.dto';
+import { SettingsService } from '@src/globalServices/settings/settings.service';
+import { BigNumber, ethers } from 'ethers';
+import {
+  OPEN_REWARD_DIAMOND,
+  adminService,
+  getBrandIdHex,
+} from '@developeruche/protocol-core';
+import { OnboardBrandDto } from './dto/OnboardBrandDto.dto';
+import { CostModuleManagementService } from '@src/modules/costModule/service';
+import { PaymentRequestTnxType } from '@src/utils/enums/PaymentRequestTnxType';
+import { PaymentOrigin } from '@src/utils/enums/PaymentOrigin';
+import { supportedNetworks } from '@src/globalServices/costManagement/symbol-finder.service';
+import {
+  CallWithERC2771Request,
+  ERC2771Type,
+  GelatoRelay,
+} from '@gelatonetwork/relay-sdk';
+import { onboard_brand } from '@developeruche/runtime-sdk';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -24,13 +42,13 @@ export class BrandAccountManagementService {
     private readonly userService: UserService,
     private readonly mailService: MailService,
     private readonly customerService: CustomerService,
+    private readonly settingsService: SettingsService,
+    private readonly costModuleManagementService: CostModuleManagementService,
   ) {}
 
-  async updateBrand(body: UpdateBrandDto, userId: string) {
+  async updateBrand(body: UpdateBrandDto, brandId: string) {
     try {
-      const brand = await this.brandService.getBrandByUserId(userId);
-
-      return this.brandService.update(body, brand.id);
+      return this.brandService.update(body, brandId);
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400);
@@ -342,6 +360,79 @@ export class BrandAccountManagementService {
         query.filterBy,
       );
     } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
+    }
+  }
+
+  async onboardBrand({ brandId, walletAddress, website }: OnboardBrandDto) {
+    try {
+      const brand = await this.brandService.getBrandById(brandId);
+      brand.walletAddress = walletAddress;
+
+      await this.brandService.save(brand);
+
+      const { onboardWallet } = await this.settingsService.settingsInit();
+
+      const provider = new ethers.providers.JsonRpcProvider(
+        process.env.JSON_RPC_URL,
+      );
+      const wallet = new ethers.Wallet(onboardWallet, provider);
+      const ts2 = await adminService.registerBrand(
+        brand.name,
+        website,
+        brand.walletAddress,
+        getBrandIdHex(BigNumber.from(brand.brandProtocolId)),
+      );
+
+      const relay = new GelatoRelay();
+
+      const input = {
+        data: ts2?.data,
+        from: wallet.address,
+        to: OPEN_REWARD_DIAMOND,
+      };
+
+      const request: CallWithERC2771Request = {
+        chainId: 80001,
+        target: OPEN_REWARD_DIAMOND,
+        data: input.data,
+        user: input.from,
+      };
+
+      const { struct, signature } = await relay.getSignatureDataERC2771(
+        request,
+        wallet,
+        ERC2771Type.SponsoredCall,
+      );
+
+      const data = {
+        data: struct,
+        tnxType: PaymentRequestTnxType.RELAYER,
+        narration: '1',
+        network: supportedNetworks.MUMBAI,
+        signature,
+        brandId: brandId,
+      };
+
+      const paymentRequest =
+        this.costModuleManagementService.createPaymentRequest(
+          data,
+          PaymentOrigin.IN_APP,
+          true,
+        );
+      await onboard_brand(
+        BigNumber.from(brand.brandProtocolId),
+        walletAddress,
+        ethers.constants.AddressZero,
+        wallet,
+      );
+
+      return paymentRequest;
+    } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),

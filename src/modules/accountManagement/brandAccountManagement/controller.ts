@@ -24,6 +24,7 @@ import { UpdateMemberDto } from './dto/UpdateMemberDto.dto';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { CreateMemberDto } from './dto/CreateMemberDto.dto';
 import { FilterCustomerDto } from './dto/FilterCustomerDto.dto';
+import { OnboardBrandDto } from './dto/OnboardBrandDto.dto';
 
 @ApiTags('Brand')
 @Controller('brand')
@@ -38,11 +39,11 @@ export class BrandManagementController {
     @Body(ValidationPipe) updateBrandDto: UpdateBrandDto,
     @Req() req: any,
   ) {
-    const userId = req.user.id;
+    const brandId = req.user.brand.id;
 
     return await this.brandAccountManagementService.updateBrand(
       updateBrandDto,
-      userId,
+      brandId,
     );
   }
 
@@ -159,5 +160,17 @@ export class BrandManagementController {
     );
 
     return res.redirect(process.env.CLIENT_APP_URI);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Post('onboard')
+  async onboardBrand(
+    @Body(ValidationPipe) body: OnboardBrandDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    body.brandId = brandId;
+
+    return await this.brandAccountManagementService.onboardBrand(body);
   }
 }
