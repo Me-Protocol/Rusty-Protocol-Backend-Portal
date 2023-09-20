@@ -21,6 +21,7 @@ export const POSTGRES_PASSWORD = env.get('POSTGRES_PASSWORD').asString();
 export const POSTGRES_DATABASE = env.get('POSTGRES_DATABASE').asString();
 export const PG_ADMIN_EMAIL = env.get('PG_ADMIN_EMAIL').asString();
 export const PG_ADMIN_PASSWORD = env.get('PG_ADMIN_PASSWORD').asString();
+export const DATABASE_URL = env.get('DATABASE_URL').asString();
 
 export const ELASTIC_NODE = env.get('ELASTIC_NODE').asString();
 export const ELASTIC_USERNAME = env.get('ELASTIC_USERNAME').asString();

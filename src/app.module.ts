@@ -116,6 +116,7 @@ import { ElasticSearchConfig } from './config/elastic-search/elastic-search.conf
 import { ClientModuleConfig } from './config/client-module/client-module.config';
 import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
 import { SettingsModule } from './globalServices/settings/settings.module';
+import { InternalCacheModule } from './config/internal-cache/internal-cache.config';
 
 @Module({
   imports: [
@@ -163,6 +164,7 @@ import { SettingsModule } from './globalServices/settings/settings.module';
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
     JwtModule.register(jwtConfigurations),
     ElasticSearchConfig,
+    InternalCacheModule,
     // ElasticsearchModule.register({
     //   node: process.env.ELASTIC_NODE,
     //   auth: {

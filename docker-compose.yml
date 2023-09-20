@@ -75,7 +75,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DATABASE}
     ports:
-      - ${POSTGRES_PORT}:6543
+      - ${POSTGRES_PORT}:5432
     volumes:
       - pg-data:/var/lib/postgresql/data
     networks:
