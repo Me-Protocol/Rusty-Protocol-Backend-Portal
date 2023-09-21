@@ -536,7 +536,7 @@ export class SyncRewardService {
         wallet,
         body.token,
         body.spender,
-        body.value,
+        ethers.utils.parseEther(body.value),
         ethers.constants.MaxUint256,
       );
 

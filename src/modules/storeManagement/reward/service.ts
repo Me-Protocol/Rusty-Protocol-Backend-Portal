@@ -41,14 +41,6 @@ export class RewardManagementService {
 
   async createReward(body: CreateRewardDto) {
     try {
-      const checkDraft = await this.rewardService.getDraftReward(body.brandId);
-
-      if (checkDraft) {
-        throw new Error(
-          'You already have a draft reward. Please delete it to create a new one',
-        );
-      }
-
       const slug = getSlug(body.rewardName);
 
       const checkReward = await this.rewardService.findOneRewardBySlug(slug);
@@ -57,75 +49,26 @@ export class RewardManagementService {
         throw new Error('Looks like this reward already exists');
       }
 
-      // TODO generate private key and public key
-      let createRedistributionKey: {
-        pubKey: string;
-        privKey: string;
-      };
-      let createBountyKey: {
-        pubKey: string;
-        privKey: string;
-      };
+      let reward: Reward;
 
-      if (body.apiKey) {
-        createBountyKey = generateWalletWithApiKey(
-          body.apiKey,
-          process.env.API_KEY_SALT,
-        );
-        createRedistributionKey = generateWalletWithApiKey(
-          body.apiKey,
-          process.env.API_KEY_SALT,
-        );
-      } else {
-        createBountyKey = generateWalletRandom();
-        createRedistributionKey = generateWalletRandom();
+      reward = await this.rewardService.getDraftReward(body.brandId);
+
+      if (!reward) {
+        reward = new Reward();
       }
 
-      const { pubKey, privKey } = createRedistributionKey;
-      const { pubKey: bountyPubKey, privKey: bountyPrivKey } = createBountyKey;
-
-      // Encrypt private key
-      const redistributionEncryptedKey =
-        await this.keyManagementService.encryptKey(privKey);
-      const bountyEncryptedKey = await this.keyManagementService.encryptKey(
-        bountyPrivKey,
-      );
-
-      // Create key identifier
-      const redistributionKeyIdentifier = new KeyIdentifier();
-      redistributionKeyIdentifier.identifier = redistributionEncryptedKey;
-      redistributionKeyIdentifier.identifierType =
-        KeyIdentifierType.REDISTRIBUTION;
-
-      const newRedistributionKeyIdentifier =
-        await this.rewardService.createKeyIdentifer(
-          redistributionKeyIdentifier,
-        );
-
-      const bountyKeyIdentifier = new KeyIdentifier();
-      bountyKeyIdentifier.identifier = bountyEncryptedKey;
-      bountyKeyIdentifier.identifierType = KeyIdentifierType.BOUNTY;
-
-      const newBountyKeyIdentifier =
-        await this.rewardService.createKeyIdentifer(bountyKeyIdentifier);
-
-      const reward = new Reward();
-
-      reward.slug = slug;
-      reward.brandId = body.brandId;
-      reward.description = body.description;
-      reward.rewardImage = body.rewardImage;
-      reward.rewardSymbol = body.rewardSymbol;
-      reward.rewardName = body.rewardName;
-      reward.autoSyncEnabled = body.autoSyncEnabled;
-      reward.acceptedCustomerIdentitytypes = body.acceptedCustomerIdentitytypes;
-
-      reward.isBounty = body.isBounty;
-      reward.blockchain = body.blockchain;
-      reward.redistributionPublicKey = pubKey;
-      reward.bountyPublicKey = bountyPubKey;
-      reward.redistributionKeyIdentifierId = newRedistributionKeyIdentifier.id;
-      reward.bountyKeyIdentifierId = newBountyKeyIdentifier.id;
+      if (reward.rewardName) reward.slug = slug;
+      if (reward.brandId) reward.brandId = body.brandId;
+      if (reward.description) reward.description = body.description;
+      if (reward.rewardImage) reward.rewardImage = body.rewardImage;
+      if (reward.rewardSymbol) reward.rewardSymbol = body.rewardSymbol;
+      if (reward.rewardName) reward.rewardName = body.rewardName;
+      if (reward.autoSyncEnabled) reward.autoSyncEnabled = body.autoSyncEnabled;
+      if (reward.acceptedCustomerIdentitytypes)
+        reward.acceptedCustomerIdentitytypes =
+          body.acceptedCustomerIdentitytypes;
+      if (reward.isBounty) reward.isBounty = body.isBounty;
+      if (reward.blockchain) reward.blockchain = body.blockchain;
 
       const newReward = await this.rewardService.create(reward);
 
@@ -165,8 +108,52 @@ export class RewardManagementService {
       });
     }
 
+    // TODO generate private key and public key
+    let createRedistributionKey: {
+      pubKey: string;
+      privKey: string;
+    };
+    let createBountyKey: {
+      pubKey: string;
+      privKey: string;
+    };
+
+    createBountyKey = generateWalletRandom();
+    createRedistributionKey = generateWalletRandom();
+
+    const { pubKey, privKey } = createRedistributionKey;
+    const { pubKey: bountyPubKey, privKey: bountyPrivKey } = createBountyKey;
+
+    // Encrypt private key
+    const redistributionEncryptedKey =
+      await this.keyManagementService.encryptKey(privKey);
+    const bountyEncryptedKey = await this.keyManagementService.encryptKey(
+      bountyPrivKey,
+    );
+
+    // Create key identifier
+    const redistributionKeyIdentifier = new KeyIdentifier();
+    redistributionKeyIdentifier.identifier = redistributionEncryptedKey;
+    redistributionKeyIdentifier.identifierType =
+      KeyIdentifierType.REDISTRIBUTION;
+
+    const newRedistributionKeyIdentifier =
+      await this.rewardService.createKeyIdentifer(redistributionKeyIdentifier);
+
+    const bountyKeyIdentifier = new KeyIdentifier();
+    bountyKeyIdentifier.identifier = bountyEncryptedKey;
+    bountyKeyIdentifier.identifierType = KeyIdentifierType.BOUNTY;
+
+    const newBountyKeyIdentifier = await this.rewardService.createKeyIdentifer(
+      bountyKeyIdentifier,
+    );
+
     reward.contractAddress = body.contractAddress;
     reward.status = RewardStatus.PUBLISHED;
+    reward.redistributionPublicKey = pubKey;
+    reward.bountyPublicKey = bountyPubKey;
+    reward.redistributionKeyIdentifierId = newRedistributionKeyIdentifier.id;
+    reward.bountyKeyIdentifierId = newBountyKeyIdentifier.id;
 
     return await this.rewardService.save(reward);
   }
