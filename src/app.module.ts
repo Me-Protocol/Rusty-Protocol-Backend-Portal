@@ -4,12 +4,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { typeOrmConfig } from './config/typeorm.config';
 import { MailModule } from './globalServices/mail/mail.module';
 import { SmsModule } from './globalServices/sms/sms.module';
 import { jwtConfigurations } from './config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
-import { ElasticsearchModule } from '@nestjs/elasticsearch';
 import { JwtStrategy } from './middlewares/jwt-strategy.middleware';
 import { SearchService } from './modules/search/search.service';
 import { SearchModule } from './modules/search/search.module';
@@ -121,8 +119,7 @@ import { InternalCacheModule } from './config/internal-cache/internal-cache.conf
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    DatabaseConfig,
-    //
+    DatabaseConfig, // Database config
     TypeOrmModule.forFeature([
       User,
       Customer,
@@ -158,29 +155,11 @@ import { InternalCacheModule } from './config/internal-cache/internal-cache.conf
       Notification,
       AdminSettings,
     ]),
-    // TypeOrmModule.forRoot(typeOrmConfig),
     SettingsModule,
-    ConfigModule.forRoot({ isGlobal: true }),
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
     JwtModule.register(jwtConfigurations),
-    ElasticSearchConfig,
-    InternalCacheModule,
-    // ElasticsearchModule.register({
-    //   node: process.env.ELASTIC_NODE,
-    //   auth: {
-    //     username: process.env.ELASTIC_USERNAME,
-    //     password: process.env.ELASTIC_PASSWORD,
-    //   },
-    //   tls: {
-    //     ca: process.env.ELASTIC_CA,
-    //     rejectUnauthorized: false,
-    //   },
-    //   headers: {
-    //     Accept: 'application/json',
-    //     'Content-Type': 'application/json',
-    //   },
-    //   requestTimeout: 30000,
-    // }),
+    ElasticSearchConfig, // elastic search config
+    InternalCacheModule, // redis config
     MailModule,
     SmsModule,
     SearchModule,
@@ -193,17 +172,7 @@ import { InternalCacheModule } from './config/internal-cache/internal-cache.conf
       },
       isSimpleSpanProcessor: true, // true for development.
     }),
-    // ClientsModule.register([
-    //   {
-    //     name: 'tracking-service',
-    //     transport: Transport.TCP,
-    //     options: {
-    //       port: parseInt(process.env.APP_SERVER_LISTEN_PORT, 10),
-    //       ...TracingModule.getParserOptions(), // this method will return serializer that inject tracing id to microservice payload.
-    //     },
-    //   },
-    // ]),
-    ClientModuleConfig,
+    ClientModuleConfig, // microservice
   ],
   controllers: [
     AppController,

@@ -8,8 +8,6 @@ import {
   POSTGRES_USER,
   POSTGRES_PASSWORD,
   POSTGRES_DATABASE,
-  NODE_ENV,
-  DATABASE_URL,
 } from '../env.config';
 
 /**
@@ -33,12 +31,6 @@ import {
         entities: ['dist/**/*.entity{.ts,.js}'],
         migrations: [join(__dirname, '../dist/migrations/**.js')],
         subscribers: [join(__dirname, '../dist/subscribers/**.js')],
-        extra: {
-          ssl:
-            NODE_ENV === 'production' ||
-            NODE_ENV === 'staging' ||
-            NODE_ENV === 'development',
-        },
         migrationsRun: true,
         synchronize: true,
         autoLoadEntities: true,

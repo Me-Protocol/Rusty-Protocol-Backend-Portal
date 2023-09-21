@@ -8,7 +8,7 @@ import { CreateMemberDto } from './dto/CreateMemberDto.dto';
 import { UserService } from '@src/globalServices/user/user.service';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { TwoFAType } from '@src/utils/enums/TwoFAType';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { UserAppType } from '@src/utils/enums/UserAppType';
 import { BrandMember } from '@src/globalServices/brand/entities/brand_member.entity';
 import { MailService } from '@src/globalServices/mail/mail.service';
