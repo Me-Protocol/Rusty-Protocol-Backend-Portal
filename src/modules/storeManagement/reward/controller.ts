@@ -245,7 +245,7 @@ export class RewardManagementController {
   }
 
   @UseGuards(BrandJwtStrategy)
-  @Post('draft')
+  @Get('draft')
   async getDraftReward(@Req() req: any) {
     const brandId = req.user.brand.id;
 
