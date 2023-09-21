@@ -62,7 +62,7 @@ export class RewardManagementService {
       }
 
       if (reward.rewardName) reward.slug = slug;
-      if (reward.brandId) reward.brandId = body.brandId;
+      reward.brandId = body.brandId;
       if (reward.description) reward.description = body.description;
       if (reward.rewardImage) reward.rewardImage = body.rewardImage;
       if (reward.rewardSymbol) reward.rewardSymbol = body.rewardSymbol;
