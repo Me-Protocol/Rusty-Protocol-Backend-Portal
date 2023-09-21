@@ -24,10 +24,6 @@ export class PushTransactionDto {
 export class GetTreasuryPermitDto {
   @ApiProperty()
   @IsString()
-  token: string;
-
-  @ApiProperty()
-  @IsString()
   spender: string;
 
   @ApiProperty()

@@ -22,7 +22,10 @@ import { KeyManagementService } from '@src/globalServices/key-management/key-man
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
-import { getTreasuryPermitSignature } from '@developeruche/protocol-core';
+import {
+  getTreasuryPermitSignature,
+  treasuryContract,
+} from '@developeruche/protocol-core';
 import { GetTreasuryPermitDto } from '@src/modules/storeManagement/reward/dto/PushTransactionDto.dto';
 
 @Injectable()
@@ -534,7 +537,7 @@ export class SyncRewardService {
 
       const result = await getTreasuryPermitSignature(
         wallet,
-        body.token,
+        treasuryContract,
         body.spender,
         ethers.utils.parseEther(body.value),
         ethers.constants.MaxUint256,
