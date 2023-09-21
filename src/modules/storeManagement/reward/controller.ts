@@ -244,6 +244,14 @@ export class RewardManagementController {
     );
   }
 
+  @UseGuards(BrandJwtStrategy)
+  @Post('draft')
+  async getDraftReward(@Req() req: any) {
+    const brandId = req.user.brand.id;
+
+    return await this.rewardManagementService.getDraftReward(brandId);
+  }
+
   @UseGuards(AuthGuard())
   @Get('registry')
   async getRegistry(

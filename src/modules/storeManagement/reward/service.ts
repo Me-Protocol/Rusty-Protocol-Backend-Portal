@@ -43,7 +43,10 @@ export class RewardManagementService {
     try {
       const slug = getSlug(body.rewardName);
 
-      const checkReward = await this.rewardService.findOneRewardBySlug(slug);
+      const checkReward = await this.rewardService.findOneRewardByName(
+        body.rewardName,
+      );
+      let isDraft = true;
 
       if (checkReward) {
         throw new Error('Looks like this reward already exists');
@@ -55,6 +58,7 @@ export class RewardManagementService {
 
       if (!reward) {
         reward = new Reward();
+        isDraft = false;
       }
 
       if (reward.rewardName) reward.slug = slug;
@@ -70,9 +74,11 @@ export class RewardManagementService {
       if (reward.isBounty) reward.isBounty = body.isBounty;
       if (reward.blockchain) reward.blockchain = body.blockchain;
 
-      const newReward = await this.rewardService.create(reward);
-
-      return newReward;
+      if (isDraft) {
+        return await this.rewardService.save(reward);
+      } else {
+        return await this.rewardService.create(reward);
+      }
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, error.status, {
@@ -156,6 +162,10 @@ export class RewardManagementService {
     reward.bountyKeyIdentifierId = newBountyKeyIdentifier.id;
 
     return await this.rewardService.save(reward);
+  }
+
+  async getDraftReward(brandId: string) {
+    return await this.rewardService.getDraftReward(brandId);
   }
 
   async deleteReward(id: string, brandId: string) {
