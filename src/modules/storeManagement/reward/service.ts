@@ -61,18 +61,18 @@ export class RewardManagementService {
         isDraft = false;
       }
 
-      if (reward.rewardName) reward.slug = slug;
+      if (body.rewardName) reward.slug = slug;
       reward.brandId = body.brandId;
-      if (reward.description) reward.description = body.description;
-      if (reward.rewardImage) reward.rewardImage = body.rewardImage;
-      if (reward.rewardSymbol) reward.rewardSymbol = body.rewardSymbol;
-      if (reward.rewardName) reward.rewardName = body.rewardName;
-      if (reward.autoSyncEnabled) reward.autoSyncEnabled = body.autoSyncEnabled;
-      if (reward.acceptedCustomerIdentitytypes)
+      if (body.description) reward.description = body.description;
+      if (body.rewardImage) reward.rewardImage = body.rewardImage;
+      if (body.rewardSymbol) reward.rewardSymbol = body.rewardSymbol;
+      if (body.rewardName) reward.rewardName = body.rewardName;
+      if (body.autoSyncEnabled) reward.autoSyncEnabled = body.autoSyncEnabled;
+      if (body.acceptedCustomerIdentitytypes)
         reward.acceptedCustomerIdentitytypes =
           body.acceptedCustomerIdentitytypes;
-      if (reward.isBounty) reward.isBounty = body.isBounty;
-      if (reward.blockchain) reward.blockchain = body.blockchain;
+      if (body.isBounty) reward.isBounty = body.isBounty;
+      if (body.blockchain) reward.blockchain = body.blockchain;
 
       if (isDraft) {
         return await this.rewardService.save(reward);
