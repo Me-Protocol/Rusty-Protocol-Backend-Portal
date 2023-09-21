@@ -115,6 +115,9 @@ import { ClientModuleConfig } from './config/client-module/client-module.config'
 import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
 import { SettingsModule } from './globalServices/settings/settings.module';
 import { InternalCacheModule } from './config/internal-cache/internal-cache.config';
+import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
+import { SettingsModule } from './globalServices/settings/settings.module';
+import { DebugController } from './debug/debug.controller';
 
 @Module({
   imports: [
@@ -193,6 +196,7 @@ import { InternalCacheModule } from './config/internal-cache/internal-cache.conf
     CostManagementController,
     PaymentModuleController,
     NotificationController,
+    DebugController,
   ],
   providers: [
     ElasticIndex,

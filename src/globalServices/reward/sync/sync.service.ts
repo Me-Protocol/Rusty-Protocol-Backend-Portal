@@ -510,7 +510,7 @@ export class SyncRewardService {
         spend = await mutate(params);
       }
 
-      return spend;
+      return spend?.data ?? spend;
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400, {

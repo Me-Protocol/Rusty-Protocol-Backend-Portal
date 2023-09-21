@@ -556,21 +556,21 @@ export class OfferService {
     // offer.inventory = -order.quantity; TODO: check if this is needed
 
     const product = await this.productService.findOneProduct(offer.productId);
-    product.inventory = product.inventory - +order.quantity;
+    product.inventory = product.inventory - order.quantity;
 
     await this.productService.saveProduct(product);
 
-    await this.offerRepo.save(offer);
+    // await this.offerRepo.save(offer);
   }
 
   async increaseInventory(offer: Offer, order: Order) {
     // offer.inventory = +order.quantity; TODO: check if this is needed
 
     const product = await this.productService.findOneProduct(offer.productId);
-    product.inventory = product.inventory + +order.quantity;
+    product.inventory = product.inventory + order.quantity;
 
     await this.productService.saveProduct(product);
 
-    await this.offerRepo.save(offer);
+    // await this.offerRepo.save(offer);
   }
 }
