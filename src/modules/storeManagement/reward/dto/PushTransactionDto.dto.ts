@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsObject } from 'class-validator';
+import { IsObject, IsString } from 'class-validator';
 import { SendTransactionData } from './distributeBatch.dto';
 
 export class PushTransactionDto {
@@ -19,4 +19,18 @@ export class PushTransactionDto {
     each: true,
   })
   params: SendTransactionData;
+}
+
+export class GetTreasuryPermitDto {
+  @ApiProperty()
+  @IsString()
+  token: string;
+
+  @ApiProperty()
+  @IsString()
+  spender: string;
+
+  @ApiProperty()
+  @IsString()
+  value: string;
 }

@@ -11,12 +11,16 @@ import {
   Req,
   Delete,
   ParseUUIDPipe,
+  Put,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags } from '@nestjs/swagger';
 import { RewardManagementService } from './service';
-import { CreateRewardDto } from './dto/createRewardDto.dto';
+import {
+  CreateRewardDto,
+  UpdateRewardCreationDto,
+} from './dto/createRewardDto.dto';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { FilterRewardDto } from './dto/filterRewardDto.dto';
 import { UpdateBatchDto } from './dto/updateBatchDto';
@@ -29,7 +33,10 @@ import { InAppApiKeyJwtStrategy } from '@src/middlewares/inapp-api-jwt-strategy.
 import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
 import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
 import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
-import { PushTransactionDto } from './dto/PushTransactionDto.dto';
+import {
+  GetTreasuryPermitDto,
+  PushTransactionDto,
+} from './dto/PushTransactionDto.dto';
 import { ServerGuard } from '@src/middlewares/server-guard';
 import { FilterRegistryHistoryDto } from './dto/filterRegistryHistoryDto.dto';
 
@@ -51,6 +58,18 @@ export class RewardManagementController {
     createRewardDto.brandId = brandId;
 
     return await this.rewardManagementService.createReward(createRewardDto);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Put('complete')
+  async completeReward(
+    @Body(ValidationPipe) createRewardDto: UpdateRewardCreationDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    createRewardDto.brandId = brandId;
+
+    return await this.rewardManagementService.completeReward(createRewardDto);
   }
 
   @UseGuards(ApiKeyJwtStrategy)
@@ -201,6 +220,16 @@ export class RewardManagementController {
     @Body(ValidationPipe) body: PushTransactionDto,
   ) {
     return await this.syncService.pushTransactionToRuntime(body.params);
+  }
+
+  @UseGuards(InAppApiKeyJwtStrategy)
+  @UseGuards(ServerGuard)
+  @Post('get-treasury-permit')
+  async getTreasuryPermitAsync(
+    @Req() req: any,
+    @Body(ValidationPipe) body: GetTreasuryPermitDto,
+  ) {
+    return await this.syncService.getTreasuryPermitAsync(body);
   }
 
   @UseGuards(BrandJwtStrategy)

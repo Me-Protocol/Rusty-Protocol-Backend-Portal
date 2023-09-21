@@ -1,5 +1,8 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { CreateRewardDto } from './dto/createRewardDto.dto';
+import {
+  CreateRewardDto,
+  UpdateRewardCreationDto,
+} from './dto/createRewardDto.dto';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { Reward } from '@src/globalServices/reward/entities/reward.entity';
 import { FilterRewardDto } from './dto/filterRewardDto.dto';
@@ -24,6 +27,7 @@ import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
 import { ethers } from 'ethers';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { FilterRegistryHistoryDto } from './dto/filterRegistryHistoryDto.dto';
+import { RewardStatus } from '@src/utils/enums/ItemStatus';
 
 @Injectable()
 export class RewardManagementService {
@@ -48,12 +52,8 @@ export class RewardManagementService {
       const slug = getSlug(body.rewardName);
 
       const checkReward = await this.rewardService.findOneRewardBySlug(slug);
-      const checkContractAddress =
-        await this.rewardService.getRewardByContractAddress(
-          body.contractAddress,
-        );
 
-      if (checkReward || checkContractAddress) {
+      if (checkReward) {
         throw new Error('Looks like this reward already exists');
       }
 
@@ -120,7 +120,6 @@ export class RewardManagementService {
       reward.autoSyncEnabled = body.autoSyncEnabled;
       reward.acceptedCustomerIdentitytypes = body.acceptedCustomerIdentitytypes;
 
-      reward.contractAddress = body.contractAddress;
       reward.isBounty = body.isBounty;
       reward.blockchain = body.blockchain;
       reward.redistributionPublicKey = pubKey;
@@ -137,6 +136,39 @@ export class RewardManagementService {
         cause: new Error(error.message),
       });
     }
+  }
+
+  async completeReward(body: UpdateRewardCreationDto) {
+    const checkContractAddress =
+      await this.rewardService.getRewardByContractAddress(body.contractAddress);
+
+    if (checkContractAddress) {
+      throw new HttpException('Contract address already exists', 400, {
+        cause: new Error('Contract address already exists'),
+      });
+    }
+
+    const reward = await this.rewardService.getRewardByIdAndBrandId(
+      body.rewardId,
+      body.brandId,
+    );
+
+    if (!reward) {
+      throw new HttpException('Reward not found', 404, {
+        cause: new Error('Reward not found'),
+      });
+    }
+
+    if (reward.status === RewardStatus.PUBLISHED) {
+      throw new HttpException('Reward already published', 400, {
+        cause: new Error('Reward already published'),
+      });
+    }
+
+    reward.contractAddress = body.contractAddress;
+    reward.status = RewardStatus.PUBLISHED;
+
+    return await this.rewardService.save(reward);
   }
 
   async deleteReward(id: string, brandId: string) {

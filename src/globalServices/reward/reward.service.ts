@@ -160,4 +160,13 @@ export class RewardService {
       },
     });
   }
+
+  async getRewardByIdAndBrandId(rewardId: string, brandId: string) {
+    return this.rewardsRepo.findOne({
+      where: {
+        id: rewardId,
+        brandId,
+      },
+    });
+  }
 }
