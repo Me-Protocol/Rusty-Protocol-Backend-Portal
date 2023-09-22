@@ -1,13 +1,21 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { BaseEntity } from '@src/common/entities/base.entity';
 import { Offer } from '@src/globalServices/offer/entities/offer.entity';
 import { TokenBlockchain } from '@src/utils/enums/reward.enum';
-import { RewardType } from '@src/utils/enums/RewardType';
 import { Task } from '@src/globalServices/task/entities/task.entity';
 import { SyncBatch } from './syncBatch.entity';
 import { RewardRegistry } from './registry.entity';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
+import { Notification } from '@src/globalServices/notification/entities/notification.entity';
+import { RewardStatus } from '@src/utils/enums/ItemStatus';
 
 @Entity('reward')
 export class Reward extends BaseEntity {
@@ -18,22 +26,27 @@ export class Reward extends BaseEntity {
   @JoinColumn({ name: 'brandId' })
   brand: Brand;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   description: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   slug: string;
 
-  @Column({ type: 'enum', enum: RewardType })
-  rewardType: RewardType;
-
-  @Column()
+  @Column({
+    nullable: true,
+  })
   rewardImage: string;
 
   @Column({ nullable: true })
   otherRewardType: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   rewardSymbol: string;
 
   @Column({ nullable: true })
@@ -91,4 +104,34 @@ export class Reward extends BaseEntity {
     identifierType: SyncIdentifierType;
     amount: number;
   }[];
+
+  @Column({
+    nullable: true,
+  })
+  redistributionPublicKey: string;
+
+  @Column({
+    nullable: true,
+  })
+  bountyPublicKey: string;
+
+  @Column({
+    nullable: true,
+  })
+  redistributionKeyIdentifierId: string;
+
+  @Column({
+    nullable: true,
+  })
+  bountyKeyIdentifierId: string;
+
+  @ManyToMany(() => Notification, (notification) => notification.rewards)
+  notifications: Notification[];
+
+  @Column({
+    type: 'enum',
+    enum: RewardStatus,
+    default: RewardStatus.DRAFT,
+  })
+  status: RewardStatus;
 }

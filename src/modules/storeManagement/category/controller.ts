@@ -19,7 +19,6 @@ import { FilterCategoryDto } from './dto/FilterCategoryDto';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Category')
-@UseInterceptors(ResponseInterceptor)
 @Controller('category')
 export class CategoryManagementController {
   constructor(
@@ -49,7 +48,7 @@ export class CategoryManagementController {
   }
 
   @Get('')
-  async getAllCategories(@Query() query: FilterCategoryDto) {
+  async getAllCategories(@Query(ValidationPipe) query: FilterCategoryDto) {
     return await this.categoryManagementService.findAllCategory(query);
   }
 }

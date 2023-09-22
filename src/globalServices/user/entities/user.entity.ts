@@ -18,6 +18,9 @@ import { TaskResponse } from '@src/globalServices/task/entities/taskResponse.ent
 import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
 import { Order } from '@src/globalServices/order/entities/order.entity';
 import { Coupon } from '@src/globalServices/order/entities/coupon.entity';
+import { BrandMember } from '@src/globalServices/brand/entities/brand_member.entity';
+import { BrandCustomer } from '@src/globalServices/brand/entities/brand_customer.entity';
+import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 // import { TaskResponseEntity } from '@src/models/taskResponse.entity';
 
 @Entity('user')
@@ -169,13 +172,19 @@ export class User extends BaseEntity {
   @Column({
     nullable: true,
   })
-  countryAbbr: string;
+  countryName: string;
 
   @OneToOne(() => Customer, (customer) => customer.user, {
     onDelete: 'CASCADE',
     nullable: true,
   })
   customer: Customer;
+
+  @OneToOne(() => BrandMember, (brandMember) => brandMember.user, {
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
+  brandMember: BrandMember;
 
   @OneToOne(() => Brand, (brand) => brand.user, {
     onDelete: 'CASCADE',
@@ -225,5 +234,26 @@ export class User extends BaseEntity {
   @Column({
     nullable: true,
   })
-  walletAddress: string;
+  language: string;
+
+  @Column({
+    nullable: true,
+  })
+  timezone: string;
+
+  @Column({
+    nullable: true,
+  })
+  region: string;
+
+  @Column({
+    nullable: true,
+  })
+  currency: string;
+
+  @OneToMany(() => BrandCustomer, (customer) => customer.user)
+  brandCustomers: BrandCustomer[];
+
+  @OneToMany(() => Notification, (notification) => notification.user)
+  notifications: Notification[];
 }

@@ -50,9 +50,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         );
       }
 
-      if (!user.password) {
-        throw new HttpException('Please create a password', 400);
-      }
+      // if (!user.password) {
+      //   throw new HttpException('Please create a password', 400);
+      // }
 
       const deviceToken = await this.userService.getDeviceById(
         payload.id,

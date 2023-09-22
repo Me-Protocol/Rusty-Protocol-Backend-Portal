@@ -41,13 +41,20 @@ export class FiatWalletService {
     brand?: Brand;
   }): Promise<FiatWallet> {
     const wallet = new FiatWallet();
+    let checkWallet: FiatWallet;
 
     if (user) {
       wallet.userId = user.id;
+      checkWallet = await this.walletRepo.findOneBy({ userId: user.id });
     }
 
     if (brand) {
       wallet.brandId = brand.id;
+      checkWallet = await this.walletRepo.findOneBy({ brandId: brand.id });
+    }
+
+    if (checkWallet) {
+      return checkWallet;
     }
 
     const stripeAccount = await this.paymentService.createAccount();
@@ -108,7 +115,7 @@ export class FiatWalletService {
     fiatWallet.balance = newBalance;
     await this.walletRepo.save(fiatWallet);
 
-    await this.checkCanPayCost(fiatWallet.id, fiatWallet.brandId);
+    await this.checkCanPayCost(fiatWallet.brandId);
 
     return true;
   }
@@ -125,7 +132,7 @@ export class FiatWalletService {
     fiatWallet: FiatWallet;
   }) {
     if (fiatWallet.balance < amount) {
-      await this.checkCanPayCost(fiatWallet.id, fiatWallet.brandId);
+      await this.checkCanPayCost(fiatWallet.brandId);
       return false;
     }
 
@@ -149,26 +156,25 @@ export class FiatWalletService {
     fiatWallet.balance = newBalance;
     await this.walletRepo.save(fiatWallet);
 
-    await this.checkCanPayCost(fiatWallet.id, fiatWallet.brandId);
+    await this.checkCanPayCost(fiatWallet.brandId);
 
     return true;
   }
 
-  async checkCanPayCost(walletId: string, brandId: string) {
+  async checkCanPayCost(brandId: string) {
     const brand = await this.brandService.getBrandById(brandId);
-    const wallet = await this.walletRepo.findOneBy({ id: walletId });
+    const wallet = await this.walletRepo.findOneBy({ brandId: brand.id });
 
     const brandServices = await this.brandServiceSubscription.getBrandServices(
       brand.id,
     );
 
-    if (!brandServices) return;
+    if (!brandServices) return false;
 
     let triggerTopup: boolean = false;
 
-    for (let index = 0; index < brandServices.length; index++) {
-      const service = brandServices[index];
-      const cost = this.brandServiceSubscription.getServiceCost(service);
+    for (const service of brandServices) {
+      const cost = await this.brandServiceSubscription.getServiceCost(service);
 
       const canPay = wallet.balance < cost ? false : true;
 
@@ -186,8 +192,10 @@ export class FiatWalletService {
     }
 
     if (triggerTopup) {
-      await this.fundBrandAccountForCostCollection(wallet, brand);
+      return await this.fundBrandAccountForCostCollection(wallet, brand);
     }
+
+    return true;
   }
 
   async fundBrandAccountForCostCollection(
@@ -195,7 +203,7 @@ export class FiatWalletService {
     brand: Brand,
     amount?: number,
   ) {
-    const { topupAmountFactor } = this.settingsService.getCostSettings();
+    const { topupAmountFactor } = await this.settingsService.getCostSettings();
 
     const maximumCost = await this.brandServiceSubscription.getMaxServiceCost(
       brand.id,
@@ -240,6 +248,8 @@ export class FiatWalletService {
           transactionType: TransactionsType.CREDIT,
           narration: 'Cost Reimbursement',
         });
+
+        return true;
       } catch (error) {
         logger.error(error);
         return false;

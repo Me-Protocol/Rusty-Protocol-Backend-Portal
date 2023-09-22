@@ -39,29 +39,10 @@ export class CostModuleManagementService {
     return 'ok';
   }
 
-  async checkTransactionStatusWithRetry({
-    attempt,
-    taskId,
-  }: {
-    taskId: string;
-    attempt?: number;
-  }): Promise<string> {
-    const apiUrl = process.env.GELATO_RELAYER_STATUS_URL + taskId;
-
-    try {
-      const response = await axios.get(apiUrl);
-      const status = response.data.task.taskState;
-
-      return status;
-    } catch (error) {
-      logger.error(error);
-      throw new Error('Failed to check transaction status.');
-    }
-  }
-
   async createPaymentRequestApi(body: PaymentRequestDto) {
     try {
-      const { minimumBalanceApi } = this.settingsService.getCostSettings();
+      const { minimumBalanceApi } =
+        await this.settingsService.getCostSettings();
 
       const brand = await this.brandService.getBrandById(body.brandId);
       const wallet = await this.walletService.getWalletByBrandId(body.brandId);
@@ -81,7 +62,8 @@ export class CostModuleManagementService {
 
   async createPaymentRequestInApp(body: PaymentRequestDto) {
     try {
-      const { minimumBalanceInApp } = this.settingsService.getCostSettings();
+      const { minimumBalanceInApp } =
+        await this.settingsService.getCostSettings();
 
       const brand = await this.brandService.getBrandById(body.brandId);
       const wallet = await this.walletService.getWalletByBrandId(body.brandId);
@@ -99,7 +81,11 @@ export class CostModuleManagementService {
     }
   }
 
-  async createPaymentRequest(body: PaymentRequestDto, origin: PaymentOrigin) {
+  async createPaymentRequest(
+    body: PaymentRequestDto,
+    origin: PaymentOrigin,
+    isOnboarding?: boolean,
+  ) {
     try {
       // check if network is supported
       const supportedNetworksArray = Object.values(supportedNetworks);
@@ -142,15 +128,15 @@ export class CostModuleManagementService {
         const gelatoResponse = await axios.get(url);
         const transactionHash = gelatoResponse.data;
 
-        console.log(transactionHash);
+        const status =
+          await this.costModuleService.checkTransactionStatusWithRetry({
+            taskId: relayResponse.taskId,
+          });
 
-        const status = await this.checkTransactionStatusWithRetry({
-          taskId: relayResponse.taskId,
-          attempt: 1,
-        });
-
-        req.sourceReference = relayResponse.taskId;
-        await this.paymentRequestService.save(req);
+        if (!isOnboarding) {
+          req.sourceReference = relayResponse.taskId;
+          await this.paymentRequestService.save(req);
+        }
 
         if (status === 'CheckPending') {
           return {

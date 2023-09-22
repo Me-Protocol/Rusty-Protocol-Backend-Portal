@@ -1,6 +1,5 @@
 import {
   Controller,
-  UseInterceptors,
   UseGuards,
   Post,
   Get,
@@ -10,8 +9,8 @@ import {
   Query,
   Param,
   Res,
+  ParseUUIDPipe,
 } from '@nestjs/common';
-import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { ApiTags } from '@nestjs/swagger';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { OrderManagementService } from './service';
@@ -21,9 +20,10 @@ import { FilterOrderDto } from './dto/FilterOrderDto.dto';
 import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
 import { UseCouponDto } from './dto/UseCouponDto.dto';
 import { ServerGuard } from '@src/middlewares/server-guard';
+import { InAppApiKeyJwtStrategy } from '@src/middlewares/inapp-api-jwt-strategy.middleware';
+import { CompleteOrderDto } from './dto/CompleteOrderDto.dto';
 
 @ApiTags('Order')
-@UseInterceptors(ResponseInterceptor)
 @Controller('order')
 export class OrderManagementController {
   constructor(
@@ -40,8 +40,8 @@ export class OrderManagementController {
   }
 
   @UseGuards(AuthGuard())
-  @Get()
-  async getOrders(
+  @Get('/user')
+  async getUserOrders(
     @Req() req: any,
     @Query(ValidationPipe) query: FilterOrderDto,
   ) {
@@ -51,9 +51,21 @@ export class OrderManagementController {
     return await this.orderManagementService.getOrders(query);
   }
 
+  @UseGuards(BrandJwtStrategy)
+  @Get('/brand')
+  async getBranOrders(
+    @Req() req: any,
+    @Query(ValidationPipe) query: FilterOrderDto,
+  ) {
+    const brandId = req.user.brand.id;
+    query.brandId = brandId;
+
+    return await this.orderManagementService.getOrders(query);
+  }
+
   @UseGuards(AuthGuard())
   @Get(':id')
-  async getOrderById(@Req() req: any, @Param('id') id: string) {
+  async getOrderById(@Req() req: any, @Param('id', ParseUUIDPipe) id: string) {
     const userId = req.user.id;
 
     return await this.orderManagementService.getOrderById(userId, id);
@@ -61,7 +73,10 @@ export class OrderManagementController {
 
   @UseGuards(AuthGuard())
   @Post('/mark-as-redeemed/:id')
-  async markOrderAsRedeemed(@Req() req: any, @Param('id') id: string) {
+  async markOrderAsRedeemed(
+    @Req() req: any,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     const userId = req.user.id;
 
     return await this.orderManagementService.markOrderAsRedeemed(userId, id);
@@ -77,6 +92,19 @@ export class OrderManagementController {
     return await this.orderManagementService.useCoupon(body);
   }
 
+  @UseGuards(InAppApiKeyJwtStrategy)
+  @UseGuards(ServerGuard)
+  @Post('/complete')
+  async completeOrder(
+    @Req() req: any,
+    @Body(ValidationPipe) body: CompleteOrderDto,
+  ) {
+    return await this.orderManagementService.completeOrder(
+      body.orderId,
+      body.taskId,
+    );
+  }
+
   @Get('/redeem/confirm-redeem-mock')
   async useCouponMock(
     @Req() req: any,
@@ -89,7 +117,7 @@ export class OrderManagementController {
       idOnBrandSite: '5f88662dbfd923434345',
     });
 
-    // redirect to brand site
+    // redirect to brand sites
     return res.redirect('http://localhost:3000/test?success=true');
   }
 }

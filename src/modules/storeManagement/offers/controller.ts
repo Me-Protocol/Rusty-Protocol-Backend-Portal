@@ -20,11 +20,10 @@ import { OfferManagementService } from './service';
 import { CreateOfferDto } from './dto/CreateOfferDto.dto';
 import { UpdateOfferDto } from './dto/UpdateOfferDto.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { FilterOfferDto } from './dto/FilterOfferDto.dto';
+import { FilterOfferDto, FilterUserOfferDto } from './dto/FilterOfferDto.dto';
 import { GetOfferDto } from './dto/GetOfferDto.dto';
 
 ApiTags('Offers');
-@UseInterceptors(ResponseInterceptor)
 @Controller('store/offer')
 export class OfferManagementController {
   constructor(
@@ -52,6 +51,7 @@ export class OfferManagementController {
   ) {
     const brandId = req.user.brand.id;
     body.brandId = brandId;
+    console.log('body', body);
     return await this.offerManagementService.updateOffer(offerId, body);
   }
 
@@ -118,6 +118,20 @@ export class OfferManagementController {
       userId,
       offerCode,
       query.sessionId,
+    );
+  }
+
+  @UseGuards(AuthGuard())
+  @Get('user/redeemed')
+  async geOffersBasedOnRedeemedOffers(
+    @Req() req: any,
+    @Query(ValidationPipe) query: FilterUserOfferDto,
+  ) {
+    const userId = req.user.id;
+    query.userId = userId;
+
+    return await this.offerManagementService.geOffersBasedOnRedeemedOffers(
+      query,
     );
   }
 }

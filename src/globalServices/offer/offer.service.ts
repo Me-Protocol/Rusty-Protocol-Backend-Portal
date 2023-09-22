@@ -3,10 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Offer } from './entities/offer.entity';
 import { UserService } from '../user/user.service';
-import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
 import { ProductImage } from '../product/entities/productImage.entity';
 import { ViewsService } from '../views/view.service';
-import { OfferFilter } from '@src/utils/enums/OfferFiilter';
+import { OfferFilter, OfferSort } from '@src/utils/enums/OfferFiilter';
+import { CustomerService } from '../customer/customer.service';
+import { ProductService } from '../product/product.service';
+import { Order } from '../order/entities/order.entity';
 
 @Injectable()
 export class OfferService {
@@ -19,6 +22,8 @@ export class OfferService {
 
     private readonly userService: UserService,
     private readonly viewService: ViewsService,
+    private readonly customerService: CustomerService,
+    private readonly productService: ProductService,
   ) {}
 
   async saveOffer(offer: Offer) {
@@ -35,6 +40,8 @@ export class OfferService {
         'product',
         'product.category',
         'product.subCategory',
+        'offerImages',
+        'reward',
       ],
     });
   }
@@ -50,6 +57,8 @@ export class OfferService {
         'product',
         'product.category',
         'product.subCategory',
+        'offerImages',
+        'reward',
       ],
     });
   }
@@ -68,6 +77,8 @@ export class OfferService {
         'product',
         'product.category',
         'product.subCategory',
+        'offerImages',
+        'reward',
       ],
     });
 
@@ -92,12 +103,48 @@ export class OfferService {
     }
 
     // push category to user
-    await this.userService.updateUserCategoryInterests(
-      userId,
-      offer.product.category.id,
-    );
+    if (offer?.product?.category?.id) {
+      await this.userService.updateUserCategoryInterests(
+        userId,
+        offer?.product?.category?.id,
+      );
+    }
 
     return offer;
+  }
+
+  async getOfferByRewardId({
+    rewardId,
+    page,
+    limit,
+  }: {
+    rewardId: string;
+    page: number;
+    limit: number;
+  }) {
+    const offersQuery = this.offerRepo
+      .createQueryBuilder('offer')
+      .leftJoinAndSelect('offer.product', 'product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.subCategory', 'subCategory')
+      .leftJoinAndSelect('offer.offerImages', 'offerImages')
+      .leftJoinAndSelect('offer.brand', 'brand')
+      .leftJoinAndSelect('offer.reward', 'reward')
+      .where('offer.status = :status', { status: ItemStatus.PUBLISHED })
+      .andWhere('offer.rewardId = :rewardId', { rewardId });
+
+    offersQuery.skip((page - 1) * limit);
+    offersQuery.take(limit);
+
+    const offers = await offersQuery.getMany();
+    const total = await offersQuery.getCount();
+
+    return {
+      offers,
+      total,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
+    };
   }
 
   async getOffers({
@@ -106,56 +153,82 @@ export class OfferService {
     category,
     subCategory,
     brandId,
+    sort,
   }: {
     page: number;
     limit: number;
     category?: string;
     subCategory?: string;
     brandId?: string;
+    sort: OfferSort;
   }) {
-    const offers = await this.offerRepo.find({
-      where: {
-        status: ItemStatus.PUBLISHED,
-        product: {
-          category: {
-            id: category,
-          },
-          subCategory: {
-            id: subCategory,
-          },
-        },
-        brandId,
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-      relations: [
-        'brand',
-        'product',
-        'product.category',
-        'product.subCategory',
-      ],
-    });
+    const offersQuery = this.offerRepo
+      .createQueryBuilder('offer')
+      .leftJoinAndSelect('offer.product', 'product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.subCategory', 'subCategory')
+      .leftJoinAndSelect('offer.offerImages', 'offerImages')
+      .leftJoinAndSelect('offer.brand', 'brand')
+      .leftJoinAndSelect('offer.reward', 'reward')
+      .where('offer.status = :status', { status: ItemStatus.PUBLISHED });
 
-    const total = await this.offerRepo.count({
-      where: {
-        status: ItemStatus.PUBLISHED,
-        product: {
-          category: {
-            id: category,
-          },
-          subCategory: {
-            id: subCategory,
-          },
-        },
-        brandId,
-      },
-    });
+    if (category) {
+      offersQuery.andWhere('product.categoryId = :categoryId', {
+        categoryId: category,
+      });
+    }
+
+    if (subCategory) {
+      offersQuery.andWhere('product.subCategoryId = :subCategoryId', {
+        subCategoryId: subCategory,
+      });
+    }
+
+    if (brandId) {
+      offersQuery.andWhere('offer.brandId = :brandId', { brandId });
+    }
+
+    if (sort === OfferSort.TRENDING) {
+      offersQuery.orderBy('offer.viewCount', 'DESC');
+      offersQuery.addOrderBy('offer.likeCount', 'DESC');
+      offersQuery.addOrderBy('offer.updatedAt', 'DESC');
+    }
+
+    if (sort === OfferSort.POPULAR) {
+      offersQuery.orderBy('offer.viewCount', 'DESC');
+      offersQuery.addOrderBy('offer.likeCount', 'DESC');
+    }
+
+    if (sort === OfferSort.NEW) {
+      offersQuery.orderBy('offer.createdAt', 'DESC');
+    }
+
+    if (sort === OfferSort.PRICE_HIGH_TO_LOW) {
+      offersQuery.orderBy('offer.tokens', 'DESC');
+    }
+
+    if (sort === OfferSort.PRICE_LOW_TO_HIGH) {
+      offersQuery.orderBy('offer.tokens', 'ASC');
+    }
+
+    if (sort === OfferSort.EXPIRING) {
+      offersQuery.andWhere('offer.endDate > :endDate', {
+        endDate: new Date(),
+      });
+      offersQuery.orderBy('offer.endDate', 'ASC');
+    }
+
+    offersQuery.skip((page - 1) * limit);
+    offersQuery.take(limit);
+
+    const offers = await offersQuery.getMany();
+    const total = await offersQuery.getCount();
 
     return {
       offers,
       total,
-      nextPage: total > page * limit ? page + 1 : null,
-      previousPage: page > 1 ? page - 1 : null,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
     };
   }
 
@@ -169,7 +242,7 @@ export class OfferService {
 
       const trendingOffers = await this.offerRepo.find({
         where: {
-          status: ItemStatus.PUBLISHED,
+          status: ProductStatus.PUBLISHED,
           updatedAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
         },
         take: 10,
@@ -192,7 +265,7 @@ export class OfferService {
 
       const offers = await this.offerRepo.find({
         where: {
-          status: ItemStatus.PUBLISHED,
+          status: ProductStatus.PUBLISHED,
           product: {
             categoryId: In(categories),
             subCategoryId: In(subCategories),
@@ -205,6 +278,8 @@ export class OfferService {
           'product',
           'product.category',
           'product.subCategory',
+          'offerImages',
+          'reward',
         ],
         order: {
           likeCount: 'DESC',
@@ -214,7 +289,7 @@ export class OfferService {
 
       const total = await this.offerRepo.count({
         where: {
-          status: ItemStatus.PUBLISHED,
+          status: ProductStatus.PUBLISHED,
           product: {},
         },
       });
@@ -222,17 +297,17 @@ export class OfferService {
       return {
         offers,
         total,
-        nextPage: total > page * limit ? page + 1 : null,
-        previousPage: page > 1 ? page - 1 : null,
+        nextPage: total > page * limit ? Number(page) + 1 : null,
+        previousPage: page > 1 ? Number(page) - 1 : null,
       };
     } else {
       // Get offers based on users first interest
       const offers = await this.offerRepo.find({
         where: {
-          status: ItemStatus.PUBLISHED,
+          status: ProductStatus.PUBLISHED,
           product: {
             category: {
-              id: interests[0],
+              id: In(interests),
             },
           },
         },
@@ -243,6 +318,8 @@ export class OfferService {
           'product',
           'product.category',
           'product.subCategory',
+          'offerImages',
+          'reward',
         ],
         order: {
           likeCount: 'DESC',
@@ -252,10 +329,10 @@ export class OfferService {
 
       const total = await this.offerRepo.count({
         where: {
-          status: ItemStatus.PUBLISHED,
+          status: ProductStatus.PUBLISHED,
           product: {
             category: {
-              id: interests[0],
+              id: In(interests),
             },
           },
         },
@@ -264,8 +341,8 @@ export class OfferService {
       return {
         offers,
         total,
-        nextPage: total > page * limit ? page + 1 : null,
-        previousPage: page > 1 ? page - 1 : null,
+        nextPage: total > page * limit ? Number(page) + 1 : null,
+        previousPage: page > 1 ? Number(page) - 1 : null,
       };
     }
   }
@@ -274,8 +351,10 @@ export class OfferService {
     page: number,
     limit: number,
     brandId: string,
-    status: ItemStatus,
+    status: ProductStatus,
     orderBy: OfferFilter,
+    order: string,
+    search: string,
   ) {
     const offersQuery = this.offerRepo
       .createQueryBuilder('offer')
@@ -284,6 +363,7 @@ export class OfferService {
       .leftJoinAndSelect('product.subCategory', 'subCategory')
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
+      .leftJoinAndSelect('offer.reward', 'reward')
       .where('offer.brandId = :brandId', { brandId });
 
     if (status) {
@@ -291,15 +371,71 @@ export class OfferService {
     }
 
     if (orderBy === OfferFilter.MOST_SALES) {
-      offersQuery.orderBy('offer.viewCount', 'DESC');
-    }
-
-    if (orderBy === OfferFilter.MOST_SALES) {
+      offersQuery.andWhere('offer.totalOrders > :totalOrders', {
+        totalOrders: 4, // TODO: Change this to 100,,
+      });
       offersQuery.orderBy('offer.totalOrders', 'DESC');
     }
 
+    if (orderBy === OfferFilter.MOST_VIEWED) {
+      offersQuery.andWhere('offer.viewCount > :viewCount', {
+        viewCount: 10, // TODO: Change this to 100,
+      });
+      offersQuery.orderBy('offer.viewCount', 'DESC');
+    }
+
     if (orderBy === OfferFilter.MOST_RECENT) {
+      // where createdAt is less than 7 days
+      offersQuery.andWhere('offer.createdAt > :createdAt', {
+        createdAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
+      });
       offersQuery.orderBy('offer.createdAt', 'DESC');
+    }
+
+    if (orderBy === OfferFilter.LOW_IN_STOCK) {
+      //  where offer product stock is less than 10
+      offersQuery.andWhere('product.inventory < :inventory', {
+        stock: 10,
+      });
+      offersQuery.orderBy('product.inventory', 'ASC');
+    }
+
+    if (search) {
+      offersQuery.andWhere('offer.name LIKE :search', {
+        search: `%${search}%`,
+      });
+    }
+
+    if (order) {
+      const formatedOrder = order.split(':')[0];
+      const acceptedOrder = [
+        'status',
+        'originalPrice',
+        'discountPercentage',
+        'tokens',
+        'offerCode',
+        'name',
+        'description',
+        'viewCount',
+        'likeCount',
+        'shareCount',
+        'commentCount',
+        'startDate',
+        'endDate',
+        'idOnBrandsite',
+        'totalSales',
+        'totalOrders',
+        'createdAt',
+        'updatedAt',
+      ];
+      if (!acceptedOrder.includes(formatedOrder)) {
+        throw new Error('Invalid order param');
+      }
+
+      offersQuery.orderBy(
+        `offer.${order.split(':')[0]}`,
+        order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+      );
     }
 
     offersQuery.skip((page - 1) * limit);
@@ -311,8 +447,8 @@ export class OfferService {
     return {
       offers,
       total,
-      nextPage: total > page * limit ? page + 1 : null,
-      previousPage: page > 1 ? page - 1 : null,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
     };
   }
 
@@ -322,38 +458,59 @@ export class OfferService {
         id: offerId,
         brandId,
       },
+      relations: ['offerImages'],
     });
     if (!offer) {
       throw new Error('Offer not found');
     }
 
-    const productImages = images.map((image) =>
-      this.productImageRepo.create({
-        url: image,
-        offer,
-      }),
-    );
+    const productImages = [];
+
+    for (const image of images) {
+      // check if image already exists
+      const existingImage = offer.offerImages.find(
+        (offerImage) => offerImage.url === image,
+      );
+
+      if (!existingImage) {
+        productImages.push(
+          this.productImageRepo.create({
+            url: image,
+            offer,
+          }),
+        );
+      }
+    }
 
     return this.productImageRepo.save(productImages);
   }
 
-  async generateOfferCode() {
+  async generateOfferCode(name: string) {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // get caps from name
+    const caps = name
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase())
+      .join('');
+
+    const codeWithCaps = `${code}_${caps}`;
+
     const offer = await this.offerRepo.findOne({
       where: {
-        offerCode: code,
+        offerCode: codeWithCaps,
       },
     });
 
     if (offer) {
-      return this.generateOfferCode();
+      return this.generateOfferCode(name);
     }
 
-    return code;
+    return codeWithCaps;
   }
 
   async deleteOffer(offerId: string, brandId: string) {
-    return await this.offerRepo.delete({
+    return await this.offerRepo.softDelete({
       id: offerId,
       brandId,
     });
@@ -362,13 +519,58 @@ export class OfferService {
   async increaseOfferSales({
     offer,
     amount,
+    userId,
   }: {
     offer: Offer;
     amount: number;
+    userId: string;
   }) {
-    offer.totalOrders = offer.totalOrders + 1;
-    offer.totalSales = offer.totalSales + amount;
+    try {
+      const totalSales = Number(offer.totalSales) + Number(amount);
+      const totalSalesParse = totalSales.toFixed(2);
 
-    return await this.offerRepo.save(offer);
+      offer.totalOrders = offer.totalOrders + 1;
+      offer.totalSales = +totalSalesParse;
+
+      // update customer total redeem
+      const customer = await this.customerService.getByUserId(userId);
+
+      const totalRedemptionAmount =
+        Number(customer.totalRedemptionAmount) + Number(amount);
+      const totalRedemptionAmountParse = totalRedemptionAmount.toFixed(3);
+
+      customer.totalRedeemed += 1;
+      customer.totalRedemptionAmount = +totalRedemptionAmountParse;
+
+      await this.offerRepo.save(offer);
+
+      await this.customerService.save(customer);
+
+      return 'done';
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async reduceInventory(offer: Offer, order: Order) {
+    // offer.inventory = -order.quantity; TODO: check if this is needed
+
+    const product = await this.productService.findOneProduct(offer.productId);
+    product.inventory = product.inventory - order.quantity;
+
+    await this.productService.saveProduct(product);
+
+    // await this.offerRepo.save(offer);
+  }
+
+  async increaseInventory(offer: Offer, order: Order) {
+    // offer.inventory = +order.quantity; TODO: check if this is needed
+
+    const product = await this.productService.findOneProduct(offer.productId);
+    product.inventory = product.inventory + order.quantity;
+
+    await this.productService.saveProduct(product);
+
+    // await this.offerRepo.save(offer);
   }
 }

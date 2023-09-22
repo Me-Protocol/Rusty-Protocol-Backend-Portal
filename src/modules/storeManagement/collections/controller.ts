@@ -10,6 +10,7 @@ import {
   Get,
   Query,
   Req,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
@@ -23,7 +24,6 @@ import { UpdateCollectionDto } from './dto/UpdateCollectionDto.dto';
 import { FIlterCollectionDto } from './dto/FilterCollectionDto.dto';
 
 ApiTags('Collection');
-@UseInterceptors(ResponseInterceptor)
 @Controller('collections')
 export class CollectionManagementController {
   constructor(
@@ -48,7 +48,7 @@ export class CollectionManagementController {
   async createCategory(
     @Body(ValidationPipe) updateCollectionDto: UpdateCollectionDto,
     @Req() req: any,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ) {
     const user = req.user as User;
     updateCollectionDto.brandId = user.brand.id;
@@ -64,15 +64,15 @@ export class CollectionManagementController {
   @Get()
   async get(@Query() filterDto: FIlterCollectionDto, @Req() req: any) {
     const user = req.user as User;
-    filterDto.brandId = user.brand.id;
-    filterDto.userId = user.id;
+    filterDto.brandId = user?.brand?.id;
+    filterDto.userId = user?.id;
 
     return await this.collectionManagementService.findAll(filterDto);
   }
 
   @UseGuards(AuthGuard())
   @Get(':id')
-  async getById(@Param('id') id: string, @Req() req: any) {
+  async getById(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
     const user = req.user as User;
     return await this.collectionManagementService.findOne(
       id,

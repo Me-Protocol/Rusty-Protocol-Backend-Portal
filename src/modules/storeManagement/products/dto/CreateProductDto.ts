@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import { ProductStatus } from '@src/utils/enums/ItemStatus';
 import { VarientType } from '@src/utils/enums/VarientType';
 import {
   IsArray,
@@ -10,6 +10,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  IsUrl,
 } from 'class-validator';
 
 export class CreateProductDto {
@@ -33,10 +34,10 @@ export class CreateProductDto {
   productImages: string[];
 
   @ApiProperty()
-  @IsEnum(ItemStatus, {
+  @IsEnum(ProductStatus, {
     message: 'Please provide a valid status',
   })
-  status: ItemStatus;
+  status: ProductStatus;
 
   @ApiProperty()
   @IsNumber()
@@ -86,4 +87,15 @@ export class CreateProductDto {
     price: number;
     inventory: number;
   }[];
+
+  @ApiProperty()
+  @IsOptional()
+  @IsArray({
+    message: 'Product images must be an array of strings',
+  })
+  collections: string[];
+
+  @ApiProperty()
+  @IsUrl()
+  productUrl: string;
 }

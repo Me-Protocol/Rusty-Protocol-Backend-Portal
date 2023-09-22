@@ -1,9 +1,11 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { CouponService } from './coupon.service';
-import { pagination } from '@src/utils/types/pagination';
+import { OrderFilter } from '@src/utils/enums/OrderFilter';
+import { StatusType } from '@src/utils/enums/Transactions';
+import { FilterOrderDto } from '@src/modules/storeManagement/order/dto/FilterOrderDto.dto';
 
 @Injectable()
 export class OrderService {
@@ -27,32 +29,96 @@ export class OrderService {
     });
   }
 
-  async getOrders(userId: string, page: number, limit = 10) {
-    const orders = await this.orderRepo.find({
-      where: { userId: userId },
-      skip: +page === 1 ? 0 : (+page - 1) * limit,
-      take: limit ? limit : 10,
-      relations: ['coupon'],
-    });
+  async getOrders(query: FilterOrderDto) {
+    const { limit, page, filterBy, userId, brandId } = query;
 
-    const count = await this.orderRepo.count({
-      where: { userId: userId },
-    });
+    const orderQuery = this.orderRepo
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.coupon', 'coupon')
+      .leftJoinAndSelect('order.offer', 'offer')
+      .leftJoinAndSelect('offer.offerImages', 'offerImages')
+      .leftJoinAndSelect('offer.reward', 'reward')
+      .leftJoinAndSelect('reward.brand', 'brand')
+      .orderBy('order.createdAt', 'DESC');
 
-    const pagination: pagination = {
-      currentPage: page,
-      limit: limit,
-      totalPage: Math.ceil(count / limit),
-      nextPage: Math.ceil(count / limit) > page ? page + 1 : null,
-      previousPage: page === 1 ? null : page - 1,
+    if (brandId) {
+      orderQuery
+        .leftJoinAndSelect('offer.product', 'product')
+        .leftJoinAndSelect('product.productImages', 'productImages')
+        .leftJoinAndSelect('product.variants', 'variants')
+        .leftJoinAndSelect('product.collections', 'collections')
+        .andWhere('order.brandId = :brandId', {
+          brandId: brandId,
+        });
+    }
+
+    if (userId) {
+      orderQuery.andWhere('order.userId = :userId', { userId: userId });
+    }
+
+    if (filterBy === OrderFilter.REDEEMED) {
+      orderQuery.andWhere('order.isRedeemed = :isRedeemed', {
+        isRedeemed: true,
+      });
+    }
+
+    if (filterBy === OrderFilter.UNREDEEMED) {
+      orderQuery.andWhere('order.isRedeemed = :isRedeemed', {
+        isRedeemed: false,
+      });
+    }
+
+    if (filterBy === OrderFilter.PROCESSING) {
+      orderQuery.andWhere('order.status = :status', {
+        status: StatusType.PROCESSING,
+      });
+    }
+
+    if (filterBy === OrderFilter.SUCCEDDED) {
+      orderQuery.andWhere('order.status = :status', {
+        status: StatusType.SUCCEDDED,
+      });
+    }
+
+    if (filterBy === OrderFilter.FAILED) {
+      orderQuery.andWhere('order.status = :status', {
+        status: StatusType.FAILED,
+      });
+    }
+
+    const [orders, total] = await orderQuery
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      orders,
+      total,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
     };
-
-    return { orders, pagination };
   }
 
   async getOrderById(userId: string, id: string) {
     return await this.orderRepo.findOne({
       where: { id: id, userId: userId },
+      relations: ['coupon', 'offer', 'offer.reward', 'offer.offerImages'],
+    });
+  }
+
+  async getOrderByOrderId(orderId: string) {
+    return await this.orderRepo.findOne({
+      where: { id: orderId },
+      relations: ['coupon', 'offer', 'offer.reward', 'offer.offerImages'],
+    });
+  }
+
+  async getPendingOrders() {
+    return await this.orderRepo.find({
+      where: {
+        status: StatusType.PROCESSING,
+        taskId: Not(IsNull()),
+      },
       relations: ['coupon'],
     });
   }
@@ -74,5 +140,17 @@ export class OrderService {
     order.isRedeemed = true;
 
     return await this.orderRepo.save(order);
+  }
+
+  async getOrdersByOfferRewardId(offerRewardId: string, userId: string) {
+    return await this.orderRepo.findOne({
+      where: {
+        offer: {
+          rewardId: offerRewardId,
+        },
+        userId: userId,
+      },
+      relations: ['coupon'],
+    });
   }
 }

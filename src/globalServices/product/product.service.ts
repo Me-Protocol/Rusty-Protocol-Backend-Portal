@@ -3,9 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { ProductImage } from './entities/productImage.entity';
-import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
 import { Variant } from './entities/variants.entity';
 import { VarientType } from '@src/utils/enums/VarientType';
+import { ProductFilter } from '@src/utils/enums/OfferFiilter';
 
 @Injectable()
 export class ProductService {
@@ -42,8 +43,8 @@ export class ProductService {
     return {
       images,
       total,
-      nextPage: total > page * limit ? page + 1 : null,
-      previousPage: page > 1 ? page - 1 : null,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
     };
   }
 
@@ -57,17 +58,29 @@ export class ProductService {
         id: productId,
         brandId,
       },
+      relations: ['productImages'],
     });
     if (!product) {
       throw new Error('Product not found');
     }
 
-    const productImages = images.map((image) =>
-      this.productImageRepo.create({
-        url: image,
-        product,
-      }),
-    );
+    const productImages = [];
+
+    for (const image of images) {
+      // check if image already exists
+      const imageExists = product.productImages.find(
+        (productImage) => productImage.url === image,
+      );
+
+      if (!imageExists) {
+        productImages.push(
+          this.productImageRepo.create({
+            url: image,
+            product,
+          }),
+        );
+      }
+    }
 
     return this.productImageRepo.save(productImages);
   }
@@ -107,7 +120,7 @@ export class ProductService {
   }
 
   async updateProduct(product: Product) {
-    return this.productRepo.update({ id: product.id }, product);
+    return this.productRepo.save(product);
   }
 
   async saveProduct(product: Product) {
@@ -118,7 +131,7 @@ export class ProductService {
     brandId: string,
     page: number,
     limit: number,
-    status?: ItemStatus,
+    status?: ProductStatus,
   ) {
     const products = await this.productRepo.find({
       where: {
@@ -138,8 +151,8 @@ export class ProductService {
     return {
       products,
       total,
-      nextPage: total > page * limit ? page + 1 : null,
-      previousPage: page > 1 ? page - 1 : null,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
     };
   }
 
@@ -159,7 +172,7 @@ export class ProductService {
         brandId,
       },
       {
-        status: ItemStatus.ARCHIVED,
+        status: ProductStatus.ARCHIVED,
       },
     );
   }
@@ -171,7 +184,7 @@ export class ProductService {
         brandId,
       },
       {
-        status: ItemStatus.DRAFT,
+        status: ProductStatus.DRAFT,
       },
     );
   }
@@ -194,23 +207,31 @@ export class ProductService {
     });
   }
 
-  async generateProductCode() {
+  async generateProductCode(name: string) {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // get caps from name
+    const caps = name
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase())
+      .join('');
+
+    const codeWithCaps = `${code}_${caps}`;
+
     const product = await this.productRepo.findOne({
       where: {
-        productCode: code,
+        productCode: codeWithCaps,
       },
     });
 
     if (product) {
-      return this.generateProductCode();
+      return this.generateProductCode(name);
     }
 
-    return code;
+    return codeWithCaps;
   }
 
   async deleteProduct(productId: string, brandId: string) {
-    return await this.productRepo.delete({
+    return await this.productRepo.softDelete({
       id: productId,
       brandId,
     });
@@ -222,12 +243,18 @@ export class ProductService {
     status,
     brandId,
     categoryId,
+    order,
+    filterBy,
+    search,
   }: {
     page: number;
     limit: number;
-    status?: ItemStatus;
+    status?: ProductStatus;
     brandId?: string;
     categoryId?: string;
+    order: string;
+    search: string;
+    filterBy?: string;
   }) {
     const products = this.productRepo
       .createQueryBuilder('product')
@@ -247,6 +274,48 @@ export class ProductService {
       products.andWhere('product.categoryId = :categoryId', { categoryId });
     }
 
+    if (filterBy === ProductFilter.LOW_IN_STOCK) {
+      products.andWhere('product.inventory <= 5');
+      products.orderBy('product.inventory', 'ASC');
+    }
+
+    if (filterBy === ProductFilter.MOST_RECENT) {
+      products.andWhere('product.createdAt > :createdAt', {
+        createdAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
+      });
+      products.orderBy('product.createdAt', 'DESC');
+    }
+
+    if (search) {
+      products.andWhere('product.name LIKE :search', {
+        search: `%${search}%`,
+      });
+    }
+
+    if (order) {
+      const formatedOrder = order.split(':')[0];
+      const acceptedOrder = [
+        'name',
+        'description',
+        'status',
+        'price',
+        'inventory',
+        'isUnlimited',
+        'productCode',
+        'createdAt',
+        'updatedAt',
+      ];
+
+      if (!acceptedOrder.includes(formatedOrder)) {
+        throw new Error('Invalid order param');
+      }
+
+      products.orderBy(
+        `product.${order.split(':')[0]}`,
+        order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+      );
+    }
+
     const total = await products.getCount();
 
     const data = await products
@@ -257,8 +326,8 @@ export class ProductService {
     return {
       products: data,
       total,
-      nextPage: total > page * limit ? page + 1 : null,
-      previousPage: page > 1 ? page - 1 : null,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
     };
   }
 }

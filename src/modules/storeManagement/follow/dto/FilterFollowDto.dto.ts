@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { IsString, IsUUID } from 'class-validator';
 
 export class FilterFollowDto {
   @ApiProperty()
@@ -11,7 +11,7 @@ export class FilterFollowDto {
   limit: number;
 
   @ApiProperty()
-  @IsString()
+  @IsUUID()
   brandId: string;
 }
 

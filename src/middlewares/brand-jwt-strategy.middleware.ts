@@ -51,12 +51,6 @@ export class BrandJwtStrategy implements CanActivate {
         throw new UnauthorizedException('Unauthorized. Please login');
       }
 
-      if (user.suspended) {
-        throw new UnauthorizedException(
-          'You account is currently suspended. Please contact support',
-        );
-      }
-
       if (user.banned) {
         throw new UnauthorizedException(
           'You account has been banned. Please contact support',
@@ -69,10 +63,6 @@ export class BrandJwtStrategy implements CanActivate {
         );
       }
 
-      if (!user.password) {
-        throw new UnauthorizedException('Please create a password');
-      }
-
       const deviceToken = await this.userService.getDeviceById(id, device);
 
       if (!deviceToken) {
@@ -81,7 +71,10 @@ export class BrandJwtStrategy implements CanActivate {
 
       delete deviceToken.token;
 
-      request.user = user;
+      request.user = {
+        ...user,
+        brand: user?.brandMember?.brand ?? user.brand,
+      };
 
       return true;
     } catch (error) {

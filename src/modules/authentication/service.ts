@@ -11,8 +11,8 @@ import { LoginDto } from './dto/LoginDto.dto';
 import { Verify2FADto } from './dto/Verify2FADto.dto';
 import { UpdateUserDto } from './dto/UpdateUserDto.dto';
 import { PasswordDto } from './dto/PasswordDto.dto';
-import { ChangeEmailDto } from './dto/ChangeEmailDto.dto';
-import { ChangePhoneDto } from './dto/ChangePhoneDto.dto';
+import { ChangeEmailDto, StartChangeEmailDto } from './dto/ChangeEmailDto.dto';
+import { ChangePhoneDto, StartChangePhoneDto } from './dto/ChangePhoneDto.dto';
 import { ForgotPasswordDto } from './dto/ForgotPasswordDto.dto';
 import { ResetPasswordDto } from './dto/ResetPasswordDto.dto';
 import { UpdateDeviceTokenDto } from './dto/UpdateDeviceTokenDto.dto';
@@ -27,13 +27,17 @@ import { UserAppType } from '@src/utils/enums/UserAppType';
 import { Role } from '@src/utils/enums/Role';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { logger } from '@src/globalServices/logger/logger.service';
+import { RewardService } from '@src/globalServices/reward/reward.service';
+import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
+import { Enable2FADto } from './dto/Enable2FADto.dto';
+import { UpdatePreferenceDto } from './dto/UpdatePreferenceDto.dto';
+import fetch from 'node-fetch';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const DeviceDetector = require('node-device-detector');
-
 const deviceDetector = new DeviceDetector();
 
 @Injectable()
@@ -46,6 +50,7 @@ export class AuthenticationService {
     private customerService: CustomerService,
     private brandService: BrandService,
     private walletService: FiatWalletService,
+    private syncService: SyncRewardService,
   ) {}
 
   // Signs a token
@@ -66,7 +71,8 @@ export class AuthenticationService {
   ): Promise<any> {
     const deviceData = deviceDetector.detect(userAgent);
 
-    const location = geoip.lookup(clientIp);
+    const response = await fetch(`http://ip-api.com/json/${clientIp}`);
+    const location = await response.json();
 
     const device = new Device();
     device.user = user;
@@ -77,8 +83,8 @@ export class AuthenticationService {
     device.ip = clientIp;
     device.location = `${location?.city ?? ''}, ${location?.country ?? ''}`;
     device.timezone = location?.timezone;
-    device.lat_lng = location?.ll;
-    device.range = location?.range;
+    device.lat_lng = [location?.lat, location?.lon];
+    device.range = [location?.lat, location?.lon];
 
     const checkDevice = await this.userService.checkDevice(
       clientIp,
@@ -87,15 +93,30 @@ export class AuthenticationService {
     );
 
     if (checkDevice) {
+      checkDevice.name = deviceData.device.name;
+      checkDevice.type = deviceData.device.type;
+      checkDevice.agent = deviceData.client.name;
+      checkDevice.ip = clientIp;
+      checkDevice.location = `${location?.city ?? ''}, ${
+        location?.country ?? ''
+      }`;
+      checkDevice.timezone = location?.timezone;
+      checkDevice.lat_lng = [location?.lat, location?.lon];
+      checkDevice.range = [location?.lat, location?.lon];
+
+      await this.userService.saveDevice(checkDevice);
+
       return checkDevice.token;
     }
+
+    const saveDevice = await this.userService.saveDevice(device);
 
     const token = await this.signToken({
       email: user.email,
       id: user.id,
       phone: user.phone,
       username: user.username,
-      device: device.id,
+      device: saveDevice.id,
     });
 
     device.token = token;
@@ -156,13 +177,18 @@ export class AuthenticationService {
     }
   }
 
-  async sendPhoneVerificationCode(phoneNumber: string): Promise<any> {
+  async sendPhoneVerificationCode(
+    phoneNumber: string,
+    user?: User,
+  ): Promise<any> {
     try {
       const phone = phoneNumber.replace(/\D/g, '');
 
-      const user = await this.userService.getUserByPhone(phone);
+      if (!user) {
+        user = await this.userService.getUserByPhone(phone);
 
-      if (!user) throw new Error('User not found');
+        if (!user) throw new Error('User not found');
+      }
 
       user.accountVerificationCode = Math.floor(1000 + Math.random() * 9000);
       await this.userService.saveUser(user);
@@ -282,6 +308,19 @@ export class AuthenticationService {
       user.accountVerificationCode = null;
       await this.userService.saveUser(user);
 
+      // check if user has any reward registry
+      const rewardRegistry =
+        await this.syncService.getAllRegistryRecordsByIdentifer(user.email);
+
+      if (rewardRegistry.length > 0) {
+        for (const registry of rewardRegistry) {
+          if (!registry.userId) {
+            registry.userId = user.id;
+            await this.syncService.saveRegistry(registry);
+          }
+        }
+      }
+
       if (!is2Fa) {
         if (user.userType === UserAppType.BRAND) {
           const brand = await this.brandService.getBrandByUserId(user.id);
@@ -339,7 +378,7 @@ export class AuthenticationService {
       const newUser = new User();
       newUser.phone = phone.replace(/\D/g, '').replace(countryCode, '');
       newUser.countryCode = countryCode;
-      newUser.countryAbbr = countryAbbr;
+      newUser.countryName = countryAbbr;
       newUser.username = Math.random().toString(36).substring(7);
       newUser.twoFAType = TwoFAType.SMS;
 
@@ -441,6 +480,12 @@ export class AuthenticationService {
     }
   }
 
+  async isPasswordValid(password: string, user: User): Promise<boolean> {
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    return isPasswordValid;
+  }
+
   async login(
     { identifier, password }: LoginDto,
     userAgent: string,
@@ -457,6 +502,10 @@ export class AuthenticationService {
           throw new Error('Invalid login details');
         }
 
+        if (user && !(await this.isPasswordValid(password, user))) {
+          throw new Error('Invalid login details');
+        }
+
         if (!user.emailVerified) {
           throw new Error('Email not verified');
         }
@@ -467,6 +516,10 @@ export class AuthenticationService {
           throw new Error('Invalid login details');
         }
 
+        if (user && (await this.isPasswordValid(password, user))) {
+          throw new Error('Invalid login details');
+        }
+
         if (!user.phoneVerified) {
           throw new Error('Phone not verified');
         }
@@ -474,6 +527,10 @@ export class AuthenticationService {
         user = await this.userService.getUserByUsername(identifier);
 
         if (!user) {
+          throw new Error('Invalid login details');
+        }
+
+        if (user && (await this.isPasswordValid(password, user))) {
           throw new Error('Invalid login details');
         }
 
@@ -496,9 +553,7 @@ export class AuthenticationService {
         );
       }
 
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-
-      if (!isPasswordValid) {
+      if (!(await this.isPasswordValid(password, user))) {
         throw new Error('Invalid login details');
       }
 
@@ -517,19 +572,11 @@ export class AuthenticationService {
         };
       }
 
-      const brand = await this.brandService.getBrandByUserId(user.id);
-
-      await this.walletService.createWallet({
-        brand,
-      });
-      await this.walletService.createWallet({
-        user,
-      });
-
       const token = await this.registerDevice(user, userAgent, clientIp);
 
       return token;
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
@@ -635,7 +682,7 @@ export class AuthenticationService {
     }
   }
 
-  async changeEmail(user: User, { email }: EmailSignupDto): Promise<any> {
+  async changeEmail(user: User, { email }: StartChangeEmailDto): Promise<any> {
     try {
       const existingUser = await this.userService.getUserByEmail(email);
 
@@ -695,7 +742,7 @@ export class AuthenticationService {
 
   async changePhone(
     user: User,
-    { phone, countryCode }: PhoneSignupDto,
+    { phone, countryCode }: StartChangePhoneDto,
   ): Promise<any> {
     try {
       const phoneNumber = phone.replace(/\D/g, '').replace(countryCode, '');
@@ -707,13 +754,13 @@ export class AuthenticationService {
       }
 
       if (!user.phone) {
-        await this.sendPhoneVerificationCode(phone);
+        await this.sendPhoneVerificationCode(phone, user);
 
         return 'Please verify your new phone number';
       }
 
       if (user.phone === phoneNumber) {
-        throw new Error('Phone number already exists');
+        throw new Error('You are already using this phone number');
       }
 
       await this.sendPhoneVerificationCode(user.phone);
@@ -729,7 +776,7 @@ export class AuthenticationService {
 
   async verifyAndChangePhone(
     user: User,
-    { phone, code, countryAbbr, countryCode }: ChangePhoneDto,
+    { phone, code, countryName, countryCode }: ChangePhoneDto,
   ): Promise<any> {
     try {
       const phoneNumber = phone.replace(/\D/g, '');
@@ -744,7 +791,7 @@ export class AuthenticationService {
       }
 
       user.phone = phoneNumber.replace(/\D/g, '').replace(countryCode, '');
-      user.countryAbbr = countryAbbr;
+      user.countryName = countryName;
       user.countryCode = countryCode;
       user.phoneVerified = true;
       user.accountVerificationCode = null;
@@ -771,7 +818,7 @@ export class AuthenticationService {
     bio: string;
     location: string;
     website: string;
-    username: string;
+    username?: string;
     userAgent: string;
     ip: string;
     userType: UserAppType;
@@ -789,6 +836,7 @@ export class AuthenticationService {
     } = data;
 
     const user = await this.userService.getUserByEmail(email);
+    const userNameFromEmail = email.split('@')[0].toLowerCase();
 
     if (user) {
       if (user.loginType !== provider) {
@@ -836,6 +884,8 @@ export class AuthenticationService {
     const newUser = new User();
     newUser.email = email;
     newUser.emailVerified = true;
+    newUser.username = username ?? userNameFromEmail;
+    newUser.loginType = provider;
 
     if (provider === LoginType.FACEBOOK) {
       newUser.facebookAuth = {
@@ -977,5 +1027,31 @@ export class AuthenticationService {
     await this.userService.saveUser(user);
 
     return 'Password changed';
+  }
+
+  async enableDisable2FA(body: Enable2FADto): Promise<any> {
+    const user = await this.userService.getUserById(body.userId);
+
+    user.is2faEnabled = body.enable;
+    user.twoFAType = body.twoFAType;
+
+    await this.userService.saveUser(user);
+
+    return {
+      message: body.enable ? '2FA enabled' : '2FA disabled',
+      enable: body.enable,
+    };
+  }
+
+  async updatePreferences(body: UpdatePreferenceDto) {
+    const user = await this.userService.getUserById(body.userId);
+    if (body.language) user.language = body.language;
+    if (body.currency) user.currency = body.currency;
+    if (body.timezone) user.timezone = body.timezone;
+    if (body.region) user.region = body.region;
+
+    await this.userService.saveUser(user);
+
+    return 'ok';
   }
 }

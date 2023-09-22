@@ -5,14 +5,6 @@ import { User } from './entities/user.entity';
 import { Device } from './entities/device.entity';
 import { selectUser } from '@src/utils/helpers/selectUser';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const geoip = require('geoip-lite');
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const DeviceDetector = require('node-device-detector');
-
-const deviceDetector = new DeviceDetector();
-
 @Injectable()
 export class UserService {
   constructor(
@@ -47,7 +39,7 @@ export class UserService {
 
     if (!device) throw new HttpException('Device not found', 404);
 
-    await this.deviceRepository.delete({
+    await this.deviceRepository.softDelete({
       id,
       userId,
     });
@@ -69,6 +61,7 @@ export class UserService {
         'location',
         'createdAt',
         'device_token',
+        'updatedAt',
       ],
     });
     return devices;
@@ -114,7 +107,7 @@ export class UserService {
       where: {
         id,
       },
-      relations: ['customer', 'brand'],
+      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
     });
   }
 
@@ -128,7 +121,12 @@ export class UserService {
   }
 
   async getUserByEmail(email: string): Promise<User> {
-    return await this.userRepository.findOneBy({ email });
+    return await this.userRepository.findOne({
+      where: {
+        email,
+      },
+      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
+    });
   }
 
   async getUserByUsername(username: string): Promise<User> {
@@ -189,5 +187,14 @@ export class UserService {
     if (!user) throw new HttpException('User not found', 404);
 
     return user.user_category_interests || [];
+  }
+
+  async getUserByVerificationCode(code: number): Promise<User> {
+    return await this.userRepository.findOne({
+      where: {
+        accountVerificationCode: code,
+      },
+      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
+    });
   }
 }

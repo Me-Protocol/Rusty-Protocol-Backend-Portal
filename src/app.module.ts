@@ -103,6 +103,19 @@ import { PaymentModuleController } from './modules/paymentModule/controller';
 import { InAppApiKeyJwtStrategy } from './middlewares/inapp-api-jwt-strategy.middleware';
 import { SettingsService } from './globalServices/settings/settings.service';
 import { BrandSubscriptionService } from './globalServices/brand/brandSeviceSubscription.service';
+import { BrandMember } from './globalServices/brand/entities/brand_member.entity';
+import { KeyManagementService } from './globalServices/key-management/key-management.service';
+import { KeyIdentifier } from './globalServices/reward/entities/keyIdentifier.entity';
+import { BrandCustomer } from './globalServices/brand/entities/brand_customer.entity';
+import { Notification } from './globalServices/notification/entities/notification.entity';
+import { NotificationController } from './modules/notification/controller';
+import { NotificationService } from './globalServices/notification/notification.service';
+import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
+import { SettingsModule } from './globalServices/settings/settings.module';
+import { DebugController } from './debug/debug.controller';
+import { ReviewManagementController } from './modules/storeManagement/review/controller';
+import { ReviewService } from './globalServices/review/review.service';
+import { ReviewManagementService } from './modules/storeManagement/review/service';
 
 @Module({
   imports: [
@@ -136,7 +149,13 @@ import { BrandSubscriptionService } from './globalServices/brand/brandSeviceSubs
       PaymentRequest,
       Transaction,
       PaymentMethod,
+      BrandMember,
+      KeyIdentifier,
+      BrandCustomer,
+      Notification,
+      AdminSettings,
     ]),
+    SettingsModule,
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(typeOrmConfig),
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
@@ -182,6 +201,9 @@ import { BrandSubscriptionService } from './globalServices/brand/brandSeviceSubs
     OrderManagementController,
     CostManagementController,
     PaymentModuleController,
+    NotificationController,
+    DebugController,
+    ReviewManagementController,
   ],
   providers: [
     ElasticIndex,
@@ -234,6 +256,10 @@ import { BrandSubscriptionService } from './globalServices/brand/brandSeviceSubs
     InAppApiKeyJwtStrategy,
     SettingsService,
     BrandSubscriptionService,
+    KeyManagementService,
+    NotificationService,
+    ReviewService,
+    ReviewManagementService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

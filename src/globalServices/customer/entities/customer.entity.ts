@@ -67,4 +67,17 @@ export class Customer extends BaseEntity {
 
   @Column({ nullable: true, default: NotificationFormat.NONE })
   other_notifications: NotificationFormat;
+
+  @Column({ nullable: true })
+  walletAddress: string;
+
+  @Column({
+    default: 0,
+  })
+  totalRedeemed: number;
+
+  @Column({
+    default: 0,
+  })
+  totalRedemptionAmount: number;
 }

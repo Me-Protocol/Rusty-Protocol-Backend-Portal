@@ -32,6 +32,12 @@ import { User } from '@src/globalServices/user/entities/user.entity';
 import { View } from '@src/globalServices/views/entities/view.entity';
 import { PaymentMethod } from '@src/globalServices/fiatWallet/entities/paymentMethod';
 import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.entity';
+import { BrandMember } from '@src/globalServices/brand/entities/brand_member.entity';
+import { KeyIdentifier } from '@src/globalServices/reward/entities/keyIdentifier.entity';
+import { BrandCustomer } from '@src/globalServices/brand/entities/brand_customer.entity';
+import { Notification } from '@src/globalServices/notification/entities/notification.entity';
+import { RedisOptions } from 'ioredis';
+import { AdminSettings } from '@src/globalServices/settings/entities/admin_settings.entity';
 
 export const typeOrmConfig: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -73,16 +79,53 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     CostCollection,
     PaymentRequest,
     PaymentMethod,
+    BrandMember,
+    KeyIdentifier,
+    BrandCustomer,
+    Notification,
+    AdminSettings,
   ],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   extra: {
     charset: 'utf8mb4_unicode_ci',
   },
+  // cache: {
+  //   type: 'redis',
+  //   provider: (redisOptions: RedisOptions) =>
+  //     require('cache-manager-ioredis').createCacheManager({
+  //       ...redisOptions,
+  //       isCacheableValue: () => true,
+  //       storeClient: require('ioredis').createClient({
+  //         ...redisOptions,
+  //         lazyConnect: true,
+  //       }),
+  //       retryStrategy: (times) => {
+  //         const delay = Math.min(times * 50, 2000);
+  //         return delay;
+  //       },
+  //     }),
+  //   options: {
+  //     retryAttempts: 5,
+  //     cachePrefix: process.env.REDIS_PREFIX,
+  //     enableReadyCheck: true,
+  //     connectTimeout: 10000,
+  //     maxRetriesPerRequest: 3,
+  //     reconnectOnError: (err: { message: string }) => {
+  //       const targetErrors = [/READONLY/, /ETIMEDOUT/];
+  //       targetErrors.forEach((targetError) => {
+  //         if (targetError.test(err.message)) {
+  //           return true;
+  //         }
+  //       });
+  //       return false;
+  //     },
+  //   },
+  // },
   synchronize: true,
   autoLoadEntities: true,
   logging: false,
-  // ssl: {
-  //   rejectUnauthorized: false,
-  // },
+  ssl: {
+    rejectUnauthorized: false,
+  },
   // ssl: true,
 };

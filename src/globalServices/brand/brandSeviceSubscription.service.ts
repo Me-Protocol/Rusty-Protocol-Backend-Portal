@@ -16,9 +16,9 @@ export class BrandSubscriptionService {
     return brand.subscribedServices;
   }
 
-  getServiceCost(service: BrandSubServices) {
+  async getServiceCost(service: BrandSubServices) {
     const { minimumBalanceApi, minimumBalanceInApp, topupLimitFactor } =
-      this.settingsService.getCostSettings();
+      await this.settingsService.getCostSettings();
 
     const minimumBalanceForNextBatchApp =
       minimumBalanceInApp * topupLimitFactor;

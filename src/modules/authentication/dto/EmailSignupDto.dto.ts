@@ -30,7 +30,10 @@ export class EmailSignupDto {
   @IsString()
   name: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    enum: UserAppType,
+    type: 'enum',
+  })
   @IsEnum(UserAppType, {
     message: 'User type is invalid',
   })

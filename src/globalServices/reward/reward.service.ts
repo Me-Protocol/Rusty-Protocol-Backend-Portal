@@ -8,6 +8,9 @@ import { Reward } from './entities/reward.entity';
 import { RewardType } from '@src/utils/enums/RewardType';
 import { rewardIndex } from '@src/modules/search/interface/search.interface';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
+import { KeyIdentifier } from './entities/keyIdentifier.entity';
+import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
+import { RewardStatus } from '@src/utils/enums/ItemStatus';
 
 @Injectable()
 export class RewardService {
@@ -16,13 +19,26 @@ export class RewardService {
 
     @InjectRepository(Reward)
     private readonly rewardsRepo: Repository<Reward>,
+
+    @InjectRepository(KeyIdentifier)
+    private readonly keyIdentifierRepo: Repository<KeyIdentifier>,
   ) {}
 
   async create(reward: Reward): Promise<Reward> {
     const createReward = this.rewardsRepo.create(reward);
     const rewardRec = await this.save(createReward);
     this.elasticIndex.insertDocument(rewardRec, rewardIndex);
+
     return rewardRec;
+  }
+
+  async getDraftReward(brandId: string) {
+    return this.rewardsRepo.findOne({
+      where: {
+        brandId,
+        status: RewardStatus.DRAFT,
+      },
+    });
   }
 
   async save(reward: Reward): Promise<Reward> {
@@ -35,19 +51,18 @@ export class RewardService {
   async findAll({
     category_id,
     brand_id,
-    reward_type,
     page,
     limit,
   }: {
     category_id: string;
     brand_id: string;
-    reward_type: RewardType;
     page: number;
     limit: number;
   }) {
     const rewards = this.rewardsRepo
       .createQueryBuilder('reward')
-      .leftJoinAndSelect('reward.brand', 'brand');
+      .leftJoinAndSelect('reward.brand', 'brand')
+      .where('reward.status = :status', { status: RewardStatus.PUBLISHED });
 
     if (category_id) {
       rewards.andWhere('brand.categoryId = :category_id', { category_id });
@@ -55,10 +70,6 @@ export class RewardService {
 
     if (brand_id) {
       rewards.andWhere('brand.id = :brand_id', { brand_id });
-    }
-
-    if (reward_type) {
-      rewards.andWhere('reward.rewardType = :reward_type', { reward_type });
     }
 
     rewards.skip((page - 1) * limit).take(limit);
@@ -70,8 +81,8 @@ export class RewardService {
     return {
       total,
       rewards: rewardsRec,
-      nextPage: total > page * limit ? page + 1 : null,
-      previousPage: page > 1 ? page - 1 : null,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
     };
   }
 
@@ -79,8 +90,12 @@ export class RewardService {
     return this.rewardsRepo.findOneBy({ slug: slug });
   }
 
+  async findOneRewardByName(name: string): Promise<Reward> {
+    return this.rewardsRepo.findOneBy({ rewardName: name });
+  }
+
   async delete(rewardId: string, brandId: string): Promise<boolean> {
-    await this.rewardsRepo.delete({ id: rewardId, brandId: brandId });
+    await this.rewardsRepo.softDelete({ id: rewardId, brandId: brandId });
 
     this.elasticIndex.deleteDocument(rewardIndex, rewardId);
 
@@ -126,6 +141,38 @@ export class RewardService {
     return this.rewardsRepo.findOne({
       where: { contractAddress: contractAddress },
       relations: ['brand'],
+    });
+  }
+
+  async createKeyIdentifer(
+    keyIdentifier: KeyIdentifier,
+  ): Promise<KeyIdentifier> {
+    return this.keyIdentifierRepo.save(keyIdentifier);
+  }
+
+  async getKeyIdentifier(id: string, type: KeyIdentifierType) {
+    return this.keyIdentifierRepo.findOne({
+      where: {
+        id,
+        identifierType: type,
+      },
+    });
+  }
+
+  async activeDraftReward(brandId: string) {
+    return this.rewardsRepo.findOne({
+      where: {
+        brandId,
+      },
+    });
+  }
+
+  async getRewardByIdAndBrandId(rewardId: string, brandId: string) {
+    return this.rewardsRepo.findOne({
+      where: {
+        id: rewardId,
+        brandId,
+      },
     });
   }
 }

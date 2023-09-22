@@ -20,11 +20,4 @@ export class FilterRewardDto {
   @IsOptional()
   @IsString()
   brandId: string;
-
-  @ApiProperty()
-  @IsOptional()
-  @IsEnum(RewardType, {
-    message: 'Reward type is invalid',
-  })
-  rewardType: RewardType;
 }

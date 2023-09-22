@@ -15,7 +15,6 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Customer')
 @ApiBearerAuth()
-@UseInterceptors(ResponseInterceptor)
 @Controller('customer')
 export class CustomerManagementController {
   constructor(
@@ -32,6 +31,20 @@ export class CustomerManagementController {
 
     return await this.customerAccountManagementService.updateCustomer(
       updateCustomerDto,
+      userId,
+    );
+  }
+
+  @UseGuards(AuthGuard())
+  @Put('/setup-wallet-address')
+  async setWalletAddress(
+    @Body(ValidationPipe) body: UpdateCustomerDto,
+    @Req() req: any,
+  ) {
+    const userId = req.user.id;
+
+    return await this.customerAccountManagementService.setWalletAddress(
+      body.walletAddress,
       userId,
     );
   }

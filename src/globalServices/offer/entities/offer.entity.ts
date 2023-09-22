@@ -1,8 +1,15 @@
 // offer entity
 
 import { BaseEntity } from '@src/common/entities/base.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
-import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
+import { ProductStatus } from '@src/utils/enums/ItemStatus';
 import { Product } from '@src/globalServices/product/entities/product.entity';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { ProductImage } from '@src/globalServices/product/entities/productImage.entity';
@@ -14,15 +21,16 @@ import { Like } from '@src/globalServices/like/entities/like.entity';
 import { Task } from '@src/globalServices/task/entities/task.entity';
 import { Order } from '@src/globalServices/order/entities/order.entity';
 import { Coupon } from '@src/globalServices/order/entities/coupon.entity';
+import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 
 @Entity('offer')
 export class Offer extends BaseEntity {
   @Column({
     type: 'enum',
-    enum: ItemStatus,
-    default: ItemStatus.DRAFT,
+    enum: ProductStatus,
+    default: ProductStatus.DRAFT,
   })
-  status: ItemStatus;
+  status: ProductStatus;
 
   @ManyToOne(() => Brand, (brand) => brand.products)
   @JoinColumn({ name: 'brandId' })
@@ -39,6 +47,11 @@ export class Offer extends BaseEntity {
 
   @OneToMany(() => ProductImage, (productImage) => productImage.offer)
   offerImages: ProductImage[];
+
+  @Column({
+    default: 0,
+  })
+  inventory: number;
 
   @Column({
     type: 'decimal',
@@ -142,4 +155,7 @@ export class Offer extends BaseEntity {
 
   @OneToMany(() => Coupon, (coupon) => coupon.offer)
   coupons: Coupon[];
+
+  @ManyToMany(() => Notification, (notification) => notification.offers)
+  notifications: Notification[];
 }

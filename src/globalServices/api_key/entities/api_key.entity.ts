@@ -27,4 +27,14 @@ export class ApiKey extends BaseEntity {
     default: 'Default App',
   })
   name: string;
+
+  @Column({
+    nullable: true,
+  })
+  keyIdentifierId: string;
+
+  @Column({
+    nullable: true,
+  })
+  protocolPublicKey: string;
 }

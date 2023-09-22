@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ItemStatus } from '@src/utils/enums/ItemStatus';
-import { OfferFilter } from '@src/utils/enums/OfferFiilter';
+import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
+import { OfferFilter, OfferSort } from '@src/utils/enums/OfferFiilter';
 import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class FilterOfferDto {
@@ -31,11 +31,11 @@ export class FilterOfferDto {
 
   @ApiProperty({
     type: 'enum',
-    enum: ItemStatus,
+    enum: ProductStatus,
   })
   @IsOptional()
-  @IsEnum(ItemStatus)
-  status: ItemStatus;
+  @IsEnum(ProductStatus)
+  status: ProductStatus;
 
   @ApiProperty({
     type: 'enum',
@@ -44,4 +44,42 @@ export class FilterOfferDto {
   @IsOptional()
   @IsEnum(OfferFilter)
   orderBy: OfferFilter;
+
+  @ApiProperty({
+    type: 'enum',
+    enum: OfferSort,
+  })
+  @IsOptional()
+  @IsEnum(OfferSort)
+  sort: OfferSort;
+
+  @ApiProperty({
+    description: 'order must be of this format "name:ASC" or "name:DESC"',
+  })
+  @IsOptional()
+  @IsString({
+    message: 'order must be of this format "name:ASC" or "name:DESC"',
+  })
+  order: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  search: string;
+}
+
+export class FilterUserOfferDto {
+  @ApiProperty()
+  @IsString()
+  page: number;
+
+  @ApiProperty()
+  @IsString()
+  limit: number;
+
+  @ApiProperty()
+  @IsUUID()
+  rewardId?: string;
+
+  userId: string;
 }

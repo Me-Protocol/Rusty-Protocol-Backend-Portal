@@ -6,6 +6,7 @@ import {
   HttpException,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
   Req,
@@ -27,20 +28,22 @@ import { LoginDto } from './dto/LoginDto.dto';
 import { Verify2FADto } from './dto/Verify2FADto.dto';
 import { UpdateUserDto } from './dto/UpdateUserDto.dto';
 import { PasswordDto } from './dto/PasswordDto.dto';
-import { ChangeEmailDto } from './dto/ChangeEmailDto.dto';
-import { ChangePhoneDto } from './dto/ChangePhoneDto.dto';
+import { ChangeEmailDto, StartChangeEmailDto } from './dto/ChangeEmailDto.dto';
+import { ChangePhoneDto, StartChangePhoneDto } from './dto/ChangePhoneDto.dto';
 import { ForgotPasswordDto } from './dto/ForgotPasswordDto.dto';
 import { ResetPasswordDto } from './dto/ResetPasswordDto.dto';
 import { UpdateDeviceTokenDto } from './dto/UpdateDeviceTokenDto.dto';
 import { AuthenticationService } from './service';
 import { UserAppType } from '@src/utils/enums/UserAppType';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Enable2FADto } from './dto/Enable2FADto.dto';
+import { UpdatePreferenceDto } from './dto/UpdatePreferenceDto.dto';
+import { LogoutDeviceDto } from './dto/LogoutDeviceDto.dto';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const requestIp = require('request-ip');
 
 @ApiTags('Authentication')
-@UseInterceptors(ResponseInterceptor)
 @Controller('user')
 export class AuthenticationController {
   constructor(private readonly authService: AuthenticationService) {}
@@ -154,8 +157,6 @@ export class AuthenticationController {
 
     const {
       password,
-      emailVerified,
-      phoneVerified,
       createdAt,
       updatedAt,
       accountVerificationCode,
@@ -181,7 +182,7 @@ export class AuthenticationController {
   @Post('logout')
   async logout(
     @Req() req: any,
-    @Body() params: { deviceId: string },
+    @Body(ValidationPipe) params: LogoutDeviceDto,
   ): Promise<any> {
     const user = req.user as User;
 
@@ -221,7 +222,7 @@ export class AuthenticationController {
   @Put('me/email')
   async updateEmail(
     @Req() req: any,
-    @Body(ValidationPipe) body: EmailSignupDto,
+    @Body(ValidationPipe) body: StartChangeEmailDto,
   ): Promise<any> {
     const user = req.user as User;
 
@@ -245,11 +246,37 @@ export class AuthenticationController {
   @Put('me/phone')
   async updatePhone(
     @Req() req: any,
-    @Body(ValidationPipe) body: PhoneSignupDto,
+    @Body(ValidationPipe) body: StartChangePhoneDto,
   ): Promise<any> {
     const user = req.user as User;
 
     return await this.authService.changePhone(user, body);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard())
+  @Put('me/2fa')
+  async enableDisable2FA(
+    @Req() req: any,
+    @Body(ValidationPipe) body: Enable2FADto,
+  ): Promise<any> {
+    const user = req.user as User;
+    body.userId = user.id;
+
+    return await this.authService.enableDisable2FA(body);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard())
+  @Put('me/preferences')
+  async updatePreferences(
+    @Req() req: any,
+    @Body(ValidationPipe) body: UpdatePreferenceDto,
+  ): Promise<any> {
+    const user = req.user as User;
+    body.userId = user.id;
+
+    return await this.authService.updatePreferences(body);
   }
 
   @ApiBearerAuth()
@@ -320,8 +347,8 @@ export class AuthenticationController {
   //   // This will redirect the user to Twitter for authentication
   // }
 
-  @Get('google/callback')
   @UseGuards(AuthGuard('google'))
+  @Get('google/callback')
   async googleCallback(
     @Req() req: any,
     @Res({ passthrough: true }) res: any,
@@ -344,7 +371,7 @@ export class AuthenticationController {
         bio: '',
         location: '',
         website: '',
-        username: '',
+        username: null,
         userAgent: req.headers['user-agent'],
         ip: requestIp.getClientIp(req),
         userType: UserAppType.USER,
@@ -382,7 +409,7 @@ export class AuthenticationController {
         bio: '',
         location: '',
         website: '',
-        username: '',
+        username: null,
         userAgent: req.headers['user-agent'],
         ip: requestIp.getClientIp(req),
         userType: UserAppType.BRAND,
@@ -427,7 +454,7 @@ export class AuthenticationController {
         bio: '',
         location: '',
         website: '',
-        username: '',
+        username: null,
         userAgent: req.headers['user-agent'],
         ip: requestIp.getClientIp(req),
         userType: UserAppType.USER,
@@ -467,7 +494,7 @@ export class AuthenticationController {
   @Put('me/devices/:id')
   async updateDevice(
     @Req() req: any,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body(ValidationPipe) body: UpdateDeviceTokenDto,
   ): Promise<any> {
     const user = req.user as User;

@@ -17,8 +17,7 @@ import { FollowManagementService } from './service';
 import { FollowDto } from './dto/FollowDto.dto';
 import { FilteUserFollowDto, FilterFollowDto } from './dto/FilterFollowDto.dto';
 
-@ApiTags('Follow')
-@UseInterceptors(ResponseInterceptor)
+@ApiTags('Followers')
 @Controller('follow')
 export class FollowManagementController {
   constructor(
@@ -27,13 +26,19 @@ export class FollowManagementController {
 
   @UseGuards(AuthGuard())
   @Post()
-  async follow(@Body(ValidationPipe) body: FollowDto) {
+  async follow(@Body(ValidationPipe) body: FollowDto, @Req() req: any) {
+    const userId = req.user.id;
+    body.userId = userId;
+
     await this.followManagementService.followBrand(body);
   }
 
   @UseGuards(AuthGuard())
   @Post('unfollow')
-  async unfollow(@Body(ValidationPipe) body: FollowDto) {
+  async unfollow(@Body(ValidationPipe) body: FollowDto, @Req() req: any) {
+    const userId = req.user.id;
+    body.userId = userId;
+
     await this.followManagementService.unfollowBrand(body);
   }
 
@@ -52,6 +57,7 @@ export class FollowManagementController {
     @Query(ValidationPipe) query: FilteUserFollowDto,
     @Req() req: any,
   ) {
+    query.userId = req.user.id;
     return await this.followManagementService.getUserFollowedBrands(query);
   }
 

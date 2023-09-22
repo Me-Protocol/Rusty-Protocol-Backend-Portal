@@ -24,7 +24,7 @@ const { SENDGRID_API_KEY, SENDGRID_EMAIL } = process.env;
           },
         },
         defaults: {
-          from: `"Synchro" <${SENDGRID_EMAIL}>`,
+          from: `"Me Protocol" <${SENDGRID_EMAIL}>`,
         },
         template: {
           // direction in src/views/template/mail.hbs

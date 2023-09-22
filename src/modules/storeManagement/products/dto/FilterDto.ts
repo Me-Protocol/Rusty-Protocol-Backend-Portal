@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ItemStatus } from '@src/utils/enums/ItemStatus';
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { ProductStatus } from '@src/utils/enums/ItemStatus';
+import { OfferFilter, ProductFilter } from '@src/utils/enums/OfferFiilter';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class FilterDto {
   @ApiProperty()
@@ -16,10 +17,10 @@ export class FilterDto {
 
   @ApiProperty()
   @IsOptional()
-  @IsEnum(ItemStatus, {
+  @IsEnum(ProductStatus, {
     message: 'Please provide a valid status',
   })
-  status?: ItemStatus;
+  status?: ProductStatus;
 
   @ApiProperty()
   @IsOptional()
@@ -30,4 +31,28 @@ export class FilterDto {
   @IsOptional()
   @IsString()
   subCategoryId: string;
+
+  @ApiProperty({
+    description: 'order must be of this format "name:ASC" or "name:DESC"',
+  })
+  @IsOptional()
+  @IsString({
+    message: 'order must be of this format "name:ASC" or "name:DESC"',
+  })
+  order: string;
+
+  @ApiProperty({
+    type: 'enum',
+    enum: ProductFilter,
+  })
+  @IsOptional()
+  @IsEnum(ProductFilter, {
+    message: 'Please provide a valid filter',
+  })
+  filterBy: ProductFilter;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  search: string;
 }

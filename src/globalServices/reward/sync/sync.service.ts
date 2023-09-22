@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Raw, Repository } from 'typeorm';
 import slugify from 'slugify';
@@ -8,6 +8,25 @@ import { RewardRegistry } from '../entities/registry.entity';
 import { TransactionsType } from '@src/utils/enums/Transactions';
 import { RewardService } from '../reward.service';
 import { UserService } from '@src/globalServices/user/user.service';
+import { AxiosResponse } from 'axios';
+import { SendTransactionData } from '@src/modules/storeManagement/reward/dto/distributeBatch.dto';
+import {
+  distribute_reward_specific,
+  mutate,
+  mutate_n_format,
+  transfer_reward,
+} from '@developeruche/runtime-sdk';
+import { logger } from '@src/globalServices/logger/logger.service';
+import { BigNumber, Wallet, ethers } from 'ethers';
+import { KeyManagementService } from '@src/globalServices/key-management/key-management.service';
+import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
+import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
+import { SettingsService } from '@src/globalServices/settings/settings.service';
+import {
+  getTreasuryPermitSignature,
+  treasuryContract,
+} from '@developeruche/protocol-core';
+import { GetTreasuryPermitDto } from '@src/modules/storeManagement/reward/dto/PushTransactionDto.dto';
 
 @Injectable()
 export class SyncRewardService {
@@ -23,6 +42,9 @@ export class SyncRewardService {
 
     private readonly rewardService: RewardService,
     private readonly userService: UserService,
+    private readonly keyManagementService: KeyManagementService,
+    private readonly fiatWalletService: FiatWalletService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   async createBatch(batch: SyncBatch) {
@@ -65,8 +87,8 @@ export class SyncRewardService {
     return {
       total,
       batches,
-      nextPage: total > page * limit ? page + 1 : null,
-      previousPage: page > 1 ? page - 1 : null,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
     };
   }
 
@@ -136,8 +158,8 @@ export class SyncRewardService {
     return {
       total,
       registries,
-      nextPage: total > page * limit ? page + 1 : null,
-      previousPage: page > 1 ? page - 1 : null,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
     };
   }
 
@@ -152,17 +174,29 @@ export class SyncRewardService {
     });
   }
 
+  async findOneRegistryByEmailIdentifier(email: string, rewardId: string) {
+    return this.rewardRegistryRepo.findOne({
+      where: {
+        customerIdentiyOnBrandSite: email,
+        rewardId,
+      },
+      relations: ['reward', 'reward.brand'],
+    });
+  }
+
   // debit reward
   async debitReward({
     rewardId,
     userId,
     amount,
     description,
+    checkBalance,
   }: {
     rewardId: string;
     userId: string;
     amount: number;
     description: string;
+    checkBalance?: boolean;
   }) {
     const registry = await this.findOneRegistryByUserId(userId, rewardId);
 
@@ -170,31 +204,31 @@ export class SyncRewardService {
       throw new Error('Registry not found');
     }
 
-    if (registry.balance < amount) {
+    if (checkBalance && registry.balance < amount) {
       throw new Error('Insufficient balance');
     }
 
-    registry.balance -= amount;
-
-    await this.rewardRegistryRepo.save(registry);
+    if (checkBalance && registry.balance >= amount) {
+      registry.balance -= amount;
+      await this.rewardRegistryRepo.save(registry);
+    }
 
     // add registry history
+    // const registryHistory = this.registryHistoryRepo.create({
+    //   balance: registry.balance,
+    //   description,
+    //   transactionType: TransactionsType.DEBIT,
+    //   rewardRegistryId: registry.id,
+    //   amount: amount,
+    // });
 
-    const registryHistory = this.registryHistoryRepo.create({
-      balance: registry.balance,
-      description,
-      transactionType: TransactionsType.DEBIT,
-      rewardRegistryId: registry.id,
-      amount: amount,
-    });
-
-    await this.registryHistoryRepo.save(registryHistory);
+    // await this.registryHistoryRepo.save(registryHistory);
 
     return registry;
   }
 
   // debit reward
-  async clearBalance({
+  async disbutributeRewardToExistingUsers({
     registryId,
     amount,
     description,
@@ -213,7 +247,12 @@ export class SyncRewardService {
       throw new Error('Registry not found');
     }
 
+    const totalBalance = Number(amount) + Number(registry.totalBalance);
+    const formattedSum = totalBalance.toFixed(2);
+
     registry.balance = 0;
+    registry.pendingBalance = 0;
+    registry.totalBalance = Number(formattedSum);
 
     await this.rewardRegistryRepo.save(registry);
 
@@ -222,12 +261,98 @@ export class SyncRewardService {
     const registryHistory = this.registryHistoryRepo.create({
       balance: registry.balance,
       description,
-      transactionType: TransactionsType.DEBIT,
+      transactionType: TransactionsType.CREDIT,
       rewardRegistryId: registry.id,
       amount: amount,
     });
 
     await this.registryHistoryRepo.save(registryHistory);
+
+    return registry;
+  }
+
+  async moveRewardPointToUndistribted({
+    customerIdentiyOnBrandSite,
+    amount,
+    description,
+  }: {
+    customerIdentiyOnBrandSite: string;
+    amount: number;
+    description: string;
+  }) {
+    const registry = await this.rewardRegistryRepo.findOne({
+      where: {
+        customerIdentiyOnBrandSite,
+      },
+    });
+
+    if (!registry) {
+      throw new Error('Registry not found');
+    }
+
+    const totalDistribution =
+      Number(amount) + Number(registry.undistributedBalance);
+    const formattedSum = totalDistribution.toFixed(2);
+
+    registry.balance = 0;
+    registry.pendingBalance = 0;
+    registry.undistributedBalance = Number(formattedSum);
+
+    const newReg = await this.rewardRegistryRepo.save(registry);
+
+    // add registry history
+
+    // const registryHistory = this.registryHistoryRepo.create({
+    //   balance: registry.balance,
+    //   description,
+    //   transactionType: TransactionsType.DEBIT,
+    //   rewardRegistryId: registry.id,
+    //   amount: amount,
+    // });
+
+    // await this.registryHistoryRepo.save(registryHistory);
+
+    return newReg;
+  }
+
+  async clearUndistributedBalance({
+    registryId,
+    amount,
+    description,
+  }: {
+    registryId: string;
+    amount: number;
+    description: string;
+  }) {
+    const registry = await this.rewardRegistryRepo.findOne({
+      where: {
+        id: registryId,
+      },
+    });
+
+    if (!registry) {
+      throw new Error('Registry not found');
+    }
+
+    const totalBalance = Number(amount) + Number(registry.totalBalance);
+    const formattedSum = totalBalance.toFixed(2);
+
+    registry.undistributedBalance = 0.0;
+    registry.totalBalance = Number(formattedSum);
+
+    await this.rewardRegistryRepo.save(registry);
+
+    // add registry history
+
+    // const registryHistory = this.registryHistoryRepo.create({
+    //   balance: registry.balance,
+    //   description,
+    //   transactionType: TransactionsType.DEBIT,
+    //   rewardRegistryId: registry.id,
+    //   amount: amount,
+    // });
+
+    // await this.registryHistoryRepo.save(registryHistory);
 
     return registry;
   }
@@ -259,15 +384,15 @@ export class SyncRewardService {
 
     // add registry history
 
-    const registryHistory = this.registryHistoryRepo.create({
-      balance: registry.balance,
-      description,
-      transactionType: TransactionsType.CREDIT,
-      rewardRegistryId: registry.id,
-      amount: amount,
-    });
+    // const registryHistory = this.registryHistoryRepo.create({
+    //   balance: registry.balance,
+    //   description,
+    //   transactionType: TransactionsType.CREDIT,
+    //   rewardRegistryId: registry.id,
+    //   amount: amount,
+    // });
 
-    await this.registryHistoryRepo.save(registryHistory);
+    // await this.registryHistoryRepo.save(registryHistory);
 
     return registry;
   }
@@ -295,22 +420,27 @@ export class SyncRewardService {
     }
 
     registry.balance = amount;
+    registry.pendingBalance = amount;
 
     await this.rewardRegistryRepo.save(registry);
 
     // add registry history
 
-    const registryHistory = this.registryHistoryRepo.create({
-      balance: registry.balance,
-      description,
-      transactionType: TransactionsType.CREDIT,
-      rewardRegistryId: registry.id,
-      amount: amount,
-    });
+    // const registryHistory = this.registryHistoryRepo.create({
+    //   balance: registry.balance,
+    //   description,
+    //   transactionType: TransactionsType.CREDIT,
+    //   rewardRegistryId: registry.id,
+    //   amount: amount,
+    // });
 
-    await this.registryHistoryRepo.save(registryHistory);
+    // await this.registryHistoryRepo.save(registryHistory);
 
     return registry;
+  }
+
+  async saveRegistryHistory(registryHistory: RegistryHistory) {
+    return this.registryHistoryRepo.save(registryHistory);
   }
 
   async checkActiveBatch(brandId: string, rewardId: string) {
@@ -369,6 +499,162 @@ export class SyncRewardService {
     });
   }
 
+  async getAllRegistryRecordsByIdentifer(identifier: string) {
+    return this.rewardRegistryRepo.find({
+      where: {
+        customerIdentiyOnBrandSite: identifier,
+      },
+    });
+  }
+
+  async pushTransactionToRuntime(params: SendTransactionData) {
+    try {
+      let spend: AxiosResponse<any>;
+
+      if (params.data.startsWith('0x00000001')) {
+        spend = await mutate_n_format(params);
+      } else {
+        spend = await mutate(params);
+      }
+
+      return spend?.data ?? spend;
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
+    }
+  }
+
+  async getTreasuryPermitAsync(body: GetTreasuryPermitDto) {
+    try {
+      const { onboardWallet } = await this.settingsService.settingsInit();
+
+      const provider = new ethers.providers.JsonRpcProvider(
+        process.env.JSON_RPC_URL,
+      );
+      const wallet = new ethers.Wallet(onboardWallet, provider);
+
+      const result = await getTreasuryPermitSignature(
+        wallet,
+        treasuryContract,
+        body.spender,
+        ethers.utils.parseEther(body.value),
+        ethers.constants.MaxUint256,
+      );
+
+      if (result) {
+        return {
+          v: result.v,
+          r: result.r,
+          s: result.s,
+        };
+      }
+
+      throw new Error('Error getting treasury permit');
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
+    }
+  }
+
+  async distributeRewardWithKey({
+    recipients,
+    amounts,
+    contractAddress,
+    signer,
+  }: {
+    recipients: string[];
+    amounts: BigNumber[];
+    contractAddress: string;
+    signer: Wallet;
+  }) {
+    const distributionData = await distribute_reward_specific(
+      contractAddress,
+      recipients,
+      amounts,
+      signer,
+    );
+
+    if (distributionData?.data?.error) {
+      throw new Error(
+        distributionData.data.error?.message ??
+          'Error distributing reward on protocol',
+      );
+    } else {
+      return distributionData;
+    }
+  }
+
+  async distributeRewardWithPrivateKey({
+    rewardId,
+    walletAddress,
+    amount,
+    email,
+  }: {
+    rewardId: string;
+    walletAddress: string;
+    amount: number;
+    email: string;
+  }) {
+    const reward = await this.rewardService.findOneById(rewardId);
+
+    const canPayCost = await this.fiatWalletService.checkCanPayCost(
+      reward.brandId,
+    );
+
+    if (!canPayCost) {
+      return 'Brand cannot pay cost';
+    }
+
+    const keyIdentifier = await this.rewardService.getKeyIdentifier(
+      reward.redistributionKeyIdentifierId,
+      KeyIdentifierType.REDISTRIBUTION,
+    );
+    const decryptedPrivateKey = await this.keyManagementService.decryptKey(
+      keyIdentifier.identifier,
+    );
+    const signer = new Wallet(decryptedPrivateKey);
+
+    const distributionData = await transfer_reward(
+      reward.contractAddress,
+      walletAddress,
+      ethers.utils.parseEther(amount.toString()),
+      signer,
+    );
+
+    if (distributionData?.data?.error) {
+      return 'Undistributed balance';
+    } else {
+      const registry = await this.findOneRegistryByEmailIdentifier(
+        email,
+        rewardId,
+      );
+
+      await this.clearUndistributedBalance({
+        registryId: registry.id,
+        amount: amount,
+        description: `Reward distributed to ${walletAddress}`,
+      });
+
+      return distributionData;
+    }
+  }
+
+  async getUndistributedReward(userId: string) {
+    const rewardRegistry = await this.rewardRegistryRepo.find({
+      where: {
+        userId,
+      },
+    });
+
+    return rewardRegistry.filter(
+      (registry) => Number(registry.undistributedBalance) > 0,
+    );
+  }
+
   // getUserRegistry(userId: string, rewardId: string) {
   //   return this.rewardRegistryRepo.findOne({
   //     where: {
@@ -377,4 +663,29 @@ export class SyncRewardService {
   //     },
   //   });
   // }
+
+  async getRegistryHistory({
+    userId,
+    startDate,
+    endDate,
+    transactionsType,
+  }: {
+    userId: string;
+    startDate: Date;
+    endDate: Date;
+    transactionsType: TransactionsType;
+  }) {
+    return this.registryHistoryRepo.find({
+      where: {
+        rewardRegistry: {
+          userId,
+        },
+        transactionType: transactionsType,
+        createdAt: Raw(
+          (alias) => `DATE(${alias}) BETWEEN '${startDate}' AND '${endDate}'`,
+        ),
+      },
+      relations: ['rewardRegistry', 'rewardRegistry.reward'],
+    });
+  }
 }

@@ -13,7 +13,7 @@ import { BaseEntity } from '@src/common/entities/base.entity';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { Category } from '@src/globalServices/category/entities/category.entity';
 import { ProductImage } from './productImage.entity';
-import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import { ProductStatus } from '@src/utils/enums/ItemStatus';
 import { Offer } from '@src/globalServices/offer/entities/offer.entity';
 import { Variant } from './variants.entity';
 import { Collection } from '@src/globalServices/collections/entities/collection.entity';
@@ -33,7 +33,11 @@ export class Product extends BaseEntity {
   @Column()
   brandId: string;
 
-  @ManyToOne(() => Category, (category) => category.products)
+  @ManyToOne(() => Category, (category) => category.products, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+    cascade: true,
+  })
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 
@@ -45,10 +49,10 @@ export class Product extends BaseEntity {
 
   @Column({
     type: 'enum',
-    enum: ItemStatus,
-    default: ItemStatus.DRAFT,
+    enum: ProductStatus,
+    default: ProductStatus.DRAFT,
   })
-  status: ItemStatus;
+  status: ProductStatus;
 
   @Column({
     type: 'decimal',
@@ -79,7 +83,11 @@ export class Product extends BaseEntity {
   @JoinColumn({ name: 'subCategoryId' })
   subCategory: Category;
 
-  @OneToMany(() => Offer, (offer) => offer.product)
+  @OneToMany(() => Offer, (offer) => offer.product, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+    cascade: true,
+  })
   offers: Offer[];
 
   @OneToMany(() => Variant, (variant) => variant.product)
@@ -100,4 +108,9 @@ export class Product extends BaseEntity {
     },
   })
   collections: Collection[];
+
+  @Column({
+    default: 'N/A',
+  })
+  productUrl: string;
 }

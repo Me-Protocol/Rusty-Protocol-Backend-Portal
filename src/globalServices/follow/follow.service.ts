@@ -14,32 +14,40 @@ export class FollowService {
   ) {}
 
   // get brands followers
-  async getBrandsFollowers(brandId: string, page: number, limit: number) {
-    const followers = await this.followerRepository.find({
-      where: {
-        brandId,
-      },
-      relations: ['user', 'user.customer'],
-      select: {
-        user: {
-          username: true,
-          customer: {
-            name: true,
-            profilePicture: true,
-          },
-        },
-      },
-      skip: page * limit,
-      take: limit,
-    });
+  async getBrandsFollowers({
+    brandId,
+    page,
+    limit,
+  }: {
+    brandId: string;
+    page: number;
+    limit: number;
+  }) {
+    const followerQuery = this.followerRepository
+      .createQueryBuilder('follow')
+      .leftJoinAndSelect('follow.user', 'user')
+      .leftJoinAndSelect('user.customer', 'customer')
+      .select([
+        'follow.id',
+        'follow.createdAt',
+        'follow.updatedAt',
+        'user.id',
+        'user.username',
+        'customer.name',
+        'customer.profilePicture',
+      ])
+      .where('follow.brandId = :brandId', { brandId })
+      .skip((page - 1) * limit)
+      .take(limit);
 
-    const total = await this.countBrandFollowers(brandId);
+    const followers = await followerQuery.getMany();
+    const total = await followerQuery.getCount();
 
     return {
       total,
       followers,
-      nextPage: total > page * limit ? page + 1 : null,
-      previousPage: page > 1 ? page - 1 : null,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
     };
   }
 
@@ -52,7 +60,7 @@ export class FollowService {
 
     await this.followerRepository.save(following);
 
-    const brand = await this.brandService.getBrandById(userId);
+    const brand = await this.brandService.getBrandById(brandId);
     brand.followersCount += 1;
 
     await this.brandService.save(brand);
@@ -62,12 +70,12 @@ export class FollowService {
 
   // delete follower
   async unfollow(brandId: string, userId: string): Promise<string> {
-    await this.followerRepository.delete({
+    await this.followerRepository.softDelete({
       userId,
       brandId,
     });
 
-    const brand = await this.brandService.getBrandById(userId);
+    const brand = await this.brandService.getBrandById(brandId);
     brand.followersCount -= 1;
 
     await this.brandService.save(brand);
@@ -99,31 +107,31 @@ export class FollowService {
 
   // get users following
   async getUsersFollowing(userId: string, page: number, limit: number) {
-    const following = await this.followerRepository.find({
-      where: {
-        userId,
-      },
-      relations: ['user', 'user.customer'],
-      select: {
-        user: {
-          username: true,
-          customer: {
-            name: true,
-            profilePicture: true,
-          },
-        },
-      },
-      skip: page * limit,
-      take: limit,
-    });
+    const followerQuery = this.followerRepository
+      .createQueryBuilder('follow')
+      .leftJoinAndSelect('follow.user', 'user')
+      .leftJoinAndSelect('user.customer', 'customer')
+      .select([
+        'follow.id',
+        'follow.createdAt',
+        'follow.updatedAt',
+        'user.id',
+        'user.username',
+        'customer.name',
+        'customer.profilePicture',
+      ])
+      .where('follow.userId = :userId', { userId })
+      .skip((page - 1) * limit)
+      .take(limit);
 
-    const total = await this.countUserFollowing(userId);
+    const following = await followerQuery.getMany();
+    const total = await followerQuery.getCount();
 
     return {
       total,
       following,
-      nextPage: total > page * limit ? page + 1 : null,
-      previousPage: page > 1 ? page - 1 : null,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
     };
   }
 
