@@ -139,19 +139,19 @@ export class OfferManagementService {
         );
       }
 
-      const saveOffer = await this.offerService.saveOffer(offer);
+      await this.offerService.updateOffer(offer);
 
       const findOne = await this.offerService.getOfferById(offer.id);
 
-      console.log(saveOffer);
+      console.log('findOne', findOne);
 
-      if (saveOffer.status === ProductStatus.PUBLISHED) {
+      if (offer.status === ProductStatus.PUBLISHED) {
         this.elasticIndex.updateDocument(findOne, offerIndex);
-      } else if (saveOffer.status === ProductStatus.ARCHIVED) {
+      } else if (offer.status === ProductStatus.ARCHIVED) {
         this.elasticIndex.deleteDocument(offerIndex, offer.id);
       }
 
-      return saveOffer;
+      return findOne;
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400);

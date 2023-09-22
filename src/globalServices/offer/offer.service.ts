@@ -30,6 +30,15 @@ export class OfferService {
     return await this.offerRepo.save(offer);
   }
 
+  async updateOffer(offer: Offer) {
+    return await this.offerRepo.update(
+      {
+        id: offer.id,
+      },
+      offer,
+    );
+  }
+
   async getOfferById(id: string) {
     return await this.offerRepo.findOne({
       where: {
