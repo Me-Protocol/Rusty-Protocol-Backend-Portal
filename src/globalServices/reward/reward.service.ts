@@ -28,6 +28,7 @@ export class RewardService {
     const createReward = this.rewardsRepo.create(reward);
     const rewardRec = await this.save(createReward);
     this.elasticIndex.insertDocument(rewardRec, rewardIndex);
+
     return rewardRec;
   }
 
@@ -60,7 +61,8 @@ export class RewardService {
   }) {
     const rewards = this.rewardsRepo
       .createQueryBuilder('reward')
-      .leftJoinAndSelect('reward.brand', 'brand');
+      .leftJoinAndSelect('reward.brand', 'brand')
+      .where('reward.status = :status', { status: RewardStatus.PUBLISHED });
 
     if (category_id) {
       rewards.andWhere('brand.categoryId = :category_id', { category_id });
@@ -86,6 +88,10 @@ export class RewardService {
 
   async findOneRewardBySlug(slug: string): Promise<Reward> {
     return this.rewardsRepo.findOneBy({ slug: slug });
+  }
+
+  async findOneRewardByName(name: string): Promise<Reward> {
+    return this.rewardsRepo.findOneBy({ rewardName: name });
   }
 
   async delete(rewardId: string, brandId: string): Promise<boolean> {
@@ -156,6 +162,15 @@ export class RewardService {
   async activeDraftReward(brandId: string) {
     return this.rewardsRepo.findOne({
       where: {
+        brandId,
+      },
+    });
+  }
+
+  async getRewardByIdAndBrandId(rewardId: string, brandId: string) {
+    return this.rewardsRepo.findOne({
+      where: {
+        id: rewardId,
         brandId,
       },
     });

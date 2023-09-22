@@ -24,6 +24,7 @@ import { BrandSubServices } from '@src/utils/enums/BrandSubServices';
 import { BrandMember } from './brand_member.entity';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 import { Order } from '@src/globalServices/order/entities/order.entity';
+import { Review } from '@src/globalServices/review/entities/review.entity';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -235,4 +236,7 @@ export class Brand extends BaseEntity {
     nullable: true,
   })
   walletAddress: string;
+
+  @OneToMany(() => Review, (review) => review.brand)
+  reviews: Review[];
 }

@@ -16,48 +16,63 @@ export class ReviewService {
   }
 
   // get all reviews
-  async getAllReviews(offer_id: string): Promise<Review[]> {
-    return await this.reviewsRepository.find({
-      where: {
-        offerId: offer_id,
-      },
-      relations: ['user', 'offer'],
-      select: {
-        title: true,
-        rating: true,
-        review: true,
-        createdAt: true,
-        user: {
-          username: true,
-          customer: {
-            name: true,
-            profilePicture: true,
-          },
-        },
-      },
-    });
-  }
+  async getReviews({
+    page,
+    limit,
+    userId,
+    brandId,
+    offerId,
+  }: {
+    page: number;
+    limit: number;
+    userId?: string;
+    brandId?: string;
+    offerId?: string;
+  }) {
+    const reviewQuery = this.reviewsRepository
+      .createQueryBuilder('review')
+      .leftJoinAndSelect('review.user', 'user')
+      .leftJoinAndSelect('user.customer', 'customer')
+      .leftJoinAndSelect('review.offer', 'offer')
+      .leftJoinAndSelect('offer.offerImages', 'offerImages')
+      .leftJoinAndSelect('offer.brand', 'brand')
+      .select([
+        'review.id',
+        'review.title',
+        'review.review',
+        'review.rating',
+        'review.createdAt',
+        'user.username',
+        'customer.name',
+        'customer.profilePicture',
+      ]);
 
-  // get all users reviews
-  async getAllUsersReviews(user_id: string): Promise<Review[]> {
-    return await this.reviewsRepository.find({
-      where: {
-        userId: user_id,
-      },
-      relations: ['user', 'offer'],
-      select: {
-        title: true,
-        rating: true,
-        review: true,
-        createdAt: true,
-        user: {
-          username: true,
-          customer: {
-            name: true,
-            profilePicture: true,
-          },
-        },
-      },
-    });
+    if (userId) {
+      reviewQuery.where('review.userId = :userId', { userId });
+    }
+
+    if (brandId) {
+      reviewQuery.andWhere('review.brandId = :brandId', { brandId });
+    }
+
+    if (offerId) {
+      reviewQuery.andWhere('review.offerId = :offerId', { offerId });
+    }
+
+    reviewQuery.orderBy('review.createdAt', 'DESC');
+
+    reviewQuery.skip((page - 1) * limit);
+    reviewQuery.take(limit);
+
+    const [reviews, total] = await reviewQuery.getManyAndCount();
+
+    return {
+      reviews,
+      total,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
+    };
   }
 }
+
+// get all reviews
