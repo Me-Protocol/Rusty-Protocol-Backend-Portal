@@ -139,11 +139,9 @@ export class OfferManagementService {
         );
       }
 
-      await this.offerService.updateOffer(offer);
+      await this.offerService.saveOffer(offer);
 
       const findOne = await this.offerService.getOfferById(offer.id);
-
-      console.log('findOne', findOne);
 
       if (offer.status === ProductStatus.PUBLISHED) {
         this.elasticIndex.updateDocument(findOne, offerIndex);
