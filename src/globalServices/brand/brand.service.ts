@@ -11,6 +11,10 @@ import { BrandRole } from '@src/utils/enums/BrandRole';
 import { BrandCustomer } from './entities/brand_customer.entity';
 import { FilterBrandCustomer } from '@src/utils/enums/FilterBrandCustomer';
 import { generateBrandIdBytes10 } from '@developeruche/protocol-core';
+import axios from 'axios';
+import Vibrant from 'node-vibrant';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ProcessBrandColorEvent } from './events/process-brand-color.event';
 
 @Injectable()
 export class BrandService {
@@ -25,6 +29,8 @@ export class BrandService {
     private readonly brandCustomerRepo: Repository<BrandCustomer>,
 
     private readonly elasticIndex: ElasticIndex,
+
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async create({ userId, name }: { userId: string; name: string }) {
@@ -88,6 +94,13 @@ export class BrandService {
       if (body.supportPhoneNumber)
         brand.supportPhoneNumber = body.supportPhoneNumber;
       if (body.listOnStore) brand.listOnStore = body.listOnStore;
+
+      if (brand.logo) {
+        const processBrandColorPayload = new ProcessBrandColorEvent();
+        processBrandColorPayload.url = brand.logo;
+        processBrandColorPayload.brandId = brand.id;
+        this.eventEmitter.emit('process.brand.color', processBrandColorPayload);
+      }
 
       await this.brandRepo.update({ id: brandId }, brand);
 

@@ -115,6 +115,7 @@ import { ClientModuleConfig } from './config/client-module/client-module.config'
 import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
 import { SettingsModule } from './globalServices/settings/settings.module';
 import { InternalCacheModule } from './config/internal-cache/internal-cache.config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -165,6 +166,7 @@ import { InternalCacheModule } from './config/internal-cache/internal-cache.conf
     SearchModule,
     AuthenticationModule,
     UploadModule,
+    EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     TracingModule.forRoot({
       exporterConfig: {
