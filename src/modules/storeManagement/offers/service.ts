@@ -118,6 +118,7 @@ export class OfferManagementService {
         });
       }
 
+      if (body.rewardId) offer.rewardId = body.rewardId;
       if (body.name) offer.name = body.name;
       if (body.status) offer.status = body.status;
       if (body.originalPrice) offer.originalPrice = body.originalPrice;
@@ -128,7 +129,6 @@ export class OfferManagementService {
       if (body.startDate) offer.startDate = body.startDate;
       if (body.endDate) offer.endDate = body.endDate;
       if (body.idOnBrandsite) offer.idOnBrandsite = body.idOnBrandsite;
-      if (body.rewardId) offer.rewardId = body.rewardId;
 
       // upload images
       if (body?.offerImages) {
