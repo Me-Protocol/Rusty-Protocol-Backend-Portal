@@ -82,7 +82,10 @@ export class OfferManagementService {
 
   async updateOffer(id: string, body: UpdateOfferDto) {
     try {
-      const offer = await this.offerService.getBrandOfferById(id, body.brandId);
+      const offer = await this.offerService.getBrandOfferByIdWithoutRelations(
+        id,
+        body.brandId,
+      );
 
       if (!offer) {
         throw new HttpException('Offer not found', 404, {
