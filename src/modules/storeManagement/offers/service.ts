@@ -91,7 +91,6 @@ export class OfferManagementService {
       }
 
       if (body.productId) {
-        console.log('Has product id');
         if (body.productId !== offer.productId) {
           const product = await this.productService.getOneProduct(
             body.productId,
@@ -144,13 +143,15 @@ export class OfferManagementService {
 
       const findOne = await this.offerService.getOfferById(offer.id);
 
+      console.log(saveOffer);
+
       if (saveOffer.status === ProductStatus.PUBLISHED) {
         this.elasticIndex.updateDocument(findOne, offerIndex);
       } else if (saveOffer.status === ProductStatus.ARCHIVED) {
         this.elasticIndex.deleteDocument(offerIndex, offer.id);
       }
 
-      return findOne;
+      return saveOffer;
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400);
