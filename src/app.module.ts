@@ -115,9 +115,10 @@ import { ClientModuleConfig } from './config/client-module/client-module.config'
 import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
 import { SettingsModule } from './globalServices/settings/settings.module';
 import { InternalCacheModule } from './config/internal-cache/internal-cache.config';
-import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
-import { SettingsModule } from './globalServices/settings/settings.module';
 import { DebugController } from './debug/debug.controller';
+import { ReviewManagementController } from './modules/storeManagement/review/controller';
+import { ReviewService } from './globalServices/review/review.service';
+import { ReviewManagementService } from './modules/storeManagement/review/service';
 
 @Module({
   imports: [
@@ -176,6 +177,17 @@ import { DebugController } from './debug/debug.controller';
       isSimpleSpanProcessor: true, // true for development.
     }),
     ClientModuleConfig, // microservice
+    // ClientsModule.register([
+    //   {
+    //     name: 'tracking-service',
+    //     transport: Transport.TCP,
+    //     options: {
+    //       port: parseInt(process.env.APP_SERVER_LISTEN_PORT, 10),
+    //       ...TracingModule.getParserOptions(), // this method will return serializer that inject tracing id to microservice payload.
+    //     },
+    //   },
+    // ]),
+    ClientModuleConfig,
   ],
   controllers: [
     AppController,
@@ -197,6 +209,7 @@ import { DebugController } from './debug/debug.controller';
     PaymentModuleController,
     NotificationController,
     DebugController,
+    ReviewManagementController,
   ],
   providers: [
     ElasticIndex,
@@ -251,6 +264,8 @@ import { DebugController } from './debug/debug.controller';
     BrandSubscriptionService,
     KeyManagementService,
     NotificationService,
+    ReviewService,
+    ReviewManagementService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

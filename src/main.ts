@@ -4,22 +4,12 @@ import { jwtConfigurations } from './config/jwt.config';
 import * as session from 'express-session';
 import { logger } from './globalServices/logger/logger.service';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
-import { setupSwagger } from './config/swagger/swagger.config';
-import {
-  APP_SERVER_LISTEN_PORT,
-  APP_SERVER_LISTEN_IP,
-=======
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import { SentryFilter } from './filters/sentry.filter';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const cloudinary_1 = require('cloudinary');
+import { APP_SERVER_LISTEN_PORT, APP_SERVER_LISTEN_IP, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, CLOUDINARY_CLOUD_NAME } from './config/env.config';
+import { setupSwagger } from './config/swagger/swagger.config';
 
-const {
-  CLOUDINARY_CLOUD_NAME,
-  CLOUDINARY_API_KEY,
-  CLOUDINARY_API_SECRET,
-} from './config/env.config';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const cloudinary_1 = require('cloudinary');
 

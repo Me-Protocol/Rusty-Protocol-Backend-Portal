@@ -1,13 +1,8 @@
 import { Offer } from '@src/globalServices/offer/entities/offer.entity';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { BaseEntity } from '@src/common/entities/base.entity';
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 
 @Entity('reviews')
 export class Review extends BaseEntity {
@@ -24,6 +19,15 @@ export class Review extends BaseEntity {
 
   @Column()
   userId: string;
+
+  @Column()
+  brandId: string;
+
+  @ManyToOne(() => Brand, (brand) => brand.reviews, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'brandId' })
+  brand: Brand;
 
   @Column()
   offerId: string;

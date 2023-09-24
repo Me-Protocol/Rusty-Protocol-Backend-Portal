@@ -431,8 +431,13 @@ export class BrandAccountManagementService {
           PaymentOrigin.IN_APP,
           true,
         );
-      await onboard_brand(
+
+      const brandProtocolId = getBrandIdHex(
         BigNumber.from(brand.brandProtocolId),
+      );
+
+      await onboard_brand(
+        BigNumber.from(brandProtocolId),
         walletAddress,
         ethers.constants.AddressZero,
         wallet,

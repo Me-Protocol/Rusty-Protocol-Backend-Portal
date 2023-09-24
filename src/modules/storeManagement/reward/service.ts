@@ -1,5 +1,8 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { CreateRewardDto } from './dto/createRewardDto.dto';
+import {
+  CreateRewardDto,
+  UpdateRewardCreationDto,
+} from './dto/createRewardDto.dto';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { Reward } from '@src/globalServices/reward/entities/reward.entity';
 import { FilterRewardDto } from './dto/filterRewardDto.dto';
@@ -24,6 +27,7 @@ import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
 import { ethers } from 'ethers';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { FilterRegistryHistoryDto } from './dto/filterRegistryHistoryDto.dto';
+import { RewardStatus } from '@src/utils/enums/ItemStatus';
 
 @Injectable()
 export class RewardManagementService {
@@ -37,106 +41,131 @@ export class RewardManagementService {
 
   async createReward(body: CreateRewardDto) {
     try {
-      const checkDraft = await this.rewardService.getDraftReward(body.brandId);
-
-      if (checkDraft) {
-        throw new Error(
-          'You already have a draft reward. Please delete it to create a new one',
-        );
-      }
-
       const slug = getSlug(body.rewardName);
 
-      const checkReward = await this.rewardService.findOneRewardBySlug(slug);
-      const checkContractAddress =
-        await this.rewardService.getRewardByContractAddress(
-          body.contractAddress,
-        );
+      const checkReward = await this.rewardService.findOneRewardByName(
+        body.rewardName,
+      );
+      let isDraft = true;
 
-      if (checkReward || checkContractAddress) {
+      if (checkReward) {
         throw new Error('Looks like this reward already exists');
       }
 
-      // TODO generate private key and public key
-      let createRedistributionKey: {
-        pubKey: string;
-        privKey: string;
-      };
-      let createBountyKey: {
-        pubKey: string;
-        privKey: string;
-      };
+      let reward: Reward;
 
-      if (body.apiKey) {
-        createBountyKey = generateWalletWithApiKey(
-          body.apiKey,
-          process.env.API_KEY_SALT,
-        );
-        createRedistributionKey = generateWalletWithApiKey(
-          body.apiKey,
-          process.env.API_KEY_SALT,
-        );
-      } else {
-        createBountyKey = generateWalletRandom();
-        createRedistributionKey = generateWalletRandom();
+      reward = await this.rewardService.getDraftReward(body.brandId);
+
+      if (!reward) {
+        reward = new Reward();
+        isDraft = false;
       }
 
-      const { pubKey, privKey } = createRedistributionKey;
-      const { pubKey: bountyPubKey, privKey: bountyPrivKey } = createBountyKey;
-
-      // Encrypt private key
-      const redistributionEncryptedKey =
-        await this.keyManagementService.encryptKey(privKey);
-      const bountyEncryptedKey = await this.keyManagementService.encryptKey(
-        bountyPrivKey,
-      );
-
-      // Create key identifier
-      const redistributionKeyIdentifier = new KeyIdentifier();
-      redistributionKeyIdentifier.identifier = redistributionEncryptedKey;
-      redistributionKeyIdentifier.identifierType =
-        KeyIdentifierType.REDISTRIBUTION;
-
-      const newRedistributionKeyIdentifier =
-        await this.rewardService.createKeyIdentifer(
-          redistributionKeyIdentifier,
-        );
-
-      const bountyKeyIdentifier = new KeyIdentifier();
-      bountyKeyIdentifier.identifier = bountyEncryptedKey;
-      bountyKeyIdentifier.identifierType = KeyIdentifierType.BOUNTY;
-
-      const newBountyKeyIdentifier =
-        await this.rewardService.createKeyIdentifer(bountyKeyIdentifier);
-
-      const reward = new Reward();
-
-      reward.slug = slug;
+      if (body.rewardName) reward.slug = slug;
       reward.brandId = body.brandId;
-      reward.description = body.description;
-      reward.rewardImage = body.rewardImage;
-      reward.rewardSymbol = body.rewardSymbol;
-      reward.rewardName = body.rewardName;
-      reward.autoSyncEnabled = body.autoSyncEnabled;
-      reward.acceptedCustomerIdentitytypes = body.acceptedCustomerIdentitytypes;
+      if (body.description) reward.description = body.description;
+      if (body.rewardImage) reward.rewardImage = body.rewardImage;
+      if (body.rewardSymbol) reward.rewardSymbol = body.rewardSymbol;
+      if (body.rewardName) reward.rewardName = body.rewardName;
+      if (body.autoSyncEnabled) reward.autoSyncEnabled = body.autoSyncEnabled;
+      if (body.acceptedCustomerIdentitytypes)
+        reward.acceptedCustomerIdentitytypes =
+          body.acceptedCustomerIdentitytypes;
+      if (body.isBounty) reward.isBounty = body.isBounty;
+      if (body.blockchain) reward.blockchain = body.blockchain;
 
-      reward.contractAddress = body.contractAddress;
-      reward.isBounty = body.isBounty;
-      reward.blockchain = body.blockchain;
-      reward.redistributionPublicKey = pubKey;
-      reward.bountyPublicKey = bountyPubKey;
-      reward.redistributionKeyIdentifierId = newRedistributionKeyIdentifier.id;
-      reward.bountyKeyIdentifierId = newBountyKeyIdentifier.id;
-
-      const newReward = await this.rewardService.create(reward);
-
-      return newReward;
+      if (isDraft) {
+        return await this.rewardService.save(reward);
+      } else {
+        return await this.rewardService.create(reward);
+      }
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, error.status, {
         cause: new Error(error.message),
       });
     }
+  }
+
+  async completeReward(body: UpdateRewardCreationDto) {
+    const checkContractAddress =
+      await this.rewardService.getRewardByContractAddress(body.contractAddress);
+
+    if (checkContractAddress) {
+      throw new HttpException('Contract address already exists', 400, {
+        cause: new Error('Contract address already exists'),
+      });
+    }
+
+    const reward = await this.rewardService.getRewardByIdAndBrandId(
+      body.rewardId,
+      body.brandId,
+    );
+
+    if (!reward) {
+      throw new HttpException('Reward not found', 404, {
+        cause: new Error('Reward not found'),
+      });
+    }
+
+    if (reward.status === RewardStatus.PUBLISHED) {
+      throw new HttpException('Reward already published', 400, {
+        cause: new Error('Reward already published'),
+      });
+    }
+
+    // TODO generate private key and public key
+    let createRedistributionKey: {
+      pubKey: string;
+      privKey: string;
+    };
+    let createBountyKey: {
+      pubKey: string;
+      privKey: string;
+    };
+
+    createBountyKey = generateWalletRandom();
+    createRedistributionKey = generateWalletRandom();
+
+    const { pubKey, privKey } = createRedistributionKey;
+    const { pubKey: bountyPubKey, privKey: bountyPrivKey } = createBountyKey;
+
+    // Encrypt private key
+    const redistributionEncryptedKey =
+      await this.keyManagementService.encryptKey(privKey);
+    const bountyEncryptedKey = await this.keyManagementService.encryptKey(
+      bountyPrivKey,
+    );
+
+    // Create key identifier
+    const redistributionKeyIdentifier = new KeyIdentifier();
+    redistributionKeyIdentifier.identifier = redistributionEncryptedKey;
+    redistributionKeyIdentifier.identifierType =
+      KeyIdentifierType.REDISTRIBUTION;
+
+    const newRedistributionKeyIdentifier =
+      await this.rewardService.createKeyIdentifer(redistributionKeyIdentifier);
+
+    const bountyKeyIdentifier = new KeyIdentifier();
+    bountyKeyIdentifier.identifier = bountyEncryptedKey;
+    bountyKeyIdentifier.identifierType = KeyIdentifierType.BOUNTY;
+
+    const newBountyKeyIdentifier = await this.rewardService.createKeyIdentifer(
+      bountyKeyIdentifier,
+    );
+
+    reward.contractAddress = body.contractAddress;
+    reward.status = RewardStatus.PUBLISHED;
+    reward.redistributionPublicKey = pubKey;
+    reward.bountyPublicKey = bountyPubKey;
+    reward.redistributionKeyIdentifierId = newRedistributionKeyIdentifier.id;
+    reward.bountyKeyIdentifierId = newBountyKeyIdentifier.id;
+
+    return await this.rewardService.save(reward);
+  }
+
+  async getDraftReward(brandId: string) {
+    return await this.rewardService.getDraftReward(brandId);
   }
 
   async deleteReward(id: string, brandId: string) {
