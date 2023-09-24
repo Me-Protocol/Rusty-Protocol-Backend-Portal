@@ -26,19 +26,27 @@ export class Reward extends BaseEntity {
   @JoinColumn({ name: 'brandId' })
   brand: Brand;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   description: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   slug: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   rewardImage: string;
 
   @Column({ nullable: true })
   otherRewardType: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   rewardSymbol: string;
 
   @Column({ nullable: true })

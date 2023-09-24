@@ -21,6 +21,12 @@ import { BigNumber, Wallet, ethers } from 'ethers';
 import { KeyManagementService } from '@src/globalServices/key-management/key-management.service';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
+import { SettingsService } from '@src/globalServices/settings/settings.service';
+import {
+  getTreasuryPermitSignature,
+  treasuryContract,
+} from '@developeruche/protocol-core';
+import { GetTreasuryPermitDto } from '@src/modules/storeManagement/reward/dto/PushTransactionDto.dto';
 
 @Injectable()
 export class SyncRewardService {
@@ -38,6 +44,7 @@ export class SyncRewardService {
     private readonly userService: UserService,
     private readonly keyManagementService: KeyManagementService,
     private readonly fiatWalletService: FiatWalletService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   async createBatch(batch: SyncBatch) {
@@ -510,7 +517,41 @@ export class SyncRewardService {
         spend = await mutate(params);
       }
 
-      return spend;
+      return spend?.data ?? spend;
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
+    }
+  }
+
+  async getTreasuryPermitAsync(body: GetTreasuryPermitDto) {
+    try {
+      const { onboardWallet } = await this.settingsService.settingsInit();
+
+      const provider = new ethers.providers.JsonRpcProvider(
+        process.env.JSON_RPC_URL,
+      );
+      const wallet = new ethers.Wallet(onboardWallet, provider);
+
+      const result = await getTreasuryPermitSignature(
+        wallet,
+        treasuryContract,
+        body.spender,
+        ethers.utils.parseEther(body.value),
+        ethers.constants.MaxUint256,
+      );
+
+      if (result) {
+        return {
+          v: result.v,
+          r: result.r,
+          s: result.s,
+        };
+      }
+
+      throw new Error('Error getting treasury permit');
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400, {

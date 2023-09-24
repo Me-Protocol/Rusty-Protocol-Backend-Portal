@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { IsString, IsUrl } from 'class-validator';
 
 export class OnboardBrandDto {
   @ApiProperty()
@@ -7,7 +7,7 @@ export class OnboardBrandDto {
   walletAddress: string;
 
   @ApiProperty()
-  @IsString()
+  @IsUrl()
   website: string;
 
   brandId: string;

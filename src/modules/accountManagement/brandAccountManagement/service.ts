@@ -401,6 +401,14 @@ export class BrandAccountManagementService {
         data: input.data,
         user: input.from,
       };
+      console.log('request', request);
+
+      // const register_tx = await wallet.sendTransaction({
+      //   to: OPEN_REWARD_DIAMOND,
+      //   data: input.data,
+      // });
+
+      // console.log('register_tx', register_tx);
 
       const { struct, signature } = await relay.getSignatureDataERC2771(
         request,
@@ -423,14 +431,21 @@ export class BrandAccountManagementService {
           PaymentOrigin.IN_APP,
           true,
         );
-      await onboard_brand(
+
+      const brandProtocolId = getBrandIdHex(
         BigNumber.from(brand.brandProtocolId),
+      );
+
+      await onboard_brand(
+        BigNumber.from(brandProtocolId),
         walletAddress,
         ethers.constants.AddressZero,
         wallet,
       );
 
       return paymentRequest;
+
+      return 'DD';
     } catch (error) {
       console.log(error);
       logger.error(error);

@@ -30,6 +30,15 @@ export class OfferService {
     return await this.offerRepo.save(offer);
   }
 
+  async updateOffer(offer: Offer) {
+    return await this.offerRepo.update(
+      {
+        id: offer.id,
+      },
+      offer,
+    );
+  }
+
   async getOfferById(id: string) {
     return await this.offerRepo.findOne({
       where: {
@@ -63,6 +72,15 @@ export class OfferService {
     });
   }
 
+  async getBrandOfferByIdWithoutRelations(id: string, brandId: string) {
+    return await this.offerRepo.findOne({
+      where: {
+        id,
+        brandId,
+      },
+    });
+  }
+
   async getOfferByofferCode(
     offerCode: string,
     sessionId: string,
@@ -87,6 +105,9 @@ export class OfferService {
     }
 
     await this.viewService.createView(offer.id, sessionId, userId);
+
+    offer.viewCount = offer.viewCount + 1;
+    await this.offerRepo.save(offer);
 
     return offer;
   }
@@ -556,21 +577,21 @@ export class OfferService {
     // offer.inventory = -order.quantity; TODO: check if this is needed
 
     const product = await this.productService.findOneProduct(offer.productId);
-    product.inventory = product.inventory - +order.quantity;
+    product.inventory = product.inventory - order.quantity;
 
     await this.productService.saveProduct(product);
 
-    await this.offerRepo.save(offer);
+    // await this.offerRepo.save(offer);
   }
 
   async increaseInventory(offer: Offer, order: Order) {
     // offer.inventory = +order.quantity; TODO: check if this is needed
 
     const product = await this.productService.findOneProduct(offer.productId);
-    product.inventory = product.inventory + +order.quantity;
+    product.inventory = product.inventory + order.quantity;
 
     await this.productService.saveProduct(product);
 
-    await this.offerRepo.save(offer);
+    // await this.offerRepo.save(offer);
   }
 }

@@ -1,22 +1,23 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString, IsUUID } from 'class-validator';
 
-export class ReviewDto {
+export class FilterReviewDto {
   @ApiProperty()
+  @IsString()
+  page: number;
+
+  @ApiProperty()
+  @IsString()
+  limit: number;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
   @IsUUID()
   offerId: string;
 
-  @ApiProperty()
-  @IsString()
-  title: string;
-
-  @ApiProperty()
-  @IsString()
-  review: string;
-
-  @ApiProperty()
-  @IsString()
-  rating: number;
+  brandId: string;
 
   userId: string;
 }

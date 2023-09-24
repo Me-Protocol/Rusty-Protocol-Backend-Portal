@@ -117,6 +117,10 @@ import { ClientModuleConfig } from './config/client-module/client-module.config'
 import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
 import { SettingsModule } from './globalServices/settings/settings.module';
 import { InternalCacheModule } from './config/internal-cache/internal-cache.config';
+import { DebugController } from './debug/debug.controller';
+import { ReviewManagementController } from './modules/storeManagement/review/controller';
+import { ReviewService } from './globalServices/review/review.service';
+import { ReviewManagementService } from './modules/storeManagement/review/service';
 
 @Module({
   imports: [
@@ -224,6 +228,8 @@ import { InternalCacheModule } from './config/internal-cache/internal-cache.conf
     CostManagementController,
     PaymentModuleController,
     NotificationController,
+    DebugController,
+    ReviewManagementController,
   ],
   providers: [
     ElasticIndex,
@@ -278,6 +284,8 @@ import { InternalCacheModule } from './config/internal-cache/internal-cache.conf
     BrandSubscriptionService,
     KeyManagementService,
     NotificationService,
+    ReviewService,
+    ReviewManagementService,
   ],
   exports: [JwtStrategy, PassportModule],
 })
