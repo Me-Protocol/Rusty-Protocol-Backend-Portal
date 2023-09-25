@@ -225,6 +225,16 @@ export class Brand extends BaseEntity {
   @Column({
     nullable: true,
   })
+  brandPrimaryColor: string;
+
+  @Column({
+    nullable: true,
+  })
+  brandSecondaryColor: string;
+
+  @Column({
+    nullable: true,
+  })
   walletAddress: string;
 
   @OneToMany(() => Review, (review) => review.brand)
