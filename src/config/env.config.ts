@@ -10,8 +10,11 @@ export const GLOBAL_PREFIX = env.get('GLOBAL_PREFIX').asString();
 export const CLIENT_APP_URI = env.get('CLIENT_APP_URI').asString();
 export const APP_NAME = env.get('APP_NAME').asString();
 export const API_ROOT = env.get('API_ROOT').asString();
+export const API_DOC_ROOT = env.get('API_DOC_ROOT').asString();
 export const APP_DESCRIPTION = env.get('APP_DESCRIPTION').asString();
-export const SERVER_MONITOR_WEBSOCKET_URL = env.get('SERVER_MONITOR_WEBSOCKET_URL').asString();
+export const SERVER_MONITOR_WEBSOCKET_URL = env
+  .get('SERVER_MONITOR_WEBSOCKET_URL')
+  .asString();
 export const SERVER_URL = env.get('SERVER_URL').asString();
 
 export const POSTGRES_HOST = env.get('POSTGRES_HOST').asString();
@@ -40,40 +43,58 @@ export const SENDGRID_API_KEY = env.get('SENDGRID_API_KEY').asString();
 export const SENDGRID_EMAIL = env.get('SENDGRID_EMAIL').asString();
 
 export const TWITTER_CONSUMER_KEY = env.get('TWITTER_CONSUMER_KEY').asString();
-export const TWITTER_CONSUMER_SECRET = env.get('TWITTER_CONSUMER_SECRET').asString();
+export const TWITTER_CONSUMER_SECRET = env
+  .get('TWITTER_CONSUMER_SECRET')
+  .asString();
 export const TWITTER_CALLBACK_URL = env.get('TWITTER_CALLBACK_URL').asString();
 export const TWITTER_CLIENT_ID = env.get('TWITTER_CLIENT_ID').asString();
-export const TWITTER_BREARER_TOKEN = env.get('TWITTER_BREARER_TOKEN').asString();
+export const TWITTER_BREARER_TOKEN = env
+  .get('TWITTER_BREARER_TOKEN')
+  .asString();
 
 export const FACEBOOK_CLIENT_ID = env.get('FACEBOOK_CLIENT_ID').asString();
-export const FACEBOOK_REDIRECT_URI = env.get('FACEBOOK_REDIRECT_URI').asString();
+export const FACEBOOK_REDIRECT_URI = env
+  .get('FACEBOOK_REDIRECT_URI')
+  .asString();
 export const FACEBOOK_SECRET = env.get('FACEBOOK_SECRET').asString();
 
 export const GOOGLE_CLIENT_ID = env.get('GOOGLE_CLIENT_ID').asString();
 export const GOOGLE_CLIENT_SECRET = env.get('GOOGLE_CLIENT_SECRET').asString();
 export const GOOGLE_REDIRECT_URI = env.get('GOOGLE_REDIRECT_URI').asString();
 
-export const CLOUDINARY_CLOUD_NAME = env.get('CLOUDINARY_CLOUD_NAME').asString();
+export const CLOUDINARY_CLOUD_NAME = env
+  .get('CLOUDINARY_CLOUD_NAME')
+  .asString();
 export const CLOUDINARY_API_KEY = env.get('CLOUDINARY_API_KEY').asString();
-export const CLOUDINARY_API_SECRET = env.get('CLOUDINARY_API_SECRET').asString();
+export const CLOUDINARY_API_SECRET = env
+  .get('CLOUDINARY_API_SECRET')
+  .asString();
 
 export const STRIPE_SECRET_KEY = env.get('STRIPE_SECRET_KEY').asString();
-export const STRIPE_PUBLISHABLE_KEY = env.get('STRIPE_PUBLISHABLE_KEY').asString();
+export const STRIPE_PUBLISHABLE_KEY = env
+  .get('STRIPE_PUBLISHABLE_KEY')
+  .asString();
 export const STRIPE_API_VERSION = env.get('STRIPE_API_VERSION').asString();
 export const STRIPE_REFRESH_URL = env.get('STRIPE_REFRESH_URL').asString();
 
 export const DFNS = env.get('DFNS').asString();
 export const NODE_ENV = env.get('NODE_ENV').asString();
 export const DFNS_ACCESS_TOKEN = env.get('DFNS_ACCESS_TOKEN').asString();
-export const DFNS_PRIVATE_ACCESS_TOKEN = env.get('DFNS_PRIVATE_ACCESS_TOKEN').asString();
+export const DFNS_PRIVATE_ACCESS_TOKEN = env
+  .get('DFNS_PRIVATE_ACCESS_TOKEN')
+  .asString();
 
 export const COUPON_CODE_PREFIX = env.get('COUPON_CODE_PREFIX').asString();
 export const TNX_PREFIX = env.get('TNX_PREFIX').asString();
 export const MEPRO_WALLET_ADDRESS = env.get('MEPRO_WALLET_ADDRESS').asString();
 
 export const MUMBAI_INDEXER_URL = env.get('MUMBAI_INDEXER_URL').asString();
-export const MUMBAI_INDEXER_API_KEY = env.get('MUMBAI_INDEXER_API_KEY').asString();
-export const GELATO_RELAYER_STATUS_URL = env.get('GELATO_RELAYER_STATUS_URL').asString();
+export const MUMBAI_INDEXER_API_KEY = env
+  .get('MUMBAI_INDEXER_API_KEY')
+  .asString();
+export const GELATO_RELAYER_STATUS_URL = env
+  .get('GELATO_RELAYER_STATUS_URL')
+  .asString();
 export const GELATO_API_KEY = env.get('GELATO_API_KEY').asString();
 export const PREMIUM = env.get('PREMIUM').asInt();
 export const PRICE_ORACLE_URL = env.get('PRICE_ORACLE_URL').asString();
@@ -87,7 +108,9 @@ export const API_KEY_SALT = env.get('API_KEY_SALT').asString();
 export const AWS_KMS_KEY_ID = env.get('AWS_KMS_KEY_ID').asString();
 export const AWS_KMS_KEY_ARN = env.get('AWS_KMS_KEY_ARN').asString();
 export const AWS_ACCESS_KEY_ID = env.get('AWS_ACCESS_KEY_ID').asString();
-export const AWS_SECRET_ACCESS_KEY = env.get('AWS_SECRET_ACCESS_KEY').asString();
+export const AWS_SECRET_ACCESS_KEY = env
+  .get('AWS_SECRET_ACCESS_KEY')
+  .asString();
 export const AWS_REGION = env.get('AWS_REGION').asString();
 
 export const REDIS_HOSTNAME = env.get('REDIS_HOSTNAME').asString();
