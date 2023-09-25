@@ -19,14 +19,6 @@ import { SentryFilter } from './filters/sentry.filter';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const cloudinary_1 = require('cloudinary');
 
-// const {
-//   CLOUDINARY_CLOUD_NAME,
-//   CLOUDINARY_API_KEY,
-//   CLOUDINARY_API_SECRET,
-//   APP_SERVER_LISTEN_PORT,
-//   APP_SERVER_LISTEN_IP,
-// } = process.env;
-
 //To Initialize sentry
 Sentry.init({
   dsn: process.env.SENTRY_DNS,

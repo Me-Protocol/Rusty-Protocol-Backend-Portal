@@ -1,7 +1,12 @@
 import { INestApplication } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { APP_NAME, API_VERSION, APP_DESCRIPTION, API_ROOT } from '../env.config';
-
+import {
+  APP_NAME,
+  API_VERSION,
+  APP_DESCRIPTION,
+  API_DOC_ROOT,
+} from '../env.config';
+import { logger } from '@src/globalServices/logger/logger.service';
 
 export const setupSwagger = (app: INestApplication) => {
   const options = new DocumentBuilder()
@@ -22,5 +27,10 @@ export const setupSwagger = (app: INestApplication) => {
     )
     .build();
   const document = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup(API_ROOT, app, document);
+
+  try {
+    SwaggerModule.setup(API_DOC_ROOT, app, document);
+  } catch (error) {
+    logger.error(error);
+  }
 };

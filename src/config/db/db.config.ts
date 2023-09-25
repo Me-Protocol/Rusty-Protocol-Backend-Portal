@@ -34,6 +34,9 @@ import {
         migrationsRun: true,
         synchronize: true,
         autoLoadEntities: true,
+        ssl: {
+          rejectUnauthorized: false,
+        },
       }),
     }),
   ],
