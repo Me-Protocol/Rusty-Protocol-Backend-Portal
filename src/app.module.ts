@@ -4,12 +4,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { typeOrmConfig } from './config/typeorm.config';
 import { MailModule } from './globalServices/mail/mail.module';
 import { SmsModule } from './globalServices/sms/sms.module';
 import { jwtConfigurations } from './config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
-import { ElasticsearchModule } from '@nestjs/elasticsearch';
 import { JwtStrategy } from './middlewares/jwt-strategy.middleware';
 import { SearchService } from './modules/search/search.service';
 import { SearchModule } from './modules/search/search.module';
@@ -110,6 +108,12 @@ import { BrandCustomer } from './globalServices/brand/entities/brand_customer.en
 import { Notification } from './globalServices/notification/entities/notification.entity';
 import { NotificationController } from './modules/notification/controller';
 import { NotificationService } from './globalServices/notification/notification.service';
+import { InternalCacheModule } from './config/internal-cache/internal-cache.config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { TracingModule } from '@dollarsign/nestjs-jaeger-tracing';
+import { DatabaseConfig } from './config/db/db.config';
+import { ElasticSearchConfig } from './config/elastic-search/elastic-search.config';
+import { ClientModuleConfig } from './config/client-module/client-module.config';
 import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
 import { SettingsModule } from './globalServices/settings/settings.module';
 import { DebugController } from './debug/debug.controller';
@@ -119,7 +123,8 @@ import { ReviewManagementService } from './modules/storeManagement/review/servic
 
 @Module({
   imports: [
-    //
+    ConfigModule.forRoot({ isGlobal: true }),
+    DatabaseConfig, // Database config
     TypeOrmModule.forFeature([
       User,
       Customer,
@@ -156,32 +161,35 @@ import { ReviewManagementService } from './modules/storeManagement/review/servic
       AdminSettings,
     ]),
     SettingsModule,
-    ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRoot(typeOrmConfig),
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
     JwtModule.register(jwtConfigurations),
-    ElasticsearchModule.register({
-      node: process.env.ELASTIC_NODE,
-      auth: {
-        username: process.env.ELASTIC_USERNAME,
-        password: process.env.ELASTIC_PASSWORD,
-      },
-      tls: {
-        ca: process.env.ELASTIC_CA,
-        rejectUnauthorized: false,
-      },
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      requestTimeout: 30000,
-    }),
+    ElasticSearchConfig, // elastic search config
+    InternalCacheModule, // redis config
     MailModule,
     SmsModule,
     SearchModule,
     AuthenticationModule,
     UploadModule,
+    EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
+    TracingModule.forRoot({
+      exporterConfig: {
+        serviceName: 'core-service', // service name that will be shown in jaeger dashboard
+      },
+      isSimpleSpanProcessor: true, // true for development.
+    }),
+    ClientModuleConfig, // microservice
+    // ClientsModule.register([
+    //   {
+    //     name: 'tracking-service',
+    //     transport: Transport.TCP,
+    //     options: {
+    //       port: parseInt(process.env.APP_SERVER_LISTEN_PORT, 10),
+    //       ...TracingModule.getParserOptions(), // this method will return serializer that inject tracing id to microservice payload.
+    //     },
+    //   },
+    // ]),
+    ClientModuleConfig,
   ],
   controllers: [
     AppController,

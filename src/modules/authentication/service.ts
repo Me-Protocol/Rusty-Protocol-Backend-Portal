@@ -1,5 +1,5 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload, jwtConfigurations } from '@src/config/jwt.config';
 import { isNumber } from '@src/utils/helpers/isNumber';

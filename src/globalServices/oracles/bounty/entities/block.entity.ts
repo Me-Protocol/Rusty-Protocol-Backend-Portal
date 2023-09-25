@@ -3,6 +3,6 @@ import { Column, Entity } from 'typeorm';
 
 @Entity('block')
 export class Block extends BaseEntity {
-  @Column()
-  blockNumber: bigint;
+  @Column('bigint')
+  blockNumber: string;
 }

@@ -82,7 +82,10 @@ export class OfferManagementService {
 
   async updateOffer(id: string, body: UpdateOfferDto) {
     try {
-      const offer = await this.offerService.getBrandOfferById(id, body.brandId);
+      const offer = await this.offerService.getBrandOfferByIdWithoutRelations(
+        id,
+        body.brandId,
+      );
 
       if (!offer) {
         throw new HttpException('Offer not found', 404, {
@@ -91,7 +94,6 @@ export class OfferManagementService {
       }
 
       if (body.productId) {
-        console.log('Has product id');
         if (body.productId !== offer.productId) {
           const product = await this.productService.getOneProduct(
             body.productId,
@@ -119,6 +121,7 @@ export class OfferManagementService {
         });
       }
 
+      if (body.rewardId) offer.rewardId = body.rewardId;
       if (body.name) offer.name = body.name;
       if (body.status) offer.status = body.status;
       if (body.originalPrice) offer.originalPrice = body.originalPrice;
@@ -129,7 +132,6 @@ export class OfferManagementService {
       if (body.startDate) offer.startDate = body.startDate;
       if (body.endDate) offer.endDate = body.endDate;
       if (body.idOnBrandsite) offer.idOnBrandsite = body.idOnBrandsite;
-      if (body.rewardId) offer.rewardId = body.rewardId;
 
       // upload images
       if (body?.offerImages) {
@@ -140,13 +142,13 @@ export class OfferManagementService {
         );
       }
 
-      const saveOffer = await this.offerService.saveOffer(offer);
+      await this.offerService.saveOffer(offer);
 
       const findOne = await this.offerService.getOfferById(offer.id);
 
-      if (saveOffer.status === ProductStatus.PUBLISHED) {
+      if (offer.status === ProductStatus.PUBLISHED) {
         this.elasticIndex.updateDocument(findOne, offerIndex);
-      } else if (saveOffer.status === ProductStatus.ARCHIVED) {
+      } else if (offer.status === ProductStatus.ARCHIVED) {
         this.elasticIndex.deleteDocument(offerIndex, offer.id);
       }
 
