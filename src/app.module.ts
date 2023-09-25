@@ -108,12 +108,15 @@ import { BrandCustomer } from './globalServices/brand/entities/brand_customer.en
 import { Notification } from './globalServices/notification/entities/notification.entity';
 import { NotificationController } from './modules/notification/controller';
 import { NotificationService } from './globalServices/notification/notification.service';
-import { DatabaseConfig } from './config/db/db.config';
-import { ElasticSearchConfig } from './config/elastic-search/elastic-search.config';
 import { InternalCacheModule } from './config/internal-cache/internal-cache.config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { TracingModule } from '@dollarsign/nestjs-jaeger-tracing';
+import { DatabaseConfig } from './config/db/db.config';
+import { ElasticSearchConfig } from './config/elastic-search/elastic-search.config';
+import { ClientModuleConfig } from './config/client-module/client-module.config';
 import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
 import { SettingsModule } from './globalServices/settings/settings.module';
+import { InternalCacheModule } from './config/internal-cache/internal-cache.config';
 import { DebugController } from './debug/debug.controller';
 import { ReviewManagementController } from './modules/storeManagement/review/controller';
 import { ReviewService } from './globalServices/review/review.service';
@@ -170,6 +173,24 @@ import { ReviewManagementService } from './modules/storeManagement/review/servic
     UploadModule,
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
+    TracingModule.forRoot({
+      exporterConfig: {
+        serviceName: 'core-service', // service name that will be shown in jaeger dashboard
+      },
+      isSimpleSpanProcessor: true, // true for development.
+    }),
+    ClientModuleConfig, // microservice
+    // ClientsModule.register([
+    //   {
+    //     name: 'tracking-service',
+    //     transport: Transport.TCP,
+    //     options: {
+    //       port: parseInt(process.env.APP_SERVER_LISTEN_PORT, 10),
+    //       ...TracingModule.getParserOptions(), // this method will return serializer that inject tracing id to microservice payload.
+    //     },
+    //   },
+    // ]),
+    ClientModuleConfig,
   ],
   controllers: [
     AppController,
