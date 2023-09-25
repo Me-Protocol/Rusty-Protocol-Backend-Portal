@@ -4,6 +4,14 @@ import { jwtConfigurations } from './config/jwt.config';
 import * as session from 'express-session';
 import { logger } from './globalServices/logger/logger.service';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
+import { setupSwagger } from './config/swagger/swagger.config';
+import {
+  APP_SERVER_LISTEN_PORT,
+  APP_SERVER_LISTEN_IP,
+  CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET,
+} from './config/env.config';
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import { SentryFilter } from './filters/sentry.filter';
@@ -45,7 +53,7 @@ async function bootstrap() {
 
   // TracingHandler creates a trace for every incoming request
   app.use(Sentry.Handlers.tracingHandler());
-  
+
   // // The error handler must be registered before any other error middleware and after all controllers
   // app.use(Sentry.Handlers.errorHandler());
 

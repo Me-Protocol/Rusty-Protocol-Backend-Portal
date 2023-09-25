@@ -12,6 +12,7 @@ import { BrandCustomer } from './entities/brand_customer.entity';
 import { FilterBrandCustomer } from '@src/utils/enums/FilterBrandCustomer';
 import { generateBrandIdBytes10 } from '@developeruche/protocol-core';
 
+
 @Injectable()
 export class BrandService {
   constructor(
@@ -25,6 +26,7 @@ export class BrandService {
     private readonly brandCustomerRepo: Repository<BrandCustomer>,
 
     private readonly elasticIndex: ElasticIndex,
+
   ) {}
 
   async create({ userId, name }: { userId: string; name: string }) {
