@@ -12,7 +12,7 @@ import * as bcrypt from 'bcryptjs';
 import { UserAppType } from '@src/utils/enums/UserAppType';
 import { BrandMember } from '@src/globalServices/brand/entities/brand_member.entity';
 import { MailService } from '@src/globalServices/mail/mail.service';
-import { emailButton } from '@src/utils/helpers/emailButton';
+import { emailButton } from '@src/utils/helpers/email';
 import { CustomerService } from '@src/globalServices/customer/customer.service';
 import { FilterCustomerDto } from './dto/FilterCustomerDto.dto';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
@@ -453,8 +453,6 @@ export class BrandAccountManagementService {
       );
 
       return paymentRequest;
-
-      return 'DD';
     } catch (error) {
       console.log(error);
       logger.error(error);

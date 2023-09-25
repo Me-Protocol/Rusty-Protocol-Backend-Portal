@@ -17,7 +17,7 @@ import { NotificationService } from '@src/globalServices/notification/notificati
 import { StatusType, TransactionsType } from '@src/utils/enums/Transactions';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 import { NotificationType } from '@src/utils/enums/notification.enum';
-import { emailButton } from '@src/utils/helpers/emailButton';
+import { emailButton } from '@src/utils/helpers/email';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { RegistryHistory } from '@src/globalServices/reward/entities/registryHistory.entity';
 
