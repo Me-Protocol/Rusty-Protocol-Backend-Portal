@@ -116,7 +116,6 @@ import { ElasticSearchConfig } from './config/elastic-search/elastic-search.conf
 import { ClientModuleConfig } from './config/client-module/client-module.config';
 import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
 import { SettingsModule } from './globalServices/settings/settings.module';
-import { InternalCacheModule } from './config/internal-cache/internal-cache.config';
 import { DebugController } from './debug/debug.controller';
 import { ReviewManagementController } from './modules/storeManagement/review/controller';
 import { ReviewService } from './globalServices/review/review.service';
