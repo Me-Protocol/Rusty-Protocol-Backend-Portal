@@ -1,7 +1,7 @@
 export const emailButton = ({ url, text }: { url: string; text: string }) => {
   return `
      <div class="x-between">
-          <a class="btn" href=${url}> ${text} </a>
+          <a class="btn black" href=${url}> ${text} </a>
         </div>
   `;
 };
