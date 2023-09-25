@@ -578,6 +578,8 @@ export class SyncRewardService {
       signer,
     );
 
+    console.log(distributionData.data);
+
     if (distributionData?.data?.error) {
       throw new Error(
         distributionData.data.error?.message ??
