@@ -174,14 +174,10 @@ import { join } from 'path';
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     ClientModuleConfig, // microservice
+
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'client', 'customer'),
+      rootPath: join(__dirname, '..', 'client/customer'),
       exclude: ['/api/(.*)'],
-    }),
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'client', 'business'),
-      exclude: ['/api/(.*)'],
-      serveRoot: '/business',
     }),
   ],
   controllers: [

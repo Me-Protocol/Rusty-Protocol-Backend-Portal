@@ -5,7 +5,6 @@ import * as session from 'express-session';
 import { logger } from './globalServices/logger/logger.service';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
 import { setupSwagger } from './config/swagger/swagger.config';
-import * as express from 'express';
 import {
   APP_SERVER_LISTEN_PORT,
   APP_SERVER_LISTEN_IP,
@@ -104,6 +103,7 @@ async function bootstrap() {
   });
 
   // logger.warn(`Application is now running on: ${await app.getUrl()}`);
+  console.log(`Application is running on: ${await app.getUrl()}`);
   logger.verbose(`Application is now running on: ${await app.getUrl()}`);
 }
 bootstrap();
