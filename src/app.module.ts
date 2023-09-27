@@ -119,6 +119,8 @@ import { DebugController } from './debug/debug.controller';
 import { ReviewManagementController } from './modules/storeManagement/review/controller';
 import { ReviewService } from './globalServices/review/review.service';
 import { ReviewManagementService } from './modules/storeManagement/review/service';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -172,6 +174,15 @@ import { ReviewManagementService } from './modules/storeManagement/review/servic
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     ClientModuleConfig, // microservice
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'client', 'customer'),
+      exclude: ['/api/(.*)'],
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'client', 'business'),
+      exclude: ['/api/(.*)'],
+      serveRoot: '/business',
+    }),
   ],
   controllers: [
     AppController,

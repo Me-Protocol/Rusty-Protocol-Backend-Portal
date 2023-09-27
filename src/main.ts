@@ -5,6 +5,7 @@ import * as session from 'express-session';
 import { logger } from './globalServices/logger/logger.service';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
 import { setupSwagger } from './config/swagger/swagger.config';
+import * as express from 'express';
 import {
   APP_SERVER_LISTEN_PORT,
   APP_SERVER_LISTEN_IP,
@@ -15,6 +16,7 @@ import {
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import { SentryFilter } from './filters/sentry.filter';
+import { join } from 'path';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const cloudinary_1 = require('cloudinary');
@@ -49,6 +51,7 @@ async function bootstrap() {
 
   const { httpAdapter } = app.get(HttpAdapterHost);
   app.useGlobalFilters(new SentryFilter(httpAdapter));
+  app.setGlobalPrefix('api');
 
   app.enableCors();
   app.use(
