@@ -72,6 +72,15 @@ export class OfferService {
     });
   }
 
+  async getBrandOfferByIdWithoutRelations(id: string, brandId: string) {
+    return await this.offerRepo.findOne({
+      where: {
+        id,
+        brandId,
+      },
+    });
+  }
+
   async getOfferByofferCode(
     offerCode: string,
     sessionId: string,
@@ -96,6 +105,9 @@ export class OfferService {
     }
 
     await this.viewService.createView(offer.id, sessionId, userId);
+
+    offer.viewCount = offer.viewCount + 1;
+    await this.offerRepo.save(offer);
 
     return offer;
   }

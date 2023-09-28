@@ -43,7 +43,7 @@ export class BountyService {
 
       //TODO: checks if this address is amoung our bounty pools
 
-      const latest_block = await web3.eth.getBlockNumber();
+      const latest_block = (await web3.eth.getBlockNumber()).toString();
       console.log('latest: ', latest_block, 'start block: ', startBlock);
 
       const events = await BountyContract.getPastEvents('BountyReward', {
@@ -94,7 +94,7 @@ export class BountyService {
 
   async emitEvent() {
     const privateKey = process.env.BOUNTY_PRIVATE_KEY;
-    const latest_block = await web3.eth.getBlockNumber();
+    const latest_block = (await web3.eth.getBlockNumber()).toString();
 
     const newBlock = new Block();
     newBlock.blockNumber = latest_block;

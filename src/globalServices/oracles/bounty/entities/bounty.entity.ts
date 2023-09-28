@@ -3,6 +3,6 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('bounty')
 export class Bounty extends BaseEntity {
-  @Column()
-  lastestBlockNumber: bigint;
+  @Column('bigint')
+  lastestBlockNumber: string;
 }

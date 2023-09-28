@@ -8,13 +8,12 @@ import { CreateMemberDto } from './dto/CreateMemberDto.dto';
 import { UserService } from '@src/globalServices/user/user.service';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { TwoFAType } from '@src/utils/enums/TwoFAType';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { UserAppType } from '@src/utils/enums/UserAppType';
 import { BrandMember } from '@src/globalServices/brand/entities/brand_member.entity';
 import { MailService } from '@src/globalServices/mail/mail.service';
-import { emailButton } from '@src/utils/helpers/emailButton';
+import { emailButton } from '@src/utils/helpers/email';
 import { CustomerService } from '@src/globalServices/customer/customer.service';
-import { BrandRole } from '@src/utils/enums/BrandRole';
 import { FilterCustomerDto } from './dto/FilterCustomerDto.dto';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { BigNumber, ethers } from 'ethers';
@@ -34,6 +33,8 @@ import {
   GelatoRelay,
 } from '@gelatonetwork/relay-sdk';
 import { onboard_brand } from '@developeruche/runtime-sdk';
+import { ProcessBrandColorEvent } from '@src/globalServices/brand/events/process-brand-color.event';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -44,10 +45,18 @@ export class BrandAccountManagementService {
     private readonly customerService: CustomerService,
     private readonly settingsService: SettingsService,
     private readonly costModuleManagementService: CostModuleManagementService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async updateBrand(body: UpdateBrandDto, brandId: string) {
     try {
+      if (body.logo) {
+        const processBrandColorPayload = new ProcessBrandColorEvent();
+        processBrandColorPayload.url = body.logo;
+        processBrandColorPayload.brandId = brandId;
+        this.eventEmitter.emit('process.brand.color', processBrandColorPayload);
+      }
+
       return this.brandService.update(body, brandId);
     } catch (error) {
       logger.error(error);
@@ -431,16 +440,19 @@ export class BrandAccountManagementService {
           PaymentOrigin.IN_APP,
           true,
         );
-      await onboard_brand(
+
+      const brandProtocolId = getBrandIdHex(
         BigNumber.from(brand.brandProtocolId),
+      );
+
+      await onboard_brand(
+        BigNumber.from(brandProtocolId),
         walletAddress,
         ethers.constants.AddressZero,
         wallet,
       );
 
       return paymentRequest;
-
-      return 'DD';
     } catch (error) {
       console.log(error);
       logger.error(error);
