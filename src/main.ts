@@ -9,6 +9,7 @@ import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import { SentryFilter } from './filters/sentry.filter';
 import { TracingInterceptor } from './interceptors/tracing.interceptor';
+import { join } from 'path';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const cloudinary_1 = require('cloudinary');
 
