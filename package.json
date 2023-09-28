@@ -91,7 +91,8 @@
     "web3": "^4.0.2",
     "winston": "^3.9.0",
     "winston-daily-rotate-file": "^4.7.1",
-    "wrap-ansi": "^8.1.0"
+    "wrap-ansi": "^8.1.0",
+    "yarn": "^1.22.19"
   },
   "devDependencies": {
     "@nestjs/cli": "^9.0.0",
