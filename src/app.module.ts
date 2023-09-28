@@ -111,7 +111,6 @@ import { NotificationService } from './globalServices/notification/notification.
 import { InternalCacheModule } from './config/internal-cache/internal-cache.config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DatabaseConfig } from './config/db/db.config';
-import { ElasticSearchConfig } from './config/elastic-search/elastic-search.config';
 import { ClientModuleConfig } from './config/client-module/client-module.config';
 import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
 import { SettingsModule } from './globalServices/settings/settings.module';
@@ -162,7 +161,7 @@ import { ReviewManagementService } from './modules/storeManagement/review/servic
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
     JwtModule.register(jwtConfigurations),
-    ElasticSearchConfig, // elastic search config
+    // ElasticSearchConfig, // elastic search config
     InternalCacheModule, // redis config
     MailModule,
     SmsModule,
