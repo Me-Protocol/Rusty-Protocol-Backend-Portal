@@ -7,6 +7,8 @@ import {
   ELASTIC_CA,
 } from '../env.config';
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
+import { SearchModule } from '@src/modules/search/search.module';
+import { SearchService } from '@src/modules/search/search.service';
 
 /**
  * Elastic search configuration module for reading properties from environment variables
@@ -35,5 +37,12 @@ import { ElasticsearchModule } from '@nestjs/elasticsearch';
       }),
     }),
   ],
+  providers: [
+    {
+      provide: 'SearchServiceInterface',
+      useClass: SearchService,
+    },
+  ],
+  exports: [SearchModule],
 })
 export class ElasticSearchConfig {}
