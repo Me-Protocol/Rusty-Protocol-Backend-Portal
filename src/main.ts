@@ -8,6 +8,7 @@ import { ResponseInterceptor } from './interceptors/response.interceptor';
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import { SentryFilter } from './filters/sentry.filter';
+import { TracingInterceptor } from './interceptors/tracing.interceptor';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const cloudinary_1 = require('cloudinary');
 
@@ -58,7 +59,9 @@ async function bootstrap() {
       resave: true,
     }),
   );
+  
   app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalInterceptors(new TracingInterceptor()); // to apply tracing interceptors globally
 
   // const httpServer = app.getHttpServer();
   // createWebSocketServer(httpServer);
