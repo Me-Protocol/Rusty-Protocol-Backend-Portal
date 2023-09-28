@@ -176,7 +176,7 @@ import { join } from 'path';
     ClientModuleConfig, // microservice
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'client'),
-      exclude: ['/api/(.*)'],
+      exclude: ['/api/(.*)', '/docs/(.*)'],
     }),
   ],
   controllers: [
