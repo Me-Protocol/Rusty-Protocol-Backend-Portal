@@ -15,6 +15,7 @@ import {
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import { SentryFilter } from './filters/sentry.filter';
+import { join } from 'path';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const cloudinary_1 = require('cloudinary');
@@ -49,6 +50,7 @@ async function bootstrap() {
 
   const { httpAdapter } = app.get(HttpAdapterHost);
   app.useGlobalFilters(new SentryFilter(httpAdapter));
+  app.setGlobalPrefix('api');
 
   app.enableCors();
   app.use(
@@ -101,6 +103,7 @@ async function bootstrap() {
   });
 
   // logger.warn(`Application is now running on: ${await app.getUrl()}`);
+  console.log(`Application is running on: ${await app.getUrl()}`);
   logger.verbose(`Application is now running on: ${await app.getUrl()}`);
 }
 bootstrap();
