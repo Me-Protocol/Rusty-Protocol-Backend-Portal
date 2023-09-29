@@ -19,7 +19,7 @@ export class TracingInterceptor implements NestInterceptor {
       reporter: {
         // The default agent host and port. Adjust if needed.
         agentHost: 'localhost',
-        agentPort: 1450,
+        agentPort: 6832,
       },
     };
     const options = {

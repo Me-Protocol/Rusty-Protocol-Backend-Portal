@@ -1,309 +1,106 @@
-<html lang='en'>
-  <head>
-    <meta charset='UTF-8' />
-    <meta http-equiv='X-UA-Compatible' content='IE=edge' />
-    <title>Me Protocol</title>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
-
-    <style>
-      @import
-      url(https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap);
-      li, p { font-size: 14px; line-height: 22px; } .btn, .link, .outline-btn {
-      text-decoration: none; } html { font-family: Inter, sans-serif !important;
-      background: #f7f7f7 !important; } body { margin: 0; } strong { color: #000
-      !important; } .italic { font-style: italic; font-weight: 500; } ol {
-      padding-left: 36px; } .btn:visited { color: 'white' !important; } .btn,
-      .link:visited, .outline-btn { color: #fff !important; } p { color:
-      #24292e; } table { width: 100%; } @media screen and (max-width: 760px) {
-      .flexed table, .flexed td { text-align: -webkit-left; } .flexed { display:
-      grid; row-gap: 0.5rem; } .flexed .f-logo { margin-left: 0.4rem; } .flexed
-      table { float: left; } footer.container { padding: 0 24px; } } .text-sm {
-      font-size: 10px; line-height: 17px; } .text-light { font-weight: 300; }
-      .btn, .otp, .outline-btn { font-weight: 600; } .text-justify { text-align:
-      justify; text-justify: inter-word; } .x-center { display: flex;
-      align-items: center; justify-content: center; } .x-right { display: flex;
-      align-items: center; justify-content: end; } .y-center { display: flex;
-      flex-direction: column; align-items: center; justify-content: center; }
-      .x-between { display: flex; align-items: center; justify-content:
-      space-between; padding: 10px 0; } .mx-auto { margin: 0 auto; } .my-auto {
-      margin: auto 0; } .h-full { height: 100%; } .container { max-width: 508px;
-      margin: 0 auto; display: block; position: relative; z-index: 10; } .spacer
-      { height: 16px; } .spacer-sm { height: 4px; } .p-0 { padding: 0; } .otp {
-      font-size: 40px; } .outline-btn { display: block; font-size: 10px; }
-      .black { background: #000 !important; } .btn { background: #581689;
-      border-radius: 8px; padding: 15px 16px; display: block; margin: 12px 0;
-      font-size: 14px; } .divider { height: 1.5px; background-color: #efefef;
-      margin: 24px 0; } .divider-b { height: 0.5px; background-color:
-      transparent; margin: 14px 0 24px; } .link { font-weight: 400; color:
-      #141414 !important; } :hover.link { text-decoration: underline; } .social
-      { height: 32px; width: 32px; } .gap { width: 12px; } .gap-sm { width: 5px;
-      } .vline { height: 16px; width: 1px; margin: auto 7px; border-radius:
-      100%; background-color: #676e76; } .text-right { text-align: right; } .box
-      { padding: 5px 18px; background-color: #f7f7f7; border-radius: 6px; }
-    </style>
-  </head>
-
-  <body>
-    <main style='padding: 24px'>
-      <div style='max-width: 568px; margin: auto'>
-        <table
-          align='center'
-          role='presentation'
-          cellspacing='0'
-          cellpadding='0'
-          border='0'
-          width='100%'
-          style='
-            padding: 12px 24px 20px 24px;
-            background-color: white;
-            border-radius: 8px;
-            border: 1px #efefef solid;
-            margin-top: 10px;
-            margin: 0 auto;
-            z-index: 10;
-            position: relative;
-          '
-        >
-          <tbody>
-            <tr style='width: 100%'>
-              <td>
-                <div class='main-bg'>
-                  <header class='container'>
-                    <table>
-                      <tr>
-                        <td valign='middle'>
-                          <a href='https://usemeprotocol.com'>
-                            <img
-                              style='height: 38px'
-                              src='https://res.cloudinary.com/digital-specie/image/upload/v1695657486/1df7bc9c-e32f-4d7d-bc46-acc638209ecb.png'
-                              alt=''
-                            />
-                          </a>
-                        </td>
-
-                        <td valign='middle'>
-                          <p class='text-right italic'>
-                            Get rewards. Redeem offers. Repeat
-                          </p>
-                        </td>
-                      </tr>
-                    </table>
-                  </header>
-                </div>
-
-                <div class='spacer'></div>
-
-                {{{message}}}
-
-                <p>
-                  Thank you for choosing Aku!
-
-                  <strong
-                    style='display: block; margin-top: 12px; color: black'
-                  >
-                    Please do NOT reply to this message as it is sent from an
-                    unattached mailbox.
-                  </strong>
-                </p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </main>
-
-    <div>
-      <footer class='container'>
-        <table
-          align='center'
-          border='0'
-          cellpadding='0'
-          cellspacing='0'
-          role='presentation'
-          width='100%'
-        >
-          <tbody>
-            <tr>
-              <td>
-                <table
-                  width='100%'
-                  align='center'
-                  role='presentation'
-                  cellspacing='0'
-                  cellpadding='0'
-                  border='0'
-                >
-                  <tbody style='width: 100%'>
-                    <tr style='width: 100%' class='flexed'>
-                      <td class='f-logo'>
-                        <h2
-                          style='
-                            max-width: 248px;
-                            margin-bottom: 4px;
-                            font-weight: 600;
-                            font-size: 16px;
-                            color: #141414;
-                          '
-                        >
-                          Enjoy Simple Banking On Your Phone With Aku Mobile App
-                        </h2>
-
-                        <div
-                          target='_blank'
-                          style='
-                            color: #000;
-                            text-decoration: none;
-                            font-size: 16px;
-                            display: block;
-                            text-align: center;
-                            font-weight: 500;
-                            margin-left: -12px;
-                          '
-                        >
-                          <table
-                            align='left'
-                            style='
-                              width: 180px;
-                              padding-left: 10px;
-                              padding-top: 10px;
-                            '
-                          >
-                            <tr align='left'>
-                              <td>
-                                <a href='https://www.facebook.com/akuafrica'>
-                                  <img
-                                    src='http://cdn.mcauto-images-production.sendgrid.net/817ed2a28dc600f8/87174ebb-02ab-467f-856f-2152673f6c58/100x100.png'
-                                    alt=''
-                                    class='social'
-                                  />
-                                </a>
-                              </td>
-
-                              <td>
-                                <a href='https://twitter.com/akuafrica'>
-                                  <img
-                                    src='http://cdn.mcauto-images-production.sendgrid.net/817ed2a28dc600f8/5acf9877-8ab2-4785-84c0-b6735a32c184/100x100.png'
-                                    alt=''
-                                    class='social'
-                                  />
-                                </a>
-                              </td>
-
-                              <td>
-                                <a href='https://instagram.com/akuafrica'>
-                                  <img
-                                    src='http://cdn.mcauto-images-production.sendgrid.net/817ed2a28dc600f8/6987867b-8a87-4e8d-b3b5-85c2c69e8748/100x100.png'
-                                    alt=''
-                                    class='social'
-                                  />
-                                </a>
-                              </td>
-
-                              <td>
-                                <a
-                                  href='https://www.linkedin.com/company/akufintech/'
-                                >
-                                  <img
-                                    src='http://cdn.mcauto-images-production.sendgrid.net/817ed2a28dc600f8/5f735a0a-6726-41c6-ba8b-79bced8169ca/100x100.png'
-                                    alt=''
-                                    class='social'
-                                  />
-                                </a>
-                              </td>
-                            </tr>
-                          </table>
-                        </div>
-                      </td>
-
-                      <td align='right'>
-                        <div
-                          style='
-                            color: #000;
-                            width: 200px;
-                            text-decoration: none;
-                            font-size: 16px;
-                            display: block;
-                            text-align: center;
-                            font-weight: 500;
-                          '
-                        >
-                          <table align='right' style='width: 190px'>
-                            <tr align='right'>
-                              <td>
-                                <a href='https://onelink.to/k2xrvg'>
-                                  <img
-                                    src='http://cdn.mcauto-images-production.sendgrid.net/817ed2a28dc600f8/213d725a-7808-47ff-a609-834f25069e6c/570x132.png'
-                                    style='height: 44px'
-                                    alt=''
-                                  />
-                                </a>
-                              </td>
-                            </tr>
-                          </table>
-
-                          <table align='right' style='width: 220px'>
-                            <tr align='right'>
-                              <td>
-                                <a
-                                  href='https://usemeprotocol.com'
-                                  class='outline-btn'
-                                  style='
-                                    color: #676e76 !important;
-                                    display: block;
-                                  '
-                                >
-                                  or visit
-                                  <span
-                                    style='color: #141414'
-                                  >usemeprotocol.com</span>
-                                  to get started
-                                </a>
-                              </td>
-                            </tr>
-                          </table>
-
-                          <table align='right' style='height: 20px'></table>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class='divider-b'></div>
-
-        <p class='text-justify text-light text-sm' style='color: #141414'>
-          All rights reserved. All deposits are insured by the Nigerian Deposit
-          Insurance Corporation (NDIC). AKU Microfinance Bank is licensed by the
-          Central Bank of Nigeria. “MeProtocol” is a trademark of MyAI: 26b Road
-          11, Ikota Villa, Lagos.
-        </p>
-
-        <div class='x-between text-sm'>
-          <div class='x-center'>
-            <a
-              href='https://usemeprotocol.com/terms-and-conditions'
-              style='color: #141414 !important'
-              class='link'
-            >
-              Terms of service
-            </a>
-            <div class='vline'></div>
-            <a href='https://usemeprotocol.com/privacy-policy' class='link'>
-              Privacy policy
-            </a>
-            <div class='vline'></div>
-            <a href='https://usemeprotocol.com/get-help' class='link'>
-              Contact Us
-            </a>
-          </div>
-        </div>
-
-        <div class='spacer'></div>
-      </footer>
-    </div>
-  </body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Me Protocol</title>
+<style type="text/css">
+li,p{font-size:14px;line-height:22px}.btn,.link,.outline-btn{text-decoration:none}html{font-family:Inter,sans-serif!important;background:#f7f7f7!important}body{margin:0}strong{color:#000!important}.italic{font-style:italic;font-weight:500}ol{padding-left:36px}.btn:visited{color:'white'!important}.btn,.link:visited,.outline-btn{color:#fff!important}p{color:#24292e}table{width:100%}@media
+screen and (max-width:760px){.flexed table,.flexed
+td{text-align:-webkit-left}.flexed{display:grid;row-gap:.5rem}.flexed
+.f-logo{margin-left:.4rem}.flexed
+table{float:left}footer.container{padding:0
+24px}}.text-sm{font-size:10px;line-height:17px}.text-light{font-weight:300}.btn,.otp,.outline-btn{font-weight:600}.text-justify{text-align:justify;text-justify:inter-word}.x-center{display:flex;align-items:center;justify-content:center}.x-right{display:flex;align-items:center;justify-content:end}.y-center{display:flex;flex-direction:column;align-items:center;justify-content:center}.x-between{display:flex;align-items:center;justify-content:space-between;padding:10px
+0}.mx-auto{margin:0 auto}.my-auto{margin:auto
+0}.h-full{height:100%}.container{max-width:508px;margin:0
+auto;display:block;position:relative;z-index:10}.spacer{height:16px}.spacer-sm{height:4px}.p-0{padding:0}.otp{font-size:40px}.outline-btn{display:block;font-size:10px}.black{background:#000!important}.btn{background:#581689;border-radius:8px;padding:15px
+16px;display:block;margin:12px
+0;font-size:14px}.divider{height:1.5px;background-color:#efefef;margin:24px
+0}.divider-b{height:.5px;background-color:transparent;margin:14px 0
+24px}.link{font-weight:400;color:#141414!important}:hover.link{text-decoration:underline}.social{height:32px;width:32px}.gap{width:12px}.gap-sm{width:5px}.vline{height:16px;width:1px;margin:auto
+7px;border-radius:100%;background-color:#676e76}.text-right{text-align:right}.box{padding:5px
+18px;background-color:#f7f7f7;border-radius:6px}
+.msohide {
+mso-hide:all;
+}
+ul li, ol li {
+margin-left:0;
+}
+</style>
+</head>
+<body>
+<main style="padding:24px">
+<div style="max-width:568px;margin:auto">
+<table align="center" role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="padding:12px 24px 20px 24px;background-color:white;border-radius:8px;border:1px #efefef solid;margin-top:10px;margin:0 auto;z-index:10;position:relative">
+<tr style="width:100%">
+<td>
+<div class="main-bg">
+<header class="container">
+<table>
+<tr>
+<td valign="middle"><a href="https://usemeprotocol.com"><img style="height:38px" src="https://res.cloudinary.com/digital-specie/image/upload/v1695657486/1df7bc9c-e32f-4d7d-bc46-acc638209ecb.png" alt=""></a></td>
+<td valign="middle"><p class="text-right italic">Get rewards. Redeem offers. Repeat</p></td>
+</tr>
+</table>
+</header>
+</div>
+<div class="spacer"></div><h3>{{{subject}}}</h3>
+<div>
+{{{message}}}
+</div><p>Thank you for choosing Me Protocol! <strong style="display:block;margin-top:12px;color:black"> Please do NOT reply to this message as it is sent from an unattached mailbox. </strong></p></td>
+</tr>
+</table>
+</div>
+</main>
+<div>
+<footer class="container">
+<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+<tr>
+<td>
+<table width="100%" align="center" role="presentation" cellspacing="0" cellpadding="0" border="0">
+<tbody style="width:100%">
+<tr style="width:100%" class="flexed">
+<td class="f-logo"><h2 style="max-width:248px;margin-bottom:4px;font-weight:600;font-size:16px;color:#141414">Buy stuff. Get rewards. Redeem offers. Repeat.</h2>
+<div target="_blank" style="color:#000;text-decoration:none;font-size:16px;display:block;text-align:center;font-weight:500;margin-left:-12px">
+<table align="left" style="width:180px;">
+<tr align="left">
+<td><a href="https://www.facebook.com/akuafrica"><img src="http://cdn.mcauto-images-production.sendgrid.net/817ed2a28dc600f8/87174ebb-02ab-467f-856f-2152673f6c58/100x100.png" alt class="social"></a></td>
+<td><a href="https://twitter.com/akuafrica"><img src="http://cdn.mcauto-images-production.sendgrid.net/817ed2a28dc600f8/5acf9877-8ab2-4785-84c0-b6735a32c184/100x100.png" alt class="social"></a></td>
+<td><a href="https://instagram.com/akuafrica"><img src="http://cdn.mcauto-images-production.sendgrid.net/817ed2a28dc600f8/6987867b-8a87-4e8d-b3b5-85c2c69e8748/100x100.png" alt class="social"></a></td>
+<td><a href="https://www.linkedin.com/company/akufintech/"><img src="http://cdn.mcauto-images-production.sendgrid.net/817ed2a28dc600f8/5f735a0a-6726-41c6-ba8b-79bced8169ca/100x100.png" alt class="social"></a></td>
+</tr>
+</table>
+</div></td>
+<td align="right">
+<div style="color:#000;width:200px;text-decoration:none;font-size:16px;display:block;text-align:center;font-weight:500">
+<table align="right" style="width:190px">
+<tr align="right">
+<td><a href="https://onelink.to/k2xrvg"><img src="http://cdn.mcauto-images-production.sendgrid.net/817ed2a28dc600f8/213d725a-7808-47ff-a609-834f25069e6c/570x132.png" style="height:44px" alt></a></td>
+</tr>
+</table>
+<table align="right" style="width:220px">
+<tr align="right">
+<td><a href="https://usemeprotocol.com" class="outline-btn" style="color:#676e76 !important;display:block"> or visit <span style="color:#141414">usemeprotocol.com</span> to get started </a></td>
+</tr>
+</table>
+<table align="right" style="height:20px"></table>
+</div></td>
+</tr>
+</table></td>
+</tr>
+</table>
+<div class="divider-b"></div>
+<p class="text-justify text-light text-sm" style="color:#141414">All rights reserved. All deposits are insured by the Nigerian Deposit Insurance Corporation (NDIC). AKU Microfinance Bank is licensed by the Central Bank of Nigeria. “MeProtocol” is a trademark of MyAI: 26b Road 11, Ikota Villa, Lagos.</p>
+<div class="x-between text-sm">
+<div class="x-center"><a href="https://usemeprotocol.com/terms-and-conditions" style="color:#141414 !important" class="link"> Terms of service </a>
+<div class="vline"></div><a href="https://usemeprotocol.com/privacy-policy" class="link"> Privacy policy </a>
+<div class="vline"></div><a href="https://usemeprotocol.com/get-help" class="link"> Contact Us </a>
+</div>
+</div>
+<div class="spacer"></div>
+</footer>
+</div>
+</body>
 </html>
