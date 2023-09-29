@@ -125,6 +125,18 @@ export class Reward extends BaseEntity {
   })
   bountyKeyIdentifierId: string;
 
+  @Column({
+    default: 0.984,
+    type: 'decimal',
+    scale: 5,
+  })
+  rewardValueInDollars: number;
+
+  @Column({
+    default: true,
+  })
+  rewardValueIsManual: boolean;
+
   @ManyToMany(() => Notification, (notification) => notification.rewards)
   notifications: Notification[];
 

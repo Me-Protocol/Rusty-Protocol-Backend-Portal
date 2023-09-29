@@ -19,8 +19,8 @@ export class TracingInterceptor implements NestInterceptor {
       reporter: {
         // The default agent host and port. Adjust if needed.
         agentHost: 'localhost',
-        agentPort: 6832
-      }
+        agentPort: 1450,
+      },
     };
     const options = {
       logger: {
@@ -41,9 +41,12 @@ export class TracingInterceptor implements NestInterceptor {
       FORMAT_HTTP_HEADERS,
       req.headers,
     );
-    const span: Span = this.tracer.startSpan('HTTP ' + req.method + ' ' + req.url, {
-      childOf: parentSpanContext,
-    });
+    const span: Span = this.tracer.startSpan(
+      'HTTP ' + req.method + ' ' + req.url,
+      {
+        childOf: parentSpanContext,
+      },
+    );
 
     // Log any useful request data
     span.log({ event: 'request_start', url: req.url, headers: req.headers });
