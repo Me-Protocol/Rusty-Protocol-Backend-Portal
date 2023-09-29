@@ -5,6 +5,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -24,6 +25,8 @@ export class UpdateProductDto {
   description: string;
 
   @ApiProperty()
+  @IsNotEmpty()
+  @IsUUID()
   brandId: string;
 
   @ApiProperty()

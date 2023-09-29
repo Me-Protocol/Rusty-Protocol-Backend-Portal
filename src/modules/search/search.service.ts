@@ -1,7 +1,8 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { ConfigSearch } from '@src/config/search.config';
 import { SearchServiceInterface } from './interface/search.interface';
+import { ELASTIC_NODE } from '@src/config/env.config';
 
 @Injectable()
 export class SearchService
@@ -9,7 +10,7 @@ export class SearchService
   implements SearchServiceInterface<any>
 {
   constructor() {
-    super(ConfigSearch.searchConfig(process.env.ELASTIC_NODE));
+    super(ConfigSearch.searchConfig(ELASTIC_NODE));
   }
 
   public async insertIndex(bulkData: any): Promise<any> {

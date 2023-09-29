@@ -32,6 +32,7 @@ import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service'
 import { Enable2FADto } from './dto/Enable2FADto.dto';
 import { UpdatePreferenceDto } from './dto/UpdatePreferenceDto.dto';
 import fetch from 'node-fetch';
+import { emailCode } from '@src/utils/helpers/email';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -164,9 +165,11 @@ export class AuthenticationService {
         subject: 'Verify your email address',
         text: 'Verify your email address',
         html: `
-        <p>Hello ${name},</p><br/>
-        <p>Use the code below to verify your email address.</p><br/>
-        <b><p>Code: ${user.accountVerificationCode}</p></b>
+        <p>Hello ${name},</p>
+        <p>Use the code below to verify your email address.</p>
+        ${emailCode({
+          code: user.accountVerificationCode,
+        })}
         `,
       });
     } catch (error) {

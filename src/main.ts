@@ -5,6 +5,8 @@ import * as session from 'express-session';
 import { logger } from './globalServices/logger/logger.service';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
 import { setupSwagger } from './config/swagger/swagger.config';
+// import * as compression from 'compression';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import {
   APP_SERVER_LISTEN_PORT,
   APP_SERVER_LISTEN_IP,
@@ -15,6 +17,7 @@ import {
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import { SentryFilter } from './filters/sentry.filter';
+import { TracingInterceptor } from './interceptors/tracing.interceptor';
 import { join } from 'path';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -35,7 +38,11 @@ Sentry.init({
 });
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
+
+  // app.use(compression()); will compress all responses however will config later
+  app.set('trust proxy', 1);
+  app.disable('x-powered-by');
 
   // Use Sentry middleware here
 
@@ -60,7 +67,9 @@ async function bootstrap() {
       resave: true,
     }),
   );
+  
   app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalInterceptors(new TracingInterceptor()); // to apply tracing interceptors globally
 
   setupSwagger(app);
 

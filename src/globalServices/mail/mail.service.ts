@@ -14,11 +14,12 @@ export class MailService {
         text: options.text,
         template: './mail.hbs',
         context: {
-          message: options.html,
+          message: options.html ?? options.text,
           subject: options.subject,
         },
       });
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new Error(error);
     }
