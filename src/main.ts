@@ -17,6 +17,7 @@ import {
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import { SentryFilter } from './filters/sentry.filter';
+import { TracingInterceptor } from './interceptors/tracing.interceptor';
 import { join } from 'path';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -66,7 +67,9 @@ async function bootstrap() {
       resave: true,
     }),
   );
+  
   app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalInterceptors(new TracingInterceptor()); // to apply tracing interceptors globally
 
   setupSwagger(app);
 
