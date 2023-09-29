@@ -5,6 +5,8 @@ import * as session from 'express-session';
 import { logger } from './globalServices/logger/logger.service';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
 import { setupSwagger } from './config/swagger/swagger.config';
+// import * as compression from 'compression';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import {
   APP_SERVER_LISTEN_PORT,
   APP_SERVER_LISTEN_IP,
@@ -34,7 +36,11 @@ Sentry.init({
 });
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
+
+  // app.use(compression()); will compress all responses however will config later
+  app.set('trust proxy', 1);
+  app.disable('x-powered-by');
 
   // Use Sentry middleware here
 
