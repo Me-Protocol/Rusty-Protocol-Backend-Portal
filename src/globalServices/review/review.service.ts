@@ -73,6 +73,21 @@ export class ReviewService {
       previousPage: page > 1 ? Number(page) - 1 : null,
     };
   }
+
+  async getReviewByOfferAndUser({
+    offer_id,
+    user_id,
+  }: {
+    offer_id: string;
+    user_id: string;
+  }) {
+    return await this.reviewsRepository.findOne({
+      where: {
+        offerId: offer_id,
+        userId: user_id,
+      },
+    });
+  }
 }
 
 // get all reviews

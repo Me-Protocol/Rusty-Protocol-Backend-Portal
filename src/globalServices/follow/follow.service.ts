@@ -152,4 +152,13 @@ export class FollowService {
     });
     return count;
   }
+
+  async getAllBrandFollowers(brandId: string) {
+    return this.followerRepository.find({
+      where: {
+        brandId,
+      },
+      relations: ['user', 'user.customer'],
+    });
+  }
 }

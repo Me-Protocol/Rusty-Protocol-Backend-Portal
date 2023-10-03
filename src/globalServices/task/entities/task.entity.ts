@@ -44,13 +44,13 @@ export class Task extends BaseEntity {
 
   @Column({
     type: 'enum',
-    enum: ItemStatus,
-    default: ItemStatus.DRAFT,
+    enum: TaskStatus,
+    default: TaskStatus.PENDING,
   })
-  status: ItemStatus;
+  status: TaskStatus;
 
   @Column()
-  brandId: number;
+  brandId: string;
 
   @ManyToOne(() => Brand, (brand) => brand.tasks, {
     onDelete: 'CASCADE',
@@ -84,7 +84,7 @@ export class Task extends BaseEntity {
   notificationSent: boolean;
 
   @Column({ nullable: true })
-  offerId: number;
+  offerId: string;
 
   @ManyToOne(() => Offer, (offer) => offer.tasks)
   @JoinColumn({ name: 'offerId' })

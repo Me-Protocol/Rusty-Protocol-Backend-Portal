@@ -1,26 +1,52 @@
-import { HttpException, Inject, Injectable, forwardRef } from '@nestjs/common';
+/* eslint-disable prefer-const */
+import { HttpException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, FindOptionsOrderValue, LessThan, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
+import moment from 'moment';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { writeFile, readFile } from 'fs/promises';
+import { HttpService } from '@nestjs/axios';
+import { Wallet, providers } from 'ethers';
+import { Queue } from 'bull';
+import { InjectQueue } from '@nestjs/bull';
 import { Task } from './entities/task.entity';
 import { TaskResponse } from './entities/taskResponse.entity';
 import { Reward } from '../reward/entities/reward.entity';
-import { BountyService } from '../oracles/bounty/bounty.service';
+import { BountyRecord } from './entities/bountyRecord.entity';
 import { Brand } from '../brand/entities/brand.entity';
 import { TaskResponseRecord } from './entities/taskResponseRecord.entity';
 import { JobResponse } from './entities/jobResponse.entity';
 import { TaskResponder } from './entities/taskResponder.entity';
-import { HttpService } from '@nestjs/axios';
 import { RewardService } from '../reward/reward.service';
 import { BrandService } from '../brand/brand.service';
 import { FollowService } from '../follow/follow.service';
+import { NotificationService } from '../notification/notification.service';
 import { UserService } from '../user/user.service';
-import { ItemStatus } from '@src/utils/enums/ItemStatus';
-import { BountyRecord } from './entities/bountyRecord.entity';
-import { pagination } from '@src/utils/types/pagination';
-import { AllTaskTypes } from '@src/utils/enums/TasksTypes';
-import moment from 'moment';
-import { readFile, writeFile } from 'fs/promises';
+import { InAppTaskVerifier } from './common/verifier/inapp.service';
+import { TwitterTaskVerifier } from './common/verifier/outapp/twitter.verifier';
+import { AllTaskTypes, TaskStatus } from '@src/utils/enums/TasksTypes';
+import {
+  CreateTaskDto,
+  FilterTaskDto,
+  JobResponseDto,
+  UpdateReportDto,
+  UpdateStatusDto,
+  UpdateTaskDto,
+  UpdateTaskResponseDto,
+} from '@src/modules/taskModule/dtos/tasks.dto';
+import { Notification } from '../notification/entities/notification.entity';
+import { NotificationType } from '@src/utils/enums/notification.enum';
+import { emailButton } from '@src/utils/helpers/email';
+import { CLIENT_APP_URI } from '@src/config/env.config';
+export const { TASK_QUEUE } = process.env;
 
+const humanJobWinnerCount = parseInt(process.env.HUMAN_JOB_WINNER_COUNT);
+
+const provider = new providers.JsonRpcProvider(process.env.PROVIDER_URI!);
+const signer = new Wallet(process.env.ETH_PRIVATE_KEY!, provider);
+
+//TODO: get token decimal before payout
+//TODO: make all external tasks stable
 @Injectable()
 export class TasksService {
   constructor(
@@ -32,6 +58,9 @@ export class TasksService {
 
     @InjectRepository(Reward)
     private tokenRepo: Repository<Reward>,
+
+    @InjectRepository(BountyRecord)
+    private bountyRecordRepo: Repository<BountyRecord>,
 
     @InjectRepository(Brand)
     private brandRepo: Repository<Brand>,
@@ -45,15 +74,24 @@ export class TasksService {
     @InjectRepository(TaskResponder)
     private taskResponder: Repository<TaskResponder>,
 
-    @InjectRepository(BountyRecord)
-    private bountyRecord: Repository<BountyRecord>,
-
     private readonly httpService: HttpService,
+
     private readonly rewardService: RewardService,
+
     private readonly brandService: BrandService,
+
     private readonly followService: FollowService,
-    // private readonly notificationService: NotificationService,
+
+    private readonly notificationService: NotificationService,
+
     private readonly userService: UserService,
+
+    private inAppTaskVerifier: InAppTaskVerifier,
+
+    private readonly twitterTaskVerifier: TwitterTaskVerifier,
+
+    @InjectQueue(TASK_QUEUE)
+    private readonly taskQueue: Queue,
   ) {}
 
   // fetch based on contract address
@@ -80,12 +118,12 @@ export class TasksService {
     console.log('TOKEN CONTRACT ADDRESS', token.contractAddress);
 
     const nextTask = await this.taskRepository.findOne({
-      relations: ['brand', 'reward'],
+      relations: ['brand', 'token'],
       order: {
         createdAt: 'DESC',
       },
       where: {
-        status: ItemStatus.PENDING,
+        status: TaskStatus.PENDING,
         reward: {
           contractAddress,
         },
@@ -94,9 +132,10 @@ export class TasksService {
 
     if (nextTask) {
       await this.taskRepository.update(nextTask.id, {
-        status: ItemStatus.ACTIVE,
+        status: TaskStatus.ACTIVE,
         startDate: new Date(),
       });
+      console.log('TASK IS NOW ACTIVE');
     } else {
       // create a bountyrecord
       await this.createABountyRecord(contractAddress);
@@ -110,15 +149,14 @@ export class TasksService {
   async createABountyRecord(contractAddress: string) {
     const bountyRecord = new BountyRecord();
     bountyRecord.contractAddress = contractAddress;
-
-    return await this.bountyRecord.save(bountyRecord);
+    return await this.bountyRecordRepo.save(bountyRecord);
   }
 
-  async getBrandTasks(brandId: number) {
+  async getBrandTasks(brandId: string) {
     const tasks = await this.taskRepository.find({
-      relations: ['brand', 'reward'],
+      relations: ['brand', 'token'],
       where: {
-        brandId: brandId,
+        brandId,
       },
     });
 
@@ -126,134 +164,88 @@ export class TasksService {
   }
 
   async findActiveTasks({
-    reward,
+    rewardId,
     page,
     limit,
     type,
-    brand,
+    brandId,
     sort,
-  }: {
-    reward?: string;
-    page?: number;
-    limit?: number;
-    type?: string;
-    brand?: string;
-    sort?: {
-      order: FindOptionsOrderValue;
-      trending: boolean;
-      minPrice: number;
-      maxPrice: number;
-      expiring: boolean;
-    };
-  }) {
+  }: FilterTaskDto) {
     try {
-      const checkReward = await this.rewardService.findOneById(reward);
+      const checkReward = await this.rewardService.findOneById(rewardId);
 
-      if (reward && !checkReward) {
+      if (rewardId && !checkReward) {
         throw new HttpException('Reward not found', 400);
       }
 
-      const checkBrand = await this.brandService.getBrandById(brand);
+      const checkBrand = await this.brandService.getBrandById(brandId);
 
-      if (brand && !checkBrand) {
+      if (brandId && !checkBrand) {
         throw new HttpException('Brand not found', 400);
       }
 
-      page = page ? page : 1;
+      const taskQuery = this.taskRepository
+        .createQueryBuilder('task')
+        .leftJoinAndSelect('task.brand', 'brand')
+        .leftJoinAndSelect('task.reward', 'reward')
+        .where('task.status = :status', { status: TaskStatus.ACTIVE });
 
-      let tasks = [];
-
-      if (sort?.expiring) {
-        tasks = await this.taskRepository.find({
-          relations: ['brand', 'reward'],
-          where: {
-            status: ItemStatus.ACTIVE,
-            timeFrameInHours: LessThan(24),
-            expired: false,
-            ...(reward && { token: { rewardId: reward } }),
-            ...(brand && { brand_id: brand }),
-            ...(type && { task_type: type }),
-          },
-          skip: +page === 1 ? 0 : (+page - 1) * limit,
-          take: limit ? limit : 10,
-          order: {
-            createdAt: sort ? sort.order : 'DESC',
-          },
-        });
-      } else if (sort?.trending) {
-        tasks = await this.taskRepository.find({
-          relations: ['brand', 'reward'],
-          where: {
-            status: ItemStatus.ACTIVE,
-            expired: false,
-            ...(reward && { token: { rewardId: reward } }),
-            ...(brand && { brand_id: brand }),
-            ...(type && { task_type: type }),
-          },
-          skip: +page === 1 ? 0 : (+page - 1) * limit,
-          take: limit ? limit : 10,
-          order: {
-            createdAt: sort ? sort.order : 'DESC',
-            viewCount: 'DESC',
-            updatedAt: 'DESC',
-          },
-        });
-      } else if (sort?.maxPrice && sort?.minPrice) {
-        tasks = await this.taskRepository.find({
-          relations: ['brand', 'reward'],
-          where: {
-            status: ItemStatus.ACTIVE,
-            expired: false,
-            price: Between(sort.minPrice, sort.maxPrice),
-            ...(reward && { token: { rewardId: reward } }),
-            ...(brand && { brand_id: brand }),
-            ...(type && { task_type: type }),
-          },
-          skip: +page === 1 ? 0 : (+page - 1) * limit,
-          take: limit ? limit : 10,
-          order: {
-            createdAt: sort ? sort.order : 'DESC',
-          },
-        });
-      } else {
-        tasks = await this.taskRepository.find({
-          relations: ['brand', 'reward'],
-          where: {
-            status: ItemStatus.ACTIVE,
-            expired: false,
-            ...(reward && { token: { rewardId: reward } }),
-            ...(brand && { brand_id: brand }),
-            ...(type && { task_type: type }),
-          },
-          skip: +page === 1 ? 0 : (+page - 1) * limit,
-          take: limit ? limit : 10,
-          order: {
-            createdAt: sort ? sort.order : 'DESC',
-          },
-        });
+      if (rewardId) {
+        taskQuery.andWhere('task.rewardId = :rewardId', { rewardId });
       }
 
-      const count = await this.taskRepository.count({
-        where: {
-          expired: false,
-          status: ItemStatus.ACTIVE,
-          ...(reward && { token: { rewardId: reward } }),
-          ...(brand && { brand_id: brand }),
-          ...(type && { task_type: type }),
-        },
-      });
+      if (brandId) {
+        taskQuery.andWhere('task.brandId = :brandId', { brandId });
+      }
 
-      const pagination: pagination = {
-        currentPage: page,
-        limit: limit,
-        totalPage: Math.ceil(count / limit),
-        nextPage: Math.ceil(count / limit) > page ? Number(page) + 1 : null,
-        previousPage: page === 1 ? null : Number(page) - 1,
-      };
+      if (type) {
+        taskQuery.andWhere('task.taskType = :type', { type });
+      }
+
+      if (sort) {
+        if (sort.order === 'ASC') {
+          taskQuery.orderBy('task.price', 'ASC');
+        } else if (sort.order === 'DESC') {
+          taskQuery.orderBy('task.price', 'DESC');
+        }
+
+        if (sort.expiring) {
+          taskQuery.andWhere('task.expired = :expired', { expired: false });
+          // timeFrameInHours less than 24 hours
+          taskQuery.andWhere('task.timeFrameInHours < :timeFrameInHours', {
+            timeFrameInHours: 24,
+          });
+        }
+
+        if (sort.trending) {
+          taskQuery.orderBy('task.viewCount', 'DESC');
+        }
+
+        if (sort.minPrice) {
+          taskQuery.andWhere('task.price >= :minPrice', {
+            minPrice: sort.minPrice,
+          });
+        }
+
+        if (sort.maxPrice) {
+          taskQuery.andWhere('task.price <= :maxPrice', {
+            maxPrice: sort.maxPrice,
+          });
+        }
+      }
+
+      const tasks = await taskQuery
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getMany();
+
+      const count = await taskQuery.getCount();
 
       return {
-        tasks: tasks as Task[],
-        pagination,
+        tasks,
+        page: page ? page : 1,
+        nextPage: Math.ceil(count / limit) > page ? page + 1 : null,
+        prevPage: page === 1 ? null : page - 1,
       };
     } catch (error) {
       console.log(error);
@@ -263,10 +255,10 @@ export class TasksService {
 
   async getTaskById(id: string) {
     const task = await this.taskRepository.findOne({
-      relations: ['brand', 'reward'],
+      relations: ['brand', 'token'],
       where: {
         id,
-        status: ItemStatus.ACTIVE,
+        status: TaskStatus.ACTIVE,
         expired: false,
       },
     });
@@ -286,7 +278,7 @@ export class TasksService {
     page = page ? page : 1;
 
     const tasks = await this.taskResponder.find({
-      relations: ['task', 'task.brand', 'task.token', 'task.token.reward'],
+      relations: ['task', 'task.brand', 'task.reward'],
       where: {
         userId,
       },
@@ -300,23 +292,16 @@ export class TasksService {
       },
     });
 
-    const pagination: pagination = {
-      currentPage: page,
-      limit: limit,
-      totalPage: Math.ceil(count / limit),
-      nextPage: Math.ceil(count / limit) > page ? Number(page) + 1 : null,
-      previousPage: page === 1 ? null : Number(page) - 1,
-    };
-
     return {
-      tasks: tasks as TaskResponder[],
-      pagination,
+      tasks: tasks,
+      nextPage: Math.ceil(count / limit) > page ? page + 1 : null,
+      previousPage: page === 1 ? null : page - 1,
     };
   }
 
   async getUsersSingleTasks(userId: string, taskId: string) {
     const task = await this.taskResponder.findOne({
-      relations: ['task', 'task.brand', 'task.reward'],
+      relations: ['task', 'task.brand', 'task.token', 'task.token.reward'],
       where: {
         userId,
         taskId,
@@ -324,7 +309,7 @@ export class TasksService {
     });
 
     if (!task) {
-      throw new Error('Task not found');
+      throw new HttpException('Task not found', 404);
     }
 
     return task;
@@ -338,7 +323,7 @@ export class TasksService {
         taskId,
         winner: true,
       },
-      relations: ['user'],
+      relations: ['user', 'user.customer'],
       select: {
         user: {
           username: true,
@@ -358,17 +343,10 @@ export class TasksService {
       },
     });
 
-    const pagination: pagination = {
-      currentPage: page,
-      limit: limit,
-      totalPage: Math.ceil(count / limit),
-      nextPage: Math.ceil(count / limit) > page ? Number(page) + 1 : null,
-      previousPage: page === 1 ? null : Number(page) - 1,
-    };
-
     return {
-      winners: winners as TaskResponder[],
-      pagination,
+      winners: winners,
+      nextPage: Math.ceil(count / limit) > page ? page + 1 : null,
+      prevPage: page === 1 ? null : page - 1,
     };
   }
 
@@ -384,7 +362,7 @@ export class TasksService {
         throw new HttpException('Task not found', 400);
       }
 
-      if (task?.status !== ItemStatus.ACTIVE) {
+      if (task?.status !== TaskStatus.ACTIVE) {
         throw new HttpException('Task is not active', 400);
       }
 
@@ -400,12 +378,10 @@ export class TasksService {
       const isTaskInAvailableTaskTypes =
         availableTaskTypes.filter((type) => type === task?.taskType).length > 0;
 
-      console.log(isTaskInAvailableTaskTypes, user_id);
-
       if (
         availableTaskTypes.filter((type) => type === task?.taskType).length >
           0 &&
-        !user?.twitterAuth?.username
+        !user?.twitterAuth.username
       ) {
         throw new HttpException(
           'Please connect your twitter account to join this task',
@@ -420,6 +396,7 @@ export class TasksService {
       );
 
       if (!isValid) {
+        console.log('rrighthe');
         throw new HttpException('Task is no longer active', 400);
       }
 
@@ -477,7 +454,7 @@ export class TasksService {
         throw new HttpException('Task not found', 400);
       }
 
-      if (task.status !== ItemStatus.ACTIVE) {
+      if (task.status !== TaskStatus.ACTIVE) {
         throw new HttpException('Task is not active', 400);
       }
 
@@ -511,11 +488,11 @@ export class TasksService {
       });
 
       if (!checkResponser) {
-        throw new Error('You have not joined the task');
+        throw new HttpException('You have not joined the task', 400);
       }
 
       if (checkResponser?.taskPerformed) {
-        throw new Error('Task already done.');
+        throw new HttpException('Task already done.', 400);
       }
 
       checkResponser.currentStep = 2;
@@ -525,58 +502,81 @@ export class TasksService {
       return response;
     } catch (error) {
       console.log(error);
-      throw new Error(error.message);
-    }
-  }
-
-  async create(data: Task) {
-    try {
-      const task = this.taskRepository.create(data);
-      return await this.taskRepository.save(task);
-    } catch (error) {
       throw new HttpException(error.message, 400);
     }
   }
 
-  async update(id: string, data: Task) {
+  async create(data: CreateTaskDto) {
+    try {
+      const band_id: any = data.brand_id;
+
+      const brand = await this.brandRepo.findOneBy({ id: band_id });
+
+      const reward = await this.tokenRepo.findOne({
+        where: {
+          id: data.reward_token_id,
+        },
+      });
+
+      if (!brand) {
+        throw new HttpException('Brand not found', 400);
+      }
+
+      if (!reward) {
+        throw new HttpException('Reward not found', 400);
+      }
+
+      data.reward_token_id = reward.id;
+
+      const task = this.taskRepository.create(data);
+      return await this.taskRepository.save(task);
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async update(id: string, data: UpdateTaskDto) {
     const task = await this.taskRepository.findOneBy({ id });
 
     if (
-      task.status === ItemStatus.ACTIVE ||
-      task.status === ItemStatus.COMPLETED
+      task.status === TaskStatus.ACTIVE ||
+      task.status === TaskStatus.COMPLETED
     ) {
-      throw new Error('Task is already active or completed');
+      throw new HttpException('Task is already active or completed', 400);
+    }
+
+    if (task.brandId !== data.brand_id) {
+      throw new HttpException('Brand cannot be changed', 401);
     }
 
     await this.taskRepository.update(id, data);
     return await this.taskRepository.findOneBy({ id });
   }
 
-  async updateStatus(id: string, status: ItemStatus) {
+  async updateStatus(id: string, data: UpdateStatusDto) {
     const task = await this.taskRepository.findOneBy({ id });
 
-    if (task.status === ItemStatus.PENDING) {
+    if (task.status === TaskStatus.PENDING) {
       throw new HttpException('Task is still pending', 400);
     }
 
-    if (task.status === ItemStatus.COMPLETED) {
+    if (task.status === TaskStatus.COMPLETED) {
       throw new HttpException('Task is already completed', 400);
     }
 
-    await this.taskRepository.update(id, {
-      status,
-    });
+    await this.taskRepository.update(id, data);
     return await this.taskRepository.findOneBy({ id });
   }
 
-  async updateReport(id: string, data: Task) {
+  async updateReport(id: string, data: UpdateReportDto) {
     const task = await this.taskRepository.findOneBy({ id });
 
-    if (task.status === ItemStatus.PENDING) {
+    if (task.status === TaskStatus.PENDING) {
       throw new HttpException('Task is still pending', 400);
     }
 
-    if (task.status === ItemStatus.COMPLETED) {
+    if (task.status === TaskStatus.COMPLETED) {
       throw new HttpException('Task is already completed', 400);
     }
 
@@ -588,28 +588,21 @@ export class TasksService {
     const task = await this.taskRepository.findOneBy({ id });
 
     if (
-      task.status === ItemStatus.ACTIVE ||
-      task.status === ItemStatus.COMPLETED
+      task.status === TaskStatus.ACTIVE ||
+      task.status === TaskStatus.COMPLETED
     ) {
       throw new HttpException('Task is already active or completed', 400);
     }
 
-    await this.taskRepository.softDelete(id);
+    await this.taskRepository.delete(id);
     return { deleted: true };
   }
 
-  async respondToTask(data: {
-    task_id: string;
-    user_id: string;
-    wallet_address: string;
-    response: string;
-    response_type: string;
-    response_url: string;
-  }) {
+  async respondToTask(data: UpdateTaskResponseDto) {
     try {
       const task = await this.taskRepository.findOneBy({
         id: data.task_id,
-        status: ItemStatus.ACTIVE,
+        status: TaskStatus.ACTIVE,
       });
 
       if (!task) {
@@ -653,6 +646,7 @@ export class TasksService {
       });
 
       if (walletHasResponded) {
+        console.log('WALLET HAS ALREADY RESPONDED');
         throw new HttpException('User has already responded', 400);
       }
 
@@ -660,18 +654,63 @@ export class TasksService {
         throw new HttpException('User has already responded', 400);
       }
 
-      const taskResponse = this.taskResponseRepository.create({
-        taskId: data.task_id,
-        userId: data.user_id,
-        walletAddress: data.wallet_address,
-        response: data.response,
-        responseType: data.response_type,
-        responseUrl: data.response_url,
-      });
+      const taskResponse = this.taskResponseRepository.create(data);
       return await this.taskResponseRepository.save(taskResponse);
     } catch (error) {
       console.log(error);
       throw new HttpException(error.message, 400);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async activeNextTask() {
+    const nextTask = await this.taskRepository.findOne({
+      relations: ['brand', 'token'],
+      order: {
+        createdAt: 'DESC',
+      },
+      where: {
+        status: TaskStatus.PENDING,
+      },
+    });
+
+    if (nextTask) {
+      await this.taskRepository.update(nextTask.id, {
+        status: TaskStatus.ACTIVE,
+      });
+
+      console.log('next job is active', nextTask.id);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async fundJob() {
+    // get one record with no escrow address
+    const record = await this.taskResponseRecordRepo.findOne({
+      where: { isFunded: false },
+    });
+
+    if (record) {
+      if (record.isReady && record.escrowUpdated) {
+        const localUrl = `./public/uploads/manifests/${record.manifestHash}.json`;
+        const data = await readFile(localUrl, 'utf8');
+
+        const mani = JSON.parse(data);
+
+        const fundJob = await this.httpService.axiosRef.post(
+          `${process.env.JOB_LAUNCHER_URL}/joblauncher/fundJob`,
+          {
+            escrowAddress: record.escrowAddress,
+            amount: `${mani.price}`,
+          },
+        );
+
+        if (fundJob.status >= 200 && fundJob.status < 300) {
+          record.isFunded = true;
+          console.log('Job was funded');
+          return await this.taskResponseRecordRepo.save(record);
+        }
+      }
     }
   }
 
@@ -735,11 +774,7 @@ export class TasksService {
     }
   }
 
-  async storeNewResponse(data: {
-    worker_address: string;
-    escrow_address: string;
-    responses: string[];
-  }) {
+  async storeNewResponse(data: JobResponseDto) {
     try {
       const taskRecord = await this.taskResponseRecordRepo.findOne({
         where: {
@@ -877,36 +912,412 @@ export class TasksService {
   }
 
   async completeUserTask(task_id: string, user_id: string) {
-    const task = await this.taskRepository.findOneBy({ id: task_id });
+    try {
+      const task = await this.taskRepository.findOneBy({ id: task_id });
 
-    if (!task) {
-      throw new HttpException('Task not found', 404);
+      if (!task) {
+        throw new HttpException('Task not found', 404);
+      }
+
+      const response = await this.taskResponder.findOne({
+        where: {
+          userId: user_id,
+          taskId: task_id,
+        },
+        relations: ['user', 'user.customer'],
+      });
+
+      if (!response) {
+        throw new HttpException('Please join task first.', 400);
+      }
+
+      if (response.taskCancelled) {
+        throw new HttpException('Task was cancelled.', 400);
+      }
+
+      if (response.taskPerformed) {
+        throw new HttpException('Task already completed.', 400);
+      }
+
+      await this.validateResponse(task, response);
+
+      return {
+        message: 'Task completed successfully.',
+      };
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, 400);
     }
+  }
 
-    const response = await this.taskResponder.findOne({
-      where: {
-        userId: user_id,
-        taskId: task_id,
-      },
-      relations: ['user'],
+  private async completeTaskVerifier(
+    activeTask: Task,
+    response: TaskResponder,
+  ) {
+    const queuedJob: any = await this.taskQueue.add({
+      activeTask,
+      response,
     });
 
-    if (!response) {
-      throw new HttpException('Please join task first.', 400);
+    const job = await this.taskQueue.getJob(queuedJob.id);
+    const isFinishedValue = await job.finished();
+
+    if (isFinishedValue) return isFinishedValue;
+
+    await this.taskRepository.update(activeTask.id, {
+      winnerCount: activeTask.winnerCount + 1,
+    });
+
+    response.taskPerformed = true;
+    response.currentStep = 3;
+    response.winner = true;
+
+    return await this.taskResponder.save(response);
+  }
+
+  async getTaskWinners(taskId: string) {
+    return await this.taskResponder.find({
+      where: {
+        taskId,
+        taskCancelled: false,
+        taskPerformed: true,
+        winner: true,
+      },
+    });
+  }
+
+  private async validateResponse(activeTask: Task, response: TaskResponder) {
+    const availableTaskTypes = [
+      AllTaskTypes.IN_APP_COLLECTION,
+      AllTaskTypes.IN_APP_FOLLOW,
+      AllTaskTypes.IN_APP_PRODUCT_LIKE,
+      AllTaskTypes.IN_APP_SHARE,
+      AllTaskTypes.OUT_SM_FOLLOW,
+      AllTaskTypes.OUT_BRAND_TAGGING,
+      AllTaskTypes.OUT_LIKE_POST,
+      AllTaskTypes.OUT_REPOST,
+      AllTaskTypes.IN_APP_SHARE,
+    ];
+
+    if (availableTaskTypes.includes(activeTask.taskType)) {
+      if (activeTask.taskType === AllTaskTypes.IN_APP_COLLECTION) {
+        const taskWinners = await this.taskResponder.find({
+          where: {
+            taskId: activeTask.id,
+            taskCancelled: false,
+            taskPerformed: true,
+            winner: true,
+          },
+        });
+
+        if (taskWinners.length >= activeTask.numberOfWinners) {
+          //expire tasks
+          await this.taskRepository.update(activeTask.id, {
+            expired: true,
+          });
+
+          return 'Sorry winners already selected for this task';
+        } else {
+          const check = await this.inAppTaskVerifier.verifyUserCollectedAnOffer(
+            activeTask.offerId,
+            response.userId,
+          );
+
+          if (!check)
+            return 'We could not validate your response. Please try again';
+
+          return await this.completeTaskVerifier(activeTask, response);
+        }
+      }
+
+      if (activeTask.taskType === AllTaskTypes.IN_APP_FOLLOW) {
+        //select task responder winners
+        const taskWinners = await this.getTaskWinners(activeTask.id);
+        if (taskWinners.length >= activeTask.numberOfWinners) {
+          //expire tasks
+          await this.taskRepository.update(activeTask.id, {
+            expired: true,
+          });
+
+          return 'Sorry winners already selected for this task';
+        } else {
+          const check = await this.inAppTaskVerifier.verifyUserFollowsBrand(
+            activeTask.brandId,
+            response.userId,
+          );
+
+          if (!check)
+            return 'We could not  validate your response. Please try again';
+
+          return await this.completeTaskVerifier(activeTask, response);
+        }
+      }
+
+      if (activeTask.taskType === AllTaskTypes.IN_APP_PRODUCT_LIKE) {
+        //select task responder winners
+
+        const taskWinners = await this.getTaskWinners(activeTask.id);
+        if (taskWinners.length >= activeTask.numberOfWinners) {
+          //expire tasks
+          await this.taskRepository.update(activeTask.id, {
+            expired: true,
+          });
+
+          return 'Sorry winners already selected for this task';
+        } else {
+          const check = await this.inAppTaskVerifier.verifyUserLikedAnOffer(
+            activeTask.offerId,
+            response.userId,
+          );
+
+          if (!check)
+            return 'We could not  validate your response. Please try again';
+
+          return await this.completeTaskVerifier(activeTask, response);
+        }
+      }
+
+      if (activeTask.taskType === AllTaskTypes.OUT_SM_FOLLOW) {
+        const taskWinners = await this.getTaskWinners(activeTask.id);
+
+        if (taskWinners.length >= activeTask.numberOfWinners) {
+          //expire tasks
+          await this.taskRepository.update(activeTask.id, {
+            expired: true,
+          });
+
+          return 'Sorry winners already selected for this task';
+        } else {
+          const check =
+            await this.twitterTaskVerifier.checkIfUserIsFollowingBrandOnTwitter(
+              response.user?.twitterAuth?.username,
+              activeTask.socialHandle,
+            );
+
+          if (!check) return 'We could not validate your response';
+
+          return await this.completeTaskVerifier(activeTask, response);
+        }
+      }
+
+      if (activeTask.taskType === AllTaskTypes.OUT_BRAND_TAGGING) {
+        //select task responder winners
+
+        const taskWinners = await this.getTaskWinners(activeTask.id);
+
+        if (taskWinners.length >= activeTask.numberOfWinners) {
+          await this.taskRepository.update(activeTask.id, {
+            expired: true,
+          });
+
+          return 'Sorry winners already selected for this task';
+        } else {
+          const responseData = await this.taskResponseRepository.findOne({
+            where: {
+              userId: response.userId,
+              taskId: activeTask.id,
+            },
+          });
+
+          const responseUrl = responseData.responseUrl;
+
+          const tweetId = responseUrl.split('/').pop();
+
+          const check =
+            await this.twitterTaskVerifier.checkIfUserTaggedBrandOnTwitter(
+              activeTask.socialHandle,
+              tweetId,
+            );
+
+          if (!check) return 'We could not validate your response';
+
+          return await this.completeTaskVerifier(activeTask, response);
+        }
+      }
+
+      if (activeTask.taskType === AllTaskTypes.OUT_LIKE_POST) {
+        const tweetId = activeTask.socialPost?.split('/').pop();
+
+        //select task responder winners
+
+        const taskWinners = await this.getTaskWinners(activeTask.id);
+
+        if (taskWinners.length >= activeTask.numberOfWinners) {
+          await this.taskRepository.update(activeTask.id, {
+            expired: true,
+          });
+
+          return 'Sorry! winners already selected for this task';
+        } else {
+          const check =
+            await this.twitterTaskVerifier.checkIfUserLikesPostOnTwitter(
+              response.user?.twitterAuth?.username,
+              tweetId,
+            );
+
+          if (!check)
+            return 'We could not  validate your response. Please try again';
+
+          return await this.completeTaskVerifier(activeTask, response);
+        }
+      }
+
+      if (activeTask.taskType === AllTaskTypes.OUT_REPOST) {
+        const tweetId = activeTask.socialPost?.split('/').pop();
+
+        //select task responder winners
+
+        const taskWinners = await this.getTaskWinners(activeTask.id);
+
+        if (taskWinners.length >= activeTask.numberOfWinners) {
+          //expire tasks
+          await this.taskRepository.update(activeTask.id, {
+            expired: true,
+          });
+
+          return 'Sorry winners already selected for this task';
+        } else {
+          const check =
+            await this.twitterTaskVerifier.checkIfUserRepostedPostOnTwitter(
+              response.user?.twitterAuth?.username,
+              tweetId,
+            );
+
+          if (!check) return 'We could not validate your response';
+
+          const queuedJob: any = await this.taskQueue.add({
+            activeTask,
+            response,
+          });
+
+          const job = await this.taskQueue.getJob(queuedJob.id);
+          const isFinishedValue = await job.finished();
+
+          if (isFinishedValue) return isFinishedValue;
+
+          await this.taskRepository.update(activeTask.id, {
+            winnerCount: activeTask.winnerCount + 1,
+          });
+
+          response.taskPerformed = true;
+          response.currentStep = 3;
+          response.winner = true;
+
+          return await this.taskResponder.save(response);
+        }
+      }
+
+      if (activeTask.taskType === AllTaskTypes.IN_APP_REVIEW) {
+        const taskWinners = await this.getTaskWinners(activeTask.id);
+
+        if (taskWinners.length >= activeTask.numberOfWinners) {
+          //expire tasks
+          await this.taskRepository.update(activeTask.id, {
+            expired: true,
+          });
+
+          return 'Sorry winners already selected for this task';
+        } else {
+          const check = await this.inAppTaskVerifier.verifyUserReviewedOffer(
+            activeTask.offerId,
+            response.userId,
+          );
+
+          if (!check) return 'We could not validate your response';
+        }
+      }
     }
+  }
 
-    if (response.taskCancelled) {
-      throw new HttpException('Task was cancelled.', 400);
+  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  async sendNotificationOfNewActiveTasks() {
+    const tasks = await this.taskRepository.find({
+      relations: ['brand', 'reward'],
+      where: {
+        status: TaskStatus.ACTIVE,
+        notificationSent: false,
+      },
+    });
+
+    if (tasks.length > 0) {
+      for (let index = 0; index < tasks.length; index++) {
+        const task = tasks[index];
+
+        const brand = await this.brandService.getBrandById(task.brand.id);
+
+        if (brand) {
+          // find brand followers
+          const followers = await this.followService.getAllBrandFollowers(
+            brand.id,
+          );
+
+          if (followers.length > 0) {
+            for (let index = 0; index < followers.length; index++) {
+              const follower = followers[index];
+
+              const notification = new Notification();
+              notification.userId = follower.userId as any;
+              notification.message = `New task available for ${task.reward.rewardSymbol}. Join now to earn`;
+              notification.type = NotificationType.POINT;
+              notification.rewards = [task.reward];
+              notification.title = 'New task available';
+
+              notification.emailMessage = `
+              <p>Hi ${follower?.user?.customer?.name},</p>
+              <p>There is a new task available for ${
+                task.reward.rewardName
+              }.</p>
+              ${emailButton({
+                url: `${CLIENT_APP_URI}/tasks`,
+                text: 'Join now to earn.',
+              })}
+              <p>Regards,</p>
+              `;
+
+              if (notification) {
+                await this.notificationService.createNotification(notification);
+              }
+            }
+
+            await this.taskRepository.update(task.id, {
+              notificationSent: true,
+            });
+          }
+        }
+      }
     }
+  }
 
-    if (response.taskPerformed) {
-      throw new HttpException('Task already completed.', 400);
+  //expire tasks
+  @Cron(CronExpression.EVERY_2ND_HOUR)
+  async expireTask() {
+    try {
+      const activeTasks = await this.taskRepository.find({
+        relations: ['brand', 'token'],
+        where: { status: TaskStatus.ACTIVE },
+      });
+
+      if (!activeTasks || activeTasks.length < 1) return;
+
+      for (let index = 0; index < activeTasks.length; index++) {
+        const activeTask = activeTasks[index];
+
+        // check if time frame has elapsed
+        const targetEndTime = moment(activeTask.startDate).add(
+          activeTask.timeFrameInHours,
+          'hours',
+        );
+        const isValid = moment().isAfter(targetEndTime);
+
+        if (!isValid) continue;
+
+        await this.taskRepository.update(activeTask.id, {
+          expired: true,
+        });
+      }
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, 400);
     }
-
-    // TODO: validate response
-
-    // await this.validateResponse(task, response);
-
-    return 'Task completed successfully.';
   }
 }
