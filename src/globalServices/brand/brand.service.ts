@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
 import { Repository } from 'typeorm';
@@ -11,7 +11,6 @@ import { BrandRole } from '@src/utils/enums/BrandRole';
 import { BrandCustomer } from './entities/brand_customer.entity';
 import { FilterBrandCustomer } from '@src/utils/enums/FilterBrandCustomer';
 import { generateBrandIdBytes10 } from '@developeruche/protocol-core';
-
 
 @Injectable()
 export class BrandService {
@@ -26,7 +25,6 @@ export class BrandService {
     private readonly brandCustomerRepo: Repository<BrandCustomer>,
 
     private readonly elasticIndex: ElasticIndex,
-
   ) {}
 
   async create({ userId, name }: { userId: string; name: string }) {
@@ -57,39 +55,43 @@ export class BrandService {
     return this.brandRepo.save(brand);
   }
 
-  async update(body: UpdateBrandDto, brandId: string) {
+  async update(dto: UpdateBrandDto, brandId: string) {
     try {
-      // if (body.name) {
-      //   body.slug = body.name.toLowerCase().replace(/\s/g, '-');
+      // if (dto.name) {
+      //   dto.slug = dto.name.toLowerCase().replace(/\s/g, '-');
 
-      //   const checkSlug = await this.brandRepo.findOneBy({ slug: body.slug });
+      //   const checkSlug = await this.brandRepo.findOneBy({ slug: dto.slug });
       //   if (checkSlug) {
       //     throw new Error('Name/Slug already exists');
       //   }
       // }
 
-      let brand = await this.brandRepo.findOneBy({ id: brandId });
+      const brand = await this.brandRepo.findOneBy({ id: brandId });
 
-      // if (body.name) brand.name = body.name;
-      if (body.website) brand.website = body.website;
-      if (body.location) brand.location = body.location;
-      if (body.categoryId) brand.categoryId = body.categoryId;
-      if (body.revenueRange) brand.revenueRange = body.revenueRange;
-      if (body.vatTaxId) brand.vatTaxId = body.vatTaxId;
-      if (body.ecommercePlatform)
-        brand.ecommercePlatform = body.ecommercePlatform;
-      if (body.loyaltyProgram) brand.loyaltyProgram = body.loyaltyProgram;
-      if (body.slogan) brand.slogan = body.slogan;
-      if (body.socialMediaLinks) brand.socialMediaLinks = body.socialMediaLinks;
-      if (body.logo_icon) brand.logo_icon = body.logo_icon;
-      if (body.description) brand.description = body.description;
-      if (body.logo_white) brand.logo_white = body.logo_white;
-      if (body.logo_white_icon) brand.logo_white_icon = body.logo_white_icon;
-      if (body.logo) brand.logo = body.logo;
-      if (body.banners) brand.banners = body.banners;
-      if (body.supportPhoneNumber)
-        brand.supportPhoneNumber = body.supportPhoneNumber;
-      if (body.listOnStore) brand.listOnStore = body.listOnStore;
+      if (!brand) {
+        throw new NotFoundException('Brand not found');
+      }
+
+      // if (dto.name) brand.name = dto.name;
+      brand.website = dto.website;
+      brand.location = dto.location;
+      brand.categoryId = dto.categoryId;
+      brand.revenueRange = dto.revenueRange;
+      brand.vatTaxId = dto.vatTaxId;
+
+      brand.ecommercePlatform = dto.ecommercePlatform;
+      brand.loyaltyProgram = dto.loyaltyProgram;
+      brand.slogan = dto.slogan;
+      brand.socialMediaLinks = dto.socialMediaLinks;
+      brand.logo_icon = dto.logo_icon;
+      brand.description = dto.description;
+      brand.logo_white = dto.logo_white;
+      brand.logo_white_icon = dto.logo_white_icon;
+      brand.logo = dto.logo;
+      brand.banners = dto.banners;
+
+      brand.supportPhoneNumber = dto.supportPhoneNumber;
+      brand.listOnStore = dto.listOnStore;
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);
