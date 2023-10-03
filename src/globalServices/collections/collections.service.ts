@@ -239,4 +239,15 @@ export class CollectionService {
       relations: ['products'],
     });
   }
+
+  async checkIfOfferExistInCollection(offerId: string, userId: string) {
+    const collection = await this.collectionRepo
+      .createQueryBuilder('collection')
+      .leftJoinAndSelect('collection.products', 'products')
+      .where('collection.userId = :userId', { userId })
+      .andWhere('products.id = :offerId', { offerId })
+      .getOne();
+
+    return collection;
+  }
 }

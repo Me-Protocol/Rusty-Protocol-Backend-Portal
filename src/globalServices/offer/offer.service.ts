@@ -210,9 +210,13 @@ export class OfferService {
     }
 
     if (sort === OfferSort.TRENDING) {
-      offersQuery.orderBy('offer.viewCount', 'DESC');
-      offersQuery.addOrderBy('offer.likeCount', 'DESC');
-      offersQuery.addOrderBy('offer.updatedAt', 'DESC');
+      offersQuery.andWhere('offer.viewCount > :viewCount', {
+        viewCount: 10, // TODO: Change this to 100,
+      });
+      offersQuery.andWhere('offer.likeCount > :likeCount', {
+        likeCount: 2, // TODO: Change this to 100,
+      });
+      offersQuery.orderBy('offer.updatedAt', 'DESC');
     }
 
     if (sort === OfferSort.POPULAR) {
