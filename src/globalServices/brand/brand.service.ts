@@ -91,11 +91,12 @@ export class BrandService {
         brand.supportPhoneNumber = body.supportPhoneNumber;
       if (body.listOnStore) brand.listOnStore = body.listOnStore;
 
-      await this.brandRepo.update({ id: brandId }, brand);
+      // await this.brandRepo.update({ id: brandId }, brand);
+      const newBrand = await this.brandRepo.save(brand);
 
-      this.elasticIndex.updateDocument(brand, brandIndex);
+      this.elasticIndex.updateDocument(newBrand, brandIndex);
 
-      return brand;
+      return newBrand;
     } catch (error) {
       throw new HttpException(error.message, 400);
     }

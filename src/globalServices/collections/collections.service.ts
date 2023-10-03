@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Collection } from './entities/collection.entity';
@@ -104,13 +104,18 @@ export class CollectionService {
     }
 
     if (!collection) {
-      throw new Error('Collection not found');
+      throw new NotFoundException('Collection not found');
     }
 
-    await this.collectionRepo.update(
-      { id: collection.id },
-      { name, description, image, status },
-    );
+    // await this.collectionRepo.update(
+    //   { id: collection.id },
+    //   { name, description, image, status },
+    // );
+
+    collection.name = name;
+    collection.description = description;
+    collection.image = image;
+    collection.status = status;
 
     if (products && products?.length > 0) {
       for (const productId of products) {
