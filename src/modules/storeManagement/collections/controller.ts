@@ -38,8 +38,8 @@ export class CollectionManagementController {
     @Req() req: any,
   ) {
     const user = req.user as User;
-    createCollectionDto.brandId = user.brand.id;
-    createCollectionDto.userId = user.id;
+    createCollectionDto.brandId = user?.brand?.id;
+    createCollectionDto.userId = user?.id;
 
     return await this.collectionManagementService.create(createCollectionDto);
   }
