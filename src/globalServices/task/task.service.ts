@@ -1020,7 +1020,7 @@ export class TasksService {
             expired: true,
           });
 
-          return 'Sorry winners already selected for this task';
+          throw new Error('Sorry winners already selected for this task');
         } else {
           const check = await this.inAppTaskVerifier.verifyUserFollowsBrand(
             activeTask.brandId,
@@ -1028,7 +1028,9 @@ export class TasksService {
           );
 
           if (!check)
-            return 'We could not  validate your response. Please try again';
+            throw new Error(
+              'We could not validate your response. Please try again',
+            );
 
           return await this.completeTaskVerifier(activeTask, response);
         }
@@ -1044,7 +1046,7 @@ export class TasksService {
             expired: true,
           });
 
-          return 'Sorry winners already selected for this task';
+          throw new Error('Sorry winners already selected for this task');
         } else {
           const check = await this.inAppTaskVerifier.verifyUserLikedAnOffer(
             activeTask.offerId,
@@ -1052,7 +1054,9 @@ export class TasksService {
           );
 
           if (!check)
-            return 'We could not  validate your response. Please try again';
+            throw new Error(
+              'We could not validate your response. Please try again',
+            );
 
           return await this.completeTaskVerifier(activeTask, response);
         }
@@ -1067,7 +1071,7 @@ export class TasksService {
             expired: true,
           });
 
-          return 'Sorry winners already selected for this task';
+          throw new Error('Sorry winners already selected for this task');
         } else {
           const check =
             await this.twitterTaskVerifier.checkIfUserIsFollowingBrandOnTwitter(
@@ -1075,7 +1079,7 @@ export class TasksService {
               activeTask.socialHandle,
             );
 
-          if (!check) return 'We could not validate your response';
+          if (!check) throw new Error('We could not validate your response');
 
           return await this.completeTaskVerifier(activeTask, response);
         }
@@ -1091,7 +1095,7 @@ export class TasksService {
             expired: true,
           });
 
-          return 'Sorry winners already selected for this task';
+          throw new Error('Sorry! winners already selected for this task');
         } else {
           const responseData = await this.taskResponseRepository.findOne({
             where: {
@@ -1110,7 +1114,7 @@ export class TasksService {
               tweetId,
             );
 
-          if (!check) return 'We could not validate your response';
+          if (!check) throw new Error('We could not validate your response');
 
           return await this.completeTaskVerifier(activeTask, response);
         }
@@ -1128,7 +1132,7 @@ export class TasksService {
             expired: true,
           });
 
-          return 'Sorry! winners already selected for this task';
+          throw new Error('Sorry winners already selected for this task');
         } else {
           const check =
             await this.twitterTaskVerifier.checkIfUserLikesPostOnTwitter(
@@ -1137,7 +1141,9 @@ export class TasksService {
             );
 
           if (!check)
-            return 'We could not  validate your response. Please try again';
+            throw new Error(
+              'We could not validate your response. Please try again',
+            );
 
           return await this.completeTaskVerifier(activeTask, response);
         }
@@ -1156,7 +1162,7 @@ export class TasksService {
             expired: true,
           });
 
-          return 'Sorry winners already selected for this task';
+          throw new Error('Sorry winners already selected for this task');
         } else {
           const check =
             await this.twitterTaskVerifier.checkIfUserRepostedPostOnTwitter(
@@ -1164,7 +1170,7 @@ export class TasksService {
               tweetId,
             );
 
-          if (!check) return 'We could not validate your response';
+          if (!check) throw new Error('We could not validate your response');
 
           const queuedJob: any = await this.taskQueue.add({
             activeTask,
@@ -1197,14 +1203,14 @@ export class TasksService {
             expired: true,
           });
 
-          return 'Sorry winners already selected for this task';
+          throw new Error('Sorry winners already selected for this task');
         } else {
           const check = await this.inAppTaskVerifier.verifyUserReviewedOffer(
             activeTask.offerId,
             response.userId,
           );
 
-          if (!check) return 'We could not validate your response';
+          if (!check) throw new Error('We could not validate your response');
         }
       }
     }
