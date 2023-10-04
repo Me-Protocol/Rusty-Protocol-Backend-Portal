@@ -381,7 +381,7 @@ export class TasksService {
       if (
         availableTaskTypes.filter((type) => type === task?.taskType).length >
           0 &&
-        !user?.twitterAuth.username
+        !user?.twitterAuth?.username
       ) {
         throw new HttpException(
           'Please connect your twitter account to join this task',

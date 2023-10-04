@@ -28,7 +28,7 @@ import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware
 import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('task')
-@Controller('task')
+@Controller('tasks')
 export class TasksController {
   constructor(private readonly taskDataService: TasksService) {}
 
