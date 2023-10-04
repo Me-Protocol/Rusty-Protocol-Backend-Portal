@@ -51,6 +51,9 @@ export const TWITTER_CLIENT_ID = env.get('TWITTER_CLIENT_ID').asString();
 export const TWITTER_BREARER_TOKEN = env
   .get('TWITTER_BREARER_TOKEN')
   .asString();
+export const TWITTER_LINK_CALLBACK_URL = env
+  .get('TWITTER_LINK_CALLBACK_URL')
+  .asString();
 
 export const FACEBOOK_CLIENT_ID = env.get('FACEBOOK_CLIENT_ID').asString();
 export const FACEBOOK_REDIRECT_URI = env

@@ -20,10 +20,14 @@ export class Collection extends BaseEntity {
   @Column()
   name: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   description: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   image: string;
 
   @Column({
@@ -37,7 +41,7 @@ export class Collection extends BaseEntity {
   @Column({
     type: 'enum',
     enum: ItemStatus,
-    default: ItemStatus.DRAFT,
+    default: ItemStatus.PUBLISHED,
   })
   status: ItemStatus;
 
@@ -59,4 +63,9 @@ export class Collection extends BaseEntity {
     default: false,
   })
   isDefault: boolean;
+
+  @Column({
+    default: true,
+  })
+  isPublic: boolean;
 }

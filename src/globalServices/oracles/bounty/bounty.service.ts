@@ -8,6 +8,7 @@ import Common from 'ethereumjs-common';
 import { TasksService } from '@src/globalServices/task/task.service';
 import { Bounty } from './entities/bounty.entity';
 import { Block } from './entities/block.entity';
+import ABI from '@src/common/json/contractAbis/bountyAbi.json';
 
 const Tx = require('ethereumjs-tx').Transaction;
 const web3Provider = new Web3.providers.HttpProvider(
@@ -46,7 +47,7 @@ export class BountyService {
       const latest_block = (await web3.eth.getBlockNumber()).toString();
       console.log('latest: ', latest_block, 'start block: ', startBlock);
 
-      const events = await BountyContract.getPastEvents('BountyReward', {
+      const events = await BountyContract.getPastEvents('allEvents', {
         fromBlock: startBlock,
         toBlock: 'latest',
       });

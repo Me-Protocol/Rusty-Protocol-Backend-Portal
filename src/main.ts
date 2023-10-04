@@ -4,13 +4,9 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
-import { jwtConfigurations } from './config/jwt.config';
-import * as session from 'express-session';
 import { logger } from './globalServices/logger/logger.service';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
 import { setupSwagger } from './config/swagger/swagger.config';
-// import * as compression from 'compression';
-import { NestExpressApplication } from '@nestjs/platform-express';
 import {
   APP_SERVER_LISTEN_PORT,
   APP_SERVER_LISTEN_IP,
@@ -56,6 +52,14 @@ async function bootstrap() {
     api_secret: CLOUDINARY_API_SECRET,
     secure: true,
   });
+
+  // app.use(
+  //   session({
+  //     secret: JWT_SECRETS,
+  //     saveUninitialized: true,
+  //     resave: true,
+  //   }),
+  // );
 
   /**
    * Interceptors
@@ -124,20 +128,6 @@ async function bootstrap() {
   setupSwagger(app);
 
   app.enableCors();
-  // app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
-
-  //For fastify, include 0.0.0.0 to listen on all IPs on the system. Otherwise, fastify will only listen on localhost.
-
-  // add helper for passportjs
-
-  // await app.register(secureSession, {
-  //   secret: process.env.JWT_SECRETS,
-  //   salt: process.env.JWT_SALT,
-  //   cookie: {
-  //     secure: false,
-  //     sameSite: false,
-  //   },
-  // });
 
   const fastifyInstance = app.getHttpAdapter().getInstance();
 
@@ -152,14 +142,6 @@ async function bootstrap() {
     done();
   });
 
-  app.use(
-    session({
-      secret: jwtConfigurations.secret,
-      saveUninitialized: true,
-      resave: true,
-    }),
-  );
-
   await app.listen(
     APP_SERVER_LISTEN_PORT,
     APP_SERVER_LISTEN_IP,
@@ -172,7 +154,5 @@ async function bootstrap() {
       console.log(`Server listening on ${address}`);
     },
   );
-
-  //More NOTES about fastify use: See https://docs.nestjs.com/techniques/performance for redirect and options
 }
 bootstrap();

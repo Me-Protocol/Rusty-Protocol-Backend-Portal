@@ -133,6 +133,9 @@ import { HttpModule, HttpService } from '@nestjs/axios';
 import { InAppTaskVerifier } from './globalServices/task/common/verifier/inapp.service';
 import { TwitterTaskVerifier } from './globalServices/task/common/verifier/outapp/twitter.verifier';
 import { BullModule } from '@nestjs/bull';
+import { SocialAuthenticationService } from './modules/authentication/socialAuth';
+import { BountyService } from './globalServices/oracles/bounty/bounty.service';
+import { Block } from './globalServices/oracles/bounty/entities/block.entity';
 
 @Module({
   imports: [
@@ -179,6 +182,7 @@ import { BullModule } from '@nestjs/bull';
       Bounty,
       TaskResponseRecord,
       JobResponse,
+      Block,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
@@ -295,6 +299,8 @@ import { BullModule } from '@nestjs/bull';
     TasksService,
     InAppTaskVerifier,
     TwitterTaskVerifier,
+    SocialAuthenticationService,
+    BountyService,
   ],
   exports: [JwtStrategy, PassportModule],
 })
