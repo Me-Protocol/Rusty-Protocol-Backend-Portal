@@ -37,4 +37,16 @@ export class CollectionManagementService {
   async findOne(id: string, userId: string, brandId: string) {
     return await this.collectionService.findOne({ id, userId, brandId });
   }
+
+  async delete({
+    id,
+    userId,
+    brandId,
+  }: {
+    id: string;
+    userId?: string;
+    brandId?: string;
+  }) {
+    return await this.collectionService.delete(id, userId, brandId);
+  }
 }

@@ -45,6 +45,8 @@ export class LikeService {
   async getUserLikes(
     userId: string,
     orderBy: 'date_added' | 'expiring_soon' | 'new',
+    page: number,
+    limit: number,
     collectionId?: string,
   ): Promise<any> {
     const result = await this.likeRepo.find({
@@ -52,7 +54,7 @@ export class LikeService {
         userId,
         collectionId,
       },
-      relations: ['offer', 'offer.brand'],
+      relations: ['offer', 'offer.brand', 'offer.reward', 'offer.offerImages'],
       order:
         orderBy === 'date_added'
           ? { createdAt: 'DESC' }
@@ -63,8 +65,23 @@ export class LikeService {
                 createdAt: 'DESC',
               },
             },
+      skip: (page - 1) * limit,
+      take: limit,
     });
-    return result;
+
+    const total = await this.likeRepo.count({
+      where: {
+        userId,
+        collectionId,
+      },
+    });
+
+    return {
+      total,
+      likes: result,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
+    };
   }
 
   async getOfferLikes(offerId: string): Promise<any> {
@@ -76,10 +93,7 @@ export class LikeService {
     return result;
   }
 
-  async unlikeWithOfferIdAndUserId(
-    offerId: string,
-    userId: string,
-  ): Promise<any> {
+  async unlikeWithOfferIdAndUserId(offerId: string, userId: string) {
     const result = await this.likeRepo.softDelete({
       offerId,
       userId,
@@ -87,7 +101,7 @@ export class LikeService {
     return result;
   }
 
-  async getCollectionLikes(collectionId: string): Promise<any> {
+  async getCollectionLikes(collectionId: string) {
     const result = await this.likeRepo.find({
       where: {
         collectionId,
@@ -97,7 +111,7 @@ export class LikeService {
     return result;
   }
 
-  async getLikeById(id: string): Promise<any> {
+  async getLikeById(id: string) {
     const result = await this.likeRepo.findOne({
       where: {
         id: id,
@@ -118,10 +132,14 @@ export class LikeService {
         userId,
       },
     });
+
     return result;
   }
 
-  async getLikesByIdAndUserId(offerId: string, userId: string): Promise<Like> {
+  async getLikesByOfferIdAndUserId(
+    offerId: string,
+    userId: string,
+  ): Promise<Like> {
     const result = await this.likeRepo.findOne({
       where: {
         offerId,
@@ -129,5 +147,44 @@ export class LikeService {
       },
     });
     return result;
+  }
+
+  async getLikesByCollectionId(collectionId: string) {
+    return await this.likeRepo.find({
+      where: {
+        collectionId,
+        deletedAt: null,
+      },
+      relations: ['offer', 'offer.brand', 'offer.reward', 'offer.offerImages'],
+      take: 4,
+    });
+  }
+
+  async getUsersLikes(
+    userId: string,
+    collectionId: string,
+    page: number,
+    limit: number,
+  ) {
+    const likeQuery = this.likeRepo
+      .createQueryBuilder('like')
+      .leftJoinAndSelect('like.offer', 'offer')
+      .leftJoinAndSelect('offer.brand', 'brand')
+      .leftJoinAndSelect('offer.offerImages', 'offerImages')
+      .leftJoinAndSelect('offer.reward', 'reward')
+      .where('like.userId = :userId', { userId })
+      .andWhere('like.collectionId = :collectionId', { collectionId })
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const likes = await likeQuery.getMany();
+    const total = await likeQuery.getCount();
+
+    return {
+      total,
+      likes,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
+    };
   }
 }

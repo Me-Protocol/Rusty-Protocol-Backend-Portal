@@ -164,12 +164,12 @@ export class Brand extends BaseEntity {
   paymentRequests: PaymentRequest[];
 
   @Column({
-    default: false,
+    default: true,
   })
   canPayCost: boolean;
 
   @Column({
-    default: false,
+    default: true,
   })
   canPayCost_inApp: boolean;
 
@@ -190,6 +190,7 @@ export class Brand extends BaseEntity {
   @Column('text', {
     nullable: true,
     array: true,
+    default: [BrandSubServices.API, BrandSubServices.IN_APP],
   })
   subscribedServices: BrandSubServices[];
 

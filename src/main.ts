@@ -1,7 +1,9 @@
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
-import { jwtConfigurations } from './config/jwt.config';
-import * as session from 'express-session';
 import { logger } from './globalServices/logger/logger.service';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
 import { setupSwagger } from './config/swagger/swagger.config';
@@ -15,9 +17,11 @@ import {
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import { SentryFilter } from './filters/sentry.filter';
+import { TracingInterceptor } from './interceptors/tracing.interceptor';
+import { join } from 'path';
+import { NotFoundExceptionFilter } from './interceptors/notfound-interceptor';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const cloudinary_1 = require('cloudinary');
+const cloudinary = require('cloudinary');
 
 //To Initialize sentry
 Sentry.init({
@@ -34,7 +38,36 @@ Sentry.init({
 });
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter({}),
+    {
+      bufferLogs: true,
+    },
+  );
+
+  cloudinary.v2.config({
+    cloud_name: CLOUDINARY_CLOUD_NAME,
+    api_key: CLOUDINARY_API_KEY,
+    api_secret: CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+
+  // app.use(
+  //   session({
+  //     secret: JWT_SECRETS,
+  //     saveUninitialized: true,
+  //     resave: true,
+  //   }),
+  // );
+
+  /**
+   * Interceptors
+   */
+  app.useGlobalFilters(new NotFoundExceptionFilter());
+  app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalInterceptors(new TracingInterceptor());
+  // app.setGlobalPrefix('app');
 
   // Use Sentry middleware here
 
@@ -44,63 +77,82 @@ async function bootstrap() {
   // TracingHandler creates a trace for every incoming request
   app.use(Sentry.Handlers.tracingHandler());
 
-  // // The error handler must be registered before any other error middleware and after all controllers
-  // app.use(Sentry.Handlers.errorHandler());
-
   const { httpAdapter } = app.get(HttpAdapterHost);
   app.useGlobalFilters(new SentryFilter(httpAdapter));
 
-  app.enableCors();
-  app.use(
-    session({
-      secret: jwtConfigurations.secret,
-      saveUninitialized: true,
-      resave: true,
-    }),
-  );
-  app.useGlobalInterceptors(new ResponseInterceptor());
+  // // The error handler must be registered before any other error middleware and after all controllers
+  // app.use(Sentry.Handlers.errorHandler());
+
+  /**
+   * Create views folder and set view engine. Nunjucks should already be installed.
+   * npm install @fastify/view point-of-view nunjucks
+   * npm install -D @types/nunjucks
+   */
+  app.setViewEngine({
+    engine: {
+      nunjucks: require('nunjucks'),
+    },
+    templates: join(__dirname, '..', 'client'),
+  });
+
+  app.useStaticAssets({
+    root: join(__dirname, '..', 'client'),
+    prefix: '/client/',
+    decorateReply: false,
+  });
+
+  app.useStaticAssets({
+    root: join(__dirname, '..', 'client/assets'),
+    prefix: '/assets/',
+    decorateReply: false,
+  });
+
+  app.useStaticAssets({
+    root: join(__dirname, '..', 'client/static'),
+    prefix: '/static/',
+    decorateReply: false,
+  });
+
+  app.useStaticAssets({
+    root: join(__dirname, '..', 'client/fonts'),
+    prefix: '/fonts/',
+    decorateReply: false,
+  });
+
+  app.useStaticAssets({
+    root: join(__dirname, '..', 'client/images'),
+    prefix: '/images/',
+    decorateReply: false,
+  });
 
   setupSwagger(app);
 
-  // const httpServer = app.getHttpServer();
-  // createWebSocketServer(httpServer);
+  app.enableCors();
 
-  // const config = new DocumentBuilder()
-  //   .addBearerAuth(
-  //     {
-  //       type: 'http',
-  //       scheme: 'bearer',
-  //       bearerFormat: 'JWT',
-  //       name: 'JWT',
-  //       description: 'Enter Bearer token',
-  //       in: 'header',
-  //     },
-  //     'JWT-auth',
-  //   )
-  //   .setTitle(process.env.APP_NAME)
-  //   .setDescription(process.env.APP_DESCRIPTION)
-  //   .setVersion(process.env.API_VERSION)
-  //   .build();
+  const fastifyInstance = app.getHttpAdapter().getInstance();
 
-  // const document = SwaggerModule.createDocument(app, config, {
-  //   ignoreGlobalPrefix: false,
-  // });
-  // try {
-  //   SwaggerModule.setup('doc', app, document); // the swagger URL is thus /api
-  // } catch (error) {
-  //   logger.error(error);
-  // }
-
-  await app.listen(APP_SERVER_LISTEN_PORT, APP_SERVER_LISTEN_IP);
-
-  cloudinary_1.v2.config({
-    cloud_name: CLOUDINARY_CLOUD_NAME,
-    api_key: CLOUDINARY_API_KEY,
-    api_secret: CLOUDINARY_API_SECRET,
-    secure: true,
+  fastifyInstance.addHook('onRequest', (request, reply, done) => {
+    reply.setHeader = function (key: any, value: any) {
+      return this.raw.setHeader(key, value);
+    };
+    reply.end = function () {
+      this.raw.end();
+    };
+    request.res = reply;
+    done();
   });
 
-  // logger.warn(`Application is now running on: ${await app.getUrl()}`);
-  logger.verbose(`Application is now running on: ${await app.getUrl()}`);
+  await app.listen(
+    APP_SERVER_LISTEN_PORT,
+    APP_SERVER_LISTEN_IP,
+    (err: any, address: any) => {
+      if (err) {
+        logger.error(err);
+        process.exit(1);
+      }
+      logger.log(`Server listening on ${address}`);
+      console.log(`Server listening on ${address}`);
+    },
+  );
 }
 bootstrap();

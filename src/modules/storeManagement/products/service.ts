@@ -179,7 +179,7 @@ export class ProductManagementService {
         });
 
         if (collection) {
-          const checkIfCollectionExists = product.collections.find(
+          const checkIfCollectionExists = product?.collections?.find(
             (collection) => collection.id === collectionId,
           );
 

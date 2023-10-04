@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MailModule } from './globalServices/mail/mail.module';
 import { SmsModule } from './globalServices/sms/sms.module';
@@ -111,7 +111,6 @@ import { NotificationService } from './globalServices/notification/notification.
 import { InternalCacheModule } from './config/internal-cache/internal-cache.config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DatabaseConfig } from './config/db/db.config';
-import { ElasticSearchConfig } from './config/elastic-search/elastic-search.config';
 import { ClientModuleConfig } from './config/client-module/client-module.config';
 import { AdminSettings } from './globalServices/settings/entities/admin_settings.entity';
 import { SettingsModule } from './globalServices/settings/settings.module';
@@ -119,6 +118,24 @@ import { DebugController } from './debug/debug.controller';
 import { ReviewManagementController } from './modules/storeManagement/review/controller';
 import { ReviewService } from './globalServices/review/review.service';
 import { ReviewManagementService } from './modules/storeManagement/review/service';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { TasksService } from './globalServices/task/task.service';
+import { TasksController } from './modules/taskModule/tasks.controller';
+import { Task } from './globalServices/task/entities/task.entity';
+import { TaskResponder } from './globalServices/task/entities/taskResponder.entity';
+import { TaskResponse } from './globalServices/task/entities/taskResponse.entity';
+import { BountyRecord } from './globalServices/task/entities/bountyRecord.entity';
+import { Bounty } from './globalServices/oracles/bounty/entities/bounty.entity';
+import { TaskResponseRecord } from './globalServices/task/entities/taskResponseRecord.entity';
+import { JobResponse } from './globalServices/task/entities/jobResponse.entity';
+import { HttpModule, HttpService } from '@nestjs/axios';
+import { InAppTaskVerifier } from './globalServices/task/common/verifier/inapp.service';
+import { TwitterTaskVerifier } from './globalServices/task/common/verifier/outapp/twitter.verifier';
+import { BullModule } from '@nestjs/bull';
+import { SocialAuthenticationService } from './modules/authentication/socialAuth';
+import { BountyService } from './globalServices/oracles/bounty/bounty.service';
+import { Block } from './globalServices/oracles/bounty/entities/block.entity';
 
 @Module({
   imports: [
@@ -158,11 +175,19 @@ import { ReviewManagementService } from './modules/storeManagement/review/servic
       BrandCustomer,
       Notification,
       AdminSettings,
+      Task,
+      TaskResponder,
+      TaskResponse,
+      BountyRecord,
+      Bounty,
+      TaskResponseRecord,
+      JobResponse,
+      Block,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
     JwtModule.register(jwtConfigurations),
-    ElasticSearchConfig, // elastic search config
+    // ElasticSearchConfig, // elastic search config
     InternalCacheModule, // redis config
     MailModule,
     SmsModule,
@@ -172,6 +197,26 @@ import { ReviewManagementService } from './modules/storeManagement/review/servic
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     ClientModuleConfig, // microservice
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        redis: {
+          host: configService.get('REDIS_HOSTNAME'),
+          port: configService.get('REDIS_PORT'),
+        },
+      }),
+      inject: [ConfigService],
+    }),
+
+    BullModule.registerQueueAsync({
+      name: 'task-queue',
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        name: configService.get('TASK_QUEUE'),
+      }),
+      inject: [ConfigService],
+    }),
+    HttpModule,
   ],
   controllers: [
     AppController,
@@ -194,6 +239,7 @@ import { ReviewManagementService } from './modules/storeManagement/review/servic
     NotificationController,
     DebugController,
     ReviewManagementController,
+    TasksController,
   ],
   providers: [
     ElasticIndex,
@@ -250,6 +296,11 @@ import { ReviewManagementService } from './modules/storeManagement/review/servic
     NotificationService,
     ReviewService,
     ReviewManagementService,
+    TasksService,
+    InAppTaskVerifier,
+    TwitterTaskVerifier,
+    SocialAuthenticationService,
+    BountyService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

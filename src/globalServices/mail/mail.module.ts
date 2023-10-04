@@ -4,8 +4,7 @@ import { Global, Module } from '@nestjs/common';
 import { MailService } from './mail.service';
 import { join } from 'path';
 import { ConfigService } from '@nestjs/config';
-
-const { SENDGRID_API_KEY, SENDGRID_EMAIL } = process.env;
+import { SENDGRID_API_KEY, SENDGRID_EMAIL } from '../../config/env.config';
 
 @Global()
 @Module({
@@ -17,7 +16,7 @@ const { SENDGRID_API_KEY, SENDGRID_EMAIL } = process.env;
         // or
         transport: {
           host: 'smtp.sendgrid.net',
-          secure: false,
+          secure: true,
           auth: {
             user: 'apikey',
             pass: SENDGRID_API_KEY,
