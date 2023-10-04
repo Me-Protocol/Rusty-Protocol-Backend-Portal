@@ -25,6 +25,7 @@ export class CollectionService {
     status,
     products,
     isDefault,
+    isPublic,
   }: {
     name: string;
     description: string;
@@ -34,6 +35,7 @@ export class CollectionService {
     status?: ItemStatus;
     products?: string[];
     isDefault?: boolean;
+    isPublic?: boolean;
   }) {
     const collectionProducts = [];
 
@@ -56,6 +58,7 @@ export class CollectionService {
       brandId,
       products: collectionProducts,
       isDefault,
+      isPublic,
     });
 
     const newCollection = await this.collectionRepo.save(collection);

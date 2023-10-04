@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -39,14 +40,17 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Enable2FADto } from './dto/Enable2FADto.dto';
 import { UpdatePreferenceDto } from './dto/UpdatePreferenceDto.dto';
 import { LogoutDeviceDto } from './dto/LogoutDeviceDto.dto';
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const requestIp = require('request-ip');
+import { SocialAuthenticationService } from './socialAuth';
+import { CLIENT_APP_URI } from '@src/config/env.config';
+import { RealIP } from 'nestjs-real-ip';
 
 @ApiTags('Authentication')
 @Controller('user')
 export class AuthenticationController {
-  constructor(private readonly authService: AuthenticationService) {}
+  constructor(
+    private readonly authService: AuthenticationService,
+    private readonly socialAuth: SocialAuthenticationService,
+  ) {}
 
   @Post('signup/email')
   async signupWithEmail(
@@ -74,15 +78,15 @@ export class AuthenticationController {
   async verifyEmail(
     @Body() body: EmailVerifyDto,
     @Req() req: any,
+    @RealIP() ip: string,
   ): Promise<any> {
     const user = req.user as User;
-    const clientIp = requestIp.getClientIp(req);
 
     return await this.authService.verifyEmail(
       user,
       body.code,
       req.headers['user-agent'],
-      clientIp,
+      ip,
     );
   }
 
@@ -112,15 +116,15 @@ export class AuthenticationController {
   async verifyPhone(
     @Body() body: PhoneVerifyDto,
     @Req() req: any,
+    @RealIP() ip: string,
   ): Promise<any> {
     const user = req.user as User;
-    const clientIp = requestIp.getClientIp(req);
 
     return await this.authService.verifyPhone(
       user,
       body.code,
       req.headers['user-agent'],
-      clientIp,
+      ip,
     );
   }
 
@@ -128,24 +132,21 @@ export class AuthenticationController {
   async login(
     @Body(ValidationPipe) body: LoginDto,
     @Req() req: any,
+    @RealIP() ip: string,
   ): Promise<any> {
-    const clientIp = requestIp.getClientIp(req);
-
-    return await this.authService.login(
-      body,
-      req.headers['user-agent'],
-      clientIp,
-    );
+    return await this.authService.login(body, req.headers['user-agent'], ip);
   }
 
   @Post('login/2fa')
-  async verifyLogin(@Body() body: Verify2FADto, @Req() req: any): Promise<any> {
-    const clientIp = requestIp.getClientIp(req);
-
+  async verifyLogin(
+    @Body() body: Verify2FADto,
+    @Req() req: any,
+    @RealIP() ip: string,
+  ): Promise<any> {
     return await this.authService.verify2FALogin(
       body,
       req.headers['user-agent'],
-      clientIp,
+      ip,
     );
   }
 
@@ -291,48 +292,84 @@ export class AuthenticationController {
     return await this.authService.verifyAndChangePhone(user, body);
   }
 
+  // initialize a twitter login
   @Get('twitter')
-  @UseGuards(AuthGuard('twitter'))
-  async twitterLogin() {
-    // This will redirect the user to Twitter for authentication
+  async twitter(@Res() res: any) {
+    const url = await this.socialAuth.twitterAuth({});
+    return res.status(302).redirect(url);
   }
 
+  // redirect back the user to the website after login
   @Get('twitter/callback')
-  @UseGuards(AuthGuard('twitter'))
   async twitterCallback(
+    @Query() query: { oauth_verifier: string; oauth_token: string },
+    @Res() res: any,
     @Req() req: any,
-    @Res({ passthrough: true }) res: any,
-  ): Promise<any> {
-    const user = req.user;
+    @RealIP() ip: string,
+  ) {
+    const { oauth_verifier, oauth_token } = query;
+    // const clientIP = req.socket.remoteAddress;
 
-    if (!user) {
-      return res
-        .status(302)
-        .redirect(`${process.env.CLIENT_APP_URI}?token=null&provider=null`);
-    } else {
-      const newUser = await this.authService.socialAuth({
-        email: user.profile._json.email,
-        name: user.profile.displayName,
-        accessToken: user.accessToken,
-        refreshToken: user.refreshToken,
-        provider: LoginType.TWITTER,
-        profileImage: user.profile._json.profile_image_url_https,
-        coverImage: user.profile._json.profile_banner_url,
-        bio: user.profile._json.description,
-        location: user.profile._json.location,
-        website: '',
-        username: user.profile.username,
-        userAgent: req.headers['user-agent'],
-        ip: requestIp.getClientIp(req),
-        userType: UserAppType.USER,
-      });
+    const access_token = await this.socialAuth.handleTwitterRedirect(
+      oauth_token,
+      oauth_verifier,
+      req.headers['user-agent'],
+      ip,
+    );
 
+    if (access_token.token) {
       return res
         .status(302)
         .redirect(
-          `${process.env.CLIENT_APP_URI}?token=${newUser.token}&provider=${newUser.provider}`,
+          `${process.env.CLIENT_APP_URI}?access_token=null&message=Something went wrong. Please try again later.`,
         );
     }
+
+    return res
+      .status(302)
+      .redirect(
+        `${process.env.CLIENT_APP_URI}?token=${access_token.token}&provider=${access_token.provider}`,
+      );
+  }
+
+  @Get('link_twitter')
+  async linkTwitter(
+    @Req() req: any,
+    @Res() res: any,
+    @Query() query: { user_id: string; redirectUrl: string },
+  ) {
+    const url = await this.socialAuth.twitterAuth({
+      user: query.user_id,
+      redirectUrl: query.redirectUrl,
+    });
+    return res.status(302).redirect(url);
+  }
+
+  @Get('link_twitter/callback')
+  async linkTwitterCallback(
+    @Query()
+    query: {
+      oauth_verifier: string;
+      oauth_token: string;
+      user_id: string;
+      redirectUrl: string;
+    },
+    @Res() res: any,
+    @Req() req: any,
+  ) {
+    const { oauth_verifier, oauth_token, user_id, redirectUrl }: any =
+      req.query;
+    await this.socialAuth.handleLinkTwitterRedirect(
+      oauth_token,
+      oauth_verifier,
+      user_id,
+    );
+
+    if (redirectUrl) {
+      return res.status(302).redirect(redirectUrl);
+    }
+
+    return res.status(302).redirect(`${CLIENT_APP_URI}?status=SUCCESS`);
   }
 
   @Get('google')
@@ -352,6 +389,7 @@ export class AuthenticationController {
   async googleCallback(
     @Req() req: any,
     @Res({ passthrough: true }) res: any,
+    @RealIP() ip: string,
   ): Promise<any> {
     const user = req.user;
 
@@ -373,7 +411,7 @@ export class AuthenticationController {
         website: '',
         username: null,
         userAgent: req.headers['user-agent'],
-        ip: requestIp.getClientIp(req),
+        ip,
         userType: UserAppType.USER,
       });
 
@@ -390,6 +428,7 @@ export class AuthenticationController {
   async googleBrandCallback(
     @Req() req: any,
     @Res({ passthrough: true }) res: any,
+    @RealIP() ip: string,
   ): Promise<any> {
     const user = req.user;
 
@@ -411,7 +450,7 @@ export class AuthenticationController {
         website: '',
         username: null,
         userAgent: req.headers['user-agent'],
-        ip: requestIp.getClientIp(req),
+        ip,
         userType: UserAppType.BRAND,
       });
 
@@ -434,6 +473,7 @@ export class AuthenticationController {
   async facebookCallback(
     @Req() req: any,
     @Res({ passthrough: true }) res: any,
+    @RealIP() ip: string,
   ) {
     const user = req.user;
 
@@ -456,7 +496,7 @@ export class AuthenticationController {
         website: '',
         username: null,
         userAgent: req.headers['user-agent'],
-        ip: requestIp.getClientIp(req),
+        ip,
         userType: UserAppType.USER,
       });
 
