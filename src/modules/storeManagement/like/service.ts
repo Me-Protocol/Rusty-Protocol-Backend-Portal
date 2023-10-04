@@ -38,10 +38,11 @@ export class LikeManagementService {
         }
 
         // Check if offer is in any collection
-        const offerInCollection = await this.likeService.getLikesByIdAndUserId(
-          body.offerId,
-          body.userId,
-        );
+        const offerInCollection =
+          await this.likeService.getLikesByOfferIdAndUserId(
+            body.offerId,
+            body.userId,
+          );
 
         if (offerInCollection) {
           offerInCollection.collectionId = body.collectionId;
@@ -67,7 +68,7 @@ export class LikeManagementService {
         if (userDefaultCollection) {
           // Check if offer is in collection
           const offerInCollection =
-            await this.likeService.getLikesByIdAndUserId(
+            await this.likeService.getLikesByOfferIdAndUserId(
               body.offerId,
               body.userId,
             );
@@ -85,6 +86,7 @@ export class LikeManagementService {
             description: 'My Collection',
             image: offer.offerImages[0]?.url,
             status: ItemStatus.PRIVATE,
+            isDefault: true,
           });
 
           like.collectionId = newCollection.id;
@@ -127,7 +129,7 @@ export class LikeManagementService {
 
   async checkIfOfferIsLiked(body: LikeDto) {
     try {
-      const like = await this.likeService.getLikesByIdAndUserId(
+      const like = await this.likeService.getLikesByOfferIdAndUserId(
         body.offerId,
         body.userId,
       );
@@ -150,6 +152,9 @@ export class LikeManagementService {
       const likes = await this.likeService.getUserLikes(
         query.userId,
         query.orderBy,
+        query.page,
+        query.limit,
+        query.collectionId,
       );
       return likes;
     } catch (error) {

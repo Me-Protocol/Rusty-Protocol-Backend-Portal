@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsNumberString, IsOptional, IsString } from 'class-validator';
 
 export class FilterLikeDto {
   @ApiProperty()
@@ -10,6 +10,14 @@ export class FilterLikeDto {
   @IsOptional()
   @IsString()
   collectionId?: string;
+
+  @ApiProperty()
+  @IsNumberString()
+  page: number;
+
+  @ApiProperty()
+  @IsNumberString()
+  limit: number;
 
   userId: string;
 }
