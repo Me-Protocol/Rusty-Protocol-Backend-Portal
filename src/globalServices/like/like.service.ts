@@ -153,6 +153,7 @@ export class LikeService {
     return await this.likeRepo.find({
       where: {
         collectionId,
+        deletedAt: null,
       },
       relations: ['offer', 'offer.brand', 'offer.reward', 'offer.offerImages'],
       take: 4,
