@@ -161,11 +161,18 @@ async function bootstrap() {
   );
 
   await app.listen(
-    process.env.APP_SERVER_LISTEN_PORT,
-    process.env.APP_SERVER_LISTEN_IP,
+    APP_SERVER_LISTEN_PORT,
+    APP_SERVER_LISTEN_IP,
+    (err: any, address: any) => {
+      if (err) {
+        logger.error(err);
+        process.exit(1);
+      }
+      logger.log(`Server listening on ${address}`);
+      console.log(`Server listening on ${address}`);
+    },
   );
 
   //More NOTES about fastify use: See https://docs.nestjs.com/techniques/performance for redirect and options
-  console.log(`Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();

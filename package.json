@@ -97,6 +97,7 @@
     "socket.io": "^4.6.1",
     "stripe": "^12.9.0",
     "twilio": "^3.84.1",
+    "twitter-api-sdk": "^1.2.1",
     "typeorm": "^0.3.17",
     "uuid": "^9.0.0",
     "web3": "^4.0.2",

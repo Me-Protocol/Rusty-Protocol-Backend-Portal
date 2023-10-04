@@ -11,6 +11,7 @@ import {
   Query,
   Req,
   ParseUUIDPipe,
+  Delete,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
@@ -79,5 +80,28 @@ export class CollectionManagementController {
       user.id,
       user.brand.id,
     );
+  }
+
+  @UseGuards(AuthGuard())
+  @Delete(':id/user')
+  async delete(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
+    const user = req.user as User;
+    return await this.collectionManagementService.delete({
+      id,
+      userId: user.id,
+    });
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Delete(':id/brand')
+  async deleteBrandCollection(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: any,
+  ) {
+    const user = req.user as User;
+    return await this.collectionManagementService.delete({
+      id,
+      brandId: user.brand.id,
+    });
   }
 }

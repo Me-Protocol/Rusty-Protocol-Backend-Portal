@@ -21,7 +21,10 @@ export class InAppTaskVerifier {
 
   // INAPP_FOLLOW
   async verifyUserLikedAnOffer(offerId: string, userId: string) {
-    const check = await this.likeService.getLikesByIdAndUserId(offerId, userId);
+    const check = await this.likeService.getLikesByOfferIdAndUserId(
+      offerId,
+      userId,
+    );
     return !!check;
   }
 

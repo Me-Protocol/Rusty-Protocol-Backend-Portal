@@ -109,17 +109,7 @@ export class FollowService {
   async getUsersFollowing(userId: string, page: number, limit: number) {
     const followerQuery = this.followerRepository
       .createQueryBuilder('follow')
-      .leftJoinAndSelect('follow.user', 'user')
-      .leftJoinAndSelect('user.customer', 'customer')
-      .select([
-        'follow.id',
-        'follow.createdAt',
-        'follow.updatedAt',
-        'user.id',
-        'user.username',
-        'customer.name',
-        'customer.profilePicture',
-      ])
+      .leftJoinAndSelect('follow.brand', 'brand')
       .where('follow.userId = :userId', { userId })
       .skip((page - 1) * limit)
       .take(limit);

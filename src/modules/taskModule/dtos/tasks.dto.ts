@@ -19,9 +19,9 @@ export class CreateTaskDto {
   description: string;
 
   @IsEnum(AllTaskTypes, {
-    message: 'Please enter a valid task type',
+    message: 'Enter a valid task type',
   })
-  task_type: AllTaskTypes;
+  task: AllTaskTypes;
 
   @IsString()
   validation: string;
@@ -37,11 +37,6 @@ export class CreateTaskDto {
 
   @IsArray()
   price_breakdown: string[];
-
-  @IsEnum(TaskStatus, {
-    message: 'Please enter a valid task status',
-  })
-  status: TaskStatus;
 
   brand_id: string;
 
@@ -99,6 +94,9 @@ export class UpdateTaskDto {
 }
 
 export class UpdateStatusDto {
+  @IsEnum(TaskStatus, {
+    message: 'Please enter a valid task status',
+  })
   status: TaskStatus;
 }
 
@@ -116,7 +114,9 @@ export class UpdateTaskResponseDto {
 }
 
 export class JoinTaskDto {
+  @IsUUID()
   task_id: string;
+
   user_id: string;
 }
 

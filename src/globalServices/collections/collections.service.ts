@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Collection } from './entities/collection.entity';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
 import { ProductService } from '../product/product.service';
+import { LikeService } from '../like/like.service';
 
 @Injectable()
 export class CollectionService {
@@ -12,6 +13,7 @@ export class CollectionService {
     private readonly collectionRepo: Repository<Collection>,
 
     private readonly productService: ProductService,
+    private readonly likeService: LikeService,
   ) {}
 
   async create({
@@ -22,6 +24,7 @@ export class CollectionService {
     brandId,
     status,
     products,
+    isDefault,
   }: {
     name: string;
     description: string;
@@ -30,6 +33,7 @@ export class CollectionService {
     brandId?: string;
     status?: ItemStatus;
     products?: string[];
+    isDefault?: boolean;
   }) {
     const collectionProducts = [];
 
@@ -51,6 +55,7 @@ export class CollectionService {
       status,
       brandId,
       products: collectionProducts,
+      isDefault,
     });
 
     const newCollection = await this.collectionRepo.save(collection);
@@ -104,13 +109,18 @@ export class CollectionService {
     }
 
     if (!collection) {
-      throw new Error('Collection not found');
+      throw new NotFoundException('Collection not found');
     }
 
-    await this.collectionRepo.update(
-      { id: collection.id },
-      { name, description, image, status },
-    );
+    // await this.collectionRepo.update(
+    //   { id: collection.id },
+    //   { name, description, image, status },
+    // );
+
+    collection.name = name;
+    collection.description = description;
+    collection.image = image;
+    collection.status = status;
 
     if (products && products?.length > 0) {
       for (const productId of products) {
@@ -144,10 +154,7 @@ export class CollectionService {
       .createQueryBuilder('collection')
       .leftJoinAndSelect('collection.products', 'products')
       .leftJoinAndSelect('products.productImages', 'productImages')
-      .leftJoinAndSelect('collection.brand', 'brand')
-      .leftJoinAndSelect('collection.likes', 'likes')
-      .leftJoinAndSelect('likes.offer', 'offer')
-      .leftJoinAndSelect('offer.offerImages', 'offerImages');
+      .leftJoinAndSelect('collection.brand', 'brand');
 
     if (status) {
       collectionQuery.andWhere('collection.status = :status', { status });
@@ -190,8 +197,21 @@ export class CollectionService {
 
     const [data, total] = await collectionQuery.getManyAndCount();
 
+    const collections = [];
+
+    for (const collection of data) {
+      const likes = await this.likeService.getLikesByCollectionId(
+        collection.id,
+      );
+
+      collections.push({
+        ...collection,
+        likes: likes,
+      });
+    }
+
     return {
-      collections: data,
+      collections,
       total,
       nextPage: total > page * limit ? Number(page) + 1 : null,
       previousPage: page > 1 ? Number(page) - 1 : null,
@@ -249,5 +269,23 @@ export class CollectionService {
       .getOne();
 
     return collection;
+  }
+
+  async delete(id: string, userId: string, brandId: string) {
+    const collection = await this.collectionRepo.findOne({
+      where: {
+        id,
+        userId,
+        brandId,
+      },
+    });
+
+    if (!collection) {
+      throw new Error('Collection not found');
+    }
+
+    await this.collectionRepo.softDelete({ id });
+
+    return 'Successfully deleted';
   }
 }

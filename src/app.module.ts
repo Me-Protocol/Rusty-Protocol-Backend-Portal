@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MailModule } from './globalServices/mail/mail.module';
 import { SmsModule } from './globalServices/sms/sms.module';
@@ -120,6 +120,19 @@ import { ReviewService } from './globalServices/review/review.service';
 import { ReviewManagementService } from './modules/storeManagement/review/service';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { TasksService } from './globalServices/task/task.service';
+import { TasksController } from './modules/taskModule/tasks.controller';
+import { Task } from './globalServices/task/entities/task.entity';
+import { TaskResponder } from './globalServices/task/entities/taskResponder.entity';
+import { TaskResponse } from './globalServices/task/entities/taskResponse.entity';
+import { BountyRecord } from './globalServices/task/entities/bountyRecord.entity';
+import { Bounty } from './globalServices/oracles/bounty/entities/bounty.entity';
+import { TaskResponseRecord } from './globalServices/task/entities/taskResponseRecord.entity';
+import { JobResponse } from './globalServices/task/entities/jobResponse.entity';
+import { HttpModule, HttpService } from '@nestjs/axios';
+import { InAppTaskVerifier } from './globalServices/task/common/verifier/inapp.service';
+import { TwitterTaskVerifier } from './globalServices/task/common/verifier/outapp/twitter.verifier';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
   imports: [
@@ -159,6 +172,13 @@ import { join } from 'path';
       BrandCustomer,
       Notification,
       AdminSettings,
+      Task,
+      TaskResponder,
+      TaskResponse,
+      BountyRecord,
+      Bounty,
+      TaskResponseRecord,
+      JobResponse,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
@@ -173,6 +193,26 @@ import { join } from 'path';
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     ClientModuleConfig, // microservice
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        redis: {
+          host: configService.get('REDIS_HOSTNAME'),
+          port: configService.get('REDIS_PORT'),
+        },
+      }),
+      inject: [ConfigService],
+    }),
+
+    BullModule.registerQueueAsync({
+      name: 'task-queue',
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        name: configService.get('TASK_QUEUE'),
+      }),
+      inject: [ConfigService],
+    }),
+    HttpModule,
   ],
   controllers: [
     AppController,
@@ -195,6 +235,7 @@ import { join } from 'path';
     NotificationController,
     DebugController,
     ReviewManagementController,
+    TasksController,
   ],
   providers: [
     ElasticIndex,
@@ -251,6 +292,9 @@ import { join } from 'path';
     NotificationService,
     ReviewService,
     ReviewManagementService,
+    TasksService,
+    InAppTaskVerifier,
+    TwitterTaskVerifier,
   ],
   exports: [JwtStrategy, PassportModule],
 })

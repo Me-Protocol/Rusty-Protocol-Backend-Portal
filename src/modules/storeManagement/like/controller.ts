@@ -41,7 +41,7 @@ export class LikeManagementController {
     @Query(ValidationPipe) query: FilterLikeDto,
     @Req() req: any,
   ) {
-    const userId = req.user.user.id;
+    const userId = req.user.id;
     query.userId = userId;
 
     return await this.likeManagementService.getUserLikes(query);

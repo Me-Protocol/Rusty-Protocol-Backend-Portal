@@ -53,7 +53,7 @@ export class FiatWallet extends BaseEntity {
     type: 'decimal',
     precision: 10,
     scale: 5,
-    default: 0,
+    default: 70000,
   })
   balance: number;
 

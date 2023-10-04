@@ -40,10 +40,10 @@ import { emailButton } from '@src/utils/helpers/email';
 import { CLIENT_APP_URI } from '@src/config/env.config';
 export const { TASK_QUEUE } = process.env;
 
-const humanJobWinnerCount = parseInt(process.env.HUMAN_JOB_WINNER_COUNT);
+// const humanJobWinnerCount = parseInt(process.env.HUMAN_JOB_WINNER_COUNT);
 
-const provider = new providers.JsonRpcProvider(process.env.PROVIDER_URI!);
-const signer = new Wallet(process.env.ETH_PRIVATE_KEY!, provider);
+// const provider = new providers.JsonRpcProvider(process.env.PROVIDER_URI!);
+// const signer = new Wallet(process.env.ETH_PRIVATE_KEY!, provider);
 
 //TODO: get token decimal before payout
 //TODO: make all external tasks stable
@@ -118,7 +118,7 @@ export class TasksService {
     console.log('TOKEN CONTRACT ADDRESS', token.contractAddress);
 
     const nextTask = await this.taskRepository.findOne({
-      relations: ['brand', 'token'],
+      relations: ['brand', 'reward'],
       order: {
         createdAt: 'DESC',
       },
@@ -154,7 +154,7 @@ export class TasksService {
 
   async getBrandTasks(brandId: string) {
     const tasks = await this.taskRepository.find({
-      relations: ['brand', 'token'],
+      relations: ['brand', 'reward'],
       where: {
         brandId,
       },
@@ -255,7 +255,7 @@ export class TasksService {
 
   async getTaskById(id: string) {
     const task = await this.taskRepository.findOne({
-      relations: ['brand', 'token'],
+      relations: ['brand', 'reward'],
       where: {
         id,
         status: TaskStatus.ACTIVE,
@@ -301,7 +301,7 @@ export class TasksService {
 
   async getUsersSingleTasks(userId: string, taskId: string) {
     const task = await this.taskResponder.findOne({
-      relations: ['task', 'task.brand', 'task.token', 'task.token.reward'],
+      relations: ['task', 'task.brand', 'task.reward'],
       where: {
         userId,
         taskId,
@@ -381,7 +381,7 @@ export class TasksService {
       if (
         availableTaskTypes.filter((type) => type === task?.taskType).length >
           0 &&
-        !user?.twitterAuth.username
+        !user?.twitterAuth?.username
       ) {
         throw new HttpException(
           'Please connect your twitter account to join this task',
@@ -508,19 +508,14 @@ export class TasksService {
 
   async create(data: CreateTaskDto) {
     try {
-      const band_id: any = data.brand_id;
-
-      const brand = await this.brandRepo.findOneBy({ id: band_id });
+      const band_id = data.brand_id;
 
       const reward = await this.tokenRepo.findOne({
         where: {
           id: data.reward_token_id,
+          brandId: band_id,
         },
       });
-
-      if (!brand) {
-        throw new HttpException('Brand not found', 400);
-      }
 
       if (!reward) {
         throw new HttpException('Reward not found', 400);
@@ -528,7 +523,23 @@ export class TasksService {
 
       data.reward_token_id = reward.id;
 
-      const task = this.taskRepository.create(data);
+      const task = new Task();
+      task.brandId = band_id;
+      task.rewardId = data.reward_token_id;
+      task.taskType = data.task;
+      task.description = data.description;
+      task.validation = data.validation;
+      task.timeFrameInHours = data.time_frame_in_hours;
+      task.numberOfWinners = data.number_of_winners;
+      task.price = data.price;
+      task.price_breakdown = data.price_breakdown;
+      task.title = data.title;
+      task.description = data.description;
+      task.offerId = data.offer_id;
+      task.tagPlatform = data.tag_platform;
+      task.socialHandle = data.social_handle;
+      task.socialPost = data.social_post;
+
       return await this.taskRepository.save(task);
     } catch (error) {
       console.log(error);
@@ -662,26 +673,26 @@ export class TasksService {
     }
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
-  async activeNextTask() {
-    const nextTask = await this.taskRepository.findOne({
-      relations: ['brand', 'token'],
-      order: {
-        createdAt: 'DESC',
-      },
-      where: {
-        status: TaskStatus.PENDING,
-      },
-    });
+  // @Cron(CronExpression.EVERY_MINUTE)
+  // async activeNextTask() {
+  //   const nextTask = await this.taskRepository.findOne({
+  //     relations: ['brand', 'reward'],
+  //     order: {
+  //       createdAt: 'DESC',
+  //     },
+  //     where: {
+  //       status: TaskStatus.PENDING,
+  //     },
+  //   });
 
-    if (nextTask) {
-      await this.taskRepository.update(nextTask.id, {
-        status: TaskStatus.ACTIVE,
-      });
+  //   if (nextTask) {
+  //     await this.taskRepository.update(nextTask.id, {
+  //       status: TaskStatus.ACTIVE,
+  //     });
 
-      console.log('next job is active', nextTask.id);
-    }
-  }
+  //     console.log('next job is active', nextTask.id);
+  //   }
+  // }
 
   @Cron(CronExpression.EVERY_MINUTE)
   async fundJob() {
@@ -1293,7 +1304,7 @@ export class TasksService {
   async expireTask() {
     try {
       const activeTasks = await this.taskRepository.find({
-        relations: ['brand', 'token'],
+        relations: ['brand', 'reward'],
         where: { status: TaskStatus.ACTIVE },
       });
 
