@@ -56,13 +56,16 @@ export class CustomerAccountManagementService {
 
   async setWalletAddress(walletAddress: string, userId: string) {
     try {
+      // 1. We retrieve the customer based on the userId and the user based on the userId.
       const customer = await this.customerService.getByUserId(userId);
       const user = await this.userService.getUserById(userId);
 
+      // 2. We get all the rewards registered with the user's email that do not have a userId field. This is because the rewards were registered before the user account was created.
       const rewardRegistry =
         await this.syncService.getAllRegistryRecordsByIdentifer(user.email);
 
       if (rewardRegistry.length > 0) {
+        // 3. We iterate through the rewards and assign the userId field to each of them.
         for (const registry of rewardRegistry) {
           if (!registry.userId) {
             registry.userId = user.id;
@@ -71,28 +74,34 @@ export class CustomerAccountManagementService {
         }
       }
 
-      if (!customer)
+      // 4. We check if the customer exists.
+      if (!customer) {
         throw new HttpException('Customer not found', 404, {
           cause: new Error('Customer not found'),
         });
+      }
 
-      if (customer.walletAddress)
+      // 5. We check if the walletAddress is already set.
+      if (customer.walletAddress) {
         throw new HttpException('Wallet address already set', 400, {
           cause: new Error('Wallet address already set'),
         });
+      }
 
+      // 6. We assign the walletAddress to the customer.
       customer.walletAddress = walletAddress;
 
+      // 7. We save the customer.
       await this.customerService.save(customer);
 
-      // Check if user has undistributed points
-
+      // 8. We check if the user has undistributed points.
       const undistributedRewards =
         await this.syncService.getUndistributedReward(userId);
 
       if (undistributedRewards.length > 0) {
+        // 9. We iterate through the undistributed points and distribute them to the new walletAddress.
         for (const point of undistributedRewards) {
-          this.syncService.distributeRewardWithPrivateKey({
+          await this.syncService.distributeRewardWithPrivateKey({
             rewardId: point.rewardId,
             walletAddress: walletAddress,
             amount: point.undistributedBalance,
