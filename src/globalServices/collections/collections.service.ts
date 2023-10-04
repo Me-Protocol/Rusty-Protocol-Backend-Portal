@@ -265,4 +265,22 @@ export class CollectionService {
 
     return collection;
   }
+
+  async delete(id: string, userId: string, brandId: string) {
+    const collection = await this.collectionRepo.findOne({
+      where: {
+        id,
+        userId,
+        brandId,
+      },
+    });
+
+    if (!collection) {
+      throw new Error('Collection not found');
+    }
+
+    await this.collectionRepo.softDelete({ id });
+
+    return 'Successfully deleted';
+  }
 }

@@ -93,10 +93,7 @@ export class LikeService {
     return result;
   }
 
-  async unlikeWithOfferIdAndUserId(
-    offerId: string,
-    userId: string,
-  ): Promise<any> {
+  async unlikeWithOfferIdAndUserId(offerId: string, userId: string) {
     const result = await this.likeRepo.softDelete({
       offerId,
       userId,
@@ -104,7 +101,7 @@ export class LikeService {
     return result;
   }
 
-  async getCollectionLikes(collectionId: string): Promise<any> {
+  async getCollectionLikes(collectionId: string) {
     const result = await this.likeRepo.find({
       where: {
         collectionId,
@@ -114,7 +111,7 @@ export class LikeService {
     return result;
   }
 
-  async getLikeById(id: string): Promise<any> {
+  async getLikeById(id: string) {
     const result = await this.likeRepo.findOne({
       where: {
         id: id,
