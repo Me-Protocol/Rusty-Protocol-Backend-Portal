@@ -1,8 +1,5 @@
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
 import { logger } from './globalServices/logger/logger.service';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
@@ -13,6 +10,7 @@ import {
   CLOUDINARY_CLOUD_NAME,
   CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRET,
+  SENTRY_DNS,
 } from './config/env.config';
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
@@ -21,11 +19,11 @@ import { TracingInterceptor } from './interceptors/tracing.interceptor';
 import { join } from 'path';
 import { NotFoundExceptionFilter } from './interceptors/notfound-interceptor';
 
-const cloudinary = require('cloudinary');
+import cloudinary from 'cloudinary';
 
 //To Initialize sentry
 Sentry.init({
-  dsn: process.env.SENTRY_DNS,
+  dsn: SENTRY_DNS,
   integrations: [
     // enable HTTP calls tracing
     new Sentry.Integrations.Http({ tracing: true }),
@@ -131,16 +129,16 @@ async function bootstrap() {
 
   const fastifyInstance = app.getHttpAdapter().getInstance();
 
-  fastifyInstance.addHook('onRequest', (request, reply, done) => {
-    reply.setHeader = function (key: any, value: any) {
-      return this.raw.setHeader(key, value);
-    };
-    reply.end = function () {
-      this.raw.end();
-    };
-    request.res = reply;
-    done();
-  });
+  // fastifyInstance.addHook('onRequest', (request, reply, done) => {
+  //   reply.getHeader = function (key: any, value: any) {
+  //     return this.raw.setHeader(key, value);
+  //   };
+  //   reply.send = function () {
+  //     this.raw.end();
+  //   };
+  //   request.res = reply;
+  //   done();
+  // });
 
   await app.listen(
     APP_SERVER_LISTEN_PORT,
