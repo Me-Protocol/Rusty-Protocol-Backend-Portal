@@ -999,48 +999,18 @@ export class TasksService {
 
   private async validateResponse(activeTask: Task, response: TaskResponder) {
     const availableTaskTypes = [
-      AllTaskTypes.IN_APP_COLLECTION,
+      // AllTaskTypes.IN_APP_COLLECTION,
       AllTaskTypes.IN_APP_FOLLOW,
       AllTaskTypes.IN_APP_PRODUCT_LIKE,
-      AllTaskTypes.IN_APP_SHARE,
+      // AllTaskTypes.IN_APP_SHARE,
       AllTaskTypes.OUT_SM_FOLLOW,
       AllTaskTypes.OUT_BRAND_TAGGING,
       AllTaskTypes.OUT_LIKE_POST,
       AllTaskTypes.OUT_REPOST,
-      AllTaskTypes.IN_APP_SHARE,
+      // AllTaskTypes.IN_APP_SHARE,
     ];
 
     if (availableTaskTypes.includes(activeTask.taskType)) {
-      if (activeTask.taskType === AllTaskTypes.IN_APP_COLLECTION) {
-        const taskWinners = await this.taskResponder.find({
-          where: {
-            taskId: activeTask.id,
-            taskCancelled: false,
-            taskPerformed: true,
-            winner: true,
-          },
-        });
-
-        if (taskWinners.length >= activeTask.numberOfWinners) {
-          //expire tasks
-          await this.taskRepository.update(activeTask.id, {
-            expired: true,
-          });
-
-          return 'Sorry winners already selected for this task';
-        } else {
-          const check = await this.inAppTaskVerifier.verifyUserCollectedAnOffer(
-            activeTask.offerId,
-            response.userId,
-          );
-
-          if (!check)
-            return 'We could not validate your response. Please try again';
-
-          return await this.completeTaskVerifier(activeTask, response);
-        }
-      }
-
       if (activeTask.taskType === AllTaskTypes.IN_APP_FOLLOW) {
         //select task responder winners
         const taskWinners = await this.getTaskWinners(activeTask.id);

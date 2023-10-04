@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@developeruche/protocol-core": "^0.1.9",
-    "@developeruche/runtime-sdk": "^0.2.6",
+    "@developeruche/runtime-sdk": "0.2.7",
     "@elastic/elasticsearch": "^8.6.0",
     "@fastify/static": "^6.11.2",
     "@fastify/view": "^8.2.0",
