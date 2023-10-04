@@ -4,7 +4,6 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
-import * as session from 'express-session';
 import { logger } from './globalServices/logger/logger.service';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
 import { setupSwagger } from './config/swagger/swagger.config';
@@ -14,7 +13,6 @@ import {
   CLOUDINARY_CLOUD_NAME,
   CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRET,
-  JWT_SECRETS,
 } from './config/env.config';
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
@@ -55,13 +53,13 @@ async function bootstrap() {
     secure: true,
   });
 
-  app.use(
-    session({
-      secret: JWT_SECRETS,
-      saveUninitialized: true,
-      resave: true,
-    }),
-  );
+  // app.use(
+  //   session({
+  //     secret: JWT_SECRETS,
+  //     saveUninitialized: true,
+  //     resave: true,
+  //   }),
+  // );
 
   /**
    * Interceptors

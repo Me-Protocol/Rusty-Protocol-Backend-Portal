@@ -135,6 +135,7 @@ import { TwitterTaskVerifier } from './globalServices/task/common/verifier/outap
 import { BullModule } from '@nestjs/bull';
 import { SocialAuthenticationService } from './modules/authentication/socialAuth';
 import { BountyService } from './globalServices/oracles/bounty/bounty.service';
+import { Block } from './globalServices/oracles/bounty/entities/block.entity';
 
 @Module({
   imports: [
@@ -181,6 +182,7 @@ import { BountyService } from './globalServices/oracles/bounty/bounty.service';
       Bounty,
       TaskResponseRecord,
       JobResponse,
+      Block,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
