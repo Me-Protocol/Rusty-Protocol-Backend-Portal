@@ -244,9 +244,9 @@ export class OfferService {
       offersQuery.andWhere('offer.viewCount > :viewCount', {
         viewCount: 3, // TODO: Change this to 100,
       });
-      offersQuery.andWhere('offer.likeCount > :likeCount', {
-        likeCount: 2, // TODO: Change this to 100,
-      });
+      // offersQuery.andWhere('offer.likeCount > :likeCount', {
+      //   likeCount: 2, // TODO: Change this to 100,
+      // });
       offersQuery.orderBy('offer.updatedAt', 'DESC');
     }
 
