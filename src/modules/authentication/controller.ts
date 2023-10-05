@@ -299,7 +299,7 @@ export class AuthenticationController {
     return res.status(302).redirect(url);
   }
 
-  // redirect back the user to the website after login
+  // // redirect back the user to the website after login
   @Get('twitter/callback')
   async twitterCallback(
     @Query() query: { oauth_verifier: string; oauth_token: string },

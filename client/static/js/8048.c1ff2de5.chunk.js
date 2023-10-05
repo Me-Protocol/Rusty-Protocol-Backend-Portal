@@ -1,2 +1,0 @@
-"use strict";(self.webpackChunkapp_web_frontend=self.webpackChunkapp_web_frontend||[]).push([[8048],{38048:function(n,e,o){o.r(e);var r=o(1413),t=o(87251),c=o(81319),p=o(80184);e.default=function(){var n=u(),e=(n.root,n.font);return(0,p.jsx)(c.Z,{label:"Price",children:(0,p.jsx)(t.Y,(0,r.Z)((0,r.Z)({},e),{},{children:"Input Price Component | coming soon"}))})};var u=function(){return{root:{h:"36px",pr:"20px",_hover:{background:"black",color:"white"}},font:{fontSize:"16px",_hover:{bg:"#F6F6F6"}}}}}}]);
-//# sourceMappingURL=8048.c1ff2de5.chunk.js.map
