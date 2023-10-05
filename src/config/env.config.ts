@@ -124,3 +124,5 @@ export const REDIS_PREFIX = env.get('REDIS_PREFIX').asString();
 export const REDIS_TTL = env.get('REDIS_TTL').asString();
 
 export const SENTRY_DNS = env.get('SENTRY_DNS').asString();
+
+export const TASK_QUEUE = env.get('TASK_QUEUE').asString();

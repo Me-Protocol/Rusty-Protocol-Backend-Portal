@@ -37,8 +37,8 @@ import {
 import { Notification } from '../notification/entities/notification.entity';
 import { NotificationType } from '@src/utils/enums/notification.enum';
 import { emailButton } from '@src/utils/helpers/email';
-import { CLIENT_APP_URI } from '@src/config/env.config';
-export const { TASK_QUEUE } = process.env;
+import { CLIENT_APP_URI, TASK_QUEUE } from '@src/config/env.config';
+// export const { TASK_QUEUE } = process.env;
 
 // const humanJobWinnerCount = parseInt(process.env.HUMAN_JOB_WINNER_COUNT);
 
