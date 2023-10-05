@@ -1,6 +1,8 @@
 import { HttpService } from '@nestjs/axios';
 import { TWITTER_BREARER_TOKEN } from '@src/config/env.config';
+import axios from 'axios';
 import { map } from 'rxjs/operators';
+import { getTwitterFriends } from './get_twitter_friends';
 const { Client } = require('twitter-api-sdk');
 
 const client = new Client(TWITTER_BREARER_TOKEN);
@@ -9,15 +11,27 @@ export class TwitterTaskVerifier {
   constructor(private readonly httpService: HttpService) {}
 
   // OUT_SM_FOLLOW
-  async checkIfUserIsFollowingBrandOnTwitter(
-    user_twitter_name: string,
-    tweetId: string,
-  ) {
-    return this.httpService
-      .get(
-        `https://api.twitter.com/1.1/friendships/show.json?source_screen_name=${user_twitter_name}&target_screen_name=${tweetId}`,
-      )
-      .pipe(map((response) => response.data.following));
+  async checkIfUserIsFollowingBrandOnTwitter({
+    user_twitter_name,
+    brandTwitterName,
+    accessToken,
+    accessTokenSecret,
+  }: {
+    user_twitter_name: string;
+    brandTwitterName: string;
+    accessToken: string;
+    accessTokenSecret: string;
+  }) {
+    const checkUsers = await getTwitterFriends({
+      your_access_token: accessToken,
+      your_access_token_secret: accessTokenSecret,
+      source_screen_name: user_twitter_name,
+      target_screen_name: brandTwitterName,
+    });
+
+    console.log(checkUsers);
+
+    return false;
   }
 
   // OUT_BRAND_TAGGING

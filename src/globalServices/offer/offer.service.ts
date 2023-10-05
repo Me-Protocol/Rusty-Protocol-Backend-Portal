@@ -211,7 +211,7 @@ export class OfferService {
 
     if (sort === OfferSort.TRENDING) {
       offersQuery.andWhere('offer.viewCount > :viewCount', {
-        viewCount: 10, // TODO: Change this to 100,
+        viewCount: 3, // TODO: Change this to 100,
       });
       offersQuery.andWhere('offer.likeCount > :likeCount', {
         likeCount: 2, // TODO: Change this to 100,

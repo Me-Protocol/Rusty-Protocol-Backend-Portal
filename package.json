@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@developeruche/protocol-core": "^0.1.9",
-    "@developeruche/runtime-sdk": "0.2.7",
+    "@developeruche/runtime-sdk": "0.2.8",
     "@elastic/elasticsearch": "^8.6.0",
     "@fastify/static": "^6.11.2",
     "@fastify/view": "^8.2.0",
@@ -83,6 +83,7 @@
     "node-vibrant": "^3.2.1-alpha.1",
     "nodemailer": "^6.9.0",
     "nunjucks": "^3.2.4",
+    "oauth-1.0a": "^2.2.6",
     "opentracing": "^0.14.7",
     "passport": "^0.6.0",
     "passport-facebook": "^3.0.0",
