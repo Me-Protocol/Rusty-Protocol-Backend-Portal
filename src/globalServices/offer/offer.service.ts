@@ -39,6 +39,40 @@ export class OfferService {
     );
   }
 
+  async updateOfferViews(offerId: string) {
+    const offer = await this.offerRepo.findOne({
+      where: {
+        id: offerId,
+      },
+    });
+
+    return this.offerRepo.update(
+      {
+        id: offerId,
+      },
+      {
+        viewCount: offer.viewCount + 1,
+      },
+    );
+  }
+
+  async updateOfferLikeCount(offerId: string) {
+    const offer = await this.offerRepo.findOne({
+      where: {
+        id: offerId,
+      },
+    });
+
+    return this.offerRepo.update(
+      {
+        id: offerId,
+      },
+      {
+        likeCount: offer.likeCount + 1,
+      },
+    );
+  }
+
   async getOfferById(id: string) {
     return await this.offerRepo.findOne({
       where: {
@@ -105,9 +139,6 @@ export class OfferService {
     }
 
     await this.viewService.createView(offer.id, sessionId, userId);
-
-    offer.viewCount = offer.viewCount + 1;
-    await this.offerRepo.save(offer);
 
     return offer;
   }
@@ -213,9 +244,9 @@ export class OfferService {
       offersQuery.andWhere('offer.viewCount > :viewCount', {
         viewCount: 3, // TODO: Change this to 100,
       });
-      offersQuery.andWhere('offer.likeCount > :likeCount', {
-        likeCount: 2, // TODO: Change this to 100,
-      });
+      // offersQuery.andWhere('offer.likeCount > :likeCount', {
+      //   likeCount: 2, // TODO: Change this to 100,
+      // });
       offersQuery.orderBy('offer.updatedAt', 'DESC');
     }
 

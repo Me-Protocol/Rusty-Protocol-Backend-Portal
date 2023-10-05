@@ -11,9 +11,7 @@ export enum AllTaskTypes {
 
   IN_APP_PRODUCT_LIKE = 'IN_APP_PRODUCT_LIKE',
   IN_APP_REVIEW = 'IN_APP_REVIEW',
-  // IN_APP_SHARE = 'IN_APP_SHARE',
   IN_APP_FOLLOW = 'IN_APP_FOLLOW',
-  // IN_APP_COLLECTION = 'IN_APP_COLLECTION',
 }
 
 export enum TaskStatus {

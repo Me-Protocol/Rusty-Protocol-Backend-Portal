@@ -98,9 +98,7 @@ export class LikeManagementService {
 
       const createdLike = await this.likeService.createLike(like);
 
-      offer.likeCount = offer.likeCount + 1;
-
-      await this.offerService.saveOffer(offer);
+      await this.offerService.updateOfferLikeCount(body.offerId);
 
       return createdLike;
     } catch (error) {

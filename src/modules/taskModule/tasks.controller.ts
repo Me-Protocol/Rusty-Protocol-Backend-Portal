@@ -68,14 +68,6 @@ export class TasksController {
   }
 
   @UseGuards(AuthGuard())
-  @Post('next_step')
-  async moveStep(@Body() data: { task_id: string }, @Req() req: any) {
-    const user = req.user;
-    if (!data?.task_id) throw new HttpException('Task ID is required', 400);
-    return await this.taskDataService.moveToSecondStep(user?.id, data.task_id);
-  }
-
-  @UseGuards(AuthGuard())
   @Get('joined_tasks')
   async getUsersTasks(
     @Query('page', ParseIntPipe) page: number = 1,
@@ -87,13 +79,29 @@ export class TasksController {
   }
 
   @UseGuards(AuthGuard())
-  @Get('joined_tasks/:task_id')
+  @Post('next_step')
+  async moveToSecondStep(@Body() data: { task_id: string }, @Req() req: any) {
+    if (!data?.task_id) throw new HttpException('Task ID is required', 400);
+    const user = req.user;
+    console.log(user);
+    return await this.taskDataService.moveToSecondStep(user?.id, data.task_id);
+  }
+
+  @UseGuards(AuthGuard())
+  @Get('joined_tasks/:id')
   async getUsersSingleTasks(
-    @Param('task_id', ParseIntPipe) task_id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: any,
   ) {
     const user = req.user;
-    return await this.taskDataService.getUsersSingleTasks(user?.id, task_id);
+    return await this.taskDataService.getUsersSingleTasks(user?.id, id);
+  }
+
+  @UseGuards(AuthGuard())
+  @Post('cancel_task/:id')
+  async cancelledTask(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
+    const user = req.user;
+    return await this.taskDataService.cancelledTask(user?.id, id);
   }
 
   @UseGuards(AuthGuard())

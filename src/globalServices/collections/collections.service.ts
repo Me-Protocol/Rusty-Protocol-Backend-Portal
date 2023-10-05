@@ -144,15 +144,23 @@ export class CollectionService {
     return await this.collectionRepo.save(collection);
   }
 
-  async findAll(
-    userId: string,
-    brandId: string,
-    page: number,
-    limit: number,
-    order: string,
-    search: string,
-    status: ItemStatus,
-  ) {
+  async findAll({
+    userId,
+    brandId,
+    page,
+    limit = 10,
+    order,
+    search,
+    status,
+  }: {
+    userId: string;
+    brandId: string;
+    page: number;
+    limit: number;
+    order: string;
+    search: string;
+    status: ItemStatus;
+  }) {
     const collectionQuery = this.collectionRepo
       .createQueryBuilder('collection')
       .leftJoinAndSelect('collection.products', 'products')
