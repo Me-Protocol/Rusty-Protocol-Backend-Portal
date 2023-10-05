@@ -89,7 +89,7 @@ export class TasksController {
   @UseGuards(AuthGuard())
   @Get('joined_tasks/:task_id')
   async getUsersSingleTasks(
-    @Param('task_id', ParseIntPipe) task_id: string,
+    @Param('task_id', ParseUUIDPipe) task_id: string,
     @Req() req: any,
   ) {
     const user = req.user;
