@@ -188,6 +188,7 @@ export class TasksService {
         .createQueryBuilder('task')
         .leftJoinAndSelect('task.brand', 'brand')
         .leftJoinAndSelect('task.reward', 'reward')
+        .leftJoinAndSelect('task.offer', 'offer')
         .where('task.status = :status', { status: TaskStatus.ACTIVE });
 
       if (rewardId) {
@@ -255,7 +256,7 @@ export class TasksService {
 
   async getTaskById(id: string) {
     const task = await this.taskRepository.findOne({
-      relations: ['brand', 'reward'],
+      relations: ['brand', 'reward', 'offer'],
       where: {
         id,
         status: TaskStatus.ACTIVE,
