@@ -965,15 +965,16 @@ export class TasksService {
     activeTask: Task,
     response: TaskResponder,
   ) {
-    const queuedJob: any = await this.taskQueue.add({
-      activeTask,
-      response,
-    });
+    // TODO: Add task queue
+    // const queuedJob: any = await this.taskQueue.add({
+    //   activeTask,
+    //   response,
+    // });
 
-    const job = await this.taskQueue.getJob(queuedJob.id);
-    const isFinishedValue = await job.finished();
+    // const job = await this.taskQueue.getJob(queuedJob.id);
+    // const isFinishedValue = await job.finished();
 
-    if (isFinishedValue) return isFinishedValue;
+    // if (isFinishedValue) return isFinishedValue;
 
     await this.taskRepository.update(activeTask.id, {
       winnerCount: activeTask.winnerCount + 1,
@@ -1038,6 +1039,7 @@ export class TasksService {
 
       if (activeTask.taskType === AllTaskTypes.IN_APP_PRODUCT_LIKE) {
         //select task responder winners
+        console.log('IN APP PRODUCT LIKE');
 
         const taskWinners = await this.getTaskWinners(activeTask.id);
         if (taskWinners.length >= activeTask.numberOfWinners) {
@@ -1075,8 +1077,12 @@ export class TasksService {
         } else {
           const check =
             await this.twitterTaskVerifier.checkIfUserIsFollowingBrandOnTwitter(
-              response.user?.twitterAuth?.username,
-              activeTask.socialHandle,
+              {
+                user_twitter_name: response.user?.twitterAuth?.username,
+                brandTwitterName: activeTask.socialHandle,
+                accessToken: response.user?.twitterAuth?.accessToken,
+                accessTokenSecret: response.user?.twitterAuth?.refreshToken,
+              },
             );
 
           if (!check) throw new Error('We could not validate your response');

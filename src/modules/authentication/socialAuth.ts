@@ -45,6 +45,7 @@ export class SocialAuthenticationService {
     redirectUrl?: string;
   }): Promise<string> {
     try {
+      console.log(TWITTER_LINK_CALLBACK_URL);
       const linkTwitterConsumer = new oauth.OAuth(
         'https://twitter.com/oauth/request_token',
         'https://twitter.com/oauth/access_token',
@@ -204,9 +205,17 @@ export class SocialAuthenticationService {
       if (!user) {
         throw new HttpException('Please login first', 400);
       } else {
-        user.twitterAuth.accessToken = accessToken.oauthAccessToken;
-        user.twitterAuth.refreshToken = accessToken.oauthAccessTokenSecret;
-        user.twitterAuth.username = twitterUser.screen_name;
+        if (user.twitterAuth) {
+          user.twitterAuth.accessToken = accessToken.oauthAccessToken;
+          user.twitterAuth.refreshToken = accessToken.oauthAccessTokenSecret;
+          user.twitterAuth.username = twitterUser.screen_name;
+        } else {
+          user.twitterAuth = {
+            accessToken: accessToken.oauthAccessToken,
+            refreshToken: accessToken.oauthAccessTokenSecret,
+            username: twitterUser.screen_name,
+          };
+        }
 
         await this.userService.saveUser(user);
 
