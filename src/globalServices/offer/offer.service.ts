@@ -106,15 +106,6 @@ export class OfferService {
 
     await this.viewService.createView(offer.id, sessionId, userId);
 
-    await this.offerRepo.update(
-      {
-        id: offer.id,
-      },
-      {
-        viewCount: offer.viewCount + 1,
-      },
-    );
-
     return offer;
   }
 
