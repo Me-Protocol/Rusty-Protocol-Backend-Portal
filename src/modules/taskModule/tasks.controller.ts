@@ -98,6 +98,13 @@ export class TasksController {
   }
 
   @UseGuards(AuthGuard())
+  @Post('cancel_task/:id')
+  async cancelledTask(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
+    const user = req.user;
+    return await this.taskDataService.cancelledTask(user?.id, id);
+  }
+
+  @UseGuards(AuthGuard())
   @Post('complete_user_task')
   async completeTask(@Body() data: { task_id: string }, @Req() req: any) {
     const user = req.user;

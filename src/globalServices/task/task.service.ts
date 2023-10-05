@@ -301,13 +301,12 @@ export class TasksService {
 
   async getUsersSingleTasks(userId: string, taskId: string) {
     const task = await this.taskResponder.findOne({
-      relations: ['task', 'task.brand', 'task.reward'],
+      relations: ['task', 'task.brand', 'task.reward', 'task.offer'],
       where: {
         userId,
         taskId,
       },
     });
-    console.log(taskId, userId);
 
     if (!task) {
       throw new HttpException('Task not found', 404);
@@ -379,11 +378,7 @@ export class TasksService {
       const isTaskInAvailableTaskTypes =
         availableTaskTypes.filter((type) => type === task?.taskType).length > 0;
 
-      if (
-        availableTaskTypes.filter((type) => type === task?.taskType).length >
-          0 &&
-        !user?.twitterAuth?.username
-      ) {
+      if (isTaskInAvailableTaskTypes && !user?.twitterAuth?.username) {
         throw new HttpException(
           'Please connect your twitter account to join this task',
           400,
@@ -397,7 +392,6 @@ export class TasksService {
       );
 
       if (!isValid) {
-        console.log('rrighthe');
         throw new HttpException('Task is no longer active', 400);
       }
 
@@ -441,6 +435,23 @@ export class TasksService {
       console.log(error);
       throw new HttpException(error.message, 400);
     }
+  }
+
+  async cancelledTask(user_id: string, task_id: string) {
+    const taskResponder = await this.taskResponder.findOne({
+      where: {
+        taskId: task_id,
+        userId: user_id,
+      },
+    });
+
+    if (!taskResponder) {
+      throw new HttpException("You haven't joined this task", 400);
+    }
+
+    taskResponder.taskCancelled = true;
+
+    return await this.taskResponder.save(taskResponder);
   }
 
   async moveToSecondStep(user_id: string, task_id: string) {
