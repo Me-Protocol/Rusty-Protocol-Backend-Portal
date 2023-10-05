@@ -39,6 +39,40 @@ export class OfferService {
     );
   }
 
+  async updateOfferViews(offerId: string) {
+    const offer = await this.offerRepo.findOne({
+      where: {
+        id: offerId,
+      },
+    });
+
+    return this.offerRepo.update(
+      {
+        id: offerId,
+      },
+      {
+        viewCount: offer.viewCount + 1,
+      },
+    );
+  }
+
+  async updateOfferLikeCount(offerId: string) {
+    const offer = await this.offerRepo.findOne({
+      where: {
+        id: offerId,
+      },
+    });
+
+    return this.offerRepo.update(
+      {
+        id: offerId,
+      },
+      {
+        likeCount: offer.likeCount + 1,
+      },
+    );
+  }
+
   async getOfferById(id: string) {
     return await this.offerRepo.findOne({
       where: {
