@@ -92,6 +92,7 @@ export class BrandService {
 
       brand.supportPhoneNumber = dto.supportPhoneNumber;
       brand.listOnStore = dto.listOnStore;
+      brand.vaultPercentage = dto.vaultPercentage;
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);

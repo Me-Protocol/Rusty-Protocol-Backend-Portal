@@ -240,4 +240,9 @@ export class Brand extends BaseEntity {
 
   @OneToMany(() => Review, (review) => review.brand)
   reviews: Review[];
+
+  @Column({
+    default: 50,
+  })
+  vaultPercentage: number;
 }

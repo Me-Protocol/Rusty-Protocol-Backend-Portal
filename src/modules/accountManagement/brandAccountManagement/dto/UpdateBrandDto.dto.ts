@@ -4,6 +4,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsNumber,
   IsOptional,
   IsString,
   IsTaxId,
@@ -136,4 +137,9 @@ export class UpdateBrandDto {
     message: 'Enter a valid boolean value',
   })
   listOnStore: boolean;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumber()
+  vaultPercentage: number;
 }
