@@ -307,6 +307,7 @@ export class TasksService {
         taskId,
       },
     });
+    console.log(taskId, userId);
 
     if (!task) {
       throw new HttpException('Task not found', 404);
