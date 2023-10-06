@@ -129,6 +129,14 @@ async function bootstrap() {
 
   const fastifyInstance = app.getHttpAdapter().getInstance();
 
+  // Add a hook to Fastify to make the raw response available on the reply
+  // object
+  fastifyInstance.addHook('onRequest', (request, reply, done) => {
+    // Cast the request to any to access the res property
+    (request as any).res = reply.raw;
+    done();
+  });
+
   // fastifyInstance.addHook('onRequest', (request, reply, done) => {
   //   reply.getHeader = function (key: any, value: any) {
   //     return this.raw.setHeader(key, value);

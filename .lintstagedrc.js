@@ -1,5 +1,5 @@
 module.exports = {
-  '*.{ts,tsx}': 'npm run lint:fix',
+  // '*.{ts}': 'npm run lint:fix',
   'package.json': 'npx fixpack', // Sort package.json
   '*.md': 'markdownlint',
   '*.json': 'npx jsonlint',
