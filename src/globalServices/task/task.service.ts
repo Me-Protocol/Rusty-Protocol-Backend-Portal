@@ -961,15 +961,13 @@ export class TasksService {
 
   private async validateResponse(activeTask: Task, response: TaskResponder) {
     const availableTaskTypes = [
-      // AllTaskTypes.IN_APP_COLLECTION,
       AllTaskTypes.IN_APP_FOLLOW,
       AllTaskTypes.IN_APP_PRODUCT_LIKE,
-      // AllTaskTypes.IN_APP_SHARE,
+      AllTaskTypes.IN_APP_REVIEW,
       AllTaskTypes.OUT_SM_FOLLOW,
       AllTaskTypes.OUT_BRAND_TAGGING,
       AllTaskTypes.OUT_LIKE_POST,
       AllTaskTypes.OUT_REPOST,
-      // AllTaskTypes.IN_APP_SHARE,
     ];
 
     if (availableTaskTypes.includes(activeTask.taskType)) {
@@ -1180,6 +1178,10 @@ export class TasksService {
           if (!check) throw new Error('We could not validate your response');
         }
       }
+    } else {
+      throw new Error(
+        "We couldn't validate your response. Please try again later.",
+      );
     }
   }
 }

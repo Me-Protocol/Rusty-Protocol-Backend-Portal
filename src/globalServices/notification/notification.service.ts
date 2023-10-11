@@ -35,6 +35,8 @@ export class NotificationService {
       });
     }
 
+    console.log('notif', notif);
+
     return notif;
   }
 

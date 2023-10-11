@@ -64,7 +64,7 @@ export class BrandAccountManagementService {
     }
   }
 
-  async getAllBrands(query: FilterBrandDto) {
+  async getAllFilteredBrands(query: FilterBrandDto) {
     try {
       const { categoryId, page, limit } = query;
       const brands = await this.brandService.getAllFilteredBrands({
