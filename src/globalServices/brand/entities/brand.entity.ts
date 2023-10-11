@@ -219,7 +219,7 @@ export class Brand extends BaseEntity {
   orders: Order[];
 
   @Column({
-    default: true,
+    default: false,
   })
   listOnStore: boolean;
 
@@ -245,4 +245,9 @@ export class Brand extends BaseEntity {
     default: 50,
   })
   vaultPercentage: number;
+
+  @Column({
+    nullable: true,
+  })
+  noOfCustomers: number;
 }

@@ -136,6 +136,7 @@ import { BullModule } from '@nestjs/bull';
 import { SocialAuthenticationService } from './modules/authentication/socialAuth';
 import { BountyService } from './globalServices/oracles/bounty/bounty.service';
 import { Block } from './globalServices/oracles/bounty/entities/block.entity';
+import { TaskScheduleService } from './globalServices/task/common/schedules/taskSchedule.service';
 
 @Module({
   imports: [
@@ -301,6 +302,7 @@ import { Block } from './globalServices/oracles/bounty/entities/block.entity';
     TwitterTaskVerifier,
     SocialAuthenticationService,
     BountyService,
+    TaskScheduleService,
   ],
   exports: [JwtStrategy, PassportModule],
 })
