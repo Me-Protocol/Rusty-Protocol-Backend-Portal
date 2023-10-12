@@ -133,9 +133,6 @@ export class OrderManagementService {
       //   couponCode: coupon.code,
       // };
 
-      // create customer
-      await this.brandService.createBrandCustomer(userId, offer.brandId);
-
       // update customer total redeem
       const customer = await this.customerService.getByUserId(userId);
       customer.totalRedeemed += 1;
