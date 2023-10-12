@@ -27,6 +27,7 @@ import {
   treasuryContract,
 } from '@developeruche/protocol-core';
 import { GetTreasuryPermitDto } from '@src/modules/storeManagement/reward/dto/PushTransactionDto.dto';
+import { BrandService } from '@src/globalServices/brand/brand.service';
 
 @Injectable()
 export class SyncRewardService {
@@ -45,6 +46,7 @@ export class SyncRewardService {
     private readonly keyManagementService: KeyManagementService,
     private readonly fiatWalletService: FiatWalletService,
     private readonly settingsService: SettingsService,
+    private readonly brandService: BrandService,
   ) {}
 
   async createBatch(batch: SyncBatch) {
@@ -449,6 +451,7 @@ export class SyncRewardService {
         rewardId: rewardId,
         isDistributed: false,
       },
+      relations: ['reward', 'reward.brand'],
     });
 
     return batch;
@@ -626,6 +629,18 @@ export class SyncRewardService {
       ethers.utils.parseEther(amount.toString()),
       signer,
     );
+
+    const user = await this.userService.getUserByEmail(email);
+    if (user) {
+      const checkCustomer = await this.brandService.getBrandCustomer(
+        reward.brandId,
+        user.id,
+      );
+
+      if (!checkCustomer) {
+        await this.brandService.createBrandCustomer(user.id, reward.brandId);
+      }
+    }
 
     if (distributionData?.data?.error) {
       return 'Undistributed balance';

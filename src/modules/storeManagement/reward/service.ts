@@ -28,6 +28,7 @@ import { ethers } from 'ethers';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { FilterRegistryHistoryDto } from './dto/filterRegistryHistoryDto.dto';
 import { RewardStatus } from '@src/utils/enums/ItemStatus';
+import { BrandService } from '@src/globalServices/brand/brand.service';
 
 @Injectable()
 export class RewardManagementService {
@@ -37,6 +38,7 @@ export class RewardManagementService {
     private readonly userService: UserService,
     private readonly keyManagementService: KeyManagementService,
     private readonly fiatWalletService: FiatWalletService,
+    private readonly brandService: BrandService,
   ) {}
 
   async createReward(body: CreateRewardDto) {
@@ -271,7 +273,19 @@ export class RewardManagementService {
     });
   }
 
-  //
+  // create customer
+  async createCustomers(userId: string, brandId: string) {
+    const checkCustomer = await this.brandService.getBrandCustomer(
+      brandId,
+      userId,
+    );
+
+    if (!checkCustomer) {
+      await this.brandService.createBrandCustomer(userId, brandId);
+    }
+
+    return true;
+  }
 
   async addPointsToRewardRegistry(addableSyncData: any[], rewardId: string) {
     for (const syncData of addableSyncData) {
@@ -471,6 +485,8 @@ export class RewardManagementService {
               description: `Reward distributed to ${user.customer.walletAddress}`,
             });
           }
+
+          await this.createCustomers(user.id, batch.reward.brandId);
         } else {
           await this.syncService.moveRewardPointToUndistribted({
             customerIdentiyOnBrandSite: syncData.identifier,

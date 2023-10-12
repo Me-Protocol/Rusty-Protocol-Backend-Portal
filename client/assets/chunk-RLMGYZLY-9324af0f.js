@@ -1,0 +1,1 @@
+import{aK as r,aU as t,aV as p,j as c,aN as d,aO as y}from"./index-49b376e0.js";var v=r(function(o,a){const{getBodyProps:s}=t(),e=p();return c.jsx(d.div,{...s(o,a),className:y("chakra-popover__body",o.className),__css:e.body})});v.displayName="PopoverBody";export{v as P};
