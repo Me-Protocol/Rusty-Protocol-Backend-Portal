@@ -175,4 +175,9 @@ export class RewardService {
       },
     });
   }
+
+  async syncElasticSearchIndex() {
+    const allCategories = await this.rewardsRepo.find();
+    this.elasticIndex.batchUpdateIndex(allCategories, rewardIndex);
+  }
 }

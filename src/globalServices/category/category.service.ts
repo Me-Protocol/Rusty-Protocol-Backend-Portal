@@ -75,4 +75,9 @@ export class CategoryService {
 
     return this.categoryRepo.softDelete({ id });
   }
+
+  async syncElasticSearchIndex() {
+    const allCategories = await this.categoryRepo.find();
+    this.elasticIndex.batchUpdateIndex(allCategories, categoryIndex);
+  }
 }
