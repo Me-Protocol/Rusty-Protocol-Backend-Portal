@@ -142,4 +142,9 @@ export class UpdateBrandDto {
   @IsOptional()
   @IsNumber()
   vaultPercentage: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumber()
+  noOfCustomers: number;
 }
