@@ -39,7 +39,10 @@ export class ElasticIndex {
   }
 
   public async batchUpdateIndex(entities: SearchEntity[], index: SearchIndex) {
+    console.log('running');
     const existingIds = await this.fetchExistingIdsFromIndex(index);
+
+    console.log(existingIds);
 
     const newData = entities.filter(
       (entity) => !existingIds.has(entity.id.toString()),
@@ -88,6 +91,8 @@ export class ElasticIndex {
         },
       },
     });
+
+    console.log(existingDocuments);
 
     existingDocuments.forEach((doc) => existingIds.add(doc._id));
 

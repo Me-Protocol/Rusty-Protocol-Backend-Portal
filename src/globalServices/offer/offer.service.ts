@@ -12,6 +12,7 @@ import { ProductService } from '../product/product.service';
 import { Order } from '../order/entities/order.entity';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { offerIndex } from '@src/modules/search/interface/search.interface';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class OfferService {
@@ -633,6 +634,7 @@ export class OfferService {
     // await this.offerRepo.save(offer);
   }
 
+  @Cron(CronExpression.EVERY_30_MINUTES)
   async syncElasticSearchIndex() {
     const allOffers = await this.offerRepo.find();
     this.elasticIndex.batchUpdateIndex(allOffers, offerIndex);

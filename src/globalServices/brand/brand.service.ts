@@ -12,6 +12,7 @@ import { BrandCustomer } from './entities/brand_customer.entity';
 import { FilterBrandCustomer } from '@src/utils/enums/FilterBrandCustomer';
 import { generateBrandIdBytes10 } from '@developeruche/protocol-core';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class BrandService {
@@ -282,6 +283,7 @@ export class BrandService {
     });
   }
 
+  @Cron(CronExpression.EVERY_30_MINUTES)
   async syncElasticSearchIndex() {
     const allBrands = await this.brandRepo.find();
     this.elasticIndex.batchUpdateIndex(allBrands, brandIndex);
