@@ -102,11 +102,13 @@ export class BrandService {
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);
+      this.elasticIndex.updateDocument(newBrand, brandIndex);
+
       const brandProcessColorEvent = new ProcessBrandColorEvent();
       brandProcessColorEvent.brandId = brandId;
-      brandProcessColorEvent.url = dto.logo || dto.logo_white || dto.logo_icon;
+      brandProcessColorEvent.url =
+        newBrand.logo || newBrand.logo_white || newBrand.logo_icon;
       this.eventEmitter.emit('process.brand.color', brandProcessColorEvent);
-      this.elasticIndex.updateDocument(newBrand, brandIndex);
 
       return newBrand;
     } catch (error) {
