@@ -21,6 +21,10 @@ export class ProductService {
     private readonly variantRepo: Repository<Variant>,
   ) {}
 
+  async getAllProducts() {
+    return await this.productRepo.find();
+  }
+
   async getProductImages(brandId: string, page: number, limit: number) {
     const images = await this.productImageRepo.find({
       where: {
