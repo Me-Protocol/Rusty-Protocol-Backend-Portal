@@ -38,6 +38,24 @@ export class ElasticIndex {
     return this.searchService.deleteDocument(data);
   }
 
+  public async batchUpdateIndex(entities: SearchEntity[], index: SearchIndex) {
+    console.log('running');
+    const existingIds = await this.fetchExistingIdsFromIndex(index);
+
+    console.log(existingIds);
+
+    const newData = entities.filter(
+      (entity) => !existingIds.has(entity.id.toString()),
+    );
+
+    if (newData.length > 0) {
+      const data = newData.map((entity) =>
+        this.document(index, entity as SearchEntity),
+      );
+      await this.searchService.batchInsert(data);
+    }
+  }
+
   private bulkIndex(index: SearchIndex, id: number): any {
     return {
       _index: index._index,
@@ -57,5 +75,27 @@ export class ElasticIndex {
       index: index._index,
       type: index._type,
     };
+  }
+
+  private async fetchExistingIdsFromIndex(
+    index: SearchIndex,
+  ): Promise<Set<string>> {
+    const existingIds = new Set<string>();
+
+    // Fetch existing document IDs from the index
+    const existingDocuments = await this.searchService.searchIndex({
+      index: index._index,
+      body: {
+        query: {
+          match_all: {},
+        },
+      },
+    });
+
+    console.log(existingDocuments);
+
+    existingDocuments.forEach((doc) => existingIds.add(doc._id));
+
+    return existingIds;
   }
 }

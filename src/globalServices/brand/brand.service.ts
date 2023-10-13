@@ -11,6 +11,8 @@ import { BrandRole } from '@src/utils/enums/BrandRole';
 import { BrandCustomer } from './entities/brand_customer.entity';
 import { FilterBrandCustomer } from '@src/utils/enums/FilterBrandCustomer';
 import { generateBrandIdBytes10 } from '@developeruche/protocol-core';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class BrandService {
@@ -25,6 +27,8 @@ export class BrandService {
     private readonly brandCustomerRepo: Repository<BrandCustomer>,
 
     private readonly elasticIndex: ElasticIndex,
+
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create({ userId, name }: { userId: string; name: string }) {
@@ -97,7 +101,7 @@ export class BrandService {
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);
-
+      // this.eventEmitter.emit
       this.elasticIndex.updateDocument(newBrand, brandIndex);
 
       return newBrand;
@@ -277,5 +281,11 @@ export class BrandService {
         userId,
       },
     });
+  }
+
+  @Cron(CronExpression.EVERY_30_MINUTES)
+  async syncElasticSearchIndex() {
+    const allBrands = await this.brandRepo.find();
+    this.elasticIndex.batchUpdateIndex(allBrands, brandIndex);
   }
 }
