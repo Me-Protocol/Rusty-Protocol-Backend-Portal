@@ -13,6 +13,7 @@ import { FilterBrandCustomer } from '@src/utils/enums/FilterBrandCustomer';
 import { generateBrandIdBytes10 } from '@developeruche/protocol-core';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { ProcessBrandColorEvent } from './events/process-brand-color.event';
 
 @Injectable()
 export class BrandService {
@@ -101,7 +102,10 @@ export class BrandService {
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);
-      // this.eventEmitter.emit
+      const brandProcessColorEvent = new ProcessBrandColorEvent();
+      brandProcessColorEvent.brandId = brandId;
+      brandProcessColorEvent.url = dto.logo || dto.logo_white || dto.logo_icon;
+      this.eventEmitter.emit('process.brand.color', brandProcessColorEvent);
       this.elasticIndex.updateDocument(newBrand, brandIndex);
 
       return newBrand;

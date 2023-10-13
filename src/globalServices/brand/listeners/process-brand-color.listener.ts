@@ -10,7 +10,7 @@ import { logger } from '@src/globalServices/logger/logger.service';
 @Injectable()
 export class ProcessBrandColor {
   constructor(private readonly brandRepository: Repository<Brand>) {}
-  @OnEvent('process.brand.color')
+  @OnEvent('process.brand.color', { async: true })
   async handleOrderCreatedEvent(event: ProcessBrandColorEvent) {
     const response = await axios.get(event.url, {
       responseType: 'arraybuffer',
