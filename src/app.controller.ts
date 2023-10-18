@@ -1,11 +1,16 @@
-import { Controller, Get, Request, Res } from '@nestjs/common';
+import { Controller, Get, Request, Res, UseGuards } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
 import { AppService } from './app.service';
 import { ApiResponse } from '@nestjs/swagger';
+import { SettingsService } from './globalServices/settings/settings.service';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private settingsService: SettingsService,
+  ) {}
 
   /**
    * Below is used to send requests to built statically served Web frontend built with create-react-app
@@ -20,5 +25,11 @@ export class AppController {
   @Get(['', '*'])
   sendWebFrontEnd(@Request() req: Request, @Res() reply: FastifyReply) {
     return this.appService.sendWebFrontEnd(req, reply);
+  }
+
+  @UseGuards(AuthGuard())
+  @Get('public-settings')
+  async getPublicSettings() {
+    return await this.settingsService.getPublicSettings();
   }
 }

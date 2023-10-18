@@ -49,4 +49,39 @@ export class AdminSettings extends BaseEntity {
     nullable: true,
   })
   onboardWallet: string;
+
+  @Column({
+    default: 200,
+  })
+  maximumRLimit: number;
+
+  @Column({
+    default: 0,
+  })
+  minimumRewardAmountForConversion: number;
+
+  @Column({
+    default: 0,
+  })
+  minimumMeAmountForConversion: number;
+
+  @Column({
+    default: 20,
+  })
+  notifyRewardAmount: number;
+
+  @Column({
+    default: 20,
+  })
+  notifyMeTokenAmount: number;
+
+  @Column({
+    default: 2,
+  })
+  minimumOpenRewardSetupFactor: number;
+
+  @Column({
+    default: 5,
+  })
+  maximumOpenRewardSetupFactor: number;
 }

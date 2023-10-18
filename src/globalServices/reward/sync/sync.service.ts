@@ -643,7 +643,8 @@ export class SyncRewardService {
     }
 
     if (distributionData?.data?.error) {
-      return 'Undistributed balance';
+      console.log(distributionData.data);
+      throw new Error("We couldn't distribute reward");
     } else {
       const registry = await this.findOneRegistryByEmailIdentifier(
         email,
