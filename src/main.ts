@@ -24,7 +24,6 @@ import helmet from '@fastify/helmet';
 
 const cloudinary = require('cloudinary');
 
-
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
@@ -111,19 +110,7 @@ async function bootstrap() {
 
   const fastifyInstance = app.getHttpAdapter().getInstance();
 
-  await app.register(
-    helmet as any,
-    // {
-    //   contentSecurityPolicy: {
-    //     directives: {
-    //       defaultSrc: ["'self'"],
-    //       styleSrc: ["'self'", "'unsafe-inline'"],
-    //       imgSrc: ["'self'", 'data:', 'validator.swagger.io'],
-    //       scriptSrc: ["'self'", "'unsafe-inline'"],
-    //     },
-    //   },
-    // } as FastifyHelmetOptions,
-  );
+  await fastifyInstance.register(helmet);
 
   fastifyInstance.addHook('onRequest', (request, reply, done) => {
     reply.setHeader = function (key: any, value: any) {
