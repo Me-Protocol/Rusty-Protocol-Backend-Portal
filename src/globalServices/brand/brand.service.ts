@@ -289,7 +289,7 @@ export class BrandService {
     });
   }
 
-  @Cron(CronExpression.EVERY_30_MINUTES)
+  @Cron(CronExpression.EVERY_5_HOURS)
   async syncElasticSearchIndex() {
     const allBrands = await this.brandRepo.find();
     this.elasticIndex.batchUpdateIndex(allBrands, brandIndex);
