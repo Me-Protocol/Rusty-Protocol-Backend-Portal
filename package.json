@@ -24,6 +24,7 @@
     "@developeruche/protocol-core": "^0.1.9",
     "@developeruche/runtime-sdk": "0.2.8",
     "@elastic/elasticsearch": "^8.6.0",
+    "@fastify/helmet": "^11.1.1",
     "@fastify/static": "^6.11.2",
     "@fastify/view": "^8.2.0",
     "@gelatonetwork/relay-sdk": "^4.0.0",

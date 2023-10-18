@@ -39,7 +39,6 @@ export class ElasticIndex {
   }
 
   public async batchUpdateIndex(entities: SearchEntity[], index: SearchIndex) {
-    console.log('running');
     const existingIds = await this.fetchExistingIdsFromIndex(index);
 
     console.log(existingIds);
