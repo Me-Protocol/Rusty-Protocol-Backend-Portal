@@ -287,7 +287,7 @@ export class ProductManagementService {
     }
   }
 
-  @Cron(CronExpression.EVERY_5_HOURSUTES)
+  @Cron(CronExpression.EVERY_5_HOURS)
   async syncElasticSearchIndex() {
     const allProducts = await this.productService.getAllProducts();
     await this.elasticIndex.batchUpdateIndex(allProducts, productIndex);

@@ -77,7 +77,7 @@ export class CategoryService {
     return this.categoryRepo.softDelete({ id });
   }
 
-  @Cron(CronExpression.EVERY_5_HOURSUTES)
+  @Cron(CronExpression.EVERY_5_HOURS)
   async syncElasticSearchIndex() {
     const allCategories = await this.categoryRepo.find();
     this.elasticIndex.batchUpdateIndex(allCategories, categoryIndex);
