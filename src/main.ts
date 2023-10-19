@@ -110,7 +110,28 @@ async function bootstrap() {
 
   const fastifyInstance = app.getHttpAdapter().getInstance();
 
-  await fastifyInstance.register(helmet);
+  await fastifyInstance.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: [`'self'`, 'unpkg.com'],
+        styleSrc: [
+          `'self'`,
+          `'unsafe-inline'`,
+          'cdn.jsdelivr.net',
+          'fonts.googleapis.com',
+          'unpkg.com',
+        ],
+        fontSrc: [`'self'`, 'fonts.gstatic.com', 'data:'],
+        imgSrc: [`'self'`, 'data:', 'cdn.jsdelivr.net'],
+        scriptSrc: [
+          `'self'`,
+          `https: 'unsafe-inline'`,
+          `cdn.jsdelivr.net`,
+          `'unsafe-eval'`,
+        ],
+      },
+    },
+  });
 
   fastifyInstance.addHook('onRequest', (request, reply, done) => {
     reply.setHeader = function (key: any, value: any) {
