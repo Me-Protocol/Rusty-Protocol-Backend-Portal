@@ -75,6 +75,10 @@ export class RewardManagementService {
           body.acceptedCustomerIdentitytypes;
       if (body.isBounty) reward.isBounty = body.isBounty;
       if (body.blockchain) reward.blockchain = body.blockchain;
+      if (body.poolTotalSupply) reward.poolTotalSupply = body.poolTotalSupply;
+      if (body.rewardDollarPrice)
+        reward.rewardDollarPrice = body.rewardDollarPrice;
+      if (body.isBounty) reward.isBounty = body.isBounty;
 
       if (isDraft) {
         return await this.rewardService.save(reward);
