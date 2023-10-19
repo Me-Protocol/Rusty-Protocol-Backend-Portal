@@ -45,14 +45,7 @@ export class RewardManagementService {
     try {
       const slug = getSlug(body.rewardName);
 
-      const checkReward = await this.rewardService.findOneRewardByName(
-        body.rewardName,
-      );
       let isDraft = true;
-
-      if (checkReward) {
-        throw new Error('Looks like this reward already exists');
-      }
 
       let reward: Reward;
 
@@ -61,6 +54,14 @@ export class RewardManagementService {
       if (!reward) {
         reward = new Reward();
         isDraft = false;
+      }
+
+      const checkReward = await this.rewardService.findOneRewardByName(
+        body.rewardName,
+      );
+
+      if (checkReward && !isDraft) {
+        throw new Error('Looks like this reward already exists');
       }
 
       if (body.rewardName) reward.slug = slug;
