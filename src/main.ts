@@ -110,7 +110,48 @@ async function bootstrap() {
 
   const fastifyInstance = app.getHttpAdapter().getInstance();
 
-  await fastifyInstance.register(helmet);
+  await fastifyInstance.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: [`'self'`, 'unpkg.com'],
+        styleSrc: [
+          `'self'`,
+          `'unsafe-inline'`,
+          'cdn.jsdelivr.net',
+          'fonts.googleapis.com',
+          'unpkg.com',
+          'cdnjs.cloudflare.com',
+        ],
+        fontSrc: [
+          `'self'`,
+          'fonts.gstatic.com',
+          'cdnjs.cloudflare.com',
+          'data:',
+        ],
+        imgSrc: [
+          `'self'`,
+          'data:',
+          'cdn.jsdelivr.net',
+          '*.cloudinary.com',
+          'flagcdn.com',
+          '*.freepik.com',
+        ],
+        scriptSrc: [
+          `'self'`,
+          `https: 'unsafe-inline'`,
+          `cdn.jsdelivr.net`,
+          `'unsafe-eval'`,
+        ],
+        connectSrc: [
+          `'self'`,
+          '*.meappbounty.com',
+          'usemeprotocol.com',
+          '*.alchemy.com',
+          'ipapi.co',
+        ],
+      },
+    },
+  });
 
   fastifyInstance.addHook('onRequest', (request, reply, done) => {
     reply.setHeader = function (key: any, value: any) {
