@@ -79,7 +79,7 @@ export class RewardManagementService {
       if (body.poolTotalSupply) reward.poolTotalSupply = body.poolTotalSupply;
       if (body.rewardDollarPrice)
         reward.rewardDollarPrice = body.rewardDollarPrice;
-      if (body.isBounty) reward.isBounty = body.isBounty;
+      if (body.rOptimal) reward.rOptimal = body.rOptimal;
 
       if (isDraft) {
         return await this.rewardService.save(reward);
