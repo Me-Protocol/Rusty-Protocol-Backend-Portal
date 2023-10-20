@@ -80,6 +80,8 @@ export class RewardManagementService {
       if (body.rewardDollarPrice)
         reward.rewardDollarPrice = body.rewardDollarPrice;
       if (body.rOptimal) reward.rOptimal = body.rOptimal;
+      if (body.rewardValueInDollars)
+        reward.rewardValueInDollars = body.rewardValueInDollars;
 
       if (isDraft) {
         return await this.rewardService.save(reward);

@@ -5,6 +5,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsNumberString,
   IsOptional,
   IsString,
   IsUUID,
@@ -63,6 +64,11 @@ export class CreateRewardDto {
   @IsOptional()
   @IsString()
   rOptimal: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumberString()
+  rewardValueInDollars: number;
 }
 
 export class UpdateRewardCreationDto {
