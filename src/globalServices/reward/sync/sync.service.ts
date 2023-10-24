@@ -630,17 +630,17 @@ export class SyncRewardService {
       signer,
     );
 
-    const user = await this.userService.getUserByEmail(email);
-    if (user) {
-      const checkCustomer = await this.brandService.getBrandCustomer(
-        reward.brandId,
-        user.id,
-      );
+    // const user = await this.userService.getUserByEmail(email);
+    // if (user) {
+    //   const checkCustomer = await this.brandService.getBrandCustomer(
+    //     reward.brandId,
+    //     user.id,
+    //   );
 
-      if (!checkCustomer) {
-        await this.brandService.createBrandCustomer(user.id, reward.brandId);
-      }
-    }
+    //   if (!checkCustomer) {
+    //     await this.brandService.createBrandCustomer(user.id, reward.brandId);
+    //   }
+    // }
 
     if (distributionData?.data?.error) {
       console.log(distributionData.data);

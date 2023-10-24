@@ -493,7 +493,7 @@ export class RewardManagementService {
             });
           }
 
-          await this.createCustomers(user.id, batch.reward.brandId);
+          // await this.createCustomers(user.id, batch.reward.brandId);
         } else {
           await this.syncService.moveRewardPointToUndistribted({
             customerIdentiyOnBrandSite: syncData.identifier,
