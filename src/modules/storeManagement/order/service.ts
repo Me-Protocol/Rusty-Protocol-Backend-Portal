@@ -151,7 +151,14 @@ export class OrderManagementService {
     }
   }
 
-  async getOrders({ userId, page, limit, filterBy, brandId }: FilterOrderDto) {
+  async getOrders({
+    userId,
+    page,
+    limit,
+    filterBy,
+    brandId,
+    productId,
+  }: FilterOrderDto) {
     try {
       return this.orderService.getOrders({
         userId,
@@ -159,6 +166,7 @@ export class OrderManagementService {
         limit,
         filterBy,
         brandId,
+        productId,
       });
     } catch (error) {
       logger.error(error);

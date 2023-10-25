@@ -66,6 +66,11 @@ export class FilterOfferDto {
   @IsOptional()
   @IsString()
   search: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsUUID()
+  productId: string;
 }
 
 export class FilterUserOfferDto {

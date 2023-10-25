@@ -415,6 +415,7 @@ export class OfferService {
     orderBy: OfferFilter,
     order: string,
     search: string,
+    productId?: string,
   ) {
     const offersQuery = this.offerRepo
       .createQueryBuilder('offer')
@@ -463,6 +464,12 @@ export class OfferService {
     if (search) {
       offersQuery.andWhere('offer.name LIKE :search', {
         search: `%${search}%`,
+      });
+    }
+
+    if (productId) {
+      offersQuery.andWhere('offer.productId = :productId', {
+        productId,
       });
     }
 

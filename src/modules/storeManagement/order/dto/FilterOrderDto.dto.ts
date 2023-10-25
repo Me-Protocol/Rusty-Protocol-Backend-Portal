@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { OrderFilter } from '@src/utils/enums/OrderFilter';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class FilterOrderDto {
   @ApiProperty()
@@ -22,6 +22,11 @@ export class FilterOrderDto {
     message: 'Please provide a valid status',
   })
   filterBy: OrderFilter;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsUUID()
+  productId: string;
 
   userId: string;
 
