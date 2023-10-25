@@ -21,3 +21,5 @@ export class BrandCustomer extends BaseEntity {
   @JoinColumn({ name: 'userId' })
   user: User;
 }
+
+// await this.createCustomers(user.id, batch.reward.brandId);
