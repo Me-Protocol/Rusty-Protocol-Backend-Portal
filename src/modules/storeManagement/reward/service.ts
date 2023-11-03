@@ -779,8 +779,8 @@ export class RewardManagementService {
       await this.rewardService.getExistingRewardByNameAndSymbol(name, symbol);
 
     return {
-      rewardName: !!rewardName,
-      rewardSymbol: !!rewardSymbol,
+      rewardName: !rewardName,
+      rewardSymbol: !rewardSymbol,
     };
   }
 }
