@@ -183,7 +183,7 @@ export class RewardService {
   ) {
     // Get rewards where name is equal to name or symbol is equal to symbol using or query return boolean for each check
     const existingRewardWithName = await this.rewardsRepo.findOneBy({
-      rewardName,
+      rewardName: rewardName,
     });
 
     const existingRewardWithSymbol = await this.rewardsRepo.findOneBy({
