@@ -120,7 +120,7 @@ export class RewardManagementController {
   }
 
   @UseGuards(AuthGuard())
-  @Get()
+  @Get('name-symbol/lookup')
   async checkUniqueRewardNameAndSymbol(
     @Query(ValidationPipe) query: CheckExistingRewardParams,
   ) {
