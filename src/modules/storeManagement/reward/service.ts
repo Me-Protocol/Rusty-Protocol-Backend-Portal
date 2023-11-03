@@ -767,4 +767,14 @@ export class RewardManagementService {
       });
     }
   }
+
+  async checkUniqueRewardNameAndSymbol(name: string, symbol: string) {
+    const { rewardName, rewardSymbol } =
+      await this.rewardService.getExistingRewardByNameAndSymbol(name, symbol);
+
+    return {
+      rewardName: !!rewardName,
+      rewardSymbol: !!rewardSymbol,
+    };
+  }
 }

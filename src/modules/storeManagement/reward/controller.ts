@@ -39,6 +39,7 @@ import {
 } from './dto/PushTransactionDto.dto';
 import { ServerGuard } from '@src/middlewares/server-guard';
 import { FilterRegistryHistoryDto } from './dto/filterRegistryHistoryDto.dto';
+import { CheckExistingRewardParams } from './dto/check-existing-reward.dto';
 
 @ApiTags('Reward')
 @Controller('reward')
@@ -116,6 +117,18 @@ export class RewardManagementController {
   @Get()
   async getRewards(@Query(ValidationPipe) query: FilterRewardDto) {
     return await this.rewardManagementService.getRewards(query);
+  }
+
+  @UseGuards(AuthGuard())
+  @Get()
+  async checkUniqueRewardNameAndSymbol(
+    @Query(ValidationPipe) query: CheckExistingRewardParams,
+  ) {
+    const { rewardName, rewardSymbol } = query;
+    return await this.rewardManagementService.checkUniqueRewardNameAndSymbol(
+      rewardName,
+      rewardSymbol,
+    );
   }
 
   @UseGuards(AuthGuard())
