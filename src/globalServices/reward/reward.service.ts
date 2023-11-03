@@ -176,6 +176,26 @@ export class RewardService {
       },
     });
   }
+
+  async getExistingRewardByNameAndSymbol(
+    rewardName: string,
+    rewardSymbol: string,
+  ) {
+    // Get rewards where name is equal to name or symbol is equal to symbol using or query return boolean for each check
+    const existingRewardWithName = await this.rewardsRepo.findOneBy({
+      rewardName,
+    });
+
+    const existingRewardWithSymbol = await this.rewardsRepo.findOneBy({
+      rewardSymbol,
+    });
+
+    return {
+      rewardName: existingRewardWithName,
+      rewardSymbol: existingRewardWithSymbol,
+    };
+  }
+
   @Cron(CronExpression.EVERY_5_HOURS)
   async syncElasticSearchIndex() {
     const allRewards = await this.rewardsRepo.find();

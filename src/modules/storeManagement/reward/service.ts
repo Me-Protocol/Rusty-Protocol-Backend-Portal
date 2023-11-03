@@ -767,4 +767,20 @@ export class RewardManagementService {
       });
     }
   }
+
+  async checkUniqueRewardNameAndSymbol(name: string, symbol: string) {
+    if (!name || !symbol) {
+      throw new HttpException('Name and symbol are required', 400, {
+        cause: new Error('Name and symbol are required'),
+      });
+    }
+
+    const { rewardName, rewardSymbol } =
+      await this.rewardService.getExistingRewardByNameAndSymbol(name, symbol);
+
+    return {
+      rewardName: !!rewardName,
+      rewardSymbol: !!rewardSymbol,
+    };
+  }
 }
