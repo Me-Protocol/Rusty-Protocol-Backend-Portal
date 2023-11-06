@@ -91,7 +91,7 @@ export class CreateProductDto {
   @ApiProperty()
   @IsOptional()
   @IsArray({
-    message: 'Product images must be an array of strings',
+    message: 'Collections must be an array of strings',
   })
   collections: string[];
 

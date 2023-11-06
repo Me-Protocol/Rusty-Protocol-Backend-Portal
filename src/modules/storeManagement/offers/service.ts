@@ -197,6 +197,7 @@ export class OfferManagementService {
         query.orderBy,
         query.order,
         query.search,
+        query.productId,
       );
     } catch (error) {
       console.log(error);

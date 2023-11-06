@@ -30,7 +30,7 @@ export class OrderService {
   }
 
   async getOrders(query: FilterOrderDto) {
-    const { limit, page, filterBy, userId, brandId } = query;
+    const { limit, page, filterBy, userId, brandId, productId } = query;
 
     const orderQuery = this.orderRepo
       .createQueryBuilder('order')
@@ -50,6 +50,12 @@ export class OrderService {
         .andWhere('order.brandId = :brandId', {
           brandId: brandId,
         });
+
+      if (productId) {
+        orderQuery.andWhere('product.id = :productId', {
+          productId: productId,
+        });
+      }
     }
 
     if (userId) {

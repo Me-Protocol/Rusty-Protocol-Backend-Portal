@@ -92,10 +92,10 @@ export class OrderManagementService {
       //   }
       // }
 
-      const discount = (offer.tokens * offer.discountPercentage) / 100;
-      const amount = offer.tokens - discount;
+      // const discount = (offer.tokens * offer.discountPercentage) / 100;
+      // const amount = offer.tokens - discount;
 
-      const totalAmount = amount * quantity;
+      const totalAmount = offer.tokens * quantity;
 
       // //check if the user has enough point to redeem
       // if (registry.balance < +totalAmount) {
@@ -133,9 +133,6 @@ export class OrderManagementService {
       //   couponCode: coupon.code,
       // };
 
-      // create customer
-      await this.brandService.createBrandCustomer(userId, offer.brandId);
-
       // update customer total redeem
       const customer = await this.customerService.getByUserId(userId);
       customer.totalRedeemed += 1;
@@ -154,7 +151,14 @@ export class OrderManagementService {
     }
   }
 
-  async getOrders({ userId, page, limit, filterBy, brandId }: FilterOrderDto) {
+  async getOrders({
+    userId,
+    page,
+    limit,
+    filterBy,
+    brandId,
+    productId,
+  }: FilterOrderDto) {
     try {
       return this.orderService.getOrders({
         userId,
@@ -162,6 +166,7 @@ export class OrderManagementService {
         limit,
         filterBy,
         brandId,
+        productId,
       });
     } catch (error) {
       logger.error(error);
@@ -282,7 +287,7 @@ export class OrderManagementService {
     return await this.orderService.saveOrder(order);
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async checkOrderStatus() {
     const pendingOrders = await this.orderService.getPendingOrders();
 
@@ -351,6 +356,8 @@ export class OrderManagementService {
                 })}
              `;
 
+          await this.notificationService.createNotification(notification);
+
           //   balance: registry.balance,
           //   description,
           //   transactionType: TransactionsType.CREDIT,
@@ -372,8 +379,6 @@ export class OrderManagementService {
           history.balance = 0;
 
           await this.syncService.saveRegistryHistory(history);
-
-          await this.notificationService.createNotification(notification);
         } else if (status === 'ExecFailed') {
           order.status = StatusType.FAILED;
 

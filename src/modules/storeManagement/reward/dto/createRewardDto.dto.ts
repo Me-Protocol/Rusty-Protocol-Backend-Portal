@@ -1,7 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { RewardType } from '@src/utils/enums/RewardType';
 import { TokenBlockchain } from '@src/utils/enums/reward.enum';
-import { IsArray, IsBoolean, IsEnum, IsString, IsUUID } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsNumberString,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateRewardDto {
   brandId: string;
@@ -41,6 +49,26 @@ export class CreateRewardDto {
   acceptedCustomerIdentitytypes: string[];
 
   apiKey: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  poolTotalSupply: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  rewardDollarPrice: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  rOptimal: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumberString()
+  rewardValueInDollars: number;
 }
 
 export class UpdateRewardCreationDto {

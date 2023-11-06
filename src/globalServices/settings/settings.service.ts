@@ -37,4 +37,25 @@ export class SettingsService {
       where: { isDefault: true },
     });
   }
+
+  async getPublicSettings() {
+    let settings = await this.adminSettingsRepo.findOne({
+      where: { isDefault: true },
+    });
+
+    const {
+      minimumBalanceApi,
+      minimumBalanceInApp,
+      topupAmountFactor,
+      topupLimitFactor,
+      isDefault,
+      meDispenser,
+      onboardWallet,
+      ...rest
+    } = settings;
+
+    return {
+      ...rest,
+    };
+  }
 }

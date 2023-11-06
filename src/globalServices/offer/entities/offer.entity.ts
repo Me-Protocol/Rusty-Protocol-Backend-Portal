@@ -125,7 +125,9 @@ export class Offer extends BaseEntity {
   @OneToMany(() => Review, (review) => review.offer)
   reviews: Review[];
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   rewardId: string;
 
   @Column({

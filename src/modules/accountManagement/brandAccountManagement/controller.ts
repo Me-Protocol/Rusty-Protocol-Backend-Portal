@@ -48,8 +48,8 @@ export class BrandManagementController {
   }
 
   @Get()
-  async getAllBrands(@Query(ValidationPipe) query: FilterBrandDto) {
-    return await this.brandAccountManagementService.getAllBrands(query);
+  async getAllFilteredBrands(@Query(ValidationPipe) query: FilterBrandDto) {
+    return await this.brandAccountManagementService.getAllFilteredBrands(query);
   }
 
   @UseGuards(AuthGuard())

@@ -82,7 +82,6 @@ export class CustomerAccountManagementService {
         });
 
       customer.walletAddress = walletAddress;
-
       await this.customerService.save(customer);
 
       // Check if user has undistributed points
@@ -92,7 +91,7 @@ export class CustomerAccountManagementService {
 
       if (undistributedRewards.length > 0) {
         for (const point of undistributedRewards) {
-          this.syncService.distributeRewardWithPrivateKey({
+          await this.syncService.distributeRewardWithPrivateKey({
             rewardId: point.rewardId,
             walletAddress: walletAddress,
             amount: point.undistributedBalance,

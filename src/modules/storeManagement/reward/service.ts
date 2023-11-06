@@ -28,6 +28,7 @@ import { ethers } from 'ethers';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { FilterRegistryHistoryDto } from './dto/filterRegistryHistoryDto.dto';
 import { RewardStatus } from '@src/utils/enums/ItemStatus';
+import { BrandService } from '@src/globalServices/brand/brand.service';
 
 @Injectable()
 export class RewardManagementService {
@@ -37,20 +38,14 @@ export class RewardManagementService {
     private readonly userService: UserService,
     private readonly keyManagementService: KeyManagementService,
     private readonly fiatWalletService: FiatWalletService,
+    private readonly brandService: BrandService,
   ) {}
 
   async createReward(body: CreateRewardDto) {
     try {
       const slug = getSlug(body.rewardName);
 
-      const checkReward = await this.rewardService.findOneRewardByName(
-        body.rewardName,
-      );
       let isDraft = true;
-
-      if (checkReward) {
-        throw new Error('Looks like this reward already exists');
-      }
 
       let reward: Reward;
 
@@ -59,6 +54,14 @@ export class RewardManagementService {
       if (!reward) {
         reward = new Reward();
         isDraft = false;
+      }
+
+      const checkReward = await this.rewardService.findOneRewardByName(
+        body.rewardName,
+      );
+
+      if (checkReward && !isDraft) {
+        throw new Error('Looks like this reward already exists');
       }
 
       if (body.rewardName) reward.slug = slug;
@@ -73,6 +76,12 @@ export class RewardManagementService {
           body.acceptedCustomerIdentitytypes;
       if (body.isBounty) reward.isBounty = body.isBounty;
       if (body.blockchain) reward.blockchain = body.blockchain;
+      if (body.poolTotalSupply) reward.poolTotalSupply = body.poolTotalSupply;
+      if (body.rewardDollarPrice)
+        reward.rewardDollarPrice = body.rewardDollarPrice;
+      if (body.rOptimal) reward.rOptimal = body.rOptimal;
+      if (body.rewardValueInDollars)
+        reward.rewardValueInDollars = body.rewardValueInDollars;
 
       if (isDraft) {
         return await this.rewardService.save(reward);
@@ -271,7 +280,19 @@ export class RewardManagementService {
     });
   }
 
-  //
+  // create customer
+  async createCustomers(userId: string, brandId: string) {
+    const checkCustomer = await this.brandService.getBrandCustomer(
+      brandId,
+      userId,
+    );
+
+    if (!checkCustomer) {
+      await this.brandService.createBrandCustomer(userId, brandId);
+    }
+
+    return true;
+  }
 
   async addPointsToRewardRegistry(addableSyncData: any[], rewardId: string) {
     for (const syncData of addableSyncData) {
@@ -471,6 +492,8 @@ export class RewardManagementService {
               description: `Reward distributed to ${user.customer.walletAddress}`,
             });
           }
+
+          await this.createCustomers(user.id, batch.reward.brandId);
         } else {
           await this.syncService.moveRewardPointToUndistribted({
             customerIdentiyOnBrandSite: syncData.identifier,
@@ -743,5 +766,21 @@ export class RewardManagementService {
         cause: new Error(error.message),
       });
     }
+  }
+
+  async checkUniqueRewardNameAndSymbol(name: string, symbol: string) {
+    if (!name || !symbol) {
+      throw new HttpException('Name and symbol are required', 400, {
+        cause: new Error('Name and symbol are required'),
+      });
+    }
+
+    const { rewardName, rewardSymbol } =
+      await this.rewardService.getExistingRewardByNameAndSymbol(name, symbol);
+
+    return {
+      rewardName: !rewardName,
+      rewardSymbol: !rewardSymbol,
+    };
   }
 }

@@ -11,6 +11,9 @@ import { BrandRole } from '@src/utils/enums/BrandRole';
 import { BrandCustomer } from './entities/brand_customer.entity';
 import { FilterBrandCustomer } from '@src/utils/enums/FilterBrandCustomer';
 import { generateBrandIdBytes10 } from '@developeruche/protocol-core';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { ProcessBrandColorEvent } from './events/process-brand-color.event';
 
 @Injectable()
 export class BrandService {
@@ -25,6 +28,8 @@ export class BrandService {
     private readonly brandCustomerRepo: Repository<BrandCustomer>,
 
     private readonly elasticIndex: ElasticIndex,
+
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create({ userId, name }: { userId: string; name: string }) {
@@ -93,11 +98,17 @@ export class BrandService {
       brand.supportPhoneNumber = dto.supportPhoneNumber;
       brand.listOnStore = dto.listOnStore;
       brand.vaultPercentage = dto.vaultPercentage;
+      brand.noOfCustomers = dto.noOfCustomers;
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);
-
       this.elasticIndex.updateDocument(newBrand, brandIndex);
+
+      const brandProcessColorEvent = new ProcessBrandColorEvent();
+      brandProcessColorEvent.brandId = brandId;
+      brandProcessColorEvent.url =
+        newBrand.logo || newBrand.logo_white || newBrand.logo_icon;
+      this.eventEmitter.emit('process.brand.color', brandProcessColorEvent);
 
       return newBrand;
     } catch (error) {
@@ -276,5 +287,11 @@ export class BrandService {
         userId,
       },
     });
+  }
+
+  @Cron(CronExpression.EVERY_5_HOURS)
+  async syncElasticSearchIndex() {
+    const allBrands = await this.brandRepo.find();
+    this.elasticIndex.batchUpdateIndex(allBrands, brandIndex);
   }
 }

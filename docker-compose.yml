@@ -7,6 +7,7 @@ services:
     environment:
       # - xpack.security.http.ssl=false
       - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=true
       - 'discovery.type=single-node'
     # ulimits:
     #   memlock:
@@ -19,20 +20,20 @@ services:
     #   - IPC_LOCK
     volumes:
       - elasticsearch-data-volume:/usr/share/elasticsearch/data
+
     ports:
       - 9200:9200
-      - 9300:9300
     networks:
       - protocol_backend
 
   kibana:
     container_name: me_protocol_kibana
-    image: docker.elastic.co/kibana/kibana:8.10.0
+    image: docker.elastic.co/kibana/kibana:8.10.3
     restart: always
     depends_on:
       - elasticsearch
     environment:
-      - ELASTICSEARCH_HOSTS=http://me_protocol_elastic_search:9200
+      - ELASTICSEARCH_HOSTS=http://localhost:9200
     ports:
       - 5601:5601
     networks:

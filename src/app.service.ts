@@ -8,6 +8,7 @@ export class AppService {
       'Cross-Origin-Resource-Policy': 'cross-site',
       'Cross-Origin-Opener-Policy': 'cross-site',
       'Origin-Agent-Cluster': '?1',
+      'Cache-Control':'public, max-age=0, must-revalidate',
     });
     await res.view('index.html');
   }

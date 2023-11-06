@@ -10,6 +10,9 @@ import { OfferFilter, OfferSort } from '@src/utils/enums/OfferFiilter';
 import { CustomerService } from '../customer/customer.service';
 import { ProductService } from '../product/product.service';
 import { Order } from '../order/entities/order.entity';
+import { ElasticIndex } from '@src/modules/search/index/search.index';
+import { offerIndex } from '@src/modules/search/interface/search.interface';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class OfferService {
@@ -24,6 +27,7 @@ export class OfferService {
     private readonly viewService: ViewsService,
     private readonly customerService: CustomerService,
     private readonly productService: ProductService,
+    private readonly elasticIndex: ElasticIndex,
   ) {}
 
   async saveOffer(offer: Offer) {
@@ -411,6 +415,7 @@ export class OfferService {
     orderBy: OfferFilter,
     order: string,
     search: string,
+    productId?: string,
   ) {
     const offersQuery = this.offerRepo
       .createQueryBuilder('offer')
@@ -459,6 +464,12 @@ export class OfferService {
     if (search) {
       offersQuery.andWhere('offer.name LIKE :search', {
         search: `%${search}%`,
+      });
+    }
+
+    if (productId) {
+      offersQuery.andWhere('offer.productId = :productId', {
+        productId,
       });
     }
 
@@ -628,5 +639,11 @@ export class OfferService {
     await this.productService.saveProduct(product);
 
     // await this.offerRepo.save(offer);
+  }
+
+  @Cron(CronExpression.EVERY_5_HOURS)
+  async syncElasticSearchIndex() {
+    const allOffers = await this.offerRepo.find();
+    this.elasticIndex.batchUpdateIndex(allOffers, offerIndex);
   }
 }

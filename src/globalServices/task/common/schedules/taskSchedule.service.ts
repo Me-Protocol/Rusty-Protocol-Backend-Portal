@@ -19,7 +19,7 @@ import { Notification } from '@src/globalServices/notification/entities/notifica
 export const { TASK_QUEUE } = process.env;
 
 @Injectable()
-export class TasksService {
+export class TaskScheduleService {
   constructor(
     @InjectRepository(Task)
     private taskRepository: Repository<Task>,

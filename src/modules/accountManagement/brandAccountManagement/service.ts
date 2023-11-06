@@ -50,9 +50,10 @@ export class BrandAccountManagementService {
 
   async updateBrand(body: UpdateBrandDto, brandId: string) {
     try {
-      if (body.logo) {
+      if (body.logo || body.logo_white) {
+        let img = body.logo || body.logo_white;
         const processBrandColorPayload = new ProcessBrandColorEvent();
-        processBrandColorPayload.url = body.logo;
+        processBrandColorPayload.url = img;
         processBrandColorPayload.brandId = brandId;
         this.eventEmitter.emit('process.brand.color', processBrandColorPayload);
       }
@@ -64,7 +65,7 @@ export class BrandAccountManagementService {
     }
   }
 
-  async getAllBrands(query: FilterBrandDto) {
+  async getAllFilteredBrands(query: FilterBrandDto) {
     try {
       const { categoryId, page, limit } = query;
       const brands = await this.brandService.getAllFilteredBrands({

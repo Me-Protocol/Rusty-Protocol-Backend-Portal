@@ -1,14 +1,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { LoginType } from '@src/utils/enums/LoginType';
-import { MailService } from '@src/globalServices/mail/mail.service';
-import { SmsService } from '@src/globalServices/sms/sms.service';
 import { UserService } from '@src/globalServices/user/user.service';
-import { CustomerService } from '@src/globalServices/customer/customer.service';
-import { BrandService } from '@src/globalServices/brand/brand.service';
 import { UserAppType } from '@src/utils/enums/UserAppType';
-import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
-import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
 import {
   TWITTER_CALLBACK_URL,
   TWITTER_CONSUMER_KEY,

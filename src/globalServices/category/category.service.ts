@@ -7,6 +7,7 @@ import { UpdateCategoryDto } from '@src/modules/storeManagement/category/dto/Upd
 import { CreateCategoryDto } from '@src/modules/storeManagement/category/dto/CreateCategoryDto';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { categoryIndex } from '@src/modules/search/interface/search.interface';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class CategoryService {
@@ -74,5 +75,11 @@ export class CategoryService {
     this.elasticIndex.deleteDocument(categoryIndex, id);
 
     return this.categoryRepo.softDelete({ id });
+  }
+
+  @Cron(CronExpression.EVERY_5_HOURS)
+  async syncElasticSearchIndex() {
+    const allCategories = await this.categoryRepo.find();
+    this.elasticIndex.batchUpdateIndex(allCategories, categoryIndex);
   }
 }
