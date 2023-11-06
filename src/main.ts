@@ -147,6 +147,7 @@ async function bootstrap() {
           '*.meappbounty.com',
           '*.usemeprotocol.com',
           '*.alchemy.com',
+          '*.magic.link',
           'ipapi.co',
         ],
       },
