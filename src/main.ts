@@ -113,7 +113,7 @@ async function bootstrap() {
   await fastifyInstance.register(helmet, {
     contentSecurityPolicy: {
       directives: {
-        defaultSrc: [`'self'`, 'unpkg.com'],
+        defaultSrc: [`'self'`, 'unpkg.com', '*'],
         styleSrc: [
           `'self'`,
           `'unsafe-inline'`,
