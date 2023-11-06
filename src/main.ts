@@ -110,47 +110,63 @@ async function bootstrap() {
 
   const fastifyInstance = app.getHttpAdapter().getInstance();
 
+  // await fastifyInstance.register(helmet, {
+  //   contentSecurityPolicy: {
+  //     directives: {
+  //       defaultSrc: [`'self'`, 'unpkg.com'],
+  //       styleSrc: [
+  //         `'self'`,
+  //         `'unsafe-inline'`,
+  //         'cdn.jsdelivr.net',
+  //         'fonts.googleapis.com',
+  //         'unpkg.com',
+  //         'cdnjs.cloudflare.com',
+  //       ],
+  //       fontSrc: [
+  //         `'self'`,
+  //         'fonts.gstatic.com',
+  //         'cdnjs.cloudflare.com',
+  //         'data:',
+  //       ],
+  //       imgSrc: [
+  //         `'self'`,
+  //         'data:',
+  //         'cdn.jsdelivr.net',
+  //         '*.cloudinary.com',
+  //         'flagcdn.com',
+  //         '*.freepik.com',
+  //       ],
+  //       frameSrc: [
+  //         '*.magic.link'
+  //       ],
+  //       scriptSrc: [
+  //         `'self'`,
+  //         `https: 'unsafe-inline'`,
+  //         `cdn.jsdelivr.net`,
+  //         `'unsafe-eval'`,
+  //       ],
+  //       connectSrc: [
+  //         `'self'`,
+  //         '*.meappbounty.com',
+  //         '*.usemeprotocol.com',
+  //         '*.alchemy.com',
+  //         '*.magic.link',
+  //         'ipapi.co',
+  //       ],
+  //     },
+  //   },
+  // });
+
   await fastifyInstance.register(helmet, {
     contentSecurityPolicy: {
       directives: {
-        defaultSrc: [`'self'`, 'unpkg.com', '*'],
-        styleSrc: [
-          `'self'`,
-          `'unsafe-inline'`,
-          'cdn.jsdelivr.net',
-          'fonts.googleapis.com',
-          'unpkg.com',
-          'cdnjs.cloudflare.com',
-        ],
-        fontSrc: [
-          `'self'`,
-          'fonts.gstatic.com',
-          'cdnjs.cloudflare.com',
-          'data:',
-        ],
-        imgSrc: [
-          `'self'`,
-          'data:',
-          'cdn.jsdelivr.net',
-          '*.cloudinary.com',
-          'flagcdn.com',
-          '*.freepik.com',
-        ],
-        frameSrc: ['*.magic.link'],
-        scriptSrc: [
-          `'self'`,
-          `https: 'unsafe-inline'`,
-          `cdn.jsdelivr.net`,
-          `'unsafe-eval'`,
-        ],
-        connectSrc: [
-          `'self'`,
-          '*.meappbounty.com',
-          '*.usemeprotocol.com',
-          '*.alchemy.com',
-          '*.magic.link',
-          'ipapi.co',
-        ],
+        defaultSrc: ['*'],
+        styleSrc: ['*'],
+        fontSrc: ['*'],
+        imgSrc: ['*'],
+        frameSrc: ['*'],
+        scriptSrc: ['*'],
+        connectSrc: ['*'],
       },
     },
   });
