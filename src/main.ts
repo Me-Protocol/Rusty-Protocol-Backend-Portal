@@ -145,7 +145,7 @@ async function bootstrap() {
         connectSrc: [
           `'self'`,
           '*.meappbounty.com',
-          'usemeprotocol.com',
+          '*.usemeprotocol.com',
           '*.alchemy.com',
           'ipapi.co',
         ],
