@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, LessThan, Repository } from 'typeorm';
 import { Offer } from './entities/offer.entity';
 import { UserService } from '../user/user.service';
 import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
@@ -127,6 +127,7 @@ export class OfferService {
     const offer = await this.offerRepo.findOne({
       where: {
         offerCode,
+        status: ProductStatus.PUBLISHED,
       },
       relations: [
         'brand',
@@ -139,7 +140,7 @@ export class OfferService {
     });
 
     if (!offer) {
-      return null;
+      throw new Error('Offer not found');
     }
 
     await this.viewService.createView(offer.id, sessionId, userId);
@@ -645,5 +646,25 @@ export class OfferService {
   async syncElasticSearchIndex() {
     const allOffers = await this.offerRepo.find();
     this.elasticIndex.batchUpdateIndex(allOffers, offerIndex);
+  }
+
+  // get offers where the end date has passed and the status is expired
+  // TODO: We might need to change the cron expression to run every 5 minutes
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async updateOfferStatus() {
+    console.log('Updating offer status');
+
+    const offers = await this.offerRepo.find({
+      where: {
+        endDate: LessThan(new Date()),
+        status: ProductStatus.PUBLISHED,
+      },
+    });
+
+    for (const offer of offers) {
+      console.log('Updating offer status', offer.id);
+      offer.status = ProductStatus.EXPIRED;
+      await this.offerRepo.save(offer);
+    }
   }
 }

@@ -258,4 +258,27 @@ export class FiatWalletService {
       return false;
     }
   }
+
+  async createTransaction({
+    amount,
+    wallet,
+    transactionType,
+    narration,
+  }: {
+    amount: number;
+    wallet: FiatWallet;
+    transactionType: TransactionsType;
+    narration: string;
+  }) {
+    const transaction = new Transaction();
+    transaction.amount = amount;
+    transaction.balance = wallet.balance;
+    transaction.status = StatusType.SUCCEDDED;
+    transaction.transactionType = transactionType;
+    transaction.paymentRef = this.generateTransactionCode();
+    transaction.narration = narration;
+    transaction.walletId = wallet.id;
+
+    return await this.transactionRepo.save(transaction);
+  }
 }

@@ -82,7 +82,6 @@ export class CustomerAccountManagementService {
         });
 
       customer.walletAddress = walletAddress;
-
       await this.customerService.save(customer);
 
       // Check if user has undistributed points
