@@ -136,6 +136,7 @@ async function bootstrap() {
           'flagcdn.com',
           '*.freepik.com',
         ],
+        frameSrc: ['*.magic.link'],
         scriptSrc: [
           `'self'`,
           `https: 'unsafe-inline'`,
