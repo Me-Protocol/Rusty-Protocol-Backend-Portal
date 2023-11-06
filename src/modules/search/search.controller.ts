@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Query,
-  UseInterceptors,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Controller, Get, Query, ValidationPipe } from '@nestjs/common';
 import { SearchService } from './search.service';
 import { SearchObject } from './index/search.object';
 import {
@@ -12,9 +6,7 @@ import {
   offerIndex,
   productIndex,
   searchIndex,
-  userIndex,
 } from './interface/search.interface';
-import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { getPlural } from '@src/utils/helpers/getPlural';
 import { SearchDto } from './dto/SearchDto.dto';
 import { ElasticIndex } from './index/search.index';
@@ -56,9 +48,7 @@ export class SearchController {
           };
         }),
       ),
-
       query,
     };
   }
 }
- 

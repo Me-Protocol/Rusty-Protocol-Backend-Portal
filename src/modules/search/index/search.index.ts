@@ -93,7 +93,7 @@ export class ElasticIndex {
 
     console.log(existingDocuments);
 
-    existingDocuments.forEach((doc) => existingIds.add(doc._id));
+    existingDocuments.forEach((doc) => existingIds.add(doc._source.id));
 
     return existingIds;
   }
