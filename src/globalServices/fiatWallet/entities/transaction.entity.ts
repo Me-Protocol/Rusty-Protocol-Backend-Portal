@@ -34,6 +34,7 @@ export class Transaction extends BaseEntity {
     type: 'decimal',
     precision: 10,
     scale: 2,
+    nullable: true,
   })
   balance: number;
 

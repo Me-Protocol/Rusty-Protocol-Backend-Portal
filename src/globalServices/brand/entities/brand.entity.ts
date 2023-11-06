@@ -25,6 +25,7 @@ import { BrandMember } from './brand_member.entity';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 import { Order } from '@src/globalServices/order/entities/order.entity';
 import { Review } from '@src/globalServices/review/entities/review.entity';
+import { Bill } from '@src/globalServices/biller/entity/bill.entity';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -250,4 +251,7 @@ export class Brand extends BaseEntity {
     nullable: true,
   })
   noOfCustomers: number;
+
+  @OneToMany(() => Bill, (bill) => bill.brand)
+  bills: Bill[];
 }

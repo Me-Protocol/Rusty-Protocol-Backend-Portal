@@ -137,6 +137,9 @@ import { SocialAuthenticationService } from './modules/authentication/socialAuth
 import { BountyService } from './globalServices/oracles/bounty/bounty.service';
 import { Block } from './globalServices/oracles/bounty/entities/block.entity';
 import { TaskScheduleService } from './globalServices/task/common/schedules/taskSchedule.service';
+import { Bill } from './globalServices/biller/entity/bill.entity';
+import { Invoice } from './globalServices/biller/entity/invoice.entity';
+import { BillerService } from './globalServices/biller/biller.service';
 
 @Module({
   imports: [
@@ -184,6 +187,8 @@ import { TaskScheduleService } from './globalServices/task/common/schedules/task
       TaskResponseRecord,
       JobResponse,
       Block,
+      Bill,
+      Invoice,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
@@ -303,6 +308,7 @@ import { TaskScheduleService } from './globalServices/task/common/schedules/task
     SocialAuthenticationService,
     BountyService,
     TaskScheduleService,
+    BillerService,
   ],
   exports: [JwtStrategy, PassportModule],
 })
