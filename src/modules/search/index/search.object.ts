@@ -26,7 +26,7 @@ export class SearchObject {
     const query = {
       multi_match: {
         query: q,
-        fields: ['name', 'description', 'username', 'content'],
+        fields: ['name^2', 'description', 'username', 'content'],
         fuzziness: 'AUTO',
         prefix_length: 2,
       },
