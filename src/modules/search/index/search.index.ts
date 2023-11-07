@@ -141,6 +141,8 @@ export class ElasticIndex {
       },
     });
 
+    console.log(existingDocuments);
+
     // Use Promise.all to wait for all asynchronous operations to complete
     await Promise.all(
       existingDocuments.map(async (doc) => {
