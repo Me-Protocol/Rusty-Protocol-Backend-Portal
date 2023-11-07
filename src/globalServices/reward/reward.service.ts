@@ -196,7 +196,7 @@ export class RewardService {
     };
   }
 
-  @Cron(CronExpression.EVERY_5_HOURS)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async syncElasticSearchIndex() {
     const allRewards = await this.rewardsRepo.find();
     await this.elasticIndex.batchUpdateIndex(allRewards, rewardIndex);

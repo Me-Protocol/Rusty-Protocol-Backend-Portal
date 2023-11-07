@@ -18,6 +18,10 @@ export interface SearchServiceInterface<T> {
   deleteDocument(indexData: T): Promise<T>;
 
   batchInsert(indexData: T): Promise<void>;
+
+  indexExists(indexData: T): Promise<boolean>;
+
+  createIndex(indexData: any, index: any): Promise<T>;
 }
 
 export type SearchIndex = {
