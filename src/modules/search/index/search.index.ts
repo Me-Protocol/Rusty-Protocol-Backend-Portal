@@ -62,12 +62,10 @@ export class ElasticIndex {
       (entity) => !existingIds.has(entity.id.toString()),
     );
 
-    if (newData.length > 0) {
-      const data = newData.map((entity) =>
-        this.document(index, entity as SearchEntity),
-      );
-      await this.searchService.batchInsert(data);
-    }
+    const data = this.createBulkRequest(index, newData as SearchEntity[]);
+    console.log(data);
+
+    await this.searchService.batchInsert(data);
   }
 
   private bulkIndex(index: SearchIndex, id: number): any {
@@ -97,6 +95,7 @@ export class ElasticIndex {
     entities.forEach((entity) => {
       bulk.push({ index: { _index: index._index, _id: entity.id } });
       bulk.push(entity);
+      console.log(bulk);
     });
 
     return {
