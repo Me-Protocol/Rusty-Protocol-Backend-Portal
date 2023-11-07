@@ -80,6 +80,6 @@ export class CategoryService {
   @Cron(CronExpression.EVERY_30_SECONDS)
   async syncElasticSearchIndex() {
     const allCategories = await this.categoryRepo.find();
-    this.elasticIndex.batchUpdateIndex(allCategories, categoryIndex);
+    this.elasticIndex.batchCreateIndex(allCategories, categoryIndex);
   }
 }

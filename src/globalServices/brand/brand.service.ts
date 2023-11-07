@@ -292,6 +292,6 @@ export class BrandService {
   @Cron(CronExpression.EVERY_30_SECONDS)
   async syncElasticSearchIndex() {
     const allBrands = await this.brandRepo.find();
-    this.elasticIndex.batchUpdateIndex(allBrands, brandIndex);
+    this.elasticIndex.batchCreateIndex(allBrands, brandIndex);
   }
 }
