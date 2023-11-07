@@ -55,6 +55,25 @@ export class ElasticIndex {
     }
   }
 
+  public async batchCreateIndex(entities: SearchEntity[], index: SearchIndex) {
+    const existingIds = await this.fetchExistingIdsFromIndexAndCreateIfNotExist(
+      index,
+    );
+
+    console.log(existingIds);
+
+    const newData = entities.filter(
+      (entity) => !existingIds.has(entity.id.toString()),
+    );
+
+    if (newData.length > 0) {
+      const data = newData.map((entity) =>
+        this.document(index, entity as SearchEntity),
+      );
+      await this.searchService.batchInsert(data);
+    }
+  }
+
   private bulkIndex(index: SearchIndex, id: number): any {
     return {
       _index: index._index,
@@ -80,6 +99,36 @@ export class ElasticIndex {
     index: SearchIndex,
   ): Promise<Set<string>> {
     const existingIds = new Set<string>();
+
+    // Fetch existing document IDs from the index
+    const existingDocuments = await this.searchService.searchIndex({
+      index: index._index,
+      body: {
+        query: {
+          match_all: {},
+        },
+      },
+    });
+
+    console.log(existingDocuments);
+
+    existingDocuments.forEach((doc) => existingIds.add(doc._source.id));
+
+    return existingIds;
+  }
+
+  private async fetchExistingIdsFromIndexAndCreateIfNotExist(
+    index: SearchIndex,
+  ): Promise<Set<string>> {
+    const existingIds = new Set<string>();
+
+    // Check if index exists
+    const indexExists = await this.searchService.indexExists(index._index);
+
+    // If index does not exist, create it
+    if (!indexExists) {
+      await this.searchService.createIndex(index, index._index);
+    }
 
     // Fetch existing document IDs from the index
     const existingDocuments = await this.searchService.searchIndex({

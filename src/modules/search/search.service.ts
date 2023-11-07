@@ -77,6 +77,12 @@ export class SearchService
     }
   }
 
+  public async indexExists(index: any): Promise<any> {
+    return await this.indices.exists({
+      index: index,
+    });
+  }
+
   public async batchInsert(bulkData: any): Promise<any> {
     return await this.bulk(bulkData)
       .then((res: any) => res)
