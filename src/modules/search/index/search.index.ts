@@ -95,7 +95,7 @@ export class ElasticIndex {
     entities.forEach((entity) => {
       bulk.push({ index: { _index: index._index, _id: entity.id } });
       bulk.push(entity);
-      console.log(bulk);
+      console.log(JSON.stringify(bulk));
     });
 
     return {
