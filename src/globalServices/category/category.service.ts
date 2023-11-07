@@ -77,9 +77,9 @@ export class CategoryService {
     return this.categoryRepo.softDelete({ id });
   }
 
-  // @Cron(CronExpression.EVERY_30_SECONDS)
-  // async syncElasticSearchIndex() {
-  //   const allCategories = await this.categoryRepo.find();
-  //   this.elasticIndex.batchCreateIndex(allCategories, categoryIndex);
-  // }
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async syncElasticSearchIndex() {
+    const allCategories = await this.categoryRepo.find();
+    this.elasticIndex.batchCreateIndex(allCategories, categoryIndex);
+  }
 }
