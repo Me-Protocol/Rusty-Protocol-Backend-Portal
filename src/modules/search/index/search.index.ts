@@ -131,7 +131,10 @@ export class ElasticIndex {
       console.log('index.created');
     }
 
-    // Fetch existing document IDs from the index
+    setTimeout(() => {
+      console.log('timeout');
+    }, 6000);
+
     const existingDocuments = await this.searchService.searchIndex({
       index: index._index,
       body: {
@@ -141,15 +144,23 @@ export class ElasticIndex {
       },
     });
 
-    console.log(existingDocuments);
+    console.log('existingdocs', existingDocuments);
 
-    // Use Promise.all to wait for all asynchronous operations to complete
-    await Promise.all(
+    setTimeout(async () => {
+      const existingDocuments = await this.searchService.searchIndex({
+        index: index._index,
+        body: {
+          query: {
+            match_all: {},
+          },
+        },
+      });
+
       existingDocuments.map(async (doc) => {
         // Assuming this.searchService.getDocumentById is an asynchronous function
-        existingIds.add(doc._source.id);
-      }),
-    );
+        await existingIds.add(doc._source.id);
+      });
+    }, 6000);
 
     return existingIds;
   }
