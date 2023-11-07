@@ -36,7 +36,7 @@ export class TaskScheduleService {
     private readonly notificationService: NotificationService,
   ) {}
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async fundJob() {
     // get one record with no escrow address
     const record = await this.taskResponseRecordRepo.findOne({
