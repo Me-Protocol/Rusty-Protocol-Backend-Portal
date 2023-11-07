@@ -56,6 +56,7 @@ export class ElasticIndex {
   }
 
   public async batchCreateIndex(entities: SearchEntity[], index: SearchIndex) {
+    console.log('entities', entities);
     const existingIds = await this.fetchExistingIdsFromIndexAndCreateIfNotExist(
       index,
     );
@@ -65,6 +66,8 @@ export class ElasticIndex {
     const newData = entities.filter(
       (entity) => !existingIds.has(entity.id.toString()),
     );
+
+    console.log('newData', newData);
 
     if (newData.length > 0) {
       const data = newData.map((entity) =>
@@ -130,10 +133,6 @@ export class ElasticIndex {
       await this.searchService.createIndex(index, index._index);
       console.log('index.created');
     }
-
-    setTimeout(() => {
-      console.log('timeout');
-    }, 6000);
 
     const existingDocuments = await this.searchService.searchIndex({
       index: index._index,
