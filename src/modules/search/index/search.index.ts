@@ -125,27 +125,30 @@ export class ElasticIndex {
     // Check if index exists
     const indexExists = await this.searchService.indexExists(index._index);
 
-    console.log('index.created');
     // If index does not exist, create it
     if (!indexExists) {
-      await this.searchService
-        .createIndex(index, index._index)
-        .then(async () => {
-          // Fetch existing document IDs from the index
-          const existingDocuments = await this.searchService.searchIndex({
-            index: index._index,
-            body: {
-              query: {
-                match_all: {},
-              },
-            },
-          });
-
-          console.log('response from elastic', existingDocuments);
-
-          existingDocuments.forEach((doc) => existingIds.add(doc._source.id));
-        });
-      return existingIds;
+      await this.searchService.createIndex(index, index._index);
+      console.log('index.created');
     }
+
+    // Fetch existing document IDs from the index
+    const existingDocuments = await this.searchService.searchIndex({
+      index: index._index,
+      body: {
+        query: {
+          match_all: {},
+        },
+      },
+    });
+
+    // Use Promise.all to wait for all asynchronous operations to complete
+    await Promise.all(
+      existingDocuments.map(async (doc) => {
+        // Assuming this.searchService.getDocumentById is an asynchronous function
+        existingIds.add(doc._source.id);
+      }),
+    );
+
+    return existingIds;
   }
 }
