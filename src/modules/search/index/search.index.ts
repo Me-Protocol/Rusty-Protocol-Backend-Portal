@@ -47,12 +47,9 @@ export class ElasticIndex {
       (entity) => !existingIds.has(entity.id.toString()),
     );
 
-    if (newData.length > 0) {
-      const data = newData.map((entity) =>
-        this.document(index, entity as SearchEntity),
-      );
-      await this.searchService.batchInsert(data);
-    }
+    const data = this.createBulkRequest(index, newData as SearchEntity[]);
+
+    await this.searchService.batchInsert(data);
   }
 
   public async batchCreateIndex(entities: SearchEntity[], index: SearchIndex) {
@@ -64,8 +61,6 @@ export class ElasticIndex {
     const newData = entities.filter(
       (entity) => !existingIds.has(entity.id.toString()),
     );
-
-    console.log('newData', newData);
 
     if (newData.length > 0) {
       const data = newData.map((entity) =>
@@ -93,6 +88,19 @@ export class ElasticIndex {
       body: bulk,
       index: index._index,
       type: index._type,
+    };
+  }
+
+  private createBulkRequest(index: SearchIndex, entities: SearchEntity[]): any {
+    const bulk = [];
+
+    entities.forEach((entity) => {
+      bulk.push({ index: { _index: index._index, _id: entity.id } });
+      bulk.push(entity);
+    });
+
+    return {
+      body: bulk,
     };
   }
 
