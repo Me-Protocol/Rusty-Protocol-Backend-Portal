@@ -42,6 +42,13 @@ export const TWILIO_MSG_SID = env.get('TWILIO_MSG_SID').asString();
 export const SENDGRID_API_KEY = env.get('SENDGRID_API_KEY').asString();
 export const SENDGRID_EMAIL = env.get('SENDGRID_EMAIL').asString();
 
+export const ELASTIC_MAIL_USERNAME = env
+  .get('ELASTIC_MAIL_USERNAME')
+  .asString();
+export const ELASTIC_MAIL_PASSWORD = env
+  .get('ELASTIC_MAIL_PASSWORD')
+  .asString();
+
 export const TWITTER_CONSUMER_KEY = env.get('TWITTER_CONSUMER_KEY').asString();
 export const TWITTER_CONSUMER_SECRET = env
   .get('TWITTER_CONSUMER_SECRET')

@@ -47,12 +47,25 @@ export class ElasticIndex {
       (entity) => !existingIds.has(entity.id.toString()),
     );
 
-    if (newData.length > 0) {
-      const data = newData.map((entity) =>
-        this.document(index, entity as SearchEntity),
-      );
-      await this.searchService.batchInsert(data);
-    }
+    const data = this.createBulkRequest(index, newData as SearchEntity[]);
+
+    await this.searchService.batchInsert(data);
+  }
+
+  public async batchCreateIndex(entities: SearchEntity[], index: SearchIndex) {
+    console.log('entities', entities);
+    const existingIds = await this.fetchExistingIdsFromIndexAndCreateIfNotExist(
+      index,
+    );
+
+    const newData = entities.filter(
+      (entity) => !existingIds.has(entity.id.toString()),
+    );
+
+    const data = this.createBulkRequest(index, newData as SearchEntity[]);
+    console.log(data);
+
+    await this.searchService.batchInsert(data);
   }
 
   private bulkIndex(index: SearchIndex, id: number): any {
@@ -76,6 +89,20 @@ export class ElasticIndex {
     };
   }
 
+  private createBulkRequest(index: SearchIndex, entities: SearchEntity[]): any {
+    const bulk = [];
+
+    entities.forEach((entity) => {
+      bulk.push({ index: { _index: index._index, _id: entity.id } });
+      bulk.push(entity);
+      console.log(JSON.stringify(bulk));
+    });
+
+    return {
+      body: bulk,
+    };
+  }
+
   private async fetchExistingIdsFromIndex(
     index: SearchIndex,
   ): Promise<Set<string>> {
@@ -94,6 +121,50 @@ export class ElasticIndex {
     console.log(existingDocuments);
 
     existingDocuments.forEach((doc) => existingIds.add(doc._source.id));
+
+    return existingIds;
+  }
+
+  private async fetchExistingIdsFromIndexAndCreateIfNotExist(
+    index: SearchIndex,
+  ): Promise<Set<string>> {
+    const existingIds = new Set<string>();
+
+    // Check if index exists
+    const indexExists = await this.searchService.indexExists(index._index);
+
+    // If index does not exist, create it
+    if (!indexExists) {
+      await this.searchService.createIndex(index, index._index);
+      console.log('index.created');
+    }
+
+    const existingDocuments = await this.searchService.searchIndex({
+      index: index._index,
+      body: {
+        query: {
+          match_all: {},
+        },
+      },
+    });
+
+    console.log('existingdocs', existingDocuments);
+
+    setTimeout(async () => {
+      const existingDocuments = await this.searchService.searchIndex({
+        index: index._index,
+        body: {
+          query: {
+            match_all: {},
+          },
+        },
+      });
+
+      existingDocuments.map(async (doc) => {
+        // Assuming this.searchService.getDocumentById is an asynchronous function
+        await existingIds.add(doc._source.id);
+      });
+    }, 6000);
 
     return existingIds;
   }

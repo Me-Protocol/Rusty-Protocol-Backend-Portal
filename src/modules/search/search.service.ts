@@ -33,14 +33,19 @@ export class SearchService
   }
 
   public async searchIndex(searchData: any): Promise<any> {
-    return await this.search(searchData)
-      .then((res: any) => {
-        // console.log(res);
-        return res.hits.hits;
-      })
-      .catch((err: string | Record<string, any>) => {
-        return err;
-      });
+    try {
+      return await this.search(searchData)
+        .then((res: any) => {
+          // console.log(res);
+          return res.hits.hits;
+        })
+        .catch((err: string | Record<string, any>) => {
+          return err;
+        });
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
   }
 
   public async deleteIndex(indexData: any): Promise<any> {
@@ -75,6 +80,12 @@ export class SearchService
     } else {
       return true;
     }
+  }
+
+  public async indexExists(index: any): Promise<any> {
+    return await this.indices.exists({
+      index: index,
+    });
   }
 
   public async batchInsert(bulkData: any): Promise<any> {
