@@ -61,8 +61,6 @@ export class ElasticIndex {
       index,
     );
 
-    console.log(existingIds);
-
     const newData = entities.filter(
       (entity) => !existingIds.has(entity.id.toString()),
     );

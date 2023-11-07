@@ -642,7 +642,7 @@ export class OfferService {
     // await this.offerRepo.save(offer);
   }
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async syncElasticSearchIndex() {
     const allOffers = await this.offerRepo.find();
     this.elasticIndex.batchCreateIndex(allOffers, offerIndex);
