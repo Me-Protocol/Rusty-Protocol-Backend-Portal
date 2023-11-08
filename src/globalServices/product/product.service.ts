@@ -22,7 +22,9 @@ export class ProductService {
   ) {}
 
   async getAllProducts() {
-    return await this.productRepo.find();
+    return await this.productRepo.find({
+      relations: ['brand', 'productImages', 'variants', 'category'],
+    });
   }
 
   async getProductImages(brandId: string, page: number, limit: number) {

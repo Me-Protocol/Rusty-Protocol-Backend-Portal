@@ -644,7 +644,16 @@ export class OfferService {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async syncElasticSearchIndex() {
-    const allOffers = await this.offerRepo.find();
+    const offersQuery = this.offerRepo
+      .createQueryBuilder('offer')
+      .leftJoinAndSelect('offer.product', 'product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.subCategory', 'subCategory')
+      .leftJoinAndSelect('offer.offerImages', 'offerImages')
+      .leftJoinAndSelect('offer.brand', 'brand')
+      .leftJoinAndSelect('offer.reward', 'reward');
+
+    const allOffers = await offersQuery.getMany();
     this.elasticIndex.batchCreateIndex(allOffers, offerIndex);
   }
 
