@@ -5,6 +5,9 @@ import { CategoryService } from '@src/globalServices/category/category.service';
 import { OfferService } from '@src/globalServices/offer/offer.service';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 
+/**
+ * Unused
+ */
 @Injectable()
 export class ElasticSearchCronService {
   constructor(
