@@ -227,7 +227,9 @@ export class OfferService {
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
       .leftJoinAndSelect('offer.reward', 'reward')
-      .where('offer.status = :status', { status: ItemStatus.PUBLISHED });
+      .where('offer.status = :status', { status: ItemStatus.PUBLISHED })
+      // brand.listOnStore is used to check if brand is active
+      .andWhere('brand.listOnStore = :listOnStore', { listOnStore: true });
 
     if (category) {
       offersQuery.andWhere('product.categoryId = :categoryId', {
@@ -305,6 +307,9 @@ export class OfferService {
         where: {
           status: ProductStatus.PUBLISHED,
           updatedAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
+          brand: {
+            listOnStore: true,
+          },
         },
         take: 10,
         order: {
@@ -370,6 +375,9 @@ export class OfferService {
             category: {
               id: In(interests),
             },
+          },
+          brand: {
+            listOnStore: true,
           },
         },
         skip: (page - 1) * limit,
