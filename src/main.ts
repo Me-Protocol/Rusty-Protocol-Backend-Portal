@@ -152,6 +152,7 @@ async function bootstrap() {
           '*.magic.link',
           'ipapi.co',
           '*.gelato.digital',
+          '*.intercom.io',
         ],
       },
     },
