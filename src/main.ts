@@ -135,6 +135,7 @@ async function bootstrap() {
           '*.cloudinary.com',
           'flagcdn.com',
           '*.freepik.com',
+          'blob:',
         ],
         frameSrc: ['*.magic.link'],
         scriptSrc: [
@@ -151,6 +152,7 @@ async function bootstrap() {
           '*.magic.link',
           'ipapi.co',
           '*.gelato.digital',
+          '*.intercom.io',
         ],
       },
     },
