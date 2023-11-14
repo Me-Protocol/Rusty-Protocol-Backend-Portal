@@ -8,7 +8,7 @@ export class TaskResponse extends BaseEntity {
   @Column({ nullable: false })
   response: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   responseType: string;
 
   @Column({ nullable: true })

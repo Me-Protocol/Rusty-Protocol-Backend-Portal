@@ -129,3 +129,6 @@ export const REDIS_PORT = env.get('REDIS_PORT').asInt();
 export const REDIS_USERNAME = env.get('REDIS_USERNAME').asString();
 export const REDIS_PREFIX = env.get('REDIS_PREFIX').asString();
 export const REDIS_TTL = env.get('REDIS_TTL').asString();
+
+export const HMT_SITE_KEY = env.get('HMT_SITE_KEY').asString();
+export const HMT_JOB_API_KEY = env.get('HMT_JOB_API_KEY').asString();

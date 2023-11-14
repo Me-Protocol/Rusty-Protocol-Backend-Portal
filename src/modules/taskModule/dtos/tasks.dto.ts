@@ -105,11 +105,20 @@ export class UpdateReportDto {
 }
 
 export class UpdateTaskResponseDto {
+  @IsString()
   response: string;
+
   response_type: string;
+
+  @IsString()
   response_url: string;
+
+  @IsUUID()
   task_id: string;
+
   user_id: string;
+
+  @IsString()
   wallet_address: string;
 }
 
