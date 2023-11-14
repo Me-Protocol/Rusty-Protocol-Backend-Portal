@@ -386,13 +386,7 @@ export class TasksService {
         );
       }
 
-      // check if current date is within the time frame
-      const isValid = moment().isBetween(
-        moment(task?.createdAt).subtract(1, 'hours'),
-        moment(task?.startDate).add(task?.timeFrameInHours, 'hours'),
-      );
-
-      if (!isValid) {
+      if (task.expired) {
         throw new HttpException('Task is no longer active', 400);
       }
 
