@@ -27,6 +27,7 @@ import { TasksService } from '@src/globalServices/task/task.service';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { AuthGuard } from '@nestjs/passport';
 import { HMTTaskVerifier } from '@src/globalServices/task/common/verifier/outapp/hmt.verifier';
+import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
 
 @ApiTags('task')
 @Controller('tasks')
@@ -34,6 +35,7 @@ export class TasksController {
   constructor(
     private readonly taskDataService: TasksService,
     private readonly hmtTaskVerifier: HMTTaskVerifier,
+    private readonly syncService: SyncRewardService,
   ) {}
 
   @UseGuards(BrandJwtStrategy)
@@ -212,5 +214,14 @@ export class TasksController {
       body.workerAddress,
       body.escrowAddress,
     );
+  }
+
+  @Post('test_payout')
+  async distributeTaskRewardWithPrivateKey() {
+    return await this.syncService.distributeTaskRewardWithPrivateKey({
+      rewardId: '0ab5d47b-f452-4680-96f0-5a5005494b78',
+      amount: 10,
+      walletAddress: '0xEe9019c834EAf07208FE3f0d756A1Dd78D2C98Cf',
+    });
   }
 }
