@@ -26,11 +26,15 @@ import {
 import { TasksService } from '@src/globalServices/task/task.service';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { AuthGuard } from '@nestjs/passport';
+import { HMTTaskVerifier } from '@src/globalServices/task/common/verifier/outapp/hmt.verifier';
 
 @ApiTags('task')
 @Controller('tasks')
 export class TasksController {
-  constructor(private readonly taskDataService: TasksService) {}
+  constructor(
+    private readonly taskDataService: TasksService,
+    private readonly hmtTaskVerifier: HMTTaskVerifier,
+  ) {}
 
   @UseGuards(BrandJwtStrategy)
   @Post('create')
@@ -156,7 +160,7 @@ export class TasksController {
       const user = req.user;
       body.user_id = user?.id;
     }
-    return await this.taskDataService.respondToTask(body);
+    return await this.hmtTaskVerifier.respondToTask(body);
   }
 
   @UseGuards(AuthGuard())
@@ -173,10 +177,10 @@ export class TasksController {
   //   return await this.taskDataService.sendResponseToJobLauncher();
   // }
 
-  @Get('get_manifest')
-  async getManifest(@Query() query: { url: string }) {
-    return await this.taskDataService.getTaskManifestDetails(query.url);
-  }
+  // @Get('get_manifest')
+  // async getManifest(@Query() query: { url: string }) {
+  //   return await this.taskDataService.getTaskManifestDetails(query.url);
+  // }
 
   @Post('new_response')
   async newResponse(@Body() body: JobResponseDto) {

@@ -37,12 +37,12 @@ export class InAppTaskVerifier {
     return check;
   }
 
-  async verifyUserReviewedOffer(offerId: string, userId: string) {
-    const check = await this.reviewService.getReviewByOfferAndUser({
-      offer_id: offerId,
-      user_id: userId,
-    });
+  // async verifyUserReviewedOffer(offerId: string, userId: string) {
+  //   const check = await this.reviewService.getReviewByOfferAndUser({
+  //     offer_id: offerId,
+  //     user_id: userId,
+  //   });
 
-    return !!check;
-  }
+  //   return !!check;
+  // }
 }

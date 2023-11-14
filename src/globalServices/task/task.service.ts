@@ -622,130 +622,6 @@ export class TasksService {
     return { deleted: true };
   }
 
-  async respondToTask(data: UpdateTaskResponseDto) {
-    try {
-      const task = await this.taskRepository.findOneBy({
-        id: data.task_id,
-        status: TaskStatus.ACTIVE,
-      });
-
-      if (!task) {
-        throw new HttpException('Task is not active', 400);
-      }
-
-      // check if current date is within the time frame
-      const isValid = moment().isBetween(
-        moment(task.createdAt).subtract(1, 'hours'),
-        moment(task.startDate).add(task.timeFrameInHours, 'hours'),
-      );
-
-      if (!isValid) {
-        throw new HttpException('Task is no longer active', 400);
-      }
-
-      // check if user joined the task
-      const userJoinedTask = await this.taskResponder.findOne({
-        where: {
-          taskId: data.task_id,
-          userId: data.user_id,
-        },
-      });
-
-      if (!userJoinedTask) {
-        throw new HttpException('Please join task', 400);
-      }
-
-      const userHasResponded = await this.taskResponseRepository.findOne({
-        where: {
-          userId: data.user_id,
-          taskId: data.task_id,
-        },
-      });
-
-      const walletHasResponded = await this.taskResponseRepository.findOne({
-        where: {
-          walletAddress: data.wallet_address,
-          taskId: data.task_id,
-        },
-      });
-
-      if (walletHasResponded) {
-        console.log('WALLET HAS ALREADY RESPONDED');
-        throw new HttpException('User has already responded', 400);
-      }
-
-      if (userHasResponded) {
-        throw new HttpException('User has already responded', 400);
-      }
-
-      const taskResponse = this.taskResponseRepository.create(data);
-      return await this.taskResponseRepository.save(taskResponse);
-    } catch (error) {
-      console.log(error);
-      throw new HttpException(error.message, 400);
-    }
-  }
-
-  async getTaskManifestDetails(url: string) {
-    try {
-      const manifest = await this.taskResponseRecordRepo.findOne({
-        where: { manifestUrl: url },
-      });
-
-      if (!manifest) {
-        throw new HttpException('Manifest not found', 404);
-      }
-
-      // get details from the manifest url
-      const localUrl = `./public/uploads/manifests/${manifest.manifestHash}.json`;
-      const data = await readFile(localUrl, 'utf8');
-
-      const mani = JSON.parse(data);
-
-      return {
-        responseLength: mani.datasetLength,
-        totalDemandedResponse: mani.annotationsPerImage,
-        price: mani.price,
-      };
-    } catch (error) {
-      console.log(error);
-      throw new HttpException(error.message, 400);
-    }
-  }
-
-  async updateManifest(url: string) {
-    try {
-      const manifest = await this.taskResponseRecordRepo.findOne({
-        where: { manifestUrl: url },
-      });
-
-      if (!manifest) {
-        throw new HttpException('Manifest not found', 404);
-      }
-
-      // get details from the manifest url
-      const localUrl = `./public/uploads/manifests/${manifest.manifestHash}.json`;
-      const data = await readFile(localUrl, 'utf8');
-
-      const mani = JSON.parse(data);
-
-      mani.status = 'COMPLETED';
-
-      // create a manifest file with body data and save to public folder
-      const manifestData = JSON.stringify(mani);
-      writeFile(
-        `./public/uploads/manifests/${manifest.manifestHash}.json`,
-        manifestData,
-        'utf8',
-      );
-
-      return 'Manifest updated';
-    } catch (error) {
-      console.log(error);
-      throw new HttpException(error.message, 400);
-    }
-  }
-
   async storeNewResponse(data: JobResponseDto) {
     try {
       const taskRecord = await this.taskResponseRecordRepo.findOne({
@@ -963,7 +839,6 @@ export class TasksService {
     const availableTaskTypes = [
       AllTaskTypes.IN_APP_FOLLOW,
       AllTaskTypes.IN_APP_PRODUCT_LIKE,
-      AllTaskTypes.IN_APP_REVIEW,
       AllTaskTypes.OUT_SM_FOLLOW,
       AllTaskTypes.OUT_BRAND_TAGGING,
       AllTaskTypes.OUT_LIKE_POST,
@@ -1159,25 +1034,25 @@ export class TasksService {
         }
       }
 
-      if (activeTask.taskType === AllTaskTypes.IN_APP_REVIEW) {
-        const taskWinners = await this.getTaskWinners(activeTask.id);
+      // if (activeTask.taskType === AllTaskTypes.IN_APP_REVIEW) {
+      //   const taskWinners = await this.getTaskWinners(activeTask.id);
 
-        if (taskWinners.length >= activeTask.numberOfWinners) {
-          //expire tasks
-          await this.taskRepository.update(activeTask.id, {
-            expired: true,
-          });
+      //   if (taskWinners.length >= activeTask.numberOfWinners) {
+      //     //expire tasks
+      //     await this.taskRepository.update(activeTask.id, {
+      //       expired: true,
+      //     });
 
-          throw new Error('Sorry winners already selected for this task');
-        } else {
-          const check = await this.inAppTaskVerifier.verifyUserReviewedOffer(
-            activeTask.offerId,
-            response.userId,
-          );
+      //     throw new Error('Sorry winners already selected for this task');
+      //   } else {
+      //     const check = await this.inAppTaskVerifier.verifyUserReviewedOffer(
+      //       activeTask.offerId,
+      //       response.userId,
+      //     );
 
-          if (!check) throw new Error('We could not validate your response');
-        }
-      }
+      //     if (!check) throw new Error('We could not validate your response');
+      //   }
+      // }
     } else {
       throw new Error(
         "We couldn't validate your response. Please try again later.",

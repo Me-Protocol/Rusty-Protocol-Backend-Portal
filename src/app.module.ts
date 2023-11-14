@@ -140,6 +140,7 @@ import { TaskScheduleService } from './globalServices/task/common/schedules/task
 import { Bill } from './globalServices/biller/entity/bill.entity';
 import { Invoice } from './globalServices/biller/entity/invoice.entity';
 import { BillerService } from './globalServices/biller/biller.service';
+import { HMTTaskVerifier } from './globalServices/task/common/verifier/outapp/hmt.verifier';
 
 @Module({
   imports: [
@@ -309,6 +310,7 @@ import { BillerService } from './globalServices/biller/biller.service';
     BountyService,
     TaskScheduleService,
     BillerService,
+    HMTTaskVerifier,
   ],
   exports: [JwtStrategy, PassportModule],
 })
