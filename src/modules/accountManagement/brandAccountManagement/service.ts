@@ -35,6 +35,7 @@ import {
 import { onboard_brand } from '@developeruche/runtime-sdk';
 import { ProcessBrandColorEvent } from '@src/globalServices/brand/events/process-brand-color.event';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { BrandRole } from '@src/utils/enums/BrandRole';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -130,6 +131,12 @@ export class BrandAccountManagementService {
         throw new HttpException('Brand member not found', 404);
       }
 
+      const brandOwner = await this.getBrandOwner(body.brandId);
+
+      if (body.role === BrandRole.OWNER && body.userId !== brandOwner.id) {
+        throw new HttpException('You cannot assign owner role to a user', 400);
+      }
+
       brandMember.role = body.role;
 
       return await this.brandService.saveBrandMember(brandMember);
@@ -167,6 +174,10 @@ export class BrandAccountManagementService {
     try {
       const brand = await this.brandService.getBrandById(brandId);
       const user = await this.userService.getUserByEmail(email);
+
+      if (role === BrandRole.OWNER) {
+        throw new HttpException('You cannot assign owner role to a user', 400);
+      }
 
       if (user) {
         const checkBrandMemberForOtherBrand =
@@ -285,7 +296,7 @@ export class BrandAccountManagementService {
         </p>
         ${emailButton({
           text: 'Verify Email',
-          url: `${process.env.SERVER_URL}/brand/member/verify-email/${user.accountVerificationCode}/${brandId}`,
+          url: `${process.env.SERVER_URL}/brand/member/verify-email/${user?.accountVerificationCode}/${brandId}`,
         })}
         `,
       });
@@ -294,6 +305,7 @@ export class BrandAccountManagementService {
         message: 'Brand member created successfully',
       };
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
@@ -324,6 +336,7 @@ export class BrandAccountManagementService {
 
       return user;
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400);
     }
@@ -356,6 +369,7 @@ export class BrandAccountManagementService {
 
       return user;
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400);
     }
@@ -370,6 +384,7 @@ export class BrandAccountManagementService {
         query.filterBy,
       );
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),

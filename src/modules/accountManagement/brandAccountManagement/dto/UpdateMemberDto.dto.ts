@@ -29,4 +29,6 @@ export class UpdateMemberDto {
   brandMemberId: string;
 
   brandId: string;
+
+  userId: string;
 }
