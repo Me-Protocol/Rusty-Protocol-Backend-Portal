@@ -292,4 +292,16 @@ export class ProductManagementService {
     const allProducts = await this.productService.getAllProducts();
     await this.elasticIndex.batchCreateIndex(allProducts, productIndex);
   }
+
+  async deleteProductImage(imageId: string) {
+    const image = this.productService.getImage(imageId);
+
+    if (!image) {
+      throw new HttpException('Image does not exist or has been deleted', 400);
+    }
+
+    await this.productService.deleteImage(imageId);
+
+    return 'Ok';
+  }
 }

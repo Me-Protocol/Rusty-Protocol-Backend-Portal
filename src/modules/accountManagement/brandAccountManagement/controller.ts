@@ -12,6 +12,7 @@ import {
   Post,
   Res,
   ParseUUIDPipe,
+  Delete,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
@@ -118,6 +119,17 @@ export class BrandManagementController {
     body.brandId = user.brand.id;
 
     return await this.brandAccountManagementService.createBrandMember(body);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Delete('member/:id')
+  async removeBrandMember(@Req() req: any, @Param('id') id: string) {
+    const user = req.user as User;
+
+    return await this.brandAccountManagementService.removeBrandMember(
+      user.brand.id,
+      id,
+    );
   }
 
   @UseGuards(BrandJwtStrategy)
