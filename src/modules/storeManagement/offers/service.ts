@@ -61,6 +61,7 @@ export class OfferManagementService {
     offer.endDate = body.endDate;
     offer.idOnBrandsite = body.idOnBrandsite;
     offer.rewardId = body.rewardId;
+    offer.inventory = body.inventory;
 
     const saveOffer = await this.offerService.saveOffer(offer);
 
@@ -132,6 +133,7 @@ export class OfferManagementService {
       if (body.startDate) offer.startDate = body.startDate;
       if (body.endDate) offer.endDate = body.endDate;
       if (body.idOnBrandsite) offer.idOnBrandsite = body.idOnBrandsite;
+      if (body.inventory) offer.inventory = body.inventory;
 
       // upload images
       if (body?.offerImages) {

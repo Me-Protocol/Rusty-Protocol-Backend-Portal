@@ -65,13 +65,6 @@ export class HMTTaskVerifier {
         throw new HttpException('Please join task', 400);
       }
 
-      const userHasResponded = await this.taskResponseRepository.findOne({
-        where: {
-          userId: data.user_id,
-          taskId: data.task_id,
-        },
-      });
-
       const walletHasResponded = await this.taskResponseRepository.findOne({
         where: {
           walletAddress: data.wallet_address,
@@ -84,7 +77,7 @@ export class HMTTaskVerifier {
         throw new HttpException('User has already responded', 400);
       }
 
-      if (userHasResponded) {
+      if (userJoinedTask.taskPerformed) {
         throw new HttpException('User has already responded', 400);
       }
 
@@ -119,11 +112,8 @@ export class HMTTaskVerifier {
         },
       });
 
-      console.log(
-        'TASK RESPONSE COUNT',
-        newTaskResponseCount,
-        task.numberOfWinners,
-      );
+      userJoinedTask.taskPerformed = true;
+      await this.taskResponder.save(userJoinedTask);
 
       if (newTaskResponseCount === task.numberOfWinners) {
         console.log('CLosing task');

@@ -661,6 +661,50 @@ export class SyncRewardService {
     }
   }
 
+  // Send reward to task responders
+  async distributeTaskRewardWithPrivateKey({
+    rewardId,
+    walletAddress,
+    amount,
+  }: {
+    rewardId: string;
+    walletAddress: string;
+    amount: number;
+  }) {
+    const reward = await this.rewardService.findOneById(rewardId);
+
+    const canPayCost = await this.fiatWalletService.checkCanPayCost(
+      reward.brandId,
+    );
+
+    if (!canPayCost) {
+      return 'Brand cannot pay cost';
+    }
+
+    const keyIdentifier = await this.rewardService.getKeyIdentifier(
+      reward.redistributionKeyIdentifierId,
+      KeyIdentifierType.REDISTRIBUTION,
+    );
+    const decryptedPrivateKey = await this.keyManagementService.decryptKey(
+      keyIdentifier.identifier,
+    );
+    const signer = new Wallet(decryptedPrivateKey);
+
+    const distributionData = await transfer_reward(
+      reward.contractAddress,
+      walletAddress,
+      ethers.utils.parseEther(amount.toString()),
+      signer,
+    );
+
+    if (distributionData?.data?.error) {
+      console.log(distributionData.data);
+      throw new Error("We couldn't distribute reward");
+    } else {
+      return distributionData;
+    }
+  }
+
   async getUndistributedReward(userId: string) {
     const rewardRegistry = await this.rewardRegistryRepo.find({
       where: {

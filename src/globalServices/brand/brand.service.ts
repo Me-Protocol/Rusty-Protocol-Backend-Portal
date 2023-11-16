@@ -294,4 +294,8 @@ export class BrandService {
     const allBrands = await this.brandRepo.find();
     this.elasticIndex.batchCreateIndex(allBrands, brandIndex);
   }
+
+  async removeBrandMember(brandMember: BrandMember) {
+    return await this.brandMemberRepo.remove(brandMember);
+  }
 }

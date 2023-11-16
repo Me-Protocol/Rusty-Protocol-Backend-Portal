@@ -39,6 +39,10 @@ export class CreateOfferDto {
   tokens: number;
 
   @ApiProperty()
+  @IsNumber()
+  inventory: number;
+
+  @ApiProperty()
   @IsString()
   name: string;
 

@@ -386,27 +386,21 @@ export class TasksService {
         );
       }
 
-      // check if current date is within the time frame
-      const isValid = moment().isBetween(
-        moment(task?.createdAt).subtract(1, 'hours'),
-        moment(task?.startDate).add(task?.timeFrameInHours, 'hours'),
-      );
-
-      if (!isValid) {
+      if (task.expired) {
         throw new HttpException('Task is no longer active', 400);
       }
 
       // check if responses is times 2 of number of possible winners
-      const responses = await this.taskResponder.count({
-        where: {
-          taskId: task_id,
-          taskCancelled: false,
-        },
-      });
+      // const responses = await this.taskResponder.count({
+      //   where: {
+      //     taskId: task_id,
+      //     taskCancelled: false,
+      //   },
+      // });
 
-      if (responses >= task?.numberOfWinners * 2) {
-        throw new HttpException('Task is no longer active', 400);
-      }
+      // if (responses >= task?.numberOfWinners * 2) {
+      //   throw new HttpException('Task is no longer active', 400);
+      // }
 
       const checkResponser = await this.taskResponder.findOne({
         where: {
