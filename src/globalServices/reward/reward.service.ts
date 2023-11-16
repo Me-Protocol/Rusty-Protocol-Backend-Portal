@@ -196,7 +196,7 @@ export class RewardService {
     };
   }
 
-  //@Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async syncElasticSearchIndex() {
     const allRewards = await this.rewardsRepo.find({
       relations: ['brand'],
