@@ -91,6 +91,20 @@ export class ProductService {
     return this.productImageRepo.save(productImages);
   }
 
+  async getImage(id: string) {
+    return await this.productImageRepo.findOne({
+      where: {
+        id,
+      },
+    });
+  }
+
+  async deleteImage(id: string) {
+    return await this.productImageRepo.softDelete({
+      id,
+    });
+  }
+
   async addVariants(
     brandId: string,
     productId: string,

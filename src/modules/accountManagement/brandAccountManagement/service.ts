@@ -477,4 +477,27 @@ export class BrandAccountManagementService {
       });
     }
   }
+
+  async removeBrandMember(brandId: string, brandMemberId: string) {
+    try {
+      const brandMember = await this.brandService.getBrandMember(
+        brandId,
+        brandMemberId,
+      );
+
+      if (!brandMember) {
+        throw new HttpException('Brand member not found', 404);
+      }
+
+      await this.brandService.removeBrandMember(brandMember);
+
+      return {
+        message: 'Brand member removed successfully',
+      };
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
 }

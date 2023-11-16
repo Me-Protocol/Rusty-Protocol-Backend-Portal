@@ -73,4 +73,9 @@ export class UpdateOfferDto {
   @IsOptional()
   @IsUUID()
   rewardId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumber()
+  inventory: number;
 }
