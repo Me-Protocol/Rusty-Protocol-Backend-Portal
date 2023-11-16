@@ -53,7 +53,6 @@ export class ElasticIndex {
   }
 
   public async batchCreateIndex(entities: SearchEntity[], index: SearchIndex) {
-    console.log('entities', entities);
     const existingIds = await this.fetchExistingIdsFromIndexAndCreateIfNotExist(
       index,
     );
@@ -63,7 +62,6 @@ export class ElasticIndex {
     );
 
     const data = this.createBulkRequest(index, newData as SearchEntity[]);
-    console.log(data);
 
     await this.searchService.batchInsert(data);
   }

@@ -650,7 +650,7 @@ export class OfferService {
     // await this.offerRepo.save(offer);
   }
 
-  //  @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async syncElasticSearchIndex() {
     const offersQuery = this.offerRepo
       .createQueryBuilder('offer')
