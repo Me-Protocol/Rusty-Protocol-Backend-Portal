@@ -783,4 +783,9 @@ export class RewardManagementService {
       rewardSymbol: !rewardSymbol,
     };
   }
+
+  async issueAndDistributeReward(body: UpdateBatchDto, apiKey: ApiKey) {
+    await this.updateBatch(body);
+    return await this.distributeWithApiKey(apiKey, body.rewardId);
+  }
 }
