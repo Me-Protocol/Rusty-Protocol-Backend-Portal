@@ -167,6 +167,22 @@ export class RewardManagementController {
     return await this.rewardManagementService.updateBatch(body);
   }
 
+  @UseGuards(ApiKeyJwtStrategy)
+  @Post('issue-and-distribute')
+  async issueAndDistributeReward(
+    @Body(ValidationPipe) body: UpdateBatchDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.brand.id;
+    body.brandId = brandId;
+    const apiKey = req.apiKey as ApiKey;
+
+    return await this.rewardManagementService.issueAndDistributeReward(
+      body,
+      apiKey,
+    );
+  }
+
   @UseGuards(BrandJwtStrategy)
   @Get('batch/:batchId')
   async getBatch(@Param('batchId') batchId: string, @Req() req: any) {

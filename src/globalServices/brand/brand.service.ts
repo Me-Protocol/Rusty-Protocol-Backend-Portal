@@ -46,6 +46,7 @@ export class BrandService {
     brandMember.name = saveBrand.name;
     brandMember.role = BrandRole.OWNER;
     brandMember.userId = userId;
+    brandMember.isAccepted = true;
 
     await this.brandMemberRepo.save(brandMember);
 
