@@ -18,6 +18,15 @@ export class AnalyticsManagementService {
       this.analyticsService.brandFollowers(query),
     ]);
 
-    return analyticsObject;
+    return {
+      totalNumberOfViews: analyticsObject[0],
+      viewsPerDayByDateRange: analyticsObject[1],
+      orderFromBrandsReward: analyticsObject[2],
+      orderFromBrand: analyticsObject[3],
+      totalRewardSpentOnBrandOffers: analyticsObject[4],
+      totalRewardSpentOnOtherBrandOffers: analyticsObject[5],
+      totalBrandCustomers: analyticsObject[6],
+      brandFollowers: analyticsObject[7],
+    };
   }
 }
