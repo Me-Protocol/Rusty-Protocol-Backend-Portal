@@ -484,7 +484,6 @@ export class OfferService {
       });
     }
 
-    // if start date and end date is provided filter for offers created between the dates
     if (startDate && endDate) {
       offersQuery.andWhere('offer.createdAt BETWEEN :startDate AND :endDate', {
         startDate,

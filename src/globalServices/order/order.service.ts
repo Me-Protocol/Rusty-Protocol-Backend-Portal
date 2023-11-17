@@ -30,7 +30,16 @@ export class OrderService {
   }
 
   async getOrders(query: FilterOrderDto) {
-    const { limit, page, filterBy, userId, brandId, productId } = query;
+    const {
+      limit,
+      page,
+      filterBy,
+      userId,
+      brandId,
+      productId,
+      startDate,
+      endDate,
+    } = query;
 
     const orderQuery = this.orderRepo
       .createQueryBuilder('order')
@@ -89,6 +98,13 @@ export class OrderService {
     if (filterBy === OrderFilter.FAILED) {
       orderQuery.andWhere('order.status = :status', {
         status: StatusType.FAILED,
+      });
+    }
+
+    if (startDate && endDate) {
+      orderQuery.andWhere('order.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
       });
     }
 
