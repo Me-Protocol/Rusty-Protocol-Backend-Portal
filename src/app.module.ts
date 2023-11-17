@@ -141,6 +141,9 @@ import { Bill } from './globalServices/biller/entity/bill.entity';
 import { Invoice } from './globalServices/biller/entity/invoice.entity';
 import { BillerService } from './globalServices/biller/biller.service';
 import { HMTTaskVerifier } from './globalServices/task/common/verifier/outapp/hmt.verifier';
+import { AnalyticsService } from './globalServices/analytics/analytics.service';
+import { AnalyticsManagementService } from './modules/storeManagement/analytics/service';
+import { AnalyticsManagementController } from './modules/storeManagement/analytics/controller';
 
 @Module({
   imports: [
@@ -247,6 +250,7 @@ import { HMTTaskVerifier } from './globalServices/task/common/verifier/outapp/hm
     DebugController,
     ReviewManagementController,
     TasksController,
+    AnalyticsManagementController,
   ],
   providers: [
     ElasticIndex,
@@ -311,6 +315,8 @@ import { HMTTaskVerifier } from './globalServices/task/common/verifier/outapp/hm
     TaskScheduleService,
     BillerService,
     HMTTaskVerifier,
+    AnalyticsService,
+    AnalyticsManagementService,
   ],
   exports: [JwtStrategy, PassportModule],
 })
