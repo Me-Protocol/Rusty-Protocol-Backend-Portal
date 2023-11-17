@@ -425,6 +425,8 @@ export class OfferService {
     order: string,
     search: string,
     productId?: string,
+    startDate?: Date,
+    endDate?: Date,
   ) {
     const offersQuery = this.offerRepo
       .createQueryBuilder('offer')
@@ -479,6 +481,14 @@ export class OfferService {
     if (productId) {
       offersQuery.andWhere('offer.productId = :productId', {
         productId,
+      });
+    }
+
+    // if start date and end date is provided filter for offers created between the dates
+    if (startDate && endDate) {
+      offersQuery.andWhere('offer.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
       });
     }
 

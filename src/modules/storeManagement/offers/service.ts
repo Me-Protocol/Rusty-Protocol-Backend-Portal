@@ -204,6 +204,8 @@ export class OfferManagementService {
         query.order,
         query.search,
         query.productId,
+        query.startDate,
+        query.endDate,
       );
     } catch (error) {
       console.log(error);
