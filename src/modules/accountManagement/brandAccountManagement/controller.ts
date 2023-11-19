@@ -13,6 +13,7 @@ import {
   Res,
   ParseUUIDPipe,
   Delete,
+  HttpException,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
@@ -60,7 +61,7 @@ export class BrandManagementController {
   }
 
   @UseGuards(BrandJwtStrategy)
-  @Get('owner')
+  @Get('member/roles/owner')
   async getBrandOwner(@Req() req: any) {
     const brandId = req.user.brand.id;
     return await this.brandAccountManagementService.getBrandOwner(brandId);
@@ -94,17 +95,29 @@ export class BrandManagementController {
   ) {
     body.brandMemberId = id;
     body.brandId = req.user.brand.id;
+
+    const user = req.user as User;
+    const brandOwner = await this.brandAccountManagementService.getBrandOwner(
+      body.brandId,
+    );
+
+    if (brandOwner.id !== user.id) {
+      throw new HttpException(
+        "You don't have permission to update this member",
+        403,
+      );
+    }
+
     return await this.brandAccountManagementService.updateBrandMember(body);
   }
 
   @UseGuards(BrandJwtStrategy)
   @Put('member')
   async updateBrandMemberDetail(
-    @Param('id') id: string,
     @Req() req: any,
     @Body(ValidationPipe) body: UpdateMemberDto,
   ) {
-    body.brandMemberId = id;
+    body.brandMemberId = req.user.brandMember.id;
     body.brandId = req.user.brand.id;
     return await this.brandAccountManagementService.updateBrandMember(body);
   }

@@ -147,4 +147,39 @@ export class UpdateBrandDto {
   @IsOptional()
   @IsNumber()
   noOfCustomers: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  currency: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  countryCode: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  country: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  region: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  additionalAddress: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  city: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumber()
+  postalCode: number;
 }

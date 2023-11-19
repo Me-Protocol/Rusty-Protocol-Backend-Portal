@@ -254,4 +254,39 @@ export class Brand extends BaseEntity {
 
   @OneToMany(() => Bill, (bill) => bill.brand)
   bills: Bill[];
+
+  @Column({
+    nullable: true,
+  })
+  currency: string;
+
+  @Column({
+    nullable: true,
+  })
+  countryCode: string;
+
+  @Column({
+    nullable: true,
+  })
+  country: string;
+
+  @Column({
+    nullable: true,
+  })
+  region: string;
+
+  @Column({
+    nullable: true,
+  })
+  additionalAddress: string;
+
+  @Column({
+    nullable: true,
+  })
+  city: string;
+
+  @Column({
+    nullable: true,
+  })
+  postalCode: number;
 }

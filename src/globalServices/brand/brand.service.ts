@@ -46,6 +46,7 @@ export class BrandService {
     brandMember.name = saveBrand.name;
     brandMember.role = BrandRole.OWNER;
     brandMember.userId = userId;
+    brandMember.isAccepted = true;
 
     await this.brandMemberRepo.save(brandMember);
 
@@ -99,6 +100,14 @@ export class BrandService {
       brand.listOnStore = dto.listOnStore;
       brand.vaultPercentage = dto.vaultPercentage;
       brand.noOfCustomers = dto.noOfCustomers;
+
+      brand.currency = dto.currency;
+      brand.countryCode = dto.countryCode;
+      brand.country = dto.country;
+      brand.region = dto.region;
+      brand.additionalAddress = dto.additionalAddress;
+      brand.city = dto.city;
+      brand.postalCode = dto.postalCode;
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);

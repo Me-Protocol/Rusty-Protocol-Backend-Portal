@@ -165,6 +165,10 @@ export class OfferManagementService {
     return await this.offerService.getOfferByofferCode(offerCode, sessionId);
   }
 
+  async getOfferById(id: string) {
+    return await this.offerService.getOfferById(id);
+  }
+
   async getOfferForLoggedInUser(
     userId: string,
     offerCode: string,
@@ -200,6 +204,8 @@ export class OfferManagementService {
         query.order,
         query.search,
         query.productId,
+        query.startDate,
+        query.endDate,
       );
     } catch (error) {
       console.log(error);
