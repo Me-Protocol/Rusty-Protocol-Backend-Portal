@@ -16,6 +16,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
+    "start:pm2": "pm2 start 0 -o '/dev/null' -e '/dev/null'",
+    "stop:pm2": "pm2 stop 0",
+    "restart:pm2": "pm2 stop 0 && pm2 start 0 -o '/dev/null' -e '/dev/null'",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org me-protocol-c1f3212fa --project node-express ./dist && sentry-cli sourcemaps upload --org me-protocol-c1f3212fa --project node-express ./dist"
