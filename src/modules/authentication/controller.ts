@@ -166,14 +166,15 @@ export class AuthenticationController {
       banned,
       suspended,
       last_login,
-      twitterAuth,
       facebookAuth,
+      twitterAuth,
       googleAuth,
       ...userWithoutPassword
     } = user;
 
     return {
       ...userWithoutPassword,
+      twitterUsername: twitterAuth?.username ?? null,
       // dob: moment(new Date(user.dob)).format('DD, MMMM'),
     };
   }
