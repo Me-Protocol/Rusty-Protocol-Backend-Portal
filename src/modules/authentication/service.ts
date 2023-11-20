@@ -959,46 +959,56 @@ export class AuthenticationService {
   }
 
   async forgotPassword({ identifier }: ForgotPasswordDto): Promise<any> {
-    let user: User;
+    try {
+      let user: User;
+      identifier = identifier.trim().toLocaleLowerCase();
 
-    if (identifier.includes('@')) {
-      user = await this.userService.getUserByEmail(identifier);
+      if (identifier.includes('@')) {
+        user = await this.userService.getUserByEmail(identifier);
 
-      if (!user.emailVerified) {
-        throw new HttpException('Email not verified', 400);
+        if (!user?.emailVerified) {
+          throw new HttpException('Email not verified', 400);
+        }
+      } else if (isNumber(identifier)) {
+        user = await this.userService.getUserByPhone(identifier);
+
+        if (!user.phoneVerified) {
+          throw new HttpException('Phone not verified', 400);
+        }
+      } else {
+        user = await this.userService.getUserByUsername(identifier);
+
+        if (user?.email && !user.emailVerified) {
+          throw new HttpException('Email not verified', 400);
+        }
+
+        if (user?.phone && !user?.phoneVerified) {
+          throw new HttpException('Phone not verified', 400);
+        }
       }
-    } else if (isNumber(identifier)) {
-      user = await this.userService.getUserByPhone(identifier);
 
-      if (!user.phoneVerified) {
-        throw new HttpException('Phone not verified', 400);
-      }
-    } else {
-      user = await this.userService.getUserByUsername(identifier);
-
-      if (user.email && !user.emailVerified) {
-        throw new HttpException('Email not verified', 400);
+      if (!user) {
+        throw new HttpException('User not found', 404);
       }
 
-      if (user.phone && !user.phoneVerified) {
-        throw new HttpException('Phone not verified', 400);
+      if (isNumber(identifier)) {
+        await this.sendPhoneVerificationCode(user.phone);
+      } else {
+        await this.sendEmailVerificationCode(user.email, user.username);
       }
+
+      return {
+        message: `Please verify your ${
+          isNumber(identifier) ? 'phone' : 'email'
+        }`,
+        userId: user.id,
+      };
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
     }
-
-    if (!user) {
-      throw new HttpException('User not found', 404);
-    }
-
-    if (isNumber(identifier)) {
-      await this.sendPhoneVerificationCode(user.phone);
-    } else {
-      await this.sendEmailVerificationCode(user.email, user.username);
-    }
-
-    return {
-      message: `Please verify your ${isNumber(identifier) ? 'phone' : 'email'}`,
-      userId: user.id,
-    };
   }
 
   async resetPassword({
