@@ -966,17 +966,29 @@ export class AuthenticationService {
       if (identifier.includes('@')) {
         user = await this.userService.getUserByEmail(identifier);
 
+        if (!user) {
+          throw new HttpException('User not found', 404);
+        }
+
         if (!user?.emailVerified) {
           throw new HttpException('Email not verified', 400);
         }
       } else if (isNumber(identifier)) {
         user = await this.userService.getUserByPhone(identifier);
 
+        if (!user) {
+          throw new HttpException('User not found', 404);
+        }
+
         if (!user.phoneVerified) {
           throw new HttpException('Phone not verified', 400);
         }
       } else {
         user = await this.userService.getUserByUsername(identifier);
+
+        if (!user) {
+          throw new HttpException('User not found', 404);
+        }
 
         if (user?.email && !user.emailVerified) {
           throw new HttpException('Email not verified', 400);
@@ -985,10 +997,6 @@ export class AuthenticationService {
         if (user?.phone && !user?.phoneVerified) {
           throw new HttpException('Phone not verified', 400);
         }
-      }
-
-      if (!user) {
-        throw new HttpException('User not found', 404);
       }
 
       if (isNumber(identifier)) {
