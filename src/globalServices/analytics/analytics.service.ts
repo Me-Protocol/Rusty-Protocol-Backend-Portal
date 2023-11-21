@@ -10,6 +10,7 @@ import { RewardRegistry } from '../reward/entities/registry.entity';
 import { Task } from '../task/entities/task.entity';
 import { BrandCustomer } from '../brand/entities/brand_customer.entity';
 import { Follow } from '../follow/entities/follow.entity';
+import { Review } from '../review/entities/review.entity';
 
 /**
  *
@@ -46,6 +47,9 @@ export class AnalyticsService {
 
     @InjectRepository(Follow)
     private readonly followRepo: Repository<Follow>,
+
+    @InjectRepository(Review)
+    private readonly reviewRepo: Repository<Review>,
   ) {}
 
   async getTotalNumberOfOffers({
@@ -456,6 +460,87 @@ export class AnalyticsService {
       total,
       followersPerDay,
       followers,
+    };
+  }
+
+  async ratingAnalytics({ brandId }: { brandId: string }) {
+    const allReviews = await this.reviewRepo.find({
+      where: {
+        brandId,
+      },
+    });
+
+    const totalReviews = await this.reviewRepo.count({
+      where: {
+        brandId,
+      },
+    });
+
+    const averageRating =
+      allReviews.reduce((acc, review) => {
+        return acc + review.rating;
+      }, 0) / totalReviews;
+
+    const ratingMetric = [5, 4, 3, 2, 1].map((rating) => {
+      const count = allReviews.filter(
+        (review) => review.rating === rating,
+      ).length;
+      return {
+        rating,
+        count,
+      };
+    });
+
+    // diff between current month and last month
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const lastYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+    const lastMonthReviews = await this.reviewRepo.find({
+      where: {
+        brandId,
+        createdAt: Between(
+          new Date(lastYear, lastMonth, 1),
+          new Date(currentYear, currentMonth, 1),
+        ),
+      },
+    });
+
+    const lastMonthAverageRating =
+      lastMonthReviews.reduce((acc, review) => {
+        return acc + review.rating;
+      }, 0) / lastMonthReviews.length;
+
+    const currentMonthReviews = await this.reviewRepo.find({
+      where: {
+        brandId,
+        createdAt: Between(
+          new Date(currentYear, currentMonth, 1),
+          new Date(currentYear, currentMonth + 1, 1),
+        ),
+      },
+    });
+
+    const currentMonthAverageRating =
+      currentMonthReviews.reduce((acc, review) => {
+        return acc + review.rating;
+      }, 0) / currentMonthReviews.length;
+
+    // compare current month and last month rating (return the percentage difference and if its increasing or decreasing)
+
+    const diff = currentMonthAverageRating - lastMonthAverageRating;
+    const percentageDiff = (diff / lastMonthAverageRating) * 100;
+    const isIncreasing = percentageDiff > 0;
+
+    return {
+      totalReviews,
+      averageRating,
+      ratingMetric,
+      currentMonthAverageRating,
+      lastMonthAverageRating,
+      percentageDiff,
+      isIncreasing,
     };
   }
 }
