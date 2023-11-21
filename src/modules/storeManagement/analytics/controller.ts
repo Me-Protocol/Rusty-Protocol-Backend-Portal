@@ -79,4 +79,15 @@ export class AnalyticsManagementController {
     query.brandId = brandId;
     return this.analyticsService.totalActiveTasks(query);
   }
+
+  @UseGuards(BrandJwtStrategy)
+  @Get('review-analytics')
+  async ratingAnalytics(
+    @Query(ValidationPipe) query: TotalOfferViewDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    query.brandId = brandId;
+    return this.analyticsService.ratingAnalytics({ brandId });
+  }
 }
