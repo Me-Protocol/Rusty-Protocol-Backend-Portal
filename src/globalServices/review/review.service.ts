@@ -45,6 +45,12 @@ export class ReviewService {
         'user.username',
         'customer.name',
         'customer.profilePicture',
+        'offer.id',
+        'offer.name',
+        'offer.offerCode',
+        'offerImages.url',
+        'brand.id',
+        'brand.name',
       ]);
 
     if (userId) {
