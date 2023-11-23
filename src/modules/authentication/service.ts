@@ -973,17 +973,19 @@ export class AuthenticationService {
         if (!user?.emailVerified) {
           throw new HttpException('Email not verified', 400);
         }
-      } else if (isNumber(identifier)) {
-        user = await this.userService.getUserByPhone(identifier);
+      }
+      // else if (isNumber(identifier)) {
+      //   user = await this.userService.getUserByPhone(identifier);
 
-        if (!user) {
-          throw new HttpException('User not found', 404);
-        }
+      //   if (!user) {
+      //     throw new HttpException('User not found', 404);
+      //   }
 
-        if (!user.phoneVerified) {
-          throw new HttpException('Phone not verified', 400);
-        }
-      } else {
+      //   if (!user.phoneVerified) {
+      //     throw new HttpException('Phone not verified', 400);
+      //   }
+      // }
+      else {
         user = await this.userService.getUserByUsername(identifier);
 
         if (!user) {
