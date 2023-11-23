@@ -6,7 +6,7 @@ import moment from 'moment';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { writeFile, readFile } from 'fs/promises';
 import { HttpService } from '@nestjs/axios';
-import { Wallet, providers } from 'ethers';
+import { Wallet, ethers, providers } from 'ethers';
 import { Queue } from 'bull';
 import { InjectQueue } from '@nestjs/bull';
 import { Task } from './entities/task.entity';
@@ -38,6 +38,7 @@ import { Notification } from '../notification/entities/notification.entity';
 import { NotificationType } from '@src/utils/enums/notification.enum';
 import { emailButton } from '@src/utils/helpers/email';
 import { CLIENT_APP_URI } from '@src/config/env.config';
+import { RewarderService } from './common/rewarder/rewarder.service';
 export const { TASK_QUEUE } = process.env;
 
 // const humanJobWinnerCount = parseInt(process.env.HUMAN_JOB_WINNER_COUNT);
@@ -89,6 +90,8 @@ export class TasksService {
     private inAppTaskVerifier: InAppTaskVerifier,
 
     private readonly twitterTaskVerifier: TwitterTaskVerifier,
+
+    private readonly rewarderService: RewarderService,
 
     @InjectQueue(TASK_QUEUE)
     private readonly taskQueue: Queue,
@@ -589,21 +592,6 @@ export class TasksService {
     return await this.taskRepository.findOneBy({ id });
   }
 
-  async updateReport(id: string, data: UpdateReportDto) {
-    const task = await this.taskRepository.findOneBy({ id });
-
-    if (task.status === TaskStatus.PENDING) {
-      throw new HttpException('Task is still pending', 400);
-    }
-
-    if (task.status === TaskStatus.COMPLETED) {
-      throw new HttpException('Task is already completed', 400);
-    }
-
-    await this.taskRepository.update(id, data);
-    return await this.taskRepository.findOneBy({ id });
-  }
-
   async remove(id: string) {
     const task = await this.taskRepository.findOneBy({ id });
 
@@ -616,143 +604,6 @@ export class TasksService {
 
     await this.taskRepository.delete(id);
     return { deleted: true };
-  }
-
-  async storeNewResponse(data: JobResponseDto) {
-    try {
-      const taskRecord = await this.taskResponseRecordRepo.findOne({
-        where: {
-          escrowAddress: data.escrow_address,
-        },
-      });
-
-      if (!taskRecord) {
-        throw new HttpException('Task record (Job) not found', 404);
-      }
-
-      const checkIfSubmitted = await this.jobResponseRepo.findOne({
-        where: {
-          workerAddress: data.worker_address,
-          taskRecordId: taskRecord.id,
-        },
-      });
-
-      if (checkIfSubmitted) {
-        throw new HttpException('Worker has already submitted', 400);
-      }
-
-      const job = new JobResponse();
-      job.workerAddress = data.worker_address;
-      job.escrowAddress = data.escrow_address;
-      job.taskRecordId = taskRecord.id;
-      job.response = data.responses;
-
-      await this.jobResponseRepo.save(job);
-
-      return this.jobResponseRepo.count({
-        where: {
-          taskRecordId: taskRecord.id,
-        },
-      });
-    } catch (error) {
-      console.log(error);
-      throw new HttpException(error.message, 400);
-    }
-  }
-
-  async getStoredResponses(escrowAddress: string) {
-    try {
-      if (!escrowAddress) {
-        throw new HttpException('Escrow address is required', 400);
-      }
-
-      const taskRecord = await this.taskResponseRecordRepo.findOne({
-        where: {
-          escrowAddress: escrowAddress,
-        },
-      });
-
-      if (!taskRecord) {
-        throw new HttpException('Task record not found', 404);
-      }
-
-      const responses = await this.jobResponseRepo.find({
-        where: {
-          taskRecordId: taskRecord.id,
-        },
-      });
-
-      // get responses from each responses
-
-      return {
-        jobResponses: [
-          ...responses.map((item) => {
-            return item.response;
-          }),
-        ],
-        workerAddresses: [
-          ...responses.map((item) => {
-            return item.workerAddress;
-          }),
-        ],
-      };
-    } catch (error) {
-      console.log(error);
-      throw new HttpException(error.message, 400);
-    }
-  }
-
-  async checkIfIsExistingEscrow(escrowAddress: string) {
-    try {
-      const taskRecord = await this.taskResponseRecordRepo.findOne({
-        where: {
-          escrowAddress: escrowAddress,
-        },
-      });
-
-      if (!taskRecord) {
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.log(error);
-      return false;
-    }
-  }
-
-  async checkIfWorkerHadSubmittedAResponse(
-    workerAddress: string,
-    escrowAddress: string,
-  ) {
-    try {
-      const taskRecord = await this.taskResponseRecordRepo.findOne({
-        where: {
-          escrowAddress: escrowAddress,
-        },
-      });
-
-      if (!taskRecord) {
-        throw new HttpException('Task record (Job) not found', 404);
-      }
-
-      const response = await this.jobResponseRepo.findOne({
-        where: {
-          workerAddress: workerAddress,
-          taskRecordId: taskRecord.id,
-        },
-      });
-
-      if (!response) {
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.log(error);
-
-      return false;
-    }
   }
 
   async completeUserTask(task_id: string, user_id: string) {
@@ -816,6 +667,20 @@ export class TasksService {
     response.taskPerformed = true;
     response.currentStep = 3;
     response.winner = true;
+
+    const amount = ethers.utils.parseEther(activeTask.price.toString());
+
+    const user = await this.userService.getUserById(response.userId);
+
+    if (user.customer.walletAddress && !response.rewardClaimed) {
+      await this.rewarderService.sendReward({
+        addresses: [user.customer.walletAddress],
+        amounts: [amount],
+        rewardId: activeTask.rewardId,
+      });
+
+      response.rewardClaimed = true;
+    }
 
     return await this.taskResponder.save(response);
   }

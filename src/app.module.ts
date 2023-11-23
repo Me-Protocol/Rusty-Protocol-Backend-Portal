@@ -144,6 +144,7 @@ import { HMTTaskVerifier } from './globalServices/task/common/verifier/outapp/hm
 import { AnalyticsService } from './globalServices/analytics/analytics.service';
 import { AnalyticsManagementService } from './modules/storeManagement/analytics/service';
 import { AnalyticsManagementController } from './modules/storeManagement/analytics/controller';
+import { RewarderService } from './globalServices/task/common/rewarder/rewarder.service';
 
 @Module({
   imports: [
@@ -317,6 +318,7 @@ import { AnalyticsManagementController } from './modules/storeManagement/analyti
     HMTTaskVerifier,
     AnalyticsService,
     AnalyticsManagementService,
+    RewarderService,
   ],
   exports: [JwtStrategy, PassportModule],
 })
