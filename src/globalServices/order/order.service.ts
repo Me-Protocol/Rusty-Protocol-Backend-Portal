@@ -48,7 +48,18 @@ export class OrderService {
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.reward', 'reward')
       .leftJoinAndSelect('reward.brand', 'brand')
-      .orderBy('order.createdAt', 'DESC');
+      .leftJoinAndSelect('reward.user', 'user')
+      .leftJoinAndSelect('user.customer', 'customer')
+      .orderBy('order.createdAt', 'DESC')
+      .select([
+        'order',
+        'coupon',
+        'offer',
+        'offerImages',
+        'reward',
+        'brand',
+        'customer',
+      ]);
 
     if (brandId) {
       orderQuery

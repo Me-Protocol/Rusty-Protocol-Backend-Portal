@@ -27,7 +27,6 @@ import { UserAppType } from '@src/utils/enums/UserAppType';
 import { Role } from '@src/utils/enums/Role';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { logger } from '@src/globalServices/logger/logger.service';
-import { RewardService } from '@src/globalServices/reward/reward.service';
 import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
 import { Enable2FADto } from './dto/Enable2FADto.dto';
 import { UpdatePreferenceDto } from './dto/UpdatePreferenceDto.dto';
@@ -486,7 +485,6 @@ export class AuthenticationService {
 
   async isPasswordValid(password: string, user: User): Promise<boolean> {
     const isPasswordValid = await bcrypt.compare(password, user.password);
-
     return isPasswordValid;
   }
 

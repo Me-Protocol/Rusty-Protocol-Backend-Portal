@@ -248,10 +248,22 @@ export class BrandService {
     }
 
     if (filterBy === FilterBrandCustomer.MOST_RECENT) {
-      // brand customer createdAt 7 days ago
-      const date = new Date();
-      date.setDate(date.getDate() - 7);
-      brandCustomerQuery.andWhere('brandCustomer.createdAt > :date', { date });
+      // brand customer createdAt now to 1 month ago
+
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() - 1);
+
+      const startDate = new Date();
+
+      // where createdAt is between now to date ago
+
+      brandCustomerQuery.andWhere(
+        'brandCustomer.createdAt BETWEEN :startDate AND :endDate',
+        {
+          startDate,
+          endDate,
+        },
+      );
     }
 
     brandCustomerQuery.skip((page - 1) * limit).take(limit);

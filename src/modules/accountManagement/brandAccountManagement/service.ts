@@ -132,13 +132,19 @@ export class BrandAccountManagementService {
       }
 
       const brandOwner = await this.getBrandOwner(body.brandId);
+      const ownerMemberRecord = await this.brandService.getBrandMember(
+        body.brandId,
+        brandOwner.brandMember.id,
+      );
 
       if (body.role === BrandRole.OWNER && body.userId !== brandOwner.id) {
         throw new HttpException('You cannot assign owner role to a user', 400);
       }
 
-      brandMember.role = body.role;
+      ownerMemberRecord.role = BrandRole.COLLABORATOR;
+      await this.brandService.saveBrandMember(ownerMemberRecord);
 
+      brandMember.role = body.role;
       return await this.brandService.saveBrandMember(brandMember);
     } catch (error) {
       logger.error(error);

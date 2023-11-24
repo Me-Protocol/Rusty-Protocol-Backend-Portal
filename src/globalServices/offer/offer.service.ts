@@ -13,6 +13,7 @@ import { Order } from '../order/entities/order.entity';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { offerIndex } from '@src/modules/search/interface/search.interface';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { BrandCustomer } from '../brand/entities/brand_customer.entity';
 
 @Injectable()
 export class OfferService {
@@ -22,6 +23,9 @@ export class OfferService {
 
     @InjectRepository(ProductImage)
     private readonly productImageRepo: Repository<ProductImage>,
+
+    @InjectRepository(BrandCustomer)
+    private readonly brandCustomerRepo: Repository<BrandCustomer>,
 
     private readonly userService: UserService,
     private readonly viewService: ViewsService,
@@ -626,6 +630,15 @@ export class OfferService {
 
       customer.totalRedeemed += 1;
       customer.totalRedemptionAmount = +totalRedemptionAmountParse;
+
+      const brandCustomer = await this.brandCustomerRepo.findOne({
+        where: { userId: userId, brandId: offer.brandId },
+      });
+
+      brandCustomer.totalRedeemed += 1;
+      brandCustomer.totalRedemptionAmount = +totalRedemptionAmountParse;
+
+      await this.brandCustomerRepo.save(brandCustomer);
 
       await this.offerRepo.save(offer);
 
