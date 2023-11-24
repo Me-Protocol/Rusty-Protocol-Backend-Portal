@@ -105,6 +105,51 @@ export class AnalyticsService {
     });
   }
 
+  async getOfferViewsPerDayByDateRange({
+    start,
+    end,
+    offerId,
+  }: {
+    start: Date;
+    end: Date;
+    offerId: string;
+  }) {
+    const total = await this.viewRepo.count({
+      where: {
+        createdAt: Between(start, end),
+        offer: {
+          id: offerId,
+        },
+      },
+    });
+
+    const data = await this.viewRepo.find({
+      where: {
+        createdAt: Between(start, end),
+        offer: {
+          id: offerId,
+        },
+      },
+      relations: ['offer'],
+    });
+
+    const viewsPerDay = {};
+    data.forEach((view) => {
+      const date = view.createdAt.toISOString().split('T')[0];
+      if (viewsPerDay[date]) {
+        viewsPerDay[date] += 1;
+      } else {
+        viewsPerDay[date] = 1;
+      }
+    });
+
+    return {
+      total,
+      viewsPerDay,
+      offers: data,
+    };
+  }
+
   async getViewsPerDayByDateRange({
     start,
     end,

@@ -55,7 +55,7 @@ export class AnalyticsManagementController {
   ) {
     const brandId = req.user.brand.id;
     query.brandId = brandId;
-    return this.analyticsService.getTotalNumberOfViewsByOffer(query);
+    return this.analyticsService.getOfferViewsPerDayByDateRange(query);
   }
 
   @UseGuards(BrandJwtStrategy)
