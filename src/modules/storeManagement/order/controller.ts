@@ -99,10 +99,7 @@ export class OrderManagementController {
     @Req() req: any,
     @Body(ValidationPipe) body: CompleteOrderDto,
   ) {
-    return await this.orderManagementService.completeOrder(
-      body.orderId,
-      body.taskId,
-    );
+    return await this.orderManagementService.completeOrder(body);
   }
 
   @Get('/redeem/confirm-redeem-mock')

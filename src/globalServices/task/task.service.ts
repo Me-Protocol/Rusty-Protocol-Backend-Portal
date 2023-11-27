@@ -649,40 +649,45 @@ export class TasksService {
     activeTask: Task,
     response: TaskResponder,
   ) {
-    // TODO: Add task queue
-    // const queuedJob: any = await this.taskQueue.add({
-    //   activeTask,
-    //   response,
-    // });
+    try {
+      // TODO: Add task queue
+      // const queuedJob: any = await this.taskQueue.add({
+      //   activeTask,
+      //   response,
+      // });
 
-    // const job = await this.taskQueue.getJob(queuedJob.id);
-    // const isFinishedValue = await job.finished();
+      // const job = await this.taskQueue.getJob(queuedJob.id);
+      // const isFinishedValue = await job.finished();
 
-    // if (isFinishedValue) return isFinishedValue;
+      // if (isFinishedValue) return isFinishedValue;
 
-    await this.taskRepository.update(activeTask.id, {
-      winnerCount: activeTask.winnerCount + 1,
-    });
-
-    response.taskPerformed = true;
-    response.currentStep = 3;
-    response.winner = true;
-
-    const amount = ethers.utils.parseEther(activeTask.price.toString());
-
-    const user = await this.userService.getUserById(response.userId);
-
-    if (user.customer.walletAddress && !response.rewardClaimed) {
-      await this.rewarderService.sendReward({
-        addresses: [user.customer.walletAddress],
-        amounts: [amount],
-        rewardId: activeTask.rewardId,
+      await this.taskRepository.update(activeTask.id, {
+        winnerCount: activeTask.winnerCount + 1,
       });
 
-      response.rewardClaimed = true;
-    }
+      response.taskPerformed = true;
+      response.currentStep = 3;
+      response.winner = true;
 
-    return await this.taskResponder.save(response);
+      const amount = ethers.utils.parseEther(activeTask.price.toString());
+
+      const user = await this.userService.getUserById(response.userId);
+
+      if (user.customer.walletAddress && !response.rewardClaimed) {
+        await this.rewarderService.sendReward({
+          addresses: [user.customer.walletAddress],
+          amounts: [amount],
+          rewardId: activeTask.rewardId,
+        });
+
+        response.rewardClaimed = true;
+      }
+
+      return await this.taskResponder.save(response);
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, 400);
+    }
   }
 
   async getTaskWinners(taskId: string) {

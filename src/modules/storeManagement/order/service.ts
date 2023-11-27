@@ -20,6 +20,9 @@ import { NotificationType } from '@src/utils/enums/notification.enum';
 import { emailButton } from '@src/utils/helpers/email';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { RegistryHistory } from '@src/globalServices/reward/entities/registryHistory.entity';
+import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
+import { get_transaction_by_hash } from '@developeruche/runtime-sdk';
+import { result } from 'lodash';
 
 @Injectable()
 export class OrderManagementService {
@@ -261,7 +264,15 @@ export class OrderManagementService {
     }
   }
 
-  async completeOrder(orderId: string, taskId: string) {
+  async completeOrder({
+    orderId,
+    taskId,
+    verifier,
+  }: {
+    orderId: string;
+    taskId: string;
+    verifier: OrderVerifier;
+  }) {
     const order = await this.orderService.getOrderByOrderId(orderId);
 
     if (!order) {
@@ -269,6 +280,7 @@ export class OrderManagementService {
     }
 
     order.taskId = taskId;
+    order.verifier = verifier;
 
     return await this.orderService.saveOrder(order);
   }
@@ -276,18 +288,17 @@ export class OrderManagementService {
   @Cron(CronExpression.EVERY_30_SECONDS)
   async checkOrderStatus() {
     const pendingOrders = await this.orderService.getPendingOrders();
-
     if (pendingOrders.length > 0) {
       for (const order of pendingOrders) {
-        const status =
-          await this.costModuleService.checkTransactionStatusWithRetry({
-            taskId: order.taskId,
-          });
+        const status = await this.checkOrderStatusGelatoOrRuntime(
+          order.taskId,
+          order.verifier,
+        );
 
         const offer = await this.offerService.getOfferById(order.offerId);
         const customer = await this.customerService.getByUserId(order.userId);
 
-        if (status === 'ExecSuccess') {
+        if (status === 'success') {
           await this.offerService.increaseOfferSales({
             offer,
             amount: order.points,
@@ -365,7 +376,7 @@ export class OrderManagementService {
           history.balance = 0;
 
           await this.syncService.saveRegistryHistory(history);
-        } else if (status === 'ExecFailed') {
+        } else if (status === 'failed') {
           order.status = StatusType.FAILED;
 
           await this.orderService.saveOrder(order);
@@ -400,6 +411,43 @@ export class OrderManagementService {
           await this.notificationService.createNotification(notification);
         }
       }
+    }
+  }
+
+  async checkOrderStatusGelatoOrRuntime(
+    taskId: string,
+    verifier: OrderVerifier,
+  ): Promise<'success' | 'failed' | 'pending'> {
+    try {
+      if (verifier === OrderVerifier.GELATO) {
+        const status =
+          await this.costModuleService.checkTransactionStatusWithRetry({
+            taskId,
+          });
+
+        if (status === 'ExecSuccess') {
+          return 'success';
+        } else if (status === 'ExecFailed') {
+          return 'failed';
+        } else {
+          return 'pending';
+        }
+      } else {
+        const runtimeStatus = await get_transaction_by_hash({
+          hash: taskId,
+        });
+
+        if (
+          runtimeStatus.data.result.hash !==
+          '0x0000000000000000000000000000000000000000000000000000000000000000'
+        ) {
+          return 'success';
+        } else {
+          return 'failed';
+        }
+      }
+    } catch (error) {
+      return 'pending';
     }
   }
 }
