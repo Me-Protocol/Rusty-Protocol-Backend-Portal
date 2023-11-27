@@ -151,8 +151,10 @@ async function bootstrap() {
           '*.alchemy.com',
           '*.magic.link',
           'ipapi.co',
+          '',
           '*.gelato.digital',
           '*.intercom.io',
+          '*.cloudinary.com'
         ],
       },
     },
