@@ -11,6 +11,8 @@ import { AnalyticsManagementService } from './service';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import {
   AnalyticsDto,
+  RewardAnalyticsDto,
+  RewardTransactionDto,
   TotalOfferDto,
   TotalOfferViewDto,
 } from './analytics.dto';
@@ -89,5 +91,27 @@ export class AnalyticsManagementController {
     const brandId = req.user.brand.id;
     query.brandId = brandId;
     return this.analyticsService.ratingAnalytics({ brandId });
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Get('circular-supply')
+  async getCirculatingSupply(
+    @Query(ValidationPipe) query: RewardAnalyticsDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    query.brandId = brandId;
+    return this.analyticsService.getCirculatingSupply(query);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Get('transactions')
+  async getRewardTransactions(
+    @Query(ValidationPipe) query: RewardTransactionDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    query.brandId = brandId;
+    return this.analyticsService.getRewardTransactions(query);
   }
 }

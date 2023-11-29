@@ -29,6 +29,8 @@ import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.ser
 import { FilterRegistryHistoryDto } from './dto/filterRegistryHistoryDto.dto';
 import { RewardStatus } from '@src/utils/enums/ItemStatus';
 import { BrandService } from '@src/globalServices/brand/brand.service';
+import { AnalyticsRecorderService } from '@src/globalServices/analytics/analytic_recorder.service';
+import { RewardCirculation } from '@src/globalServices/analytics/entities/reward_circulation';
 
 @Injectable()
 export class RewardManagementService {
@@ -39,6 +41,7 @@ export class RewardManagementService {
     private readonly keyManagementService: KeyManagementService,
     private readonly fiatWalletService: FiatWalletService,
     private readonly brandService: BrandService,
+    private readonly analyticsRecorder: AnalyticsRecorderService,
   ) {}
 
   async createReward(body: CreateRewardDto) {
@@ -383,6 +386,28 @@ export class RewardManagementService {
         }
 
         await this.addPointsToRewardRegistry(addableSyncData, body.rewardId);
+
+        const totalDistributed = addableSyncData.reduce(
+          (acc, cur) => acc + cur.amount,
+          0,
+        );
+
+        checkReward.totalDistributedSupply =
+          checkReward.totalDistributedSupply + totalDistributed;
+        await this.rewardService.save(checkReward);
+
+        // Update circulating supply
+        const circulatingSupply = new RewardCirculation();
+        circulatingSupply.brandId = checkReward.brandId;
+        circulatingSupply.rewardId = checkReward.id;
+        circulatingSupply.circulatingSupply =
+          checkReward.totalDistributedSupply - checkReward.totalRedeemedSupply;
+        circulatingSupply.totalRedeemedAtCirculation =
+          checkReward.totalRedeemedSupply;
+        circulatingSupply.totalDistributedSupplyAtCirculation =
+          checkReward.totalDistributedSupply;
+
+        await this.analyticsRecorder.createRewardCirculation(circulatingSupply);
 
         return {
           descripancies: null,

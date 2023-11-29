@@ -14,7 +14,11 @@ import { CustomerService } from '@src/globalServices/customer/customer.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { CostModuleService } from '@src/globalServices/costManagement/costModule.service';
 import { NotificationService } from '@src/globalServices/notification/notification.service';
-import { StatusType, TransactionsType } from '@src/utils/enums/Transactions';
+import {
+  StatusType,
+  TransactionSource,
+  TransactionsType,
+} from '@src/utils/enums/Transactions';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 import { NotificationType } from '@src/utils/enums/notification.enum';
 import { emailButton } from '@src/utils/helpers/email';
@@ -23,6 +27,14 @@ import { RegistryHistory } from '@src/globalServices/reward/entities/registryHis
 import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
 import { get_transaction_by_hash } from '@developeruche/runtime-sdk';
 import { result } from 'lodash';
+import { RewardService } from '@src/globalServices/reward/reward.service';
+import { RewardCirculation } from '@src/globalServices/analytics/entities/reward_circulation';
+import { AnalyticsRecorderService } from '@src/globalServices/analytics/analytic_recorder.service';
+import { Transaction } from '@src/globalServices/fiatWallet/entities/transaction.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { generateTransactionCode } from '@src/utils/helpers/generateRandomCode';
+import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
 
 @Injectable()
 export class OrderManagementService {
@@ -37,6 +49,11 @@ export class OrderManagementService {
     private readonly costModuleService: CostModuleService,
     private readonly notificationService: NotificationService,
     private readonly fiatWalletService: FiatWalletService,
+    private readonly rewardService: RewardService,
+    private readonly analyticsRecorder: AnalyticsRecorderService,
+
+    @InjectRepository(Transaction)
+    private readonly transactionRepo: Repository<Transaction>,
   ) {}
 
   randomCode() {
@@ -282,6 +299,19 @@ export class OrderManagementService {
     order.taskId = taskId;
     order.verifier = verifier;
 
+    const transaction = new Transaction();
+    transaction.amount = order.points;
+    transaction.transactionType = TransactionsType.DEBIT;
+    transaction.paymentRef = generateTransactionCode();
+    transaction.narration = `Redeem ${order.offer.name} from ${order.offer.brand.name}`;
+    transaction.rewardId = order.offer.rewardId;
+    transaction.orderId = order.id;
+    transaction.paymentMethod = PaymentMethodEnum.REWARD;
+    transaction.source = TransactionSource.OFFER_REDEMPTION;
+    transaction.status = StatusType.PROCESSING;
+
+    await this.transactionRepo.save(transaction);
+
     return await this.orderService.saveOrder(order);
   }
 
@@ -297,6 +327,11 @@ export class OrderManagementService {
 
         const offer = await this.offerService.getOfferById(order.offerId);
         const customer = await this.customerService.getByUserId(order.userId);
+        const transaction = await this.transactionRepo.findOne({
+          where: {
+            orderId: order.id,
+          },
+        });
 
         if (status === 'success') {
           await this.offerService.increaseOfferSales({
@@ -314,6 +349,11 @@ export class OrderManagementService {
           order.status = StatusType.SUCCEDDED;
 
           await this.orderService.saveOrder(order);
+
+          if (transaction) {
+            transaction.status = StatusType.SUCCEDDED;
+            await this.transactionRepo.save(transaction);
+          }
 
           //  Send notification to user
 
@@ -376,12 +416,41 @@ export class OrderManagementService {
           history.balance = 0;
 
           await this.syncService.saveRegistryHistory(history);
+
+          const reward = await this.rewardService.getRewardByIdAndBrandId(
+            offer.rewardId,
+            offer?.brandId,
+          );
+
+          reward.totalRedeemedSupply =
+            reward.totalRedeemedSupply + offer.tokens;
+          await this.rewardService.save(reward);
+
+          // Update circulating supply
+          const circulatingSupply = new RewardCirculation();
+          circulatingSupply.brandId = reward.brandId;
+          circulatingSupply.rewardId = reward.id;
+          circulatingSupply.circulatingSupply =
+            reward.totalDistributedSupply - reward.totalRedeemedSupply;
+          circulatingSupply.totalRedeemedAtCirculation =
+            reward.totalRedeemedSupply;
+          circulatingSupply.totalDistributedSupplyAtCirculation =
+            reward.totalDistributedSupply;
+
+          await this.analyticsRecorder.createRewardCirculation(
+            circulatingSupply,
+          );
         } else if (status === 'failed') {
           order.status = StatusType.FAILED;
 
           await this.orderService.saveOrder(order);
 
           await this.offerService.increaseInventory(offer, order);
+
+          if (transaction) {
+            transaction.status = StatusType.FAILED;
+            await this.transactionRepo.save(transaction);
+          }
 
           //  Send notification to user
 

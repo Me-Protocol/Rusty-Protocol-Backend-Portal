@@ -51,7 +51,7 @@ export class OrderService {
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.reward', 'reward')
       .leftJoinAndSelect('reward.brand', 'brand')
-      .leftJoinAndSelect('reward.user', 'user')
+      .leftJoinAndSelect('order.user', 'user')
       .leftJoinAndSelect('user.customer', 'customer')
       .orderBy('order.createdAt', 'DESC')
       .select([
