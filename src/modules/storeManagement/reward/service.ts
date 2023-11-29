@@ -456,6 +456,19 @@ export class RewardManagementService {
 
       await this.addPointsToRewardRegistry(addableSyncData, body.rewardId);
 
+      // Update circulating supply
+      const circulatingSupply = new RewardCirculation();
+      circulatingSupply.brandId = checkReward.brandId;
+      circulatingSupply.rewardId = checkReward.id;
+      circulatingSupply.circulatingSupply =
+        checkReward.totalDistributedSupply - checkReward.totalRedeemedSupply;
+      circulatingSupply.totalRedeemedAtCirculation =
+        checkReward.totalRedeemedSupply;
+      circulatingSupply.totalDistributedSupplyAtCirculation =
+        checkReward.totalDistributedSupply;
+
+      await this.analyticsRecorder.createRewardCirculation(circulatingSupply);
+
       return {
         descripancies: null,
         batch: savedBatch,
