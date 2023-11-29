@@ -255,6 +255,7 @@ export class SyncRewardService {
     registry.balance = 0;
     registry.pendingBalance = 0;
     registry.totalBalance = Number(formattedSum);
+    registry.hasBalance = true;
 
     await this.rewardRegistryRepo.save(registry);
 

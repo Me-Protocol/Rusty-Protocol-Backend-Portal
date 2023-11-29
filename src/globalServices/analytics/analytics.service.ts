@@ -718,4 +718,37 @@ export class AnalyticsService {
       previousPage: page > 1 ? Number(page) - 1 : null,
     };
   }
+
+  async getRewardHolders({
+    rewardId,
+    brandId,
+  }: {
+    rewardId: string;
+    brandId: string;
+  }) {
+    const registries = await this.rewardRegistryRepo.find({
+      where: {
+        rewardId,
+        hasBalance: true,
+        reward: {
+          brandId,
+        },
+      },
+    });
+
+    const total = await this.rewardRegistryRepo.count({
+      where: {
+        rewardId,
+        hasBalance: true,
+        reward: {
+          brandId,
+        },
+      },
+    });
+
+    return {
+      holders: registries,
+      total,
+    };
+  }
 }

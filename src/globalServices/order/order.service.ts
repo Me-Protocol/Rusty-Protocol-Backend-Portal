@@ -142,7 +142,6 @@ export class OrderService {
       const redeemed = await this.orderRepo.count({
         where: {
           offerId: offerId,
-          isRedeemed: true,
           status: StatusType.SUCCEDDED,
         },
       });

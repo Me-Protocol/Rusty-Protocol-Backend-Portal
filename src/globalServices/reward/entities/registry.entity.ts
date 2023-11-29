@@ -69,4 +69,9 @@ export class RewardRegistry extends BaseEntity {
     (registryHistory) => registryHistory.rewardRegistry,
   )
   registryHistory: RegistryHistory[];
+
+  @Column({
+    default: false,
+  })
+  hasBalance: boolean;
 }

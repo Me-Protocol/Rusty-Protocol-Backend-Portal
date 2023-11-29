@@ -49,10 +49,6 @@ export class TotalOfferViewDto {
 
 export class RewardAnalyticsDto {
   @ApiProperty()
-  @IsUUID()
-  offerId: string;
-
-  @ApiProperty()
   @IsDateString()
   start: Date;
 
@@ -77,10 +73,6 @@ export class RewardAnalyticsDto {
 
 export class RewardTransactionDto {
   @ApiProperty()
-  @IsUUID()
-  offerId: string;
-
-  @ApiProperty()
   @IsDateString()
   start: Date;
 
@@ -101,4 +93,12 @@ export class RewardTransactionDto {
   @ApiProperty()
   @IsNumberString()
   limit: number;
+}
+
+export class RewardHoldersDto {
+  @ApiProperty()
+  @IsUUID()
+  rewardId: string;
+
+  brandId: string;
 }

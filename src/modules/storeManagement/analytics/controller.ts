@@ -12,6 +12,7 @@ import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware
 import {
   AnalyticsDto,
   RewardAnalyticsDto,
+  RewardHoldersDto,
   RewardTransactionDto,
   TotalOfferDto,
   TotalOfferViewDto,
@@ -113,5 +114,16 @@ export class AnalyticsManagementController {
     const brandId = req.user.brand.id;
     query.brandId = brandId;
     return this.analyticsService.getRewardTransactions(query);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Get('reward-holders')
+  async getRewardHolders(
+    @Query(ValidationPipe) query: RewardHoldersDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    query.brandId = brandId;
+    return this.analyticsService.getRewardHolders(query);
   }
 }

@@ -25,7 +25,10 @@ import { emailButton } from '@src/utils/helpers/email';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { RegistryHistory } from '@src/globalServices/reward/entities/registryHistory.entity';
 import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
-import { get_transaction_by_hash } from '@developeruche/runtime-sdk';
+import {
+  get_transaction_by_hash,
+  get_user_reward_balance,
+} from '@developeruche/runtime-sdk';
 import { result } from 'lodash';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { RewardCirculation } from '@src/globalServices/analytics/entities/reward_circulation';
@@ -450,6 +453,24 @@ export class OrderManagementService {
           if (transaction) {
             transaction.status = StatusType.FAILED;
             await this.transactionRepo.save(transaction);
+          }
+
+          const balance = await get_user_reward_balance({
+            address: customer.walletAddress,
+            reward_address: offer.reward.contractAddress,
+          });
+
+          if (balance.data?.result) {
+            const registry = await this.syncService.findOneRegistryByUserId(
+              customer.userId,
+              offer.rewardId,
+            );
+            if (registry) {
+              registry.hasBalance =
+                balance?.data?.result === '0x0' ? false : true;
+
+              await this.syncService.saveRegistry(registry);
+            }
           }
 
           //  Send notification to user
