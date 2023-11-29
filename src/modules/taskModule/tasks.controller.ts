@@ -146,14 +146,14 @@ export class TasksController {
     return await this.taskDataService.updateStatus(params.id, data);
   }
 
-  @UseGuards(BrandJwtStrategy)
-  @Put('updateReport')
-  async updateReport(
-    @Body(ValidationPipe) data: UpdateReportDto,
-    @Param() params: { id: string },
-  ) {
-    return await this.taskDataService.updateReport(params.id, data);
-  }
+  // @UseGuards(BrandJwtStrategy)
+  // @Put('updateReport')
+  // async updateReport(
+  //   @Body(ValidationPipe) data: UpdateReportDto,
+  //   @Param() params: { id: string },
+  // ) {
+  //   return await this.taskDataService.updateReport(params.id, data);
+  // }
 
   @UseGuards(AuthGuard())
   @Post('respond')
@@ -184,37 +184,37 @@ export class TasksController {
   //   return await this.taskDataService.getTaskManifestDetails(query.url);
   // }
 
-  @Post('new_response')
-  async newResponse(@Body() body: JobResponseDto) {
-    return await this.taskDataService.storeNewResponse(body);
-  }
+  // @Post('new_response')
+  // async newResponse(@Body() body: JobResponseDto) {
+  //   return await this.taskDataService.storeNewResponse(body);
+  // }
 
-  @Get('get_responses')
-  async getResponses(@Query() query: { escrowAddress: string }) {
-    return await this.taskDataService.getStoredResponses(query.escrowAddress);
-  }
+  // @Get('get_responses')
+  // async getResponses(@Query() query: { escrowAddress: string }) {
+  //   return await this.taskDataService.getStoredResponses(query.escrowAddress);
+  // }
 
-  @Get('check_escrow')
-  async checkEscrow(@Query() query: { escrowAddress: string }) {
-    return await this.taskDataService.checkIfIsExistingEscrow(
-      query.escrowAddress,
-    );
-  }
+  // @Get('check_escrow')
+  // async checkEscrow(@Query() query: { escrowAddress: string }) {
+  //   return await this.taskDataService.checkIfIsExistingEscrow(
+  //     query.escrowAddress,
+  //   );
+  // }
 
-  //TODO: create the dto
-  @Post('check_if_submitted')
-  async checkIfSubmitted(
-    @Body(ValidationPipe)
-    body: {
-      escrowAddress: string;
-      workerAddress: string;
-    },
-  ) {
-    return await this.taskDataService.checkIfWorkerHadSubmittedAResponse(
-      body.workerAddress,
-      body.escrowAddress,
-    );
-  }
+  // //TODO: create the dto
+  // @Post('check_if_submitted')
+  // async checkIfSubmitted(
+  //   @Body(ValidationPipe)
+  //   body: {
+  //     escrowAddress: string;
+  //     workerAddress: string;
+  //   },
+  // ) {
+  //   return await this.taskDataService.checkIfWorkerHadSubmittedAResponse(
+  //     body.workerAddress,
+  //     body.escrowAddress,
+  //   );
+  // }
 
   @Post('test_payout')
   async distributeTaskRewardWithPrivateKey() {
