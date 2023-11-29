@@ -85,6 +85,7 @@ export class RewardManagementService {
       if (body.rOptimal) reward.rOptimal = body.rOptimal;
       if (body.rewardValueInDollars)
         reward.rewardValueInDollars = body.rewardValueInDollars;
+      if (body.treasurySupply) reward.treasurySupply = body.treasurySupply;
 
       if (isDraft) {
         return await this.rewardService.save(reward);

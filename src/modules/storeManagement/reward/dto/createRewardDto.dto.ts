@@ -69,6 +69,11 @@ export class CreateRewardDto {
   @IsOptional()
   @IsNumberString()
   rewardValueInDollars: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  treasurySupply: string;
 }
 
 export class UpdateRewardCreationDto {
