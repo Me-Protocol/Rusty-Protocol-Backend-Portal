@@ -36,7 +36,7 @@ jobs:
           ECR_REPOSITORY: me-protocol-backend-development
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build --target prod -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest . -f deploy/Dockerfile --no-cache
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest . -f deploy/Dockerfile --no-cache
           docker push -a $ECR_REGISTRY/$ECR_REPOSITORY
   
 
