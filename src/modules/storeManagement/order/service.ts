@@ -293,29 +293,35 @@ export class OrderManagementService {
     taskId: string;
     verifier: OrderVerifier;
   }) {
-    const order = await this.orderService.getOrderByOrderId(orderId);
+    try {
+      const order = await this.orderService.getOrderByOrderId(orderId);
 
-    if (!order) {
-      throw new HttpException('Order not found', HttpStatus.NOT_FOUND);
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      order.taskId = taskId;
+      order.verifier = verifier;
+
+      const transaction = new Transaction();
+      transaction.amount = order.points;
+      transaction.transactionType = TransactionsType.DEBIT;
+      transaction.paymentRef = generateTransactionCode();
+      transaction.narration = `Redeem ${order.offer.name} from ${order.offer.brand.name}`;
+      transaction.rewardId = order.offer.rewardId;
+      transaction.orderId = order.id;
+      transaction.paymentMethod = PaymentMethodEnum.REWARD;
+      transaction.source = TransactionSource.OFFER_REDEMPTION;
+      transaction.status = StatusType.PROCESSING;
+
+      await this.transactionRepo.save(transaction);
+
+      return await this.orderService.saveOrder(order);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
-
-    order.taskId = taskId;
-    order.verifier = verifier;
-
-    const transaction = new Transaction();
-    transaction.amount = order.points;
-    transaction.transactionType = TransactionsType.DEBIT;
-    transaction.paymentRef = generateTransactionCode();
-    transaction.narration = `Redeem ${order.offer.name} from ${order.offer.brand.name}`;
-    transaction.rewardId = order.offer.rewardId;
-    transaction.orderId = order.id;
-    transaction.paymentMethod = PaymentMethodEnum.REWARD;
-    transaction.source = TransactionSource.OFFER_REDEMPTION;
-    transaction.status = StatusType.PROCESSING;
-
-    await this.transactionRepo.save(transaction);
-
-    return await this.orderService.saveOrder(order);
   }
 
   @Cron(CronExpression.EVERY_30_SECONDS)
