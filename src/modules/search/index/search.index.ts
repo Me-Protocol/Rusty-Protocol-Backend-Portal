@@ -145,22 +145,21 @@ export class ElasticIndex {
     //   },
     // });
 
-
-    setTimeout(async () => {
-      const existingDocuments = await this.searchService.searchIndex({
-        index: index._index,
-        body: {
-          query: {
-            match_all: {},
-          },
+    //  setTimeout(async () => {
+    const existingDocuments = await this.searchService.searchIndex({
+      index: index._index,
+      body: {
+        query: {
+          match_all: {},
         },
-      });
+      },
+    });
 
-      existingDocuments.map(async (doc) => {
-        // Assuming this.searchService.getDocumentById is an asynchronous function
-        await existingIds.add(doc._source.id);
-      });
-    }, 6000);
+    existingDocuments.map(async (doc) => {
+      // Assuming this.searchService.getDocumentById is an asynchronous function
+      await existingIds.add(doc._source.id);
+    });
+    //  }, 6000);
 
     return existingIds;
   }
