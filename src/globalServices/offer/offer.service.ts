@@ -659,10 +659,14 @@ export class OfferService {
     // await this.offerRepo.save(offer);
   }
 
-   @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async syncElasticSearchIndex() {
+    const currentDate = new Date();
+
     const offersQuery = this.offerRepo
       .createQueryBuilder('offer')
+      .where('offer.endDate < :currentDate', { currentDate })
+      .andWhere('offer.status = :status', { status: ProductStatus.PUBLISHED })
       .leftJoinAndSelect('offer.product', 'product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.subCategory', 'subCategory')
