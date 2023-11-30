@@ -1,24 +1,23 @@
 import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpException,
-  NotFoundException,
+    ArgumentsHost,
+    Catch,
+    ExceptionFilter,
+    HttpException,
+    NotFoundException,
 } from '@nestjs/common';
-import { FastifyReply } from 'fastify';
-const path = require('path');
-const fs = require('fs');
+import {join} from 'path';
+import {readFileSync} from 'fs';
+import {Response} from 'express';
 
 @Catch(NotFoundException)
 export class NotFoundExceptionFilter implements ExceptionFilter {
-  catch(exception: HttpException, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<FastifyReply>();
-    const publicFile = path.resolve(
-      __dirname + '../../../../public/index.html',
-    );
+    catch(exception: HttpException, host: ArgumentsHost) {
+        const ctx = host.switchToHttp();
+        const response = ctx.getResponse<Response>();
 
-    const stream = fs.readFileSync(publicFile);
-    response.type('text/html').send(stream);
-  }
+        const publicFile = join(__dirname, '../../../../public/index.html');
+        const stream = readFileSync(publicFile);
+
+        response.status(200).send(stream);
+    }
 }
