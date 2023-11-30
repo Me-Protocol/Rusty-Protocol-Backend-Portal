@@ -119,6 +119,7 @@ async function bootstrap() {
           `'unsafe-inline'`,
           'cdn.jsdelivr.net',
           'fonts.googleapis.com',
+          '*.cloudinary.com',
           'unpkg.com',
           'cdnjs.cloudflare.com',
         ],
