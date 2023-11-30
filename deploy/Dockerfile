@@ -4,19 +4,16 @@ FROM node:16.14.2-alpine
 
 WORKDIR /app
 
-# Install Yarn
-RUN npm install -g yarn
+# Install Sentry CLI
+RUN npm install -g @sentry/cli
 
-# Install Sentry CLI globally
-RUN yarn global add @sentry/cli
+COPY package*.json ./
 
-COPY package*.json yarn.lock ./
-
-RUN yarn install --force
+RUN npm install --force
 
 COPY . .
 
-RUN yarn run build
+RUN npm run build:start
 
-CMD ["yarn", "run", "start:prod"]
+CMD ["npm", "run", "start:prod"]
 
