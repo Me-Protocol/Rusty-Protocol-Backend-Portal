@@ -136,16 +136,6 @@ export class ElasticIndex {
       await this.searchService.createIndex(index, index._index);
     }
 
-    // const existingDocuments = await this.searchService.searchIndex({
-    //   index: index._index,
-    //   body: {
-    //     query: {
-    //       match_all: {},
-    //     },
-    //   },
-    // });
-
-    //  setTimeout(async () => {
     const existingDocuments = await this.searchService.searchIndex({
       index: index._index,
       body: {
@@ -155,11 +145,21 @@ export class ElasticIndex {
       },
     });
 
-    existingDocuments.map(async (doc) => {
-      // Assuming this.searchService.getDocumentById is an asynchronous function
-      await existingIds.add(doc._source.id);
-    });
-    //  }, 6000);
+    setTimeout(async () => {
+      const existingDocuments = await this.searchService.searchIndex({
+        index: index._index,
+        body: {
+          query: {
+            match_all: {},
+          },
+        },
+      });
+
+      existingDocuments.map(async (doc) => {
+        // Assuming this.searchService.getDocumentById is an asynchronous function
+        await existingIds.add(doc._source.id);
+      });
+    }, 6000);
 
     return existingIds;
   }
