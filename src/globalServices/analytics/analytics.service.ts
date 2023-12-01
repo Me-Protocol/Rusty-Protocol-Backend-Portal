@@ -672,7 +672,7 @@ export class AnalyticsService {
 
     console.log(rewardCirculations, 'Reward circulation');
 
-    return sortedRewardCirculations;
+    return { sortedRewardCirculations, rewardCirculations };
   }
 
   async getRewardTransactions({
