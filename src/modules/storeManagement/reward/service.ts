@@ -389,7 +389,7 @@ export class RewardManagementService {
         await this.addPointsToRewardRegistry(addableSyncData, body.rewardId);
 
         const totalDistributed = addableSyncData.reduce(
-          (acc, cur) => acc + cur.amount,
+          (acc, cur) => acc + +cur.amount,
           0,
         );
 
@@ -458,12 +458,21 @@ export class RewardManagementService {
 
       await this.addPointsToRewardRegistry(addableSyncData, body.rewardId);
 
+      const totalDistributed = addableSyncData.reduce(
+        (acc, cur) => acc + +cur.amount,
+        0,
+      );
+
+      checkReward.totalDistributedSupply =
+        checkReward.totalDistributedSupply + totalDistributed;
+      await this.rewardService.save(checkReward);
+
       // Update circulating supply
       const circulatingSupply = new RewardCirculation();
       circulatingSupply.brandId = checkReward.brandId;
       circulatingSupply.rewardId = checkReward.id;
       circulatingSupply.circulatingSupply =
-        checkReward.totalDistributedSupply - checkReward.totalRedeemedSupply;
+        +checkReward.totalDistributedSupply - +checkReward.totalRedeemedSupply;
       circulatingSupply.totalRedeemedAtCirculation =
         checkReward.totalRedeemedSupply;
       circulatingSupply.totalDistributedSupplyAtCirculation =
