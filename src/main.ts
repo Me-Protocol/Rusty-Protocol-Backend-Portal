@@ -151,7 +151,7 @@ async function bootstrap() {
           '*.usemeprotocol.com',
           '*.alchemy.com',
           '*.magic.link',
-          '*.cloudinary.com',
+          'api.cloudinary.com',
           'ipapi.co',
           '*.gelato.digital',
           '*.intercom.io',
