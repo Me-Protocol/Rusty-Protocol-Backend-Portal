@@ -697,7 +697,7 @@ export class AnalyticsService {
         },
       },
 
-      skip: page * limit,
+      skip: (+page - 1) * limit,
       take: limit,
     });
 
@@ -714,8 +714,8 @@ export class AnalyticsService {
     return {
       transactions,
       total,
-      nextPage: total > page * limit ? Number(page) + 1 : null,
-      previousPage: page > 1 ? Number(page) - 1 : null,
+      nextPage: total > +page * limit ? Number(page) + 1 : null,
+      previousPage: +page > 1 ? Number(page) - 1 : null,
     };
   }
 
