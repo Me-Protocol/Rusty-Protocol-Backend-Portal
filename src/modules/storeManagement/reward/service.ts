@@ -394,7 +394,7 @@ export class RewardManagementService {
         );
 
         checkReward.totalDistributedSupply =
-          checkReward.totalDistributedSupply + totalDistributed;
+          Number(checkReward.totalDistributedSupply) + Number(totalDistributed);
         await this.rewardService.save(checkReward);
 
         // Update circulating supply
@@ -402,8 +402,8 @@ export class RewardManagementService {
         circulatingSupply.brandId = checkReward.brandId;
         circulatingSupply.rewardId = checkReward.id;
         circulatingSupply.circulatingSupply =
-          +checkReward.totalDistributedSupply -
-          +checkReward.totalRedeemedSupply;
+          Number(checkReward.totalDistributedSupply) -
+          Number(checkReward.totalRedeemedSupply);
         circulatingSupply.totalRedeemedAtCirculation =
           checkReward.totalRedeemedSupply;
         circulatingSupply.totalDistributedSupplyAtCirculation =
@@ -464,7 +464,7 @@ export class RewardManagementService {
       );
 
       checkReward.totalDistributedSupply =
-        checkReward.totalDistributedSupply + totalDistributed;
+        Number(checkReward.totalDistributedSupply) + Number(totalDistributed);
       await this.rewardService.save(checkReward);
 
       // Update circulating supply
@@ -472,7 +472,8 @@ export class RewardManagementService {
       circulatingSupply.brandId = checkReward.brandId;
       circulatingSupply.rewardId = checkReward.id;
       circulatingSupply.circulatingSupply =
-        +checkReward.totalDistributedSupply - +checkReward.totalRedeemedSupply;
+        Number(checkReward.totalDistributedSupply) -
+        Number(checkReward.totalRedeemedSupply);
       circulatingSupply.totalRedeemedAtCirculation =
         checkReward.totalRedeemedSupply;
       circulatingSupply.totalDistributedSupplyAtCirculation =
