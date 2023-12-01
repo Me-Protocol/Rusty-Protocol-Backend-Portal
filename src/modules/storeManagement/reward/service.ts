@@ -402,7 +402,8 @@ export class RewardManagementService {
         circulatingSupply.brandId = checkReward.brandId;
         circulatingSupply.rewardId = checkReward.id;
         circulatingSupply.circulatingSupply =
-          checkReward.totalDistributedSupply - checkReward.totalRedeemedSupply;
+          +checkReward.totalDistributedSupply -
+          +checkReward.totalRedeemedSupply;
         circulatingSupply.totalRedeemedAtCirculation =
           checkReward.totalRedeemedSupply;
         circulatingSupply.totalDistributedSupplyAtCirculation =

@@ -670,6 +670,8 @@ export class AnalyticsService {
       sortedRewardCirculations[RewardCirculationFilter.ONE_DAY] = oneDay;
     }
 
+    console.log(rewardCirculations, 'Reward circulation');
+
     return sortedRewardCirculations;
   }
 
