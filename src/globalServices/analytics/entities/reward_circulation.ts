@@ -6,13 +6,19 @@ import { Entity, Column, ManyToOne } from 'typeorm';
 
 @Entity('reward_circulation')
 export class RewardCirculation extends BaseEntity {
-  @Column()
+  @Column({
+    type: 'decimal',
+  })
   circulatingSupply: number;
 
-  @Column()
+  @Column({
+    type: 'decimal',
+  })
   totalDistributedSupplyAtCirculation: number;
 
-  @Column()
+  @Column({
+    type: 'decimal',
+  })
   totalRedeemedAtCirculation: number;
 
   @Column()
