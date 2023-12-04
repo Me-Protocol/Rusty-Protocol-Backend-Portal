@@ -180,7 +180,10 @@ export class RewardManagementService {
 
   async updateReward(rewardId: string, body: UpdateRewardDto) {
     try {
-      const reward = await this.rewardService.findOneById(rewardId);
+      const reward = await this.rewardService.findOneByIdAndBrand(
+        rewardId,
+        body.brandId,
+      );
       if (!reward) {
         throw new Error('Reward not found');
       }
@@ -196,10 +199,17 @@ export class RewardManagementService {
         reward.acceptedCustomerIdentitytypes =
           body.acceptedCustomerIdentitytypes;
       if (reward.poolTotalSupply) reward.poolTotalSupply = body.poolTotalSupply;
-      if (reward.rewardDollarPrice)
-        reward.rewardDollarPrice = body.rewardDollarPrice;
+      if (reward.rewardValueInDollars)
+        reward.rewardValueInDollars = body.rewardValueInDollars;
 
-      return await this.rewardService.save(reward);
+      const updatedReward = await this.rewardService.updateReward(reward);
+
+      console.log(updatedReward);
+
+      return await this.rewardService.findOneByIdAndBrand(
+        rewardId,
+        body.brandId,
+      );
     } catch (error) {
       console.log(error);
       logger.error(error);

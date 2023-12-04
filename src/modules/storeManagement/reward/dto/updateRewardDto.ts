@@ -6,6 +6,7 @@ import {
   IsBoolean,
   IsEnum,
   IsNumber,
+  IsNumberString,
   IsOptional,
   IsString,
 } from 'class-validator';
@@ -40,11 +41,11 @@ export class UpdateRewardDto {
 
   @ApiProperty()
   @IsOptional()
-  @IsNumber()
+  @IsNumberString()
   poolTotalSupply: string;
 
   @ApiProperty()
   @IsOptional()
-  @IsString()
-  rewardDollarPrice: string;
+  @IsNumberString()
+  rewardValueInDollars: number;
 }
