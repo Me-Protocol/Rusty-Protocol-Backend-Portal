@@ -28,6 +28,7 @@ import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
 import {
   get_transaction_by_hash,
   get_user_reward_balance,
+  redistributed_failed_tx,
 } from '@developeruche/runtime-sdk';
 import { result } from 'lodash';
 import { RewardService } from '@src/globalServices/reward/reward.service';
@@ -38,6 +39,8 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { generateTransactionCode } from '@src/utils/helpers/generateRandomCode';
 import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
+import { SendTransactionData } from '../reward/dto/distributeBatch.dto';
+import { SpendData } from '@src/utils/types/spendData';
 
 @Injectable()
 export class OrderManagementService {
@@ -288,10 +291,12 @@ export class OrderManagementService {
     orderId,
     taskId,
     verifier,
+    spendData,
   }: {
     orderId: string;
     taskId: string;
     verifier: OrderVerifier;
+    spendData: SpendData;
   }) {
     try {
       const order = await this.orderService.getOrderByOrderId(orderId);
@@ -300,6 +305,7 @@ export class OrderManagementService {
         throw new Error('Order not found');
       }
 
+      order.spendData = spendData;
       order.taskId = taskId;
       order.verifier = verifier;
 
@@ -362,6 +368,24 @@ export class OrderManagementService {
           if (transaction) {
             transaction.status = StatusType.SUCCEDDED;
             await this.transactionRepo.save(transaction);
+          }
+
+          const balance = await get_user_reward_balance({
+            address: customer.walletAddress,
+            reward_address: offer.reward.contractAddress,
+          });
+
+          if (balance.data?.result) {
+            const registry = await this.syncService.findOneRegistryByUserId(
+              customer.userId,
+              offer.rewardId,
+            );
+            if (registry) {
+              registry.hasBalance =
+                balance?.data?.result === '0x0' ? false : true;
+
+              await this.syncService.saveRegistry(registry);
+            }
           }
 
           //  Send notification to user
@@ -450,10 +474,10 @@ export class OrderManagementService {
             circulatingSupply,
           );
         } else if (status === 'failed') {
+          await redistributed_failed_tx(order.spendData);
+
           order.status = StatusType.FAILED;
-
           await this.orderService.saveOrder(order);
-
           await this.offerService.increaseInventory(offer, order);
 
           if (transaction) {
@@ -461,29 +485,11 @@ export class OrderManagementService {
             await this.transactionRepo.save(transaction);
           }
 
-          const balance = await get_user_reward_balance({
-            address: customer.walletAddress,
-            reward_address: offer.reward.contractAddress,
-          });
-
-          if (balance.data?.result) {
-            const registry = await this.syncService.findOneRegistryByUserId(
-              customer.userId,
-              offer.rewardId,
-            );
-            if (registry) {
-              registry.hasBalance =
-                balance?.data?.result === '0x0' ? false : true;
-
-              await this.syncService.saveRegistry(registry);
-            }
-          }
-
           //  Send notification to user
 
           const notification = new Notification();
           notification.userId = order.userId;
-          notification.message = `Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed`;
+          notification.message = `Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed and a refund has been initiated. Please try again`;
           notification.type = NotificationType.ORDER;
           notification.title = 'Order Failed';
           notification.orderId = order.id;

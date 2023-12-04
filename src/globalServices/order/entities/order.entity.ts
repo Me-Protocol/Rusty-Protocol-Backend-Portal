@@ -15,6 +15,7 @@ import { StatusType } from '@src/utils/enums/Transactions';
 import { OrderPaymentType } from '@src/utils/enums/OrderPaymentType';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
+import { SpendData } from '@src/utils/types/spendData';
 
 @Entity('order')
 export class Order extends BaseEntity {
@@ -92,4 +93,10 @@ export class Order extends BaseEntity {
     default: OrderVerifier.GELATO,
   })
   verifier: OrderVerifier;
+
+  @Column({
+    nullable: true,
+    type: 'jsonb',
+  })
+  spendData: SpendData;
 }

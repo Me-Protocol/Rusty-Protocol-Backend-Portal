@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
-import { IsEnum, IsString } from 'class-validator';
+import { SpendData } from '@src/utils/types/spendData';
+import { IsEnum, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class CompleteOrderDto {
   @ApiProperty()
@@ -17,4 +18,12 @@ export class CompleteOrderDto {
   })
   @IsEnum(OrderVerifier)
   verifier: OrderVerifier;
+
+  @ApiProperty({
+    type: 'object',
+  })
+  @IsObject({
+    each: true,
+  })
+  spendData: SpendData;
 }
