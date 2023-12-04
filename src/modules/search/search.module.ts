@@ -41,6 +41,7 @@ import { SearchService } from './search.service';
           'Content-Type': 'application/json',
         },
         requestTimeout: 30000,
+        log: 'trace',
       }),
     }),
   ],
