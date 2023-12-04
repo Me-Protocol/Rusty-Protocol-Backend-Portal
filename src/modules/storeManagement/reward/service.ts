@@ -31,6 +31,7 @@ import { RewardStatus } from '@src/utils/enums/ItemStatus';
 import { BrandService } from '@src/globalServices/brand/brand.service';
 import { AnalyticsRecorderService } from '@src/globalServices/analytics/analytic_recorder.service';
 import { RewardCirculation } from '@src/globalServices/analytics/entities/reward_circulation';
+import { UpdateRewardDto } from './dto/updateRewardDto';
 
 @Injectable()
 export class RewardManagementService {
@@ -175,6 +176,37 @@ export class RewardManagementService {
     reward.bountyKeyIdentifierId = newBountyKeyIdentifier.id;
 
     return await this.rewardService.save(reward);
+  }
+
+  async updateReward(rewardId: string, body: UpdateRewardDto) {
+    try {
+      const reward = await this.rewardService.findOneById(rewardId);
+      if (!reward) {
+        throw new Error('Reward not found');
+      }
+
+      if (reward.description) reward.description = body.description;
+      if (reward.rewardImage) reward.rewardImage = body.rewardImage;
+      if (reward.autoSyncEnabled) reward.autoSyncEnabled = body.autoSyncEnabled;
+      if (reward.acceptedCustomerIdentitytypes)
+        reward.acceptedCustomerIdentitytypes =
+          body.acceptedCustomerIdentitytypes;
+      if (reward.isBounty) reward.isBounty = body.isBounty;
+      if (reward.acceptedCustomerIdentitytypes)
+        reward.acceptedCustomerIdentitytypes =
+          body.acceptedCustomerIdentitytypes;
+      if (reward.poolTotalSupply) reward.poolTotalSupply = body.poolTotalSupply;
+      if (reward.rewardDollarPrice)
+        reward.rewardDollarPrice = body.rewardDollarPrice;
+
+      return await this.rewardService.save(reward);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, error.status, {
+        cause: new Error(error.message),
+      });
+    }
   }
 
   async getDraftReward(brandId: string) {

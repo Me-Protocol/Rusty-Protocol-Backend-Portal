@@ -3,6 +3,7 @@ import { RevenueRange } from '@src/utils/enums/RevenueRange';
 import {
   IsArray,
   IsBoolean,
+  IsBooleanString,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -182,4 +183,9 @@ export class UpdateBrandDto {
   @IsOptional()
   @IsNumber()
   postalCode: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsBooleanString()
+  firstTimeLogin: 'true' | 'false';
 }

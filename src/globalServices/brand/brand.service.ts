@@ -108,6 +108,7 @@ export class BrandService {
       brand.additionalAddress = dto.additionalAddress;
       brand.city = dto.city;
       brand.postalCode = dto.postalCode;
+      brand.firstTimeLogin = dto.firstTimeLogin === 'true' ? true : false;
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);

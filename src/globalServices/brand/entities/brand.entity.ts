@@ -289,4 +289,9 @@ export class Brand extends BaseEntity {
     nullable: true,
   })
   postalCode: number;
+
+  @Column({
+    default: true,
+  })
+  firstTimeLogin: boolean;
 }
