@@ -28,6 +28,11 @@ export class AppController {
         return this.appService.sendWebFrontEnd(req, res);
     }
 
+    @Get("/health")
+    healthCheck() {
+        return "ok";
+    }
+
 
     @UseGuards(AuthGuard())
     @Get('public-settings')
