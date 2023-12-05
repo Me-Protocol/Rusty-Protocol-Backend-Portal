@@ -113,7 +113,7 @@ async function bootstrap() {
   await fastifyInstance.register(helmet, {
     contentSecurityPolicy: {
       directives: {
-        defaultSrc: [`'self'`, 'unpkg.com'],
+        defaultSrc: [`'self'`, 'unpkg.com', '*.cloudinary.com'],
         styleSrc: [
           `'self'`,
           `'unsafe-inline'`,
@@ -151,7 +151,7 @@ async function bootstrap() {
           '*.usemeprotocol.com',
           '*.alchemy.com',
           '*.magic.link',
-          'api.cloudinary.com',
+          '*.cloudinary.com',
           'ipapi.co',
           '*.gelato.digital',
           '*.intercom.io',
