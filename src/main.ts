@@ -155,6 +155,7 @@ async function bootstrap() {
           'ipapi.co',
           '*.gelato.digital',
           '*.intercom.io',
+          'https://*.cloudinary.com ',
         ],
       },
     },
