@@ -32,10 +32,11 @@ import {
   ERC2771Type,
   GelatoRelay,
 } from '@gelatonetwork/relay-sdk';
-import { onboard_brand } from '@developeruche/runtime-sdk';
 import { ProcessBrandColorEvent } from '@src/globalServices/brand/events/process-brand-color.event';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BrandRole } from '@src/utils/enums/BrandRole';
+import { onboard_brand_with_url } from '@developeruche/runtime-sdk';
+import { RUNTIME_URL } from '@src/config/env.config';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -467,11 +468,12 @@ export class BrandAccountManagementService {
         BigNumber.from(brand.brandProtocolId),
       );
 
-      await onboard_brand(
+      await onboard_brand_with_url(
         BigNumber.from(brandProtocolId),
         walletAddress,
         ethers.constants.AddressZero,
         wallet,
+        RUNTIME_URL,
       );
 
       return paymentRequest;

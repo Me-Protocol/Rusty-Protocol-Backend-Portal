@@ -10,12 +10,6 @@ import { RewardService } from '../reward.service';
 import { UserService } from '@src/globalServices/user/user.service';
 import { AxiosResponse } from 'axios';
 import { SendTransactionData } from '@src/modules/storeManagement/reward/dto/distributeBatch.dto';
-import {
-  distribute_reward_specific,
-  mutate,
-  mutate_n_format,
-  transfer_reward,
-} from '@developeruche/runtime-sdk';
 import { logger } from '@src/globalServices/logger/logger.service';
 import { BigNumber, Wallet, ethers } from 'ethers';
 import { KeyManagementService } from '@src/globalServices/key-management/key-management.service';
@@ -28,6 +22,13 @@ import {
 } from '@developeruche/protocol-core';
 import { GetTreasuryPermitDto } from '@src/modules/storeManagement/reward/dto/PushTransactionDto.dto';
 import { BrandService } from '@src/globalServices/brand/brand.service';
+import {
+  distribute_reward_specific_with_url,
+  mutate_n_format,
+  mutate_with_url,
+  transfer_reward_with_url,
+} from '@developeruche/runtime-sdk';
+import { RUNTIME_URL } from '@src/config/env.config';
 
 @Injectable()
 export class SyncRewardService {
@@ -518,7 +519,7 @@ export class SyncRewardService {
       if (params.data.startsWith('0x00000001')) {
         spend = await mutate_n_format(params);
       } else {
-        spend = await mutate(params);
+        spend = await mutate_with_url(params, RUNTIME_URL);
       }
 
       return spend?.data ?? spend;
@@ -575,11 +576,12 @@ export class SyncRewardService {
     contractAddress: string;
     signer: Wallet;
   }) {
-    const distributionData = await distribute_reward_specific(
+    const distributionData = await distribute_reward_specific_with_url(
       contractAddress,
       recipients,
       amounts,
       signer,
+      RUNTIME_URL,
     );
 
     console.log(distributionData.data);
@@ -624,11 +626,12 @@ export class SyncRewardService {
     );
     const signer = new Wallet(decryptedPrivateKey);
 
-    const distributionData = await transfer_reward(
+    const distributionData = await transfer_reward_with_url(
       reward.contractAddress,
       walletAddress,
       ethers.utils.parseEther(amount.toString()),
       signer,
+      RUNTIME_URL,
     );
 
     const user = await this.userService.getUserByEmail(email);
@@ -691,11 +694,12 @@ export class SyncRewardService {
     );
     const signer = new Wallet(decryptedPrivateKey);
 
-    const distributionData = await transfer_reward(
+    const distributionData = await transfer_reward_with_url(
       reward.contractAddress,
       walletAddress,
       ethers.utils.parseEther(amount.toString()),
       signer,
+      RUNTIME_URL,
     );
 
     if (distributionData?.data?.error) {

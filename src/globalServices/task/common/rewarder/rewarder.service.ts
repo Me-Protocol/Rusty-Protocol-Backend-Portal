@@ -1,8 +1,9 @@
 import {
   distribute_bounty_by_reward_address_magic,
-  mutate,
+  mutate_with_url,
 } from '@developeruche/runtime-sdk';
 import { Injectable } from '@nestjs/common';
+import { RUNTIME_URL } from '@src/config/env.config';
 import { KeyManagementService } from '@src/globalServices/key-management/key-management.service';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
@@ -45,7 +46,7 @@ export class RewarderService {
         signer,
       );
 
-      const distribute = await mutate(distributeData);
+      const distribute = await mutate_with_url(distributeData, RUNTIME_URL);
 
       if (distribute.data?.error) {
         throw new Error('Rewarder service is down.');

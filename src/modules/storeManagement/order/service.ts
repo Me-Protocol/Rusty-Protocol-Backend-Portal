@@ -25,11 +25,6 @@ import { emailButton } from '@src/utils/helpers/email';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { RegistryHistory } from '@src/globalServices/reward/entities/registryHistory.entity';
 import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
-import {
-  get_transaction_by_hash,
-  get_user_reward_balance,
-  redistributed_failed_tx,
-} from '@developeruche/runtime-sdk';
 import { result } from 'lodash';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { RewardCirculation } from '@src/globalServices/analytics/entities/reward_circulation';
@@ -41,6 +36,12 @@ import { generateTransactionCode } from '@src/utils/helpers/generateRandomCode';
 import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
 import { SendTransactionData } from '../reward/dto/distributeBatch.dto';
 import { SpendData } from '@src/utils/types/spendData';
+import {
+  get_transaction_by_hash_with_url,
+  get_user_reward_balance_with_url,
+  redistributed_failed_tx_with_url,
+} from '@developeruche/runtime-sdk';
+import { RUNTIME_URL } from '@src/config/env.config';
 
 @Injectable()
 export class OrderManagementService {
@@ -370,10 +371,13 @@ export class OrderManagementService {
             await this.transactionRepo.save(transaction);
           }
 
-          const balance = await get_user_reward_balance({
-            address: customer.walletAddress,
-            reward_address: offer.reward.contractAddress,
-          });
+          const balance = await get_user_reward_balance_with_url(
+            {
+              address: customer.walletAddress,
+              reward_address: offer.reward.contractAddress,
+            },
+            RUNTIME_URL,
+          );
 
           if (balance.data?.result) {
             const registry = await this.syncService.findOneRegistryByUserId(
@@ -474,7 +478,7 @@ export class OrderManagementService {
             circulatingSupply,
           );
         } else if (status === 'failed') {
-          await redistributed_failed_tx(order.spendData);
+          await redistributed_failed_tx_with_url(order.spendData, RUNTIME_URL);
 
           order.status = StatusType.FAILED;
           await this.orderService.saveOrder(order);
@@ -535,9 +539,12 @@ export class OrderManagementService {
           return 'pending';
         }
       } else {
-        const runtimeStatus = await get_transaction_by_hash({
-          hash: taskId,
-        });
+        const runtimeStatus = await get_transaction_by_hash_with_url(
+          {
+            hash: taskId,
+          },
+          RUNTIME_URL,
+        );
 
         if (
           runtimeStatus.data.result.hash !==
