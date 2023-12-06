@@ -11,6 +11,10 @@ import { Task } from '../task/entities/task.entity';
 import { BrandCustomer } from '../brand/entities/brand_customer.entity';
 import { Follow } from '../follow/entities/follow.entity';
 import { Review } from '../review/entities/review.entity';
+import { RewardCirculation } from './entities/reward_circulation';
+import { RewardCirculationFilter } from '@src/utils/enums/RewardCirculationFilter';
+import moment from 'moment';
+import { Transaction } from '../fiatWallet/entities/transaction.entity';
 
 /**
  *
@@ -50,6 +54,12 @@ export class AnalyticsService {
 
     @InjectRepository(Review)
     private readonly reviewRepo: Repository<Review>,
+
+    @InjectRepository(RewardCirculation)
+    private readonly rewardCirculationRepo: Repository<RewardCirculation>,
+
+    @InjectRepository(Transaction)
+    private readonly transactionRepo: Repository<Transaction>,
   ) {}
 
   async getTotalNumberOfOffers({
@@ -103,6 +113,51 @@ export class AnalyticsService {
         },
       },
     });
+  }
+
+  async getOfferViewsPerDayByDateRange({
+    start,
+    end,
+    offerId,
+  }: {
+    start: Date;
+    end: Date;
+    offerId: string;
+  }) {
+    const total = await this.viewRepo.count({
+      where: {
+        createdAt: Between(start, end),
+        offer: {
+          id: offerId,
+        },
+      },
+    });
+
+    const data = await this.viewRepo.find({
+      where: {
+        createdAt: Between(start, end),
+        offer: {
+          id: offerId,
+        },
+      },
+      relations: ['offer'],
+    });
+
+    const viewsPerDay = {};
+    data.forEach((view) => {
+      const date = view.createdAt.toISOString().split('T')[0];
+      if (viewsPerDay[date]) {
+        viewsPerDay[date] += 1;
+      } else {
+        viewsPerDay[date] = 1;
+      }
+    });
+
+    return {
+      total,
+      viewsPerDay,
+      offers: data,
+    };
   }
 
   async getViewsPerDayByDateRange({
@@ -541,6 +596,161 @@ export class AnalyticsService {
       lastMonthAverageRating,
       percentageDiff,
       isIncreasing,
+    };
+  }
+
+  async getCirculatingSupply({
+    brandId,
+    rewardId,
+    sortBy,
+    start,
+    end,
+  }: {
+    brandId: string;
+    rewardId: string;
+    sortBy: RewardCirculationFilter;
+    start: Date;
+    end: Date;
+  }) {
+    const rewardCirculations = await this.rewardCirculationRepo.find({
+      where: {
+        brandId,
+        rewardId,
+        createdAt: Between(start, end),
+      },
+    });
+
+    const sortedRewardCirculations = {};
+
+    if (sortBy === RewardCirculationFilter.FIVE_MINUES) {
+      // sort all rewardCirculations within 5mins
+
+      const fiveMinutes = rewardCirculations.filter((rewardCirculation) => {
+        const now = moment();
+        const createdAt = moment(rewardCirculation.createdAt);
+        const diff = now.diff(createdAt, 'minutes');
+        return diff <= 5;
+      });
+
+      sortedRewardCirculations[RewardCirculationFilter.FIVE_MINUES] =
+        fiveMinutes;
+    } else if (sortBy === RewardCirculationFilter.THIRTY_MINUTES) {
+      // sort all rewardCirculations within 30mins
+
+      const thirtyMinutes = rewardCirculations.filter((rewardCirculation) => {
+        const now = moment();
+        const createdAt = moment(rewardCirculation.createdAt);
+        const diff = now.diff(createdAt, 'minutes');
+        return diff <= 30;
+      });
+
+      sortedRewardCirculations[RewardCirculationFilter.THIRTY_MINUTES] =
+        thirtyMinutes;
+    } else if (sortBy === RewardCirculationFilter.ONE_HOUR) {
+      // sort all rewardCirculations within 1 hour
+
+      const oneHour = rewardCirculations.filter((rewardCirculation) => {
+        const now = moment();
+        const createdAt = moment(rewardCirculation.createdAt);
+        const diff = now.diff(createdAt, 'minutes');
+        return diff <= 60;
+      });
+
+      sortedRewardCirculations[RewardCirculationFilter.ONE_HOUR] = oneHour;
+    } else if (sortBy === RewardCirculationFilter.ONE_DAY) {
+      // sort all rewardCirculations within 1 day
+
+      const oneDay = rewardCirculations.filter((rewardCirculation) => {
+        const now = moment();
+        const createdAt = moment(rewardCirculation.createdAt);
+        const diff = now.diff(createdAt, 'days');
+        return diff <= 1;
+      });
+
+      sortedRewardCirculations[RewardCirculationFilter.ONE_DAY] = oneDay;
+    }
+
+    console.log(rewardCirculations, 'Reward circulation');
+
+    return { sortedRewardCirculations, rewardCirculations };
+  }
+
+  async getRewardTransactions({
+    start,
+    end,
+    rewardId,
+    brandId,
+    page,
+    limit,
+  }: {
+    start: Date;
+    end: Date;
+    rewardId: string;
+    brandId: string;
+    page: number;
+    limit: number;
+  }) {
+    const transactions = await this.transactionRepo.find({
+      where: {
+        createdAt: Between(start, end),
+        rewardId,
+        reward: {
+          brandId,
+        },
+      },
+
+      skip: (+page - 1) * limit,
+      take: limit,
+    });
+
+    const total = await this.transactionRepo.count({
+      where: {
+        createdAt: Between(start, end),
+        rewardId,
+        reward: {
+          brandId,
+        },
+      },
+    });
+
+    return {
+      transactions,
+      total,
+      nextPage: total > +page * limit ? Number(page) + 1 : null,
+      previousPage: +page > 1 ? Number(page) - 1 : null,
+    };
+  }
+
+  async getRewardHolders({
+    rewardId,
+    brandId,
+  }: {
+    rewardId: string;
+    brandId: string;
+  }) {
+    const registries = await this.rewardRegistryRepo.find({
+      where: {
+        rewardId,
+        hasBalance: true,
+        reward: {
+          brandId,
+        },
+      },
+    });
+
+    const total = await this.rewardRegistryRepo.count({
+      where: {
+        rewardId,
+        hasBalance: true,
+        reward: {
+          brandId,
+        },
+      },
+    });
+
+    return {
+      holders: registries,
+      total,
     };
   }
 }

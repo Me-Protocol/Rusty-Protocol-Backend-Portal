@@ -48,6 +48,11 @@ export class FilterOrderDto {
   @IsUUID()
   productId: string;
 
+  @ApiProperty()
+  @IsOptional()
+  @IsUUID()
+  offerId: string;
+
   userId: string;
 
   brandId: string;

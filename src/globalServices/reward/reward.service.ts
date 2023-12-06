@@ -104,11 +104,19 @@ export class RewardService {
   }
 
   async findOneById(id: string): Promise<Reward> {
-    return this.rewardsRepo.findOneBy({ id: id });
+    return this.rewardsRepo.findOne({
+      where: {
+        id: id,
+      },
+    });
   }
 
   async findOneByIdAndBrand(id: string, brandId: string): Promise<Reward> {
     return this.rewardsRepo.findOneBy({ id: id, brandId: brandId });
+  }
+
+  async updateReward(reward: Reward) {
+    return await this.rewardsRepo.update(reward.id, reward);
   }
 
   async getRegistryByIdentifer(

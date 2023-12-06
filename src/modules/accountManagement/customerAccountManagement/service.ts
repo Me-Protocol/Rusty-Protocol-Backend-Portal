@@ -20,6 +20,9 @@ export class CustomerAccountManagementService {
       const customer = await this.customerService.getByUserId(userId);
       if (!customer) throw new HttpException('Customer not found', 404);
 
+      if (body.firstTimeLogin) {
+        customer.firstTimeLogin = body.firstTimeLogin === 'true' ? true : false;
+      }
       if (body.name) customer.name = body.name;
       if (body.profilePicture) customer.profilePicture = body.profilePicture;
       if (body.country) customer.country = body.country;

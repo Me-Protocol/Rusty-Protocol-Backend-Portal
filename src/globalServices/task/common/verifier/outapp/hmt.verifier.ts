@@ -19,6 +19,7 @@ import { writeFile } from 'fs/promises';
 import { constructHmtManifest } from '../../constructHmtManifest';
 import { createReadStream, readFileSync } from 'fs';
 import path from 'path';
+import { distribute_bounty_by_reward_address_magic } from '@developeruche/runtime-sdk';
 const FormData = require('form-data');
 
 export class HMTTaskVerifier {
@@ -209,5 +210,18 @@ export class HMTTaskVerifier {
         taskId: taskResponseRecord.taskId,
       },
     });
+
+    const winners = [];
+
+    // for (let i = 0; i < responseData.length; i++) {
+    //   const response = responseData[i];
+    //   const taskResponse = taskResponses.find((taskResponse) => {
+    //     return taskResponse.walletAddress === response.wallet_address;
+    //   });
+
+    //   if (taskResponse) {
+    //     winners.push(taskResponse);
+    //   }
+    // }
   }
 }

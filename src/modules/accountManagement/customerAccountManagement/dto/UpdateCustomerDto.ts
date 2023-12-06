@@ -3,6 +3,7 @@ import { NotificationFormat } from '@src/utils/enums/NotificationFormat';
 import {
   IsArray,
   IsBoolean,
+  IsBooleanString,
   IsEnum,
   IsOptional,
   IsString,
@@ -117,4 +118,9 @@ export class UpdateCustomerDto {
     message: 'Notification format is invalid',
   })
   other_notifications: NotificationFormat;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsBooleanString()
+  firstTimeLogin: 'true' | 'false';
 }
