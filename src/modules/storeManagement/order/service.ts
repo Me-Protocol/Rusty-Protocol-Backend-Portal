@@ -14,12 +14,34 @@ import { CustomerService } from '@src/globalServices/customer/customer.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { CostModuleService } from '@src/globalServices/costManagement/costModule.service';
 import { NotificationService } from '@src/globalServices/notification/notification.service';
-import { StatusType, TransactionsType } from '@src/utils/enums/Transactions';
+import {
+  StatusType,
+  TransactionSource,
+  TransactionsType,
+} from '@src/utils/enums/Transactions';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 import { NotificationType } from '@src/utils/enums/notification.enum';
 import { emailButton } from '@src/utils/helpers/email';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { RegistryHistory } from '@src/globalServices/reward/entities/registryHistory.entity';
+import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
+import { result } from 'lodash';
+import { RewardService } from '@src/globalServices/reward/reward.service';
+import { RewardCirculation } from '@src/globalServices/analytics/entities/reward_circulation';
+import { AnalyticsRecorderService } from '@src/globalServices/analytics/analytic_recorder.service';
+import { Transaction } from '@src/globalServices/fiatWallet/entities/transaction.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { generateTransactionCode } from '@src/utils/helpers/generateRandomCode';
+import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
+import { SendTransactionData } from '../reward/dto/distributeBatch.dto';
+import { SpendData } from '@src/utils/types/spendData';
+import {
+  get_transaction_by_hash_with_url,
+  get_user_reward_balance_with_url,
+  redistributed_failed_tx_with_url,
+} from '@developeruche/runtime-sdk';
+import { RUNTIME_URL } from '@src/config/env.config';
 
 @Injectable()
 export class OrderManagementService {
@@ -34,6 +56,11 @@ export class OrderManagementService {
     private readonly costModuleService: CostModuleService,
     private readonly notificationService: NotificationService,
     private readonly fiatWalletService: FiatWalletService,
+    private readonly rewardService: RewardService,
+    private readonly analyticsRecorder: AnalyticsRecorderService,
+
+    @InjectRepository(Transaction)
+    private readonly transactionRepo: Repository<Transaction>,
   ) {}
 
   randomCode() {
@@ -261,33 +288,68 @@ export class OrderManagementService {
     }
   }
 
-  async completeOrder(orderId: string, taskId: string) {
-    const order = await this.orderService.getOrderByOrderId(orderId);
+  async completeOrder({
+    orderId,
+    taskId,
+    verifier,
+    spendData,
+  }: {
+    orderId: string;
+    taskId: string;
+    verifier: OrderVerifier;
+    spendData: SpendData;
+  }) {
+    try {
+      const order = await this.orderService.getOrderByOrderId(orderId);
 
-    if (!order) {
-      throw new HttpException('Order not found', HttpStatus.NOT_FOUND);
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      order.spendData = spendData;
+      order.taskId = taskId;
+      order.verifier = verifier;
+
+      const transaction = new Transaction();
+      transaction.amount = order.points;
+      transaction.transactionType = TransactionsType.DEBIT;
+      transaction.paymentRef = generateTransactionCode();
+      transaction.narration = `Redeem ${order.offer.name} from ${order.offer.brand.name}`;
+      transaction.rewardId = order.offer.rewardId;
+      transaction.orderId = order.id;
+      transaction.paymentMethod = PaymentMethodEnum.REWARD;
+      transaction.source = TransactionSource.OFFER_REDEMPTION;
+      transaction.status = StatusType.PROCESSING;
+
+      await this.transactionRepo.save(transaction);
+
+      return await this.orderService.saveOrder(order);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
-
-    order.taskId = taskId;
-
-    return await this.orderService.saveOrder(order);
   }
 
   @Cron(CronExpression.EVERY_30_SECONDS)
   async checkOrderStatus() {
     const pendingOrders = await this.orderService.getPendingOrders();
-
     if (pendingOrders.length > 0) {
       for (const order of pendingOrders) {
-        const status =
-          await this.costModuleService.checkTransactionStatusWithRetry({
-            taskId: order.taskId,
-          });
+        const status = await this.checkOrderStatusGelatoOrRuntime(
+          order.taskId,
+          order.verifier,
+        );
 
         const offer = await this.offerService.getOfferById(order.offerId);
         const customer = await this.customerService.getByUserId(order.userId);
+        const transaction = await this.transactionRepo.findOne({
+          where: {
+            orderId: order.id,
+          },
+        });
 
-        if (status === 'ExecSuccess') {
+        if (status === 'success') {
           await this.offerService.increaseOfferSales({
             offer,
             amount: order.points,
@@ -303,6 +365,32 @@ export class OrderManagementService {
           order.status = StatusType.SUCCEDDED;
 
           await this.orderService.saveOrder(order);
+
+          if (transaction) {
+            transaction.status = StatusType.SUCCEDDED;
+            await this.transactionRepo.save(transaction);
+          }
+
+          const balance = await get_user_reward_balance_with_url(
+            {
+              address: customer.walletAddress,
+              reward_address: offer.reward.contractAddress,
+            },
+            RUNTIME_URL,
+          );
+
+          if (balance.data?.result) {
+            const registry = await this.syncService.findOneRegistryByUserId(
+              customer.userId,
+              offer.rewardId,
+            );
+            if (registry) {
+              registry.hasBalance =
+                balance?.data?.result === '0x0' ? false : true;
+
+              await this.syncService.saveRegistry(registry);
+            }
+          }
 
           //  Send notification to user
 
@@ -365,18 +453,47 @@ export class OrderManagementService {
           history.balance = 0;
 
           await this.syncService.saveRegistryHistory(history);
-        } else if (status === 'ExecFailed') {
+
+          const reward = await this.rewardService.getRewardByIdAndBrandId(
+            offer.rewardId,
+            offer?.brandId,
+          );
+
+          reward.totalRedeemedSupply =
+            reward.totalRedeemedSupply + offer.tokens;
+          await this.rewardService.save(reward);
+
+          // Update circulating supply
+          const circulatingSupply = new RewardCirculation();
+          circulatingSupply.brandId = reward.brandId;
+          circulatingSupply.rewardId = reward.id;
+          circulatingSupply.circulatingSupply =
+            +reward.totalDistributedSupply - +reward.totalRedeemedSupply;
+          circulatingSupply.totalRedeemedAtCirculation =
+            reward.totalRedeemedSupply;
+          circulatingSupply.totalDistributedSupplyAtCirculation =
+            reward.totalDistributedSupply;
+
+          await this.analyticsRecorder.createRewardCirculation(
+            circulatingSupply,
+          );
+        } else if (status === 'failed') {
+          await redistributed_failed_tx_with_url(order.spendData, RUNTIME_URL);
+
           order.status = StatusType.FAILED;
-
           await this.orderService.saveOrder(order);
-
           await this.offerService.increaseInventory(offer, order);
+
+          if (transaction) {
+            transaction.status = StatusType.FAILED;
+            await this.transactionRepo.save(transaction);
+          }
 
           //  Send notification to user
 
           const notification = new Notification();
           notification.userId = order.userId;
-          notification.message = `Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed`;
+          notification.message = `Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed and a refund has been initiated. Please try again`;
           notification.type = NotificationType.ORDER;
           notification.title = 'Order Failed';
           notification.orderId = order.id;
@@ -400,6 +517,46 @@ export class OrderManagementService {
           await this.notificationService.createNotification(notification);
         }
       }
+    }
+  }
+
+  async checkOrderStatusGelatoOrRuntime(
+    taskId: string,
+    verifier: OrderVerifier,
+  ): Promise<'success' | 'failed' | 'pending'> {
+    try {
+      if (verifier === OrderVerifier.GELATO) {
+        const status =
+          await this.costModuleService.checkTransactionStatusWithRetry({
+            taskId,
+          });
+
+        if (status === 'ExecSuccess') {
+          return 'success';
+        } else if (status === 'ExecFailed') {
+          return 'failed';
+        } else {
+          return 'pending';
+        }
+      } else {
+        const runtimeStatus = await get_transaction_by_hash_with_url(
+          {
+            hash: taskId,
+          },
+          RUNTIME_URL,
+        );
+
+        if (
+          runtimeStatus.data.result.hash !==
+          '0x0000000000000000000000000000000000000000000000000000000000000000'
+        ) {
+          return 'success';
+        } else {
+          return 'failed';
+        }
+      }
+    } catch (error) {
+      return 'pending';
     }
   }
 }

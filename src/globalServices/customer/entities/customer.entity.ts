@@ -80,4 +80,9 @@ export class Customer extends BaseEntity {
     default: 0,
   })
   totalRedemptionAmount: number;
+
+  @Column({
+    default: true,
+  })
+  firstTimeLogin: boolean;
 }

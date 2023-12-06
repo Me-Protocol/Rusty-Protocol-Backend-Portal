@@ -6,6 +6,7 @@ import { CouponService } from './coupon.service';
 import { OrderFilter } from '@src/utils/enums/OrderFilter';
 import { StatusType } from '@src/utils/enums/Transactions';
 import { FilterOrderDto } from '@src/modules/storeManagement/order/dto/FilterOrderDto.dto';
+import { OfferService } from '../offer/offer.service';
 
 @Injectable()
 export class OrderService {
@@ -14,6 +15,7 @@ export class OrderService {
     private readonly orderRepo: Repository<Order>,
 
     private readonly couponService: CouponService,
+    private readonly offerService: OfferService,
   ) {}
 
   randomCode() {
@@ -39,6 +41,7 @@ export class OrderService {
       productId,
       startDate,
       endDate,
+      offerId,
     } = query;
 
     const orderQuery = this.orderRepo
@@ -48,7 +51,18 @@ export class OrderService {
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.reward', 'reward')
       .leftJoinAndSelect('reward.brand', 'brand')
-      .orderBy('order.createdAt', 'DESC');
+      .leftJoinAndSelect('order.user', 'user')
+      .leftJoinAndSelect('user.customer', 'customer')
+      .orderBy('order.createdAt', 'DESC')
+      .select([
+        'order',
+        'coupon',
+        'offer',
+        'offerImages',
+        'reward',
+        'brand',
+        'customer',
+      ]);
 
     if (brandId) {
       orderQuery
@@ -65,6 +79,12 @@ export class OrderService {
           productId: productId,
         });
       }
+    }
+
+    if (offerId) {
+      orderQuery.andWhere('order.offerId = :offerId', {
+        offerId: offerId,
+      });
     }
 
     if (userId) {
@@ -113,9 +133,40 @@ export class OrderService {
       .take(limit)
       .getManyAndCount();
 
+    let percentageRedemption;
+    let totalRedeemedAmount;
+
+    if (offerId) {
+      // percentage redemption based on offer inventory
+      const offer = await this.offerService.getOfferById(offerId);
+      const redeemed = await this.orderRepo.count({
+        where: {
+          offerId: offerId,
+          status: StatusType.SUCCEDDED,
+        },
+      });
+
+      percentageRedemption = (redeemed / offer.inventory) * 100;
+
+      // total redeemed amount
+      const redeemedAmount = await this.orderRepo.find({
+        where: {
+          offerId: offerId,
+          isRedeemed: true,
+          status: StatusType.SUCCEDDED,
+        },
+      });
+
+      totalRedeemedAmount = redeemedAmount.reduce((acc, curr) => {
+        return acc + curr.points;
+      }, 0);
+    }
+
     return {
       orders,
       total,
+      percentageRedemption,
+      totalRedeemedAmount,
       nextPage: total > page * limit ? Number(page) + 1 : null,
       previousPage: page > 1 ? Number(page) - 1 : null,
     };
@@ -137,7 +188,13 @@ export class OrderService {
   async getOrderByOrderId(orderId: string) {
     return await this.orderRepo.findOne({
       where: { id: orderId },
-      relations: ['coupon', 'offer', 'offer.reward', 'offer.offerImages'],
+      relations: [
+        'coupon',
+        'offer',
+        'offer.reward',
+        'offer.offerImages',
+        'offer.brand',
+      ],
     });
   }
 

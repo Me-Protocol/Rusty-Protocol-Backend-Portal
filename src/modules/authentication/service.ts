@@ -27,7 +27,6 @@ import { UserAppType } from '@src/utils/enums/UserAppType';
 import { Role } from '@src/utils/enums/Role';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { logger } from '@src/globalServices/logger/logger.service';
-import { RewardService } from '@src/globalServices/reward/reward.service';
 import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
 import { Enable2FADto } from './dto/Enable2FADto.dto';
 import { UpdatePreferenceDto } from './dto/UpdatePreferenceDto.dto';
@@ -217,6 +216,7 @@ export class AuthenticationService {
     userType,
   }: EmailSignupDto): Promise<any> {
     email = email.toLowerCase();
+
     try {
       const user = await this.userService.getUserByEmail(email);
       if (user) {
@@ -229,6 +229,9 @@ export class AuthenticationService {
           throw new Error(`Brand with name ${name} already exists`);
         }
       }
+
+      // TODO include business email validation
+      // TODO transition a user to a brand / brandmember
 
       const newUser = new User();
       newUser.email = email?.toLowerCase();
@@ -313,19 +316,19 @@ export class AuthenticationService {
       await this.userService.saveUser(user);
 
       // check if user has any reward registry
-      const rewardRegistry =
-        await this.syncService.getAllRegistryRecordsByIdentifer(user.email);
+      if (!is2Fa) {
+        const rewardRegistry =
+          await this.syncService.getAllRegistryRecordsByIdentifer(user.email);
 
-      if (rewardRegistry.length > 0) {
-        for (const registry of rewardRegistry) {
-          if (!registry.userId) {
-            registry.userId = user.id;
-            await this.syncService.saveRegistry(registry);
+        if (rewardRegistry.length > 0) {
+          for (const registry of rewardRegistry) {
+            if (!registry.userId) {
+              registry.userId = user.id;
+              await this.syncService.saveRegistry(registry);
+            }
           }
         }
-      }
 
-      if (!is2Fa) {
         if (user.userType === UserAppType.BRAND) {
           const brand = await this.brandService.getBrandByUserId(user.id);
 
@@ -339,6 +342,8 @@ export class AuthenticationService {
         });
       }
 
+      // TODO Continue tomorrow
+
       const token = await this.registerDevice(user, userAgent, clientIp);
 
       // welcome email
@@ -347,9 +352,7 @@ export class AuthenticationService {
           to: user.email,
           subject: `Welcome to ${process.env.APP_NAME}`,
           text: `Welcome to ${process.env.APP_NAME}`,
-          html: `
-        <p>Thanks for signing up to ${process.env.APP_NAME}. We're excited to have you on board!</p>
-        `,
+          html: `<p>Thanks for signing up to ${process.env.APP_NAME}. We're excited to have you on board!</p>`,
         });
       }
 
@@ -486,7 +489,6 @@ export class AuthenticationService {
 
   async isPasswordValid(password: string, user: User): Promise<boolean> {
     const isPasswordValid = await bcrypt.compare(password, user.password);
-
     return isPasswordValid;
   }
 

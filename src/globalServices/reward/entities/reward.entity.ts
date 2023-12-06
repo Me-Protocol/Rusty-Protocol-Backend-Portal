@@ -161,4 +161,27 @@ export class Reward extends BaseEntity {
     nullable: true,
   })
   rOptimal: string;
+
+  @Column('bigint', {
+    nullable: true,
+  })
+  treasurySupply: string;
+
+  @Column({
+    type: 'decimal',
+    default: 0.0,
+  })
+  totalSupply: number;
+
+  @Column({
+    type: 'decimal',
+    default: 0.0,
+  })
+  totalDistributedSupply: number;
+
+  @Column({
+    type: 'decimal',
+    default: 0.0,
+  })
+  totalRedeemedSupply: number;
 }

@@ -40,6 +40,7 @@ import {
 import { ServerGuard } from '@src/middlewares/server-guard';
 import { FilterRegistryHistoryDto } from './dto/filterRegistryHistoryDto.dto';
 import { CheckExistingRewardParams } from './dto/check-existing-reward.dto';
+import { UpdateRewardDto } from './dto/updateRewardDto';
 
 @ApiTags('Reward')
 @Controller('reward')
@@ -71,6 +72,19 @@ export class RewardManagementController {
     createRewardDto.brandId = brandId;
 
     return await this.rewardManagementService.completeReward(createRewardDto);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Put(':rewardId')
+  async updateReward(
+    @Body(ValidationPipe) body: UpdateRewardDto,
+    @Req() req: any,
+    @Param('rewardId') rewardId: string,
+  ) {
+    const brandId = req.user.brand.id;
+    body.brandId = brandId;
+
+    return await this.rewardManagementService.updateReward(rewardId, body);
   }
 
   @UseGuards(ApiKeyJwtStrategy)

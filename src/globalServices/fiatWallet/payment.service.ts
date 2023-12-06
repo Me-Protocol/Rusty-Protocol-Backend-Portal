@@ -5,8 +5,13 @@ import { PaymentMethod } from './entities/paymentMethod';
 import { Repository } from 'typeorm';
 import { logger } from '../logger/logger.service';
 import { Transaction } from './entities/transaction.entity';
-import { StatusType, TransactionsType } from '@src/utils/enums/Transactions';
+import {
+  StatusType,
+  TransactionSource,
+  TransactionsType,
+} from '@src/utils/enums/Transactions';
 import { FiatWalletService } from './fiatWallet.service';
+import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -177,6 +182,8 @@ export class PaymentService {
     transaction.paymentRef = this.generateTransactionCode();
     transaction.narration = narration;
     transaction.walletId = wallet.id;
+    transaction.paymentMethod = PaymentMethodEnum.STRIPE;
+    transaction.source = TransactionSource.AUTO_TOPUP;
 
     await this.transactionRepo.save(transaction);
 

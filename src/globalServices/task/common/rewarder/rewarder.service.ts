@@ -1,5 +1,9 @@
-import { distribute_bounty_by_reward_address_magic } from '@developeruche/runtime-sdk';
+import {
+  distribute_bounty_by_reward_address_magic,
+  mutate_with_url,
+} from '@developeruche/runtime-sdk';
 import { Injectable } from '@nestjs/common';
+import { RUNTIME_URL } from '@src/config/env.config';
 import { KeyManagementService } from '@src/globalServices/key-management/key-management.service';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
@@ -21,6 +25,8 @@ export class RewarderService {
     rewardId: string;
     amounts: BigNumber[];
   }) {
+    console.log(addresses, rewardId, amounts);
+
     try {
       const reward = await this.rewardService.findOneById(rewardId);
 
@@ -33,16 +39,20 @@ export class RewarderService {
       );
       const signer = new Wallet(decryptedPrivateKey);
 
-      const distribute = await distribute_bounty_by_reward_address_magic(
+      const distributeData = await distribute_bounty_by_reward_address_magic(
         reward.contractAddress,
         addresses,
         amounts,
         signer,
       );
 
-      console.log(distribute);
+      const distribute = await mutate_with_url(distributeData, RUNTIME_URL);
 
-      return distribute;
+      if (distribute.data?.error) {
+        throw new Error('Rewarder service is down.');
+      } else {
+        return distribute.data;
+      }
     } catch (error) {
       console.log(error);
       throw new Error(error.message);
