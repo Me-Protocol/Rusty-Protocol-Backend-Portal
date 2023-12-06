@@ -25,6 +25,7 @@ import { BrandService } from '@src/globalServices/brand/brand.service';
 import {
   distribute_reward_specific_with_url,
   mutate_n_format,
+  mutate_n_format_with_url,
   mutate_with_url,
   transfer_reward_with_url,
 } from '@developeruche/runtime-sdk';
@@ -517,7 +518,7 @@ export class SyncRewardService {
       let spend: AxiosResponse<any>;
 
       if (params.data.startsWith('0x00000001')) {
-        spend = await mutate_n_format(params);
+        spend = await mutate_n_format_with_url(params, RUNTIME_URL);
       } else {
         spend = await mutate_with_url(params, RUNTIME_URL);
       }
