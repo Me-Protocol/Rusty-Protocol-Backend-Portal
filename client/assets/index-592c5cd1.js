@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:client/assets/index-87be4bb5.js
-import{r as c,j as t,l as i}from"./index-d2f88df5.js";const m=({name:o,isLoading:r,onClick:e,isDisabled:s,rest:n})=>{const{root:a}=l();return t.jsx(t.Fragment,{children:t.jsx(i,{type:"submit",isDisabled:s,isLoading:r,onClick:e,...a,...n,children:o})})},x=c.memo(m),l=()=>({root:{colorScheme:"black",bg:"black",py:{base:5},width:"100%",h:"45px",borderRadius:"100px",loadingText:"Submitting",fontSize:{base:12,md:18}}});export{x as default};
-========
-import{r as c,j as t,l as i}from"./index-ad3b3a34.js";const m=({name:o,isLoading:r,onClick:e,isDisabled:s,rest:n})=>{const{root:a}=l();return t.jsx(t.Fragment,{children:t.jsx(i,{type:"submit",isDisabled:s,isLoading:r,onClick:e,...a,...n,children:o})})},x=c.memo(m),l=()=>({root:{colorScheme:"black",bg:"black",py:{base:5},width:"100%",h:"45px",borderRadius:"100px",loadingText:"Submitting",fontSize:{base:12,md:18}}});export{x as default};
->>>>>>>> 73e694685344517d26d2cb06a301f22ca65f8042:client/assets/index-592c5cd1.js

@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:client/assets/index-27c9b210.js
-import{j as t,h as p,w as a,H as n}from"./index-d2f88df5.js";const i=({icon:r,cardName:x,onClick:e})=>{const{root:s,text:o}=d();return t.jsxs(p,{...s,as:"button",_hover:{bg:"dark",color:"white"},onClick:e,children:[r,t.jsx(a,{}),t.jsx(n,{...o,children:x})]})},d=()=>({root:{borderRadius:{base:"10px",md:"16px"},bg:"grey",p:["10px","15px","18px","20px","25px"],h:"150px"},text:{fontSize:["12px","14px","16px","16px","20px"]}});export{i as default};
-========
-import{j as t,h as p,w as a,H as n}from"./index-ad3b3a34.js";const i=({icon:r,cardName:x,onClick:e})=>{const{root:s,text:o}=d();return t.jsxs(p,{...s,as:"button",_hover:{bg:"dark",color:"white"},onClick:e,children:[r,t.jsx(a,{}),t.jsx(n,{...o,children:x})]})},d=()=>({root:{borderRadius:{base:"10px",md:"16px"},bg:"grey",p:["10px","15px","18px","20px","25px"],h:"150px"},text:{fontSize:["12px","14px","16px","16px","20px"]}});export{i as default};
->>>>>>>> 73e694685344517d26d2cb06a301f22ca65f8042:client/assets/index-1387e064.js
