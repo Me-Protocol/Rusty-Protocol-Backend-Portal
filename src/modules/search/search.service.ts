@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { ConfigSearch } from '@src/config/search.config';
-import { SearchServiceInterface } from './interface/search.interface';
+import {
+  SearchIndex,
+  SearchServiceInterface,
+} from './interface/search.interface';
 import { ELASTIC_NODE } from '@src/config/env.config';
 
 @Injectable()
@@ -30,14 +33,19 @@ export class SearchService
   }
 
   public async searchIndex(searchData: any): Promise<any> {
-    return await this.search(searchData)
-      .then((res: any) => {
-        // console.log(res);
-        return res.hits.hits;
-      })
-      .catch((err: string | Record<string, any>) => {
-        return err;
-      });
+    try {
+      return await this.search(searchData)
+        .then((res: any) => {
+          // console.log(res);
+          return res.hits.hits;
+        })
+        .catch((err: string | Record<string, any>) => {
+          return err;
+        });
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
   }
 
   public async deleteIndex(indexData: any): Promise<any> {
@@ -72,5 +80,19 @@ export class SearchService
     } else {
       return true;
     }
+  }
+
+  public async indexExists(index: any): Promise<any> {
+    return await this.indices.exists({
+      index: index,
+    });
+  }
+
+  public async batchInsert(bulkData: any): Promise<any> {
+    return await this.bulk(bulkData)
+      .then((res: any) => res)
+      .catch((err: string | Record<string, any>) => {
+        return err;
+      });
   }
 }

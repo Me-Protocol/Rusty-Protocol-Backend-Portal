@@ -1,6 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { OrderFilter } from '@src/utils/enums/OrderFilter';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class FilterOrderDto {
   @ApiProperty()
@@ -22,6 +28,30 @@ export class FilterOrderDto {
     message: 'Please provide a valid status',
   })
   filterBy: OrderFilter;
+
+  @ApiProperty({
+    type: 'date',
+  })
+  @IsOptional()
+  @IsDateString()
+  startDate: Date;
+
+  @ApiProperty({
+    type: 'date',
+  })
+  @IsOptional()
+  @IsDateString()
+  endDate: Date;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsUUID()
+  productId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsUUID()
+  offerId: string;
 
   userId: string;
 

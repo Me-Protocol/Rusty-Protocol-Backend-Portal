@@ -136,6 +136,17 @@ import { BullModule } from '@nestjs/bull';
 import { SocialAuthenticationService } from './modules/authentication/socialAuth';
 import { BountyService } from './globalServices/oracles/bounty/bounty.service';
 import { Block } from './globalServices/oracles/bounty/entities/block.entity';
+import { TaskScheduleService } from './globalServices/task/common/schedules/taskSchedule.service';
+import { Bill } from './globalServices/biller/entity/bill.entity';
+import { Invoice } from './globalServices/biller/entity/invoice.entity';
+import { BillerService } from './globalServices/biller/biller.service';
+import { HMTTaskVerifier } from './globalServices/task/common/verifier/outapp/hmt.verifier';
+import { AnalyticsService } from './globalServices/analytics/analytics.service';
+import { AnalyticsManagementService } from './modules/storeManagement/analytics/service';
+import { AnalyticsManagementController } from './modules/storeManagement/analytics/controller';
+import { RewarderService } from './globalServices/task/common/rewarder/rewarder.service';
+import { AnalyticsRecorderService } from './globalServices/analytics/analytic_recorder.service';
+import { RewardCirculation } from './globalServices/analytics/entities/reward_circulation';
 
 @Module({
   imports: [
@@ -183,6 +194,9 @@ import { Block } from './globalServices/oracles/bounty/entities/block.entity';
       TaskResponseRecord,
       JobResponse,
       Block,
+      Bill,
+      Invoice,
+      RewardCirculation,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
@@ -240,6 +254,7 @@ import { Block } from './globalServices/oracles/bounty/entities/block.entity';
     DebugController,
     ReviewManagementController,
     TasksController,
+    AnalyticsManagementController,
   ],
   providers: [
     ElasticIndex,
@@ -301,6 +316,13 @@ import { Block } from './globalServices/oracles/bounty/entities/block.entity';
     TwitterTaskVerifier,
     SocialAuthenticationService,
     BountyService,
+    TaskScheduleService,
+    BillerService,
+    HMTTaskVerifier,
+    AnalyticsService,
+    AnalyticsManagementService,
+    RewarderService,
+    AnalyticsRecorderService,
   ],
   exports: [JwtStrategy, PassportModule],
 })

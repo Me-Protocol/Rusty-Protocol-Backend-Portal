@@ -93,6 +93,12 @@ export class OfferManagementController {
     return await this.offerManagementService.getBrandOffers(query);
   }
 
+  @UseGuards(BrandJwtStrategy)
+  @Get('/detail/:offerId')
+  async getOfferById(@Param('offerId') offerId: string) {
+    return await this.offerManagementService.getOfferById(offerId);
+  }
+
   @Get(':offerCode')
   async getOfferByCode(
     @Param('offerCode') offerCode: string,

@@ -66,6 +66,12 @@ export class ProductManagementController {
   }
 
   @UseGuards(BrandJwtStrategy)
+  @Delete('/images/:imageId')
+  async deleteProductImage(@Param('imageId') imageId: string) {
+    return await this.productManagementService.deleteProductImage(imageId);
+  }
+
+  @UseGuards(BrandJwtStrategy)
   @Delete(':productId')
   async deleteProduct(@Param('productId') productId: string, @Req() req: any) {
     const brandId = req.user.brand.id;

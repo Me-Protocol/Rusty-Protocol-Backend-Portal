@@ -11,6 +11,7 @@ import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { KeyIdentifier } from './entities/keyIdentifier.entity';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { RewardStatus } from '@src/utils/enums/ItemStatus';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class RewardService {
@@ -103,11 +104,19 @@ export class RewardService {
   }
 
   async findOneById(id: string): Promise<Reward> {
-    return this.rewardsRepo.findOneBy({ id: id });
+    return this.rewardsRepo.findOne({
+      where: {
+        id: id,
+      },
+    });
   }
 
   async findOneByIdAndBrand(id: string, brandId: string): Promise<Reward> {
     return this.rewardsRepo.findOneBy({ id: id, brandId: brandId });
+  }
+
+  async updateReward(reward: Reward) {
+    return await this.rewardsRepo.update(reward.id, reward);
   }
 
   async getRegistryByIdentifer(
@@ -174,5 +183,32 @@ export class RewardService {
         brandId,
       },
     });
+  }
+
+  async getExistingRewardByNameAndSymbol(
+    rewardName: string,
+    rewardSymbol: string,
+  ) {
+    // Get rewards where name is equal to name or symbol is equal to symbol using or query return boolean for each check
+    const existingRewardWithName = await this.rewardsRepo.findOneBy({
+      rewardName: rewardName,
+    });
+
+    const existingRewardWithSymbol = await this.rewardsRepo.findOneBy({
+      rewardSymbol,
+    });
+
+    return {
+      rewardName: existingRewardWithName,
+      rewardSymbol: existingRewardWithSymbol,
+    };
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async syncElasticSearchIndex() {
+    const allRewards = await this.rewardsRepo.find({
+      relations: ['brand'],
+    });
+    await this.elasticIndex.batchCreateIndex(allRewards, rewardIndex);
   }
 }

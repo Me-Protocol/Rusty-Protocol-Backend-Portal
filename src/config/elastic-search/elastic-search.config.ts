@@ -25,6 +25,7 @@ import { SearchService } from '@src/modules/search/search.service';
           username: configService.get('ELASTIC_USERNAME', ELASTIC_USERNAME),
           password: configService.get('ELASTIC_PASSWORD', ELASTIC_PASSWORD),
         },
+        pingTimeout: 60000,
         tls: {
           ca: configService.get('ELASTIC_CA', ELASTIC_CA),
           rejectUnauthorized: false,
@@ -33,7 +34,7 @@ import { SearchService } from '@src/modules/search/search.service';
           Accept: 'application/json',
           'Content-Type': 'application/json',
         },
-        requestTimeout: 30000,
+        requestTimeout: 60000,
       }),
     }),
   ],

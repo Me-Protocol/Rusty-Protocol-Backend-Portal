@@ -20,4 +20,12 @@ export class BrandCustomer extends BaseEntity {
   @ManyToOne(() => User, (user) => user.brandCustomers)
   @JoinColumn({ name: 'userId' })
   user: User;
+
+  @Column({ default: 0 })
+  totalRedeemed: number;
+
+  @Column({ default: 0 })
+  totalRedemptionAmount: number;
 }
+
+// await this.createCustomers(user.id, batch.reward.brandId);

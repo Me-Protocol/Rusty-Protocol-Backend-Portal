@@ -61,6 +61,7 @@ export class OfferManagementService {
     offer.endDate = body.endDate;
     offer.idOnBrandsite = body.idOnBrandsite;
     offer.rewardId = body.rewardId;
+    offer.inventory = body.inventory;
 
     const saveOffer = await this.offerService.saveOffer(offer);
 
@@ -132,6 +133,7 @@ export class OfferManagementService {
       if (body.startDate) offer.startDate = body.startDate;
       if (body.endDate) offer.endDate = body.endDate;
       if (body.idOnBrandsite) offer.idOnBrandsite = body.idOnBrandsite;
+      if (body.inventory) offer.inventory = body.inventory;
 
       // upload images
       if (body?.offerImages) {
@@ -161,6 +163,10 @@ export class OfferManagementService {
 
   async getOfferByofferCode(offerCode: string, sessionId: string) {
     return await this.offerService.getOfferByofferCode(offerCode, sessionId);
+  }
+
+  async getOfferById(id: string) {
+    return await this.offerService.getOfferById(id);
   }
 
   async getOfferForLoggedInUser(
@@ -197,6 +203,9 @@ export class OfferManagementService {
         query.orderBy,
         query.order,
         query.search,
+        query.productId,
+        query.startDate,
+        query.endDate,
       );
     } catch (error) {
       console.log(error);

@@ -2,8 +2,15 @@
 
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from '@src/common/entities/base.entity';
-import { StatusType, TransactionsType } from '@src/utils/enums/Transactions';
+import {
+  StatusType,
+  TransactionSource,
+  TransactionsType,
+} from '@src/utils/enums/Transactions';
 import { FiatWallet } from './fiatWallet.entity';
+import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
+import { Reward } from '@src/globalServices/reward/entities/reward.entity';
+import { Order } from '@src/globalServices/order/entities/order.entity';
 // import { StatusType, TransactionType } from '@src/utils/enums';
 
 @Entity('transaction')
@@ -34,6 +41,7 @@ export class Transaction extends BaseEntity {
     type: 'decimal',
     precision: 10,
     scale: 2,
+    nullable: true,
   })
   balance: number;
 
@@ -55,10 +63,37 @@ export class Transaction extends BaseEntity {
   paymentRef: string;
 
   @Column({
-    default: 'Stripe',
+    default: PaymentMethodEnum.STRIPE,
+    enum: PaymentMethodEnum,
+    type: 'enum',
   })
-  paymentMethod: string;
+  paymentMethod: PaymentMethodEnum;
 
   @Column()
   narration: string;
+
+  @Column({
+    type: 'enum',
+    enum: TransactionSource,
+    default: TransactionSource.REWARD_DISTRIBUTION,
+  })
+  source: TransactionSource;
+
+  @Column({
+    nullable: true,
+  })
+  rewardId: string;
+
+  @ManyToOne(() => Reward, (reward) => reward.id)
+  @JoinColumn({ name: 'rewardId' })
+  reward: Reward;
+
+  @Column({
+    nullable: true,
+  })
+  orderId: string;
+
+  @ManyToOne(() => Order, (order) => order.id)
+  @JoinColumn({ name: 'orderId' })
+  order: Order;
 }

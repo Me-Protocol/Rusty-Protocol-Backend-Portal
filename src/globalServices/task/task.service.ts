@@ -6,7 +6,7 @@ import moment from 'moment';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { writeFile, readFile } from 'fs/promises';
 import { HttpService } from '@nestjs/axios';
-import { Wallet, providers } from 'ethers';
+import { Wallet, ethers, providers } from 'ethers';
 import { Queue } from 'bull';
 import { InjectQueue } from '@nestjs/bull';
 import { Task } from './entities/task.entity';
@@ -37,8 +37,9 @@ import {
 import { Notification } from '../notification/entities/notification.entity';
 import { NotificationType } from '@src/utils/enums/notification.enum';
 import { emailButton } from '@src/utils/helpers/email';
-import { CLIENT_APP_URI, TASK_QUEUE } from '@src/config/env.config';
-// export const { TASK_QUEUE } = process.env;
+import { CLIENT_APP_URI } from '@src/config/env.config';
+import { RewarderService } from './common/rewarder/rewarder.service';
+export const { TASK_QUEUE } = process.env;
 
 // const humanJobWinnerCount = parseInt(process.env.HUMAN_JOB_WINNER_COUNT);
 
@@ -89,6 +90,8 @@ export class TasksService {
     private inAppTaskVerifier: InAppTaskVerifier,
 
     private readonly twitterTaskVerifier: TwitterTaskVerifier,
+
+    private readonly rewarderService: RewarderService,
 
     @InjectQueue(TASK_QUEUE)
     private readonly taskQueue: Queue,
@@ -188,6 +191,7 @@ export class TasksService {
         .createQueryBuilder('task')
         .leftJoinAndSelect('task.brand', 'brand')
         .leftJoinAndSelect('task.reward', 'reward')
+        .leftJoinAndSelect('task.offer', 'offer')
         .where('task.status = :status', { status: TaskStatus.ACTIVE });
 
       if (rewardId) {
@@ -255,7 +259,7 @@ export class TasksService {
 
   async getTaskById(id: string) {
     const task = await this.taskRepository.findOne({
-      relations: ['brand', 'reward'],
+      relations: ['brand', 'reward', 'offer'],
       where: {
         id,
         status: TaskStatus.ACTIVE,
@@ -301,13 +305,12 @@ export class TasksService {
 
   async getUsersSingleTasks(userId: string, taskId: string) {
     const task = await this.taskResponder.findOne({
-      relations: ['task', 'task.brand', 'task.reward'],
+      relations: ['task', 'task.brand', 'task.reward', 'task.offer'],
       where: {
         userId,
         taskId,
       },
     });
-    console.log(taskId, userId);
 
     if (!task) {
       throw new HttpException('Task not found', 404);
@@ -379,25 +382,16 @@ export class TasksService {
       const isTaskInAvailableTaskTypes =
         availableTaskTypes.filter((type) => type === task?.taskType).length > 0;
 
-      if (
-        availableTaskTypes.filter((type) => type === task?.taskType).length >
-          0 &&
-        !user?.twitterAuth?.username
-      ) {
+      console.log(user);
+
+      if (isTaskInAvailableTaskTypes && !user?.twitterAuth?.username) {
         throw new HttpException(
           'Please connect your twitter account to join this task',
           400,
         );
       }
 
-      // check if current date is within the time frame
-      const isValid = moment().isBetween(
-        moment(task?.createdAt).subtract(1, 'hours'),
-        moment(task?.startDate).add(task?.timeFrameInHours, 'hours'),
-      );
-
-      if (!isValid) {
-        console.log('rrighthe');
+      if (task.expired) {
         throw new HttpException('Task is no longer active', 400);
       }
 
@@ -441,6 +435,23 @@ export class TasksService {
       console.log(error);
       throw new HttpException(error.message, 400);
     }
+  }
+
+  async cancelledTask(user_id: string, task_id: string) {
+    const taskResponder = await this.taskResponder.findOne({
+      where: {
+        taskId: task_id,
+        userId: user_id,
+      },
+    });
+
+    if (!taskResponder) {
+      throw new HttpException("You haven't joined this task", 400);
+    }
+
+    taskResponder.taskCancelled = true;
+
+    return await this.taskResponder.save(taskResponder);
   }
 
   async moveToSecondStep(user_id: string, task_id: string) {
@@ -581,21 +592,6 @@ export class TasksService {
     return await this.taskRepository.findOneBy({ id });
   }
 
-  async updateReport(id: string, data: UpdateReportDto) {
-    const task = await this.taskRepository.findOneBy({ id });
-
-    if (task.status === TaskStatus.PENDING) {
-      throw new HttpException('Task is still pending', 400);
-    }
-
-    if (task.status === TaskStatus.COMPLETED) {
-      throw new HttpException('Task is already completed', 400);
-    }
-
-    await this.taskRepository.update(id, data);
-    return await this.taskRepository.findOneBy({ id });
-  }
-
   async remove(id: string) {
     const task = await this.taskRepository.findOneBy({ id });
 
@@ -608,319 +604,6 @@ export class TasksService {
 
     await this.taskRepository.delete(id);
     return { deleted: true };
-  }
-
-  async respondToTask(data: UpdateTaskResponseDto) {
-    try {
-      const task = await this.taskRepository.findOneBy({
-        id: data.task_id,
-        status: TaskStatus.ACTIVE,
-      });
-
-      if (!task) {
-        throw new HttpException('Task is not active', 400);
-      }
-
-      // check if current date is within the time frame
-      const isValid = moment().isBetween(
-        moment(task.createdAt).subtract(1, 'hours'),
-        moment(task.startDate).add(task.timeFrameInHours, 'hours'),
-      );
-
-      if (!isValid) {
-        throw new HttpException('Task is no longer active', 400);
-      }
-
-      // check if user joined the task
-      const userJoinedTask = await this.taskResponder.findOne({
-        where: {
-          taskId: data.task_id,
-          userId: data.user_id,
-        },
-      });
-
-      if (!userJoinedTask) {
-        throw new HttpException('Please join task', 400);
-      }
-
-      const userHasResponded = await this.taskResponseRepository.findOne({
-        where: {
-          userId: data.user_id,
-          taskId: data.task_id,
-        },
-      });
-
-      const walletHasResponded = await this.taskResponseRepository.findOne({
-        where: {
-          walletAddress: data.wallet_address,
-          taskId: data.task_id,
-        },
-      });
-
-      if (walletHasResponded) {
-        console.log('WALLET HAS ALREADY RESPONDED');
-        throw new HttpException('User has already responded', 400);
-      }
-
-      if (userHasResponded) {
-        throw new HttpException('User has already responded', 400);
-      }
-
-      const taskResponse = this.taskResponseRepository.create(data);
-      return await this.taskResponseRepository.save(taskResponse);
-    } catch (error) {
-      console.log(error);
-      throw new HttpException(error.message, 400);
-    }
-  }
-
-  // @Cron(CronExpression.EVERY_MINUTE)
-  // async activeNextTask() {
-  //   const nextTask = await this.taskRepository.findOne({
-  //     relations: ['brand', 'reward'],
-  //     order: {
-  //       createdAt: 'DESC',
-  //     },
-  //     where: {
-  //       status: TaskStatus.PENDING,
-  //     },
-  //   });
-
-  //   if (nextTask) {
-  //     await this.taskRepository.update(nextTask.id, {
-  //       status: TaskStatus.ACTIVE,
-  //     });
-
-  //     console.log('next job is active', nextTask.id);
-  //   }
-  // }
-
-  @Cron(CronExpression.EVERY_MINUTE)
-  async fundJob() {
-    // get one record with no escrow address
-    const record = await this.taskResponseRecordRepo.findOne({
-      where: { isFunded: false },
-    });
-
-    if (record) {
-      if (record.isReady && record.escrowUpdated) {
-        const localUrl = `./public/uploads/manifests/${record.manifestHash}.json`;
-        const data = await readFile(localUrl, 'utf8');
-
-        const mani = JSON.parse(data);
-
-        const fundJob = await this.httpService.axiosRef.post(
-          `${process.env.JOB_LAUNCHER_URL}/joblauncher/fundJob`,
-          {
-            escrowAddress: record.escrowAddress,
-            amount: `${mani.price}`,
-          },
-        );
-
-        if (fundJob.status >= 200 && fundJob.status < 300) {
-          record.isFunded = true;
-          console.log('Job was funded');
-          return await this.taskResponseRecordRepo.save(record);
-        }
-      }
-    }
-  }
-
-  async getTaskManifestDetails(url: string) {
-    try {
-      const manifest = await this.taskResponseRecordRepo.findOne({
-        where: { manifestUrl: url },
-      });
-
-      if (!manifest) {
-        throw new HttpException('Manifest not found', 404);
-      }
-
-      // get details from the manifest url
-      const localUrl = `./public/uploads/manifests/${manifest.manifestHash}.json`;
-      const data = await readFile(localUrl, 'utf8');
-
-      const mani = JSON.parse(data);
-
-      return {
-        responseLength: mani.datasetLength,
-        totalDemandedResponse: mani.annotationsPerImage,
-        price: mani.price,
-      };
-    } catch (error) {
-      console.log(error);
-      throw new HttpException(error.message, 400);
-    }
-  }
-
-  async updateManifest(url: string) {
-    try {
-      const manifest = await this.taskResponseRecordRepo.findOne({
-        where: { manifestUrl: url },
-      });
-
-      if (!manifest) {
-        throw new HttpException('Manifest not found', 404);
-      }
-
-      // get details from the manifest url
-      const localUrl = `./public/uploads/manifests/${manifest.manifestHash}.json`;
-      const data = await readFile(localUrl, 'utf8');
-
-      const mani = JSON.parse(data);
-
-      mani.status = 'COMPLETED';
-
-      // create a manifest file with body data and save to public folder
-      const manifestData = JSON.stringify(mani);
-      writeFile(
-        `./public/uploads/manifests/${manifest.manifestHash}.json`,
-        manifestData,
-        'utf8',
-      );
-
-      return 'Manifest updated';
-    } catch (error) {
-      console.log(error);
-      throw new HttpException(error.message, 400);
-    }
-  }
-
-  async storeNewResponse(data: JobResponseDto) {
-    try {
-      const taskRecord = await this.taskResponseRecordRepo.findOne({
-        where: {
-          escrowAddress: data.escrow_address,
-        },
-      });
-
-      if (!taskRecord) {
-        throw new HttpException('Task record (Job) not found', 404);
-      }
-
-      const checkIfSubmitted = await this.jobResponseRepo.findOne({
-        where: {
-          workerAddress: data.worker_address,
-          taskRecordId: taskRecord.id,
-        },
-      });
-
-      if (checkIfSubmitted) {
-        throw new HttpException('Worker has already submitted', 400);
-      }
-
-      const job = new JobResponse();
-      job.workerAddress = data.worker_address;
-      job.escrowAddress = data.escrow_address;
-      job.taskRecordId = taskRecord.id;
-      job.response = data.responses;
-
-      await this.jobResponseRepo.save(job);
-
-      return this.jobResponseRepo.count({
-        where: {
-          taskRecordId: taskRecord.id,
-        },
-      });
-    } catch (error) {
-      console.log(error);
-      throw new HttpException(error.message, 400);
-    }
-  }
-
-  async getStoredResponses(escrowAddress: string) {
-    try {
-      if (!escrowAddress) {
-        throw new HttpException('Escrow address is required', 400);
-      }
-
-      const taskRecord = await this.taskResponseRecordRepo.findOne({
-        where: {
-          escrowAddress: escrowAddress,
-        },
-      });
-
-      if (!taskRecord) {
-        throw new HttpException('Task record not found', 404);
-      }
-
-      const responses = await this.jobResponseRepo.find({
-        where: {
-          taskRecordId: taskRecord.id,
-        },
-      });
-
-      // get responses from each responses
-
-      return {
-        jobResponses: [
-          ...responses.map((item) => {
-            return item.response;
-          }),
-        ],
-        workerAddresses: [
-          ...responses.map((item) => {
-            return item.workerAddress;
-          }),
-        ],
-      };
-    } catch (error) {
-      console.log(error);
-      throw new HttpException(error.message, 400);
-    }
-  }
-
-  async checkIfIsExistingEscrow(escrowAddress: string) {
-    try {
-      const taskRecord = await this.taskResponseRecordRepo.findOne({
-        where: {
-          escrowAddress: escrowAddress,
-        },
-      });
-
-      if (!taskRecord) {
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.log(error);
-      return false;
-    }
-  }
-
-  async checkIfWorkerHadSubmittedAResponse(
-    workerAddress: string,
-    escrowAddress: string,
-  ) {
-    try {
-      const taskRecord = await this.taskResponseRecordRepo.findOne({
-        where: {
-          escrowAddress: escrowAddress,
-        },
-      });
-
-      if (!taskRecord) {
-        throw new HttpException('Task record (Job) not found', 404);
-      }
-
-      const response = await this.jobResponseRepo.findOne({
-        where: {
-          workerAddress: workerAddress,
-          taskRecordId: taskRecord.id,
-        },
-      });
-
-      if (!response) {
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.log(error);
-
-      return false;
-    }
   }
 
   async completeUserTask(task_id: string, user_id: string) {
@@ -966,26 +649,45 @@ export class TasksService {
     activeTask: Task,
     response: TaskResponder,
   ) {
-    // TODO: Add task queue
-    // const queuedJob: any = await this.taskQueue.add({
-    //   activeTask,
-    //   response,
-    // });
+    try {
+      // TODO: Add task queue
+      // const queuedJob: any = await this.taskQueue.add({
+      //   activeTask,
+      //   response,
+      // });
 
-    // const job = await this.taskQueue.getJob(queuedJob.id);
-    // const isFinishedValue = await job.finished();
+      // const job = await this.taskQueue.getJob(queuedJob.id);
+      // const isFinishedValue = await job.finished();
 
-    // if (isFinishedValue) return isFinishedValue;
+      // if (isFinishedValue) return isFinishedValue;
 
-    await this.taskRepository.update(activeTask.id, {
-      winnerCount: activeTask.winnerCount + 1,
-    });
+      await this.taskRepository.update(activeTask.id, {
+        winnerCount: activeTask.winnerCount + 1,
+      });
 
-    response.taskPerformed = true;
-    response.currentStep = 3;
-    response.winner = true;
+      response.taskPerformed = true;
+      response.currentStep = 3;
+      response.winner = true;
 
-    return await this.taskResponder.save(response);
+      const amount = ethers.utils.parseEther(activeTask.price.toString());
+
+      const user = await this.userService.getUserById(response.userId);
+
+      if (user.customer.walletAddress && !response.rewardClaimed) {
+        await this.rewarderService.sendReward({
+          addresses: [user.customer.walletAddress],
+          amounts: [amount],
+          rewardId: activeTask.rewardId,
+        });
+
+        response.rewardClaimed = true;
+      }
+
+      return await this.taskResponder.save(response);
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, 400);
+    }
   }
 
   async getTaskWinners(taskId: string) {
@@ -1001,15 +703,12 @@ export class TasksService {
 
   private async validateResponse(activeTask: Task, response: TaskResponder) {
     const availableTaskTypes = [
-      // AllTaskTypes.IN_APP_COLLECTION,
       AllTaskTypes.IN_APP_FOLLOW,
       AllTaskTypes.IN_APP_PRODUCT_LIKE,
-      // AllTaskTypes.IN_APP_SHARE,
       AllTaskTypes.OUT_SM_FOLLOW,
       AllTaskTypes.OUT_BRAND_TAGGING,
       AllTaskTypes.OUT_LIKE_POST,
       AllTaskTypes.OUT_REPOST,
-      // AllTaskTypes.IN_APP_SHARE,
     ];
 
     if (availableTaskTypes.includes(activeTask.taskType)) {
@@ -1201,117 +900,29 @@ export class TasksService {
         }
       }
 
-      if (activeTask.taskType === AllTaskTypes.IN_APP_REVIEW) {
-        const taskWinners = await this.getTaskWinners(activeTask.id);
+      // if (activeTask.taskType === AllTaskTypes.IN_APP_REVIEW) {
+      //   const taskWinners = await this.getTaskWinners(activeTask.id);
 
-        if (taskWinners.length >= activeTask.numberOfWinners) {
-          //expire tasks
-          await this.taskRepository.update(activeTask.id, {
-            expired: true,
-          });
+      //   if (taskWinners.length >= activeTask.numberOfWinners) {
+      //     //expire tasks
+      //     await this.taskRepository.update(activeTask.id, {
+      //       expired: true,
+      //     });
 
-          throw new Error('Sorry winners already selected for this task');
-        } else {
-          const check = await this.inAppTaskVerifier.verifyUserReviewedOffer(
-            activeTask.offerId,
-            response.userId,
-          );
+      //     throw new Error('Sorry winners already selected for this task');
+      //   } else {
+      //     const check = await this.inAppTaskVerifier.verifyUserReviewedOffer(
+      //       activeTask.offerId,
+      //       response.userId,
+      //     );
 
-          if (!check) throw new Error('We could not validate your response');
-        }
-      }
-    }
-  }
-
-  @Cron(CronExpression.EVERY_DAY_AT_10AM)
-  async sendNotificationOfNewActiveTasks() {
-    const tasks = await this.taskRepository.find({
-      relations: ['brand', 'reward'],
-      where: {
-        status: TaskStatus.ACTIVE,
-        notificationSent: false,
-      },
-    });
-
-    if (tasks.length > 0) {
-      for (let index = 0; index < tasks.length; index++) {
-        const task = tasks[index];
-
-        const brand = await this.brandService.getBrandById(task.brand.id);
-
-        if (brand) {
-          // find brand followers
-          const followers = await this.followService.getAllBrandFollowers(
-            brand.id,
-          );
-
-          if (followers.length > 0) {
-            for (let index = 0; index < followers.length; index++) {
-              const follower = followers[index];
-
-              const notification = new Notification();
-              notification.userId = follower.userId as any;
-              notification.message = `New task available for ${task.reward.rewardSymbol}. Join now to earn`;
-              notification.type = NotificationType.POINT;
-              notification.rewards = [task.reward];
-              notification.title = 'New task available';
-
-              notification.emailMessage = `
-              <p>Hi ${follower?.user?.customer?.name},</p>
-              <p>There is a new task available for ${
-                task.reward.rewardName
-              }.</p>
-              ${emailButton({
-                url: `${CLIENT_APP_URI}/tasks`,
-                text: 'Join now to earn.',
-              })}
-              <p>Regards,</p>
-              `;
-
-              if (notification) {
-                await this.notificationService.createNotification(notification);
-              }
-            }
-
-            await this.taskRepository.update(task.id, {
-              notificationSent: true,
-            });
-          }
-        }
-      }
-    }
-  }
-
-  //expire tasks
-  @Cron(CronExpression.EVERY_2ND_HOUR)
-  async expireTask() {
-    try {
-      const activeTasks = await this.taskRepository.find({
-        relations: ['brand', 'reward'],
-        where: { status: TaskStatus.ACTIVE },
-      });
-
-      if (!activeTasks || activeTasks.length < 1) return;
-
-      for (let index = 0; index < activeTasks.length; index++) {
-        const activeTask = activeTasks[index];
-
-        // check if time frame has elapsed
-        const targetEndTime = moment(activeTask.startDate).add(
-          activeTask.timeFrameInHours,
-          'hours',
-        );
-        const isValid = moment().isAfter(targetEndTime);
-
-        if (!isValid) continue;
-
-        await this.taskRepository.update(activeTask.id, {
-          expired: true,
-        });
-      }
-    } catch (error) {
-      console.log(error);
-      throw new HttpException(error.message, 400);
+      //     if (!check) throw new Error('We could not validate your response');
+      //   }
+      // }
+    } else {
+      throw new Error(
+        "We couldn't validate your response. Please try again later.",
+      );
     }
   }
 }

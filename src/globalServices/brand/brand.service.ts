@@ -11,6 +11,9 @@ import { BrandRole } from '@src/utils/enums/BrandRole';
 import { BrandCustomer } from './entities/brand_customer.entity';
 import { FilterBrandCustomer } from '@src/utils/enums/FilterBrandCustomer';
 import { generateBrandIdBytes10 } from '@developeruche/protocol-core';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { ProcessBrandColorEvent } from './events/process-brand-color.event';
 
 @Injectable()
 export class BrandService {
@@ -25,6 +28,8 @@ export class BrandService {
     private readonly brandCustomerRepo: Repository<BrandCustomer>,
 
     private readonly elasticIndex: ElasticIndex,
+
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create({ userId, name }: { userId: string; name: string }) {
@@ -41,6 +46,7 @@ export class BrandService {
     brandMember.name = saveBrand.name;
     brandMember.role = BrandRole.OWNER;
     brandMember.userId = userId;
+    brandMember.isAccepted = true;
 
     await this.brandMemberRepo.save(brandMember);
 
@@ -93,11 +99,26 @@ export class BrandService {
       brand.supportPhoneNumber = dto.supportPhoneNumber;
       brand.listOnStore = dto.listOnStore;
       brand.vaultPercentage = dto.vaultPercentage;
+      brand.noOfCustomers = dto.noOfCustomers;
+
+      brand.currency = dto.currency;
+      brand.countryCode = dto.countryCode;
+      brand.country = dto.country;
+      brand.region = dto.region;
+      brand.additionalAddress = dto.additionalAddress;
+      brand.city = dto.city;
+      brand.postalCode = dto.postalCode;
+      brand.firstTimeLogin = dto.firstTimeLogin === 'true' ? true : false;
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);
-
       this.elasticIndex.updateDocument(newBrand, brandIndex);
+
+      const brandProcessColorEvent = new ProcessBrandColorEvent();
+      brandProcessColorEvent.brandId = brandId;
+      brandProcessColorEvent.url =
+        newBrand.logo || newBrand.logo_white || newBrand.logo_icon;
+      this.eventEmitter.emit('process.brand.color', brandProcessColorEvent);
 
       return newBrand;
     } catch (error) {
@@ -228,10 +249,22 @@ export class BrandService {
     }
 
     if (filterBy === FilterBrandCustomer.MOST_RECENT) {
-      // brand customer createdAt 7 days ago
-      const date = new Date();
-      date.setDate(date.getDate() - 7);
-      brandCustomerQuery.andWhere('brandCustomer.createdAt > :date', { date });
+      // brand customer createdAt now to 1 month ago
+
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() - 1);
+
+      const startDate = new Date();
+
+      // where createdAt is between now to date ago
+
+      brandCustomerQuery.andWhere(
+        'brandCustomer.createdAt BETWEEN :startDate AND :endDate',
+        {
+          startDate,
+          endDate,
+        },
+      );
     }
 
     brandCustomerQuery.skip((page - 1) * limit).take(limit);
@@ -276,5 +309,15 @@ export class BrandService {
         userId,
       },
     });
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async syncElasticSearchIndex() {
+    const allBrands = await this.brandRepo.find();
+    this.elasticIndex.batchCreateIndex(allBrands, brandIndex);
+  }
+
+  async removeBrandMember(brandMember: BrandMember) {
+    return await this.brandMemberRepo.remove(brandMember);
   }
 }

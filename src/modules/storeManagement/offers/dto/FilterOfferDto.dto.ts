@@ -1,7 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
 import { OfferFilter, OfferSort } from '@src/utils/enums/OfferFiilter';
-import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class FilterOfferDto {
   @ApiProperty()
@@ -66,6 +72,25 @@ export class FilterOfferDto {
   @IsOptional()
   @IsString()
   search: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsUUID()
+  productId: string;
+
+  @ApiProperty({
+    type: 'date',
+  })
+  @IsOptional()
+  @IsDateString()
+  startDate: Date;
+
+  @ApiProperty({
+    type: 'date',
+  })
+  @IsOptional()
+  @IsDateString()
+  endDate: Date;
 }
 
 export class FilterUserOfferDto {

@@ -32,9 +32,11 @@ import {
   ERC2771Type,
   GelatoRelay,
 } from '@gelatonetwork/relay-sdk';
-import { onboard_brand } from '@developeruche/runtime-sdk';
 import { ProcessBrandColorEvent } from '@src/globalServices/brand/events/process-brand-color.event';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { BrandRole } from '@src/utils/enums/BrandRole';
+import { onboard_brand_with_url } from '@developeruche/runtime-sdk';
+import { RUNTIME_URL } from '@src/config/env.config';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -50,9 +52,10 @@ export class BrandAccountManagementService {
 
   async updateBrand(body: UpdateBrandDto, brandId: string) {
     try {
-      if (body.logo) {
+      if (body.logo || body.logo_white) {
+        let img = body.logo || body.logo_white;
         const processBrandColorPayload = new ProcessBrandColorEvent();
-        processBrandColorPayload.url = body.logo;
+        processBrandColorPayload.url = img;
         processBrandColorPayload.brandId = brandId;
         this.eventEmitter.emit('process.brand.color', processBrandColorPayload);
       }
@@ -64,7 +67,7 @@ export class BrandAccountManagementService {
     }
   }
 
-  async getAllBrands(query: FilterBrandDto) {
+  async getAllFilteredBrands(query: FilterBrandDto) {
     try {
       const { categoryId, page, limit } = query;
       const brands = await this.brandService.getAllFilteredBrands({
@@ -129,8 +132,20 @@ export class BrandAccountManagementService {
         throw new HttpException('Brand member not found', 404);
       }
 
-      brandMember.role = body.role;
+      const brandOwner = await this.getBrandOwner(body.brandId);
+      const ownerMemberRecord = await this.brandService.getBrandMember(
+        body.brandId,
+        brandOwner.brandMember.id,
+      );
 
+      if (body.role === BrandRole.OWNER && body.userId !== brandOwner.id) {
+        throw new HttpException('You cannot assign owner role to a user', 400);
+      }
+
+      ownerMemberRecord.role = BrandRole.COLLABORATOR;
+      await this.brandService.saveBrandMember(ownerMemberRecord);
+
+      brandMember.role = body.role;
       return await this.brandService.saveBrandMember(brandMember);
     } catch (error) {
       logger.error(error);
@@ -166,6 +181,10 @@ export class BrandAccountManagementService {
     try {
       const brand = await this.brandService.getBrandById(brandId);
       const user = await this.userService.getUserByEmail(email);
+
+      if (role === BrandRole.OWNER) {
+        throw new HttpException('You cannot assign owner role to a user', 400);
+      }
 
       if (user) {
         const checkBrandMemberForOtherBrand =
@@ -284,7 +303,7 @@ export class BrandAccountManagementService {
         </p>
         ${emailButton({
           text: 'Verify Email',
-          url: `${process.env.SERVER_URL}/brand/member/verify-email/${user.accountVerificationCode}/${brandId}`,
+          url: `${process.env.SERVER_URL}/brand/member/verify-email/${user?.accountVerificationCode}/${brandId}`,
         })}
         `,
       });
@@ -293,6 +312,7 @@ export class BrandAccountManagementService {
         message: 'Brand member created successfully',
       };
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
@@ -323,6 +343,7 @@ export class BrandAccountManagementService {
 
       return user;
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400);
     }
@@ -355,6 +376,7 @@ export class BrandAccountManagementService {
 
       return user;
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400);
     }
@@ -369,6 +391,7 @@ export class BrandAccountManagementService {
         query.filterBy,
       );
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
@@ -445,11 +468,12 @@ export class BrandAccountManagementService {
         BigNumber.from(brand.brandProtocolId),
       );
 
-      await onboard_brand(
+      await onboard_brand_with_url(
         BigNumber.from(brandProtocolId),
         walletAddress,
         ethers.constants.AddressZero,
         wallet,
+        RUNTIME_URL,
       );
 
       return paymentRequest;
@@ -459,6 +483,29 @@ export class BrandAccountManagementService {
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });
+    }
+  }
+
+  async removeBrandMember(brandId: string, brandMemberId: string) {
+    try {
+      const brandMember = await this.brandService.getBrandMember(
+        brandId,
+        brandMemberId,
+      );
+
+      if (!brandMember) {
+        throw new HttpException('Brand member not found', 404);
+      }
+
+      await this.brandService.removeBrandMember(brandMember);
+
+      return {
+        message: 'Brand member removed successfully',
+      };
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
     }
   }
 }

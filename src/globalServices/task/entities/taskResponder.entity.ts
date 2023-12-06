@@ -33,4 +33,9 @@ export class TaskResponder extends BaseEntity {
   @ManyToOne(() => User, (user) => user.taskResponses)
   @JoinColumn({ name: 'userId' })
   user: User;
+
+  @Column({
+    default: false,
+  })
+  rewardClaimed: boolean;
 }

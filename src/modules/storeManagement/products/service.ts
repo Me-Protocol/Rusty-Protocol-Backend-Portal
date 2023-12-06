@@ -10,6 +10,7 @@ import { CollectionService } from '@src/globalServices/collections/collections.s
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { productIndex } from '@src/modules/search/interface/search.interface';
 import { ProductStatus } from '@src/utils/enums/ItemStatus';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class ProductManagementService {
@@ -284,5 +285,23 @@ export class ProductManagementService {
       logger.error(error);
       throw new HttpException(error.message, 400);
     }
+  }
+
+  // @Cron(CronExpression.EVERY_5_MINUTES)
+  async syncElasticSearchIndex() {
+    const allProducts = await this.productService.getAllProducts();
+    await this.elasticIndex.batchCreateIndex(allProducts, productIndex);
+  }
+
+  async deleteProductImage(imageId: string) {
+    const image = this.productService.getImage(imageId);
+
+    if (!image) {
+      throw new HttpException('Image does not exist or has been deleted', 400);
+    }
+
+    await this.productService.deleteImage(imageId);
+
+    return 'Ok';
   }
 }

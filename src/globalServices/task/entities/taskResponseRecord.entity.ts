@@ -35,7 +35,7 @@ export class TaskResponseRecord extends BaseEntity {
   isFunded: boolean;
 
   @Column()
-  taskId: number;
+  taskId: string;
 
   @OneToOne(() => Task, (task) => task.taskResponseRecord, {
     onDelete: 'CASCADE',
@@ -45,4 +45,7 @@ export class TaskResponseRecord extends BaseEntity {
 
   @OneToMany(() => JobResponse, (jobResponse) => jobResponse.taskRecord)
   jobResponses: JobResponse[];
+
+  @Column()
+  hmtJobId: string;
 }

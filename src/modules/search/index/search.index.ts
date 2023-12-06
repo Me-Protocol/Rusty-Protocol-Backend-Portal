@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   SearchEntity,
   SearchIndex,
@@ -16,26 +16,73 @@ export class ElasticIndex {
     entity: SearchEntity,
     index: SearchIndex,
   ): Promise<any> {
-    const data = this.document(index, entity);
-    return this.searchService.insertIndex(data);
+    try {
+      const data = this.document(index, entity);
+      return this.searchService.insertIndex(data);
+    } catch (e) {
+      Logger.error(e);
+    }
   }
 
   public async updateDocument(
     entity: SearchEntity,
     index: SearchIndex,
   ): Promise<any> {
-    const data = this.document(index, entity);
-    await this.deleteDocument(index, entity.id);
-    return this.searchService.insertIndex(data);
+    try {
+      const data = this.document(index, entity);
+      await this.deleteDocument(index, entity.id);
+      return this.searchService.insertIndex(data);
+    } catch (e) {
+      Logger.error(e);
+    }
   }
 
   public async deleteDocument(index: SearchIndex, id: string): Promise<any> {
-    const data = {
-      index: index._index,
-      type: index._type,
-      id: id.toString(),
-    };
-    return this.searchService.deleteDocument(data);
+    try {
+      const data = {
+        index: index._index,
+        type: index._type,
+        id: id.toString(),
+      };
+      return this.searchService.deleteDocument(data);
+    } catch (e) {
+      Logger.error(e);
+    }
+  }
+
+  public async batchUpdateIndex(entities: SearchEntity[], index: SearchIndex) {
+    try {
+      const existingIds = await this.fetchExistingIdsFromIndex(index);
+
+      console.log(existingIds);
+
+      const newData = entities.filter(
+        (entity) => !existingIds.has(entity.id.toString()),
+      );
+
+      const data = this.createBulkRequest(index, newData as SearchEntity[]);
+
+      await this.searchService.batchInsert(data);
+    } catch (e) {
+      Logger.error(e);
+    }
+  }
+
+  public async batchCreateIndex(entities: SearchEntity[], index: SearchIndex) {
+    try {
+      const existingIds =
+        await this.fetchExistingIdsFromIndexAndCreateIfNotExist(index);
+
+      const newData = entities.filter(
+        (entity) => !existingIds.has(entity.id.toString()),
+      );
+
+      const data = this.createBulkRequest(index, newData as SearchEntity[]);
+
+      await this.searchService.batchInsert(data);
+    } catch (e) {
+      Logger.error(e);
+    }
   }
 
   private bulkIndex(index: SearchIndex, id: number): any {
@@ -57,5 +104,90 @@ export class ElasticIndex {
       index: index._index,
       type: index._type,
     };
+  }
+
+  private createBulkRequest(index: SearchIndex, entities: SearchEntity[]): any {
+    const bulk = [];
+
+    entities.forEach((entity) => {
+      bulk.push({ index: { _index: index._index, _id: entity.id } });
+      bulk.push(entity);
+      console.log(JSON.stringify(bulk));
+    });
+
+    return {
+      body: bulk,
+    };
+  }
+
+  private async fetchExistingIdsFromIndex(
+    index: SearchIndex,
+  ): Promise<Set<string>> {
+    try {
+      const existingIds = new Set<string>();
+
+      // Fetch existing document IDs from the index
+      const existingDocuments = await this.searchService.searchIndex({
+        index: index._index,
+        body: {
+          query: {
+            match_all: {},
+          },
+        },
+      });
+
+      console.log(existingDocuments);
+
+      existingDocuments.forEach((doc) => existingIds.add(doc._source.id));
+
+      return existingIds;
+    } catch (e) {
+      Logger.error(e);
+    }
+  }
+
+  private async fetchExistingIdsFromIndexAndCreateIfNotExist(
+    index: SearchIndex,
+  ): Promise<Set<string>> {
+    try {
+      const existingIds = new Set<string>();
+
+      // Check if index exists
+      const indexExists = await this.searchService.indexExists(index._index);
+
+      // If index does not exist, create it
+      if (!indexExists) {
+        await this.searchService.createIndex(index, index._index);
+      }
+
+      const existingDocuments = await this.searchService.searchIndex({
+        index: index._index,
+        body: {
+          query: {
+            match_all: {},
+          },
+        },
+      });
+
+      setTimeout(async () => {
+        const existingDocuments = await this.searchService.searchIndex({
+          index: index._index,
+          body: {
+            query: {
+              match_all: {},
+            },
+          },
+        });
+
+        existingDocuments.map(async (doc) => {
+          // Assuming this.searchService.getDocumentById is an asynchronous function
+          await existingIds.add(doc._source.id);
+        });
+      }, 6000);
+
+      return existingIds;
+    } catch (e) {
+      Logger.error(e);
+    }
   }
 }

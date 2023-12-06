@@ -10,12 +10,6 @@ import { RewardService } from '../reward.service';
 import { UserService } from '@src/globalServices/user/user.service';
 import { AxiosResponse } from 'axios';
 import { SendTransactionData } from '@src/modules/storeManagement/reward/dto/distributeBatch.dto';
-import {
-  distribute_reward_specific,
-  mutate,
-  mutate_n_format,
-  transfer_reward,
-} from '@developeruche/runtime-sdk';
 import { logger } from '@src/globalServices/logger/logger.service';
 import { BigNumber, Wallet, ethers } from 'ethers';
 import { KeyManagementService } from '@src/globalServices/key-management/key-management.service';
@@ -27,6 +21,14 @@ import {
   treasuryContract,
 } from '@developeruche/protocol-core';
 import { GetTreasuryPermitDto } from '@src/modules/storeManagement/reward/dto/PushTransactionDto.dto';
+import { BrandService } from '@src/globalServices/brand/brand.service';
+import {
+  distribute_reward_specific_with_url,
+  mutate_n_format,
+  mutate_with_url,
+  transfer_reward_with_url,
+} from '@developeruche/runtime-sdk';
+import { RUNTIME_URL } from '@src/config/env.config';
 
 @Injectable()
 export class SyncRewardService {
@@ -45,6 +47,7 @@ export class SyncRewardService {
     private readonly keyManagementService: KeyManagementService,
     private readonly fiatWalletService: FiatWalletService,
     private readonly settingsService: SettingsService,
+    private readonly brandService: BrandService,
   ) {}
 
   async createBatch(batch: SyncBatch) {
@@ -253,6 +256,7 @@ export class SyncRewardService {
     registry.balance = 0;
     registry.pendingBalance = 0;
     registry.totalBalance = Number(formattedSum);
+    registry.hasBalance = true;
 
     await this.rewardRegistryRepo.save(registry);
 
@@ -449,6 +453,7 @@ export class SyncRewardService {
         rewardId: rewardId,
         isDistributed: false,
       },
+      relations: ['reward', 'reward.brand'],
     });
 
     return batch;
@@ -514,7 +519,7 @@ export class SyncRewardService {
       if (params.data.startsWith('0x00000001')) {
         spend = await mutate_n_format(params);
       } else {
-        spend = await mutate(params);
+        spend = await mutate_with_url(params, RUNTIME_URL);
       }
 
       return spend?.data ?? spend;
@@ -571,11 +576,12 @@ export class SyncRewardService {
     contractAddress: string;
     signer: Wallet;
   }) {
-    const distributionData = await distribute_reward_specific(
+    const distributionData = await distribute_reward_specific_with_url(
       contractAddress,
       recipients,
       amounts,
       signer,
+      RUNTIME_URL,
     );
 
     console.log(distributionData.data);
@@ -624,16 +630,29 @@ export class SyncRewardService {
     // 4. We then use the private key to sign the transaction and distribute the rewards to the wallet address.
     const signer = new Wallet(decryptedPrivateKey);
 
-    const distributionData = await transfer_reward(
+    const distributionData = await transfer_reward_with_url(
       reward.contractAddress,
       walletAddress,
       ethers.utils.parseEther(amount.toString()),
       signer,
+      RUNTIME_URL,
     );
 
-    // 5. Finally, we update the registry to clear the undistributed balance and return the distribution data.
+    const user = await this.userService.getUserByEmail(email);
+    if (user) {
+      const checkCustomer = await this.brandService.getBrandCustomer(
+        reward.brandId,
+        user.id,
+      );
+
+      if (!checkCustomer) {
+        await this.brandService.createBrandCustomer(user.id, reward.brandId);
+      }
+    }
+
     if (distributionData?.data?.error) {
-      return 'Undistributed balance';
+      console.log(distributionData.data);
+      throw new Error("We couldn't distribute reward");
     } else {
       const registry = await this.findOneRegistryByEmailIdentifier(
         email,
@@ -646,6 +665,51 @@ export class SyncRewardService {
         description: `Reward distributed to ${walletAddress}`,
       });
 
+      return distributionData;
+    }
+  }
+
+  // Send reward to task responders
+  async distributeTaskRewardWithPrivateKey({
+    rewardId,
+    walletAddress,
+    amount,
+  }: {
+    rewardId: string;
+    walletAddress: string;
+    amount: number;
+  }) {
+    const reward = await this.rewardService.findOneById(rewardId);
+
+    const canPayCost = await this.fiatWalletService.checkCanPayCost(
+      reward.brandId,
+    );
+
+    if (!canPayCost) {
+      return 'Brand cannot pay cost';
+    }
+
+    const keyIdentifier = await this.rewardService.getKeyIdentifier(
+      reward.redistributionKeyIdentifierId,
+      KeyIdentifierType.REDISTRIBUTION,
+    );
+    const decryptedPrivateKey = await this.keyManagementService.decryptKey(
+      keyIdentifier.identifier,
+    );
+    const signer = new Wallet(decryptedPrivateKey);
+
+    const distributionData = await transfer_reward_with_url(
+      reward.contractAddress,
+      walletAddress,
+      ethers.utils.parseEther(amount.toString()),
+      signer,
+      RUNTIME_URL,
+    );
+
+    if (distributionData?.data?.error) {
+      console.log(distributionData.data);
+      throw new Error("We couldn't distribute reward");
+    } else {
       return distributionData;
     }
   }

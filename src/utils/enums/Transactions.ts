@@ -8,3 +8,10 @@ export enum StatusType {
   PROCESSING = 'PROCESSING',
   FAILED = 'FAILED',
 }
+
+export enum TransactionSource {
+  REWARD_DISTRIBUTION = 'reward_distribution',
+  OFFER_REDEMPTION = 'offer_redemption',
+  EARN_REWARD = 'earn_reward',
+  AUTO_TOPUP = 'auto_topup',
+}

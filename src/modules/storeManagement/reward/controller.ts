@@ -39,6 +39,8 @@ import {
 } from './dto/PushTransactionDto.dto';
 import { ServerGuard } from '@src/middlewares/server-guard';
 import { FilterRegistryHistoryDto } from './dto/filterRegistryHistoryDto.dto';
+import { CheckExistingRewardParams } from './dto/check-existing-reward.dto';
+import { UpdateRewardDto } from './dto/updateRewardDto';
 
 @ApiTags('Reward')
 @Controller('reward')
@@ -70,6 +72,19 @@ export class RewardManagementController {
     createRewardDto.brandId = brandId;
 
     return await this.rewardManagementService.completeReward(createRewardDto);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Put(':rewardId')
+  async updateReward(
+    @Body(ValidationPipe) body: UpdateRewardDto,
+    @Req() req: any,
+    @Param('rewardId') rewardId: string,
+  ) {
+    const brandId = req.user.brand.id;
+    body.brandId = brandId;
+
+    return await this.rewardManagementService.updateReward(rewardId, body);
   }
 
   @UseGuards(ApiKeyJwtStrategy)
@@ -119,6 +134,18 @@ export class RewardManagementController {
   }
 
   @UseGuards(AuthGuard())
+  @Get('name-symbol/lookup')
+  async checkUniqueRewardNameAndSymbol(
+    @Query(ValidationPipe) query: CheckExistingRewardParams,
+  ) {
+    const { rewardName, rewardSymbol } = query;
+    return await this.rewardManagementService.checkUniqueRewardNameAndSymbol(
+      rewardName,
+      rewardSymbol,
+    );
+  }
+
+  @UseGuards(AuthGuard())
   @Get('contract/:contractAddress')
   async getRewardByContractAddress(@Param('contractAddress') param: string) {
     return await this.rewardManagementService.getRewardByContractAddress(param);
@@ -152,6 +179,22 @@ export class RewardManagementController {
     body.brandId = brandId;
 
     return await this.rewardManagementService.updateBatch(body);
+  }
+
+  @UseGuards(ApiKeyJwtStrategy)
+  @Post('issue-and-distribute')
+  async issueAndDistributeReward(
+    @Body(ValidationPipe) body: UpdateBatchDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.brand.id;
+    body.brandId = brandId;
+    const apiKey = req.apiKey as ApiKey;
+
+    return await this.rewardManagementService.issueAndDistributeReward(
+      body,
+      apiKey,
+    );
   }
 
   @UseGuards(BrandJwtStrategy)

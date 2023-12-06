@@ -7,6 +7,7 @@ import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
 import { Variant } from './entities/variants.entity';
 import { VarientType } from '@src/utils/enums/VarientType';
 import { ProductFilter } from '@src/utils/enums/OfferFiilter';
+import { FilterDto } from '@src/modules/storeManagement/products/dto/FilterDto';
 
 @Injectable()
 export class ProductService {
@@ -20,6 +21,12 @@ export class ProductService {
     @InjectRepository(Variant)
     private readonly variantRepo: Repository<Variant>,
   ) {}
+
+  async getAllProducts() {
+    return await this.productRepo.find({
+      relations: ['brand', 'productImages', 'variants', 'category'],
+    });
+  }
 
   async getProductImages(brandId: string, page: number, limit: number) {
     const images = await this.productImageRepo.find({
@@ -83,6 +90,20 @@ export class ProductService {
     }
 
     return this.productImageRepo.save(productImages);
+  }
+
+  async getImage(id: string) {
+    return await this.productImageRepo.findOne({
+      where: {
+        id,
+      },
+    });
+  }
+
+  async deleteImage(id: string) {
+    return await this.productImageRepo.softDelete({
+      id,
+    });
   }
 
   async addVariants(
@@ -246,16 +267,10 @@ export class ProductService {
     order,
     filterBy,
     search,
-  }: {
-    page: number;
-    limit: number;
-    status?: ProductStatus;
-    brandId?: string;
-    categoryId?: string;
-    order: string;
-    search: string;
-    filterBy?: string;
-  }) {
+    startDate,
+    subCategoryId,
+    endDate,
+  }: FilterDto) {
     const products = this.productRepo
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.productImages', 'productImages')
@@ -274,6 +289,12 @@ export class ProductService {
       products.andWhere('product.categoryId = :categoryId', { categoryId });
     }
 
+    if (subCategoryId) {
+      products.andWhere('product.subCategoryId = :subCategoryId', {
+        subCategoryId,
+      });
+    }
+
     if (filterBy === ProductFilter.LOW_IN_STOCK) {
       products.andWhere('product.inventory <= 5');
       products.orderBy('product.inventory', 'ASC');
@@ -289,6 +310,13 @@ export class ProductService {
     if (search) {
       products.andWhere('product.name LIKE :search', {
         search: `%${search}%`,
+      });
+    }
+
+    if (startDate && endDate) {
+      products.andWhere('product.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
       });
     }
 

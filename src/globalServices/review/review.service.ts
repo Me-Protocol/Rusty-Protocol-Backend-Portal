@@ -45,6 +45,12 @@ export class ReviewService {
         'user.username',
         'customer.name',
         'customer.profilePicture',
+        'offer.id',
+        'offer.name',
+        'offer.offerCode',
+        'offerImages.url',
+        'brand.id',
+        'brand.name',
       ]);
 
     if (userId) {
@@ -66,9 +72,35 @@ export class ReviewService {
 
     const [reviews, total] = await reviewQuery.getManyAndCount();
 
+    // average rating
+    const ratings = await this.reviewsRepository.find({
+      where: {
+        offerId: offerId,
+        brandId: brandId,
+      },
+    });
+
+    const averageRating =
+      ratings.reduce((acc, curr) => {
+        return acc + curr.rating;
+      }, 0) / ratings.length;
+
+    const averageRatingRounded = Math.round(averageRating * 10) / 10;
+
+    const rates = [1, 2, 3, 4, 5];
+
+    // percentage of each rates to the averageRatingRounded
+
+    const percentageOfEachRates = rates.map((rate) => {
+      const percentage = (rate / averageRatingRounded) * 100;
+      return Math.round(percentage * 10) / 10;
+    });
+
     return {
       reviews,
       total,
+      percentageOfEachRates,
+      averageRating: averageRatingRounded,
       nextPage: total > page * limit ? Number(page) + 1 : null,
       previousPage: page > 1 ? Number(page) - 1 : null,
     };

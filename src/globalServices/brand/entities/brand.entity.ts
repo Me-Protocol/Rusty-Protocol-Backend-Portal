@@ -25,6 +25,7 @@ import { BrandMember } from './brand_member.entity';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 import { Order } from '@src/globalServices/order/entities/order.entity';
 import { Review } from '@src/globalServices/review/entities/review.entity';
+import { Bill } from '@src/globalServices/biller/entity/bill.entity';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -219,7 +220,7 @@ export class Brand extends BaseEntity {
   orders: Order[];
 
   @Column({
-    default: true,
+    default: false,
   })
   listOnStore: boolean;
 
@@ -245,4 +246,52 @@ export class Brand extends BaseEntity {
     default: 50,
   })
   vaultPercentage: number;
+
+  @Column({
+    nullable: true,
+  })
+  noOfCustomers: number;
+
+  @OneToMany(() => Bill, (bill) => bill.brand)
+  bills: Bill[];
+
+  @Column({
+    nullable: true,
+  })
+  currency: string;
+
+  @Column({
+    nullable: true,
+  })
+  countryCode: string;
+
+  @Column({
+    nullable: true,
+  })
+  country: string;
+
+  @Column({
+    nullable: true,
+  })
+  region: string;
+
+  @Column({
+    nullable: true,
+  })
+  additionalAddress: string;
+
+  @Column({
+    nullable: true,
+  })
+  city: string;
+
+  @Column({
+    nullable: true,
+  })
+  postalCode: number;
+
+  @Column({
+    default: true,
+  })
+  firstTimeLogin: boolean;
 }

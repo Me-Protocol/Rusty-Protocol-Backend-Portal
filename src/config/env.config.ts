@@ -42,6 +42,13 @@ export const TWILIO_MSG_SID = env.get('TWILIO_MSG_SID').asString();
 export const SENDGRID_API_KEY = env.get('SENDGRID_API_KEY').asString();
 export const SENDGRID_EMAIL = env.get('SENDGRID_EMAIL').asString();
 
+export const ELASTIC_MAIL_USERNAME = env
+  .get('ELASTIC_MAIL_USERNAME')
+  .asString();
+export const ELASTIC_MAIL_PASSWORD = env
+  .get('ELASTIC_MAIL_PASSWORD')
+  .asString();
+
 export const TWITTER_CONSUMER_KEY = env.get('TWITTER_CONSUMER_KEY').asString();
 export const TWITTER_CONSUMER_SECRET = env
   .get('TWITTER_CONSUMER_SECRET')
@@ -123,6 +130,6 @@ export const REDIS_USERNAME = env.get('REDIS_USERNAME').asString();
 export const REDIS_PREFIX = env.get('REDIS_PREFIX').asString();
 export const REDIS_TTL = env.get('REDIS_TTL').asString();
 
-export const SENTRY_DNS = env.get('SENTRY_DNS').asString();
-
-export const TASK_QUEUE = env.get('TASK_QUEUE').asString();
+export const HMT_SITE_KEY = env.get('HMT_SITE_KEY').asString();
+export const HMT_JOB_API_KEY = env.get('HMT_JOB_API_KEY').asString();
+export const RUNTIME_URL = env.get('RUNTIME_URL').asString();

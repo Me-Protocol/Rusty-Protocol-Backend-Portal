@@ -12,6 +12,8 @@ import {
   Post,
   Res,
   ParseUUIDPipe,
+  Delete,
+  HttpException,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
@@ -48,8 +50,8 @@ export class BrandManagementController {
   }
 
   @Get()
-  async getAllBrands(@Query(ValidationPipe) query: FilterBrandDto) {
-    return await this.brandAccountManagementService.getAllBrands(query);
+  async getAllFilteredBrands(@Query(ValidationPipe) query: FilterBrandDto) {
+    return await this.brandAccountManagementService.getAllFilteredBrands(query);
   }
 
   @UseGuards(AuthGuard())
@@ -59,7 +61,7 @@ export class BrandManagementController {
   }
 
   @UseGuards(BrandJwtStrategy)
-  @Get('owner')
+  @Get('member/roles/owner')
   async getBrandOwner(@Req() req: any) {
     const brandId = req.user.brand.id;
     return await this.brandAccountManagementService.getBrandOwner(brandId);
@@ -93,17 +95,29 @@ export class BrandManagementController {
   ) {
     body.brandMemberId = id;
     body.brandId = req.user.brand.id;
+
+    const user = req.user as User;
+    const brandOwner = await this.brandAccountManagementService.getBrandOwner(
+      body.brandId,
+    );
+
+    if (brandOwner.id !== user.id) {
+      throw new HttpException(
+        "You don't have permission to update this member",
+        403,
+      );
+    }
+
     return await this.brandAccountManagementService.updateBrandMember(body);
   }
 
   @UseGuards(BrandJwtStrategy)
   @Put('member')
   async updateBrandMemberDetail(
-    @Param('id') id: string,
     @Req() req: any,
     @Body(ValidationPipe) body: UpdateMemberDto,
   ) {
-    body.brandMemberId = id;
+    body.brandMemberId = req.user.brandMember.id;
     body.brandId = req.user.brand.id;
     return await this.brandAccountManagementService.updateBrandMember(body);
   }
@@ -118,6 +132,17 @@ export class BrandManagementController {
     body.brandId = user.brand.id;
 
     return await this.brandAccountManagementService.createBrandMember(body);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Delete('member/:id')
+  async removeBrandMember(@Req() req: any, @Param('id') id: string) {
+    const user = req.user as User;
+
+    return await this.brandAccountManagementService.removeBrandMember(
+      user.brand.id,
+      id,
+    );
   }
 
   @UseGuards(BrandJwtStrategy)
@@ -144,7 +169,9 @@ export class BrandManagementController {
       brandId,
     );
 
-    return res.redirect(process.env.CLIENT_APP_URI);
+    return res
+      .status(302)
+      .redirect(`${process.env.BUSINESS_APP_URL}/create-password`);
   }
 
   @Get('member/join/:email/:brandId')
@@ -159,7 +186,9 @@ export class BrandManagementController {
       brandId,
     );
 
-    return res.redirect(process.env.CLIENT_APP_URI);
+    return res
+      .status(302)
+      .redirect(`${process.env.BUSINESS_APP_URL}/create-password`);
   }
 
   @UseGuards(BrandJwtStrategy)

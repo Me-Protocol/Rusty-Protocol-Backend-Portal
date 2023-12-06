@@ -23,15 +23,15 @@ export class CollectionManagementService {
   }
 
   async findAll(query: FIlterCollectionDto) {
-    return await this.collectionService.findAll(
-      query.userId,
-      query.brandId,
-      query.page,
-      query.limit,
-      query.order,
-      query.search,
-      query.status,
-    );
+    return await this.collectionService.findAll({
+      userId: query.userId,
+      brandId: query.brandId,
+      page: query.page,
+      limit: query.limit,
+      order: query.order,
+      search: query.search,
+      status: query.status,
+    });
   }
 
   async findOne(id: string, userId: string, brandId: string) {

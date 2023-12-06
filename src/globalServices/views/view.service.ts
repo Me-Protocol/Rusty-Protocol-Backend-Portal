@@ -2,20 +2,50 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { View } from './entities/view.entity';
+import { Offer } from '../offer/entities/offer.entity';
 
 @Injectable()
 export class ViewsService {
   constructor(
     @InjectRepository(View)
     private readonly viewsRepository: Repository<View>,
+
+    @InjectRepository(Offer)
+    private readonly offerRepo: Repository<Offer>,
   ) {}
 
   async createView(offerId: string, sessionId: string, userId?: string) {
-    const view = new View();
-    view.offerId = offerId;
-    view.sessionId = sessionId;
-    view.userId = userId;
-    return await this.viewsRepository.save(view);
+    const checkView = await this.checkIfOfferHasBeenViewed(
+      offerId,
+      sessionId,
+      userId,
+    );
+
+    if (!checkView) {
+      const view = new View();
+      view.offerId = offerId;
+      view.sessionId = sessionId;
+      view.userId = userId;
+
+      const offer = await this.offerRepo.findOne({
+        where: {
+          id: offerId,
+        },
+      });
+
+      await this.offerRepo.update(
+        {
+          id: offerId,
+        },
+        {
+          viewCount: offer.viewCount + 1,
+        },
+      );
+
+      return await this.viewsRepository.save(view);
+    }
+
+    return checkView;
   }
 
   // get sessions recently viewed

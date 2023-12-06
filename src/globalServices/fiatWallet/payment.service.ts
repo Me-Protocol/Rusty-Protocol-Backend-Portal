@@ -4,6 +4,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PaymentMethod } from './entities/paymentMethod';
 import { Repository } from 'typeorm';
 import { logger } from '../logger/logger.service';
+import { Transaction } from './entities/transaction.entity';
+import {
+  StatusType,
+  TransactionSource,
+  TransactionsType,
+} from '@src/utils/enums/Transactions';
+import { FiatWalletService } from './fiatWallet.service';
+import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -13,6 +21,9 @@ export class PaymentService {
   constructor(
     @InjectRepository(PaymentMethod)
     private readonly paymentRepo: Repository<PaymentMethod>,
+
+    @InjectRepository(Transaction)
+    private readonly transactionRepo: Repository<Transaction>,
   ) {}
 
   async createAccount() {
@@ -122,5 +133,60 @@ export class PaymentService {
 
   async getPaymentIntent(paymentIntentId: string) {
     return stripe.paymentIntents.retrieve(paymentIntentId);
+  }
+
+  async getPaymentMethodsFromStripe(wallet: FiatWallet) {
+    return await stripe.paymentMethods.list({
+      customer: wallet.stripeCustomerId,
+      type: 'card',
+    });
+  }
+
+  async deletePaymentMethod(paymentMethodId: string) {
+    return await stripe.paymentMethods.detach(paymentMethodId);
+  }
+
+  generateTransactionCode() {
+    const code = Math.floor(100000 + Math.random() * 900000);
+    return process.env.TNX_PREFIX + '-' + code;
+  }
+
+  async chargePaymentMethod({
+    amount,
+    paymentMethodId,
+    wallet,
+    narration,
+  }: {
+    amount: number;
+    paymentMethodId: string;
+    wallet: FiatWallet;
+    narration: string;
+  }) {
+    const paymentIntent = await this.createAutoCardChargePaymentIntent(
+      paymentMethodId,
+      amount,
+      wallet.stripeCustomerId,
+    );
+
+    await this.confirmPaymentIntent(paymentIntent.id);
+
+    const paymentDetail = await this.getPaymentIntent(paymentIntent.id);
+
+    // create transaction
+
+    const transaction = new Transaction();
+    transaction.amount = amount;
+    transaction.balance = wallet.balance;
+    transaction.status = StatusType.SUCCEDDED;
+    transaction.transactionType = TransactionsType.DEBIT;
+    transaction.paymentRef = this.generateTransactionCode();
+    transaction.narration = narration;
+    transaction.walletId = wallet.id;
+    transaction.paymentMethod = PaymentMethodEnum.STRIPE;
+    transaction.source = TransactionSource.AUTO_TOPUP;
+
+    await this.transactionRepo.save(transaction);
+
+    return paymentDetail;
   }
 }

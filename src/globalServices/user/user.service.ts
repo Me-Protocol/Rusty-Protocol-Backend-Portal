@@ -197,4 +197,13 @@ export class UserService {
       relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
     });
   }
+
+  async getUserByIds(ids: string[]): Promise<User[]> {
+    return await this.userRepository.find({
+      where: {
+        id: In(ids),
+      },
+      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
+    });
+  }
 }

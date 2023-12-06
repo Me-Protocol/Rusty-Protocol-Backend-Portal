@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, LessThan, Repository } from 'typeorm';
 import { Offer } from './entities/offer.entity';
 import { UserService } from '../user/user.service';
 import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
@@ -10,6 +10,10 @@ import { OfferFilter, OfferSort } from '@src/utils/enums/OfferFiilter';
 import { CustomerService } from '../customer/customer.service';
 import { ProductService } from '../product/product.service';
 import { Order } from '../order/entities/order.entity';
+import { ElasticIndex } from '@src/modules/search/index/search.index';
+import { offerIndex } from '@src/modules/search/interface/search.interface';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { BrandCustomer } from '../brand/entities/brand_customer.entity';
 
 @Injectable()
 export class OfferService {
@@ -20,10 +24,14 @@ export class OfferService {
     @InjectRepository(ProductImage)
     private readonly productImageRepo: Repository<ProductImage>,
 
+    @InjectRepository(BrandCustomer)
+    private readonly brandCustomerRepo: Repository<BrandCustomer>,
+
     private readonly userService: UserService,
     private readonly viewService: ViewsService,
     private readonly customerService: CustomerService,
     private readonly productService: ProductService,
+    private readonly elasticIndex: ElasticIndex,
   ) {}
 
   async saveOffer(offer: Offer) {
@@ -36,6 +44,40 @@ export class OfferService {
         id: offer.id,
       },
       offer,
+    );
+  }
+
+  async updateOfferViews(offerId: string) {
+    const offer = await this.offerRepo.findOne({
+      where: {
+        id: offerId,
+      },
+    });
+
+    return this.offerRepo.update(
+      {
+        id: offerId,
+      },
+      {
+        viewCount: offer.viewCount + 1,
+      },
+    );
+  }
+
+  async updateOfferLikeCount(offerId: string) {
+    const offer = await this.offerRepo.findOne({
+      where: {
+        id: offerId,
+      },
+    });
+
+    return this.offerRepo.update(
+      {
+        id: offerId,
+      },
+      {
+        likeCount: offer.likeCount + 1,
+      },
     );
   }
 
@@ -89,6 +131,7 @@ export class OfferService {
     const offer = await this.offerRepo.findOne({
       where: {
         offerCode,
+        status: ProductStatus.PUBLISHED,
       },
       relations: [
         'brand',
@@ -101,13 +144,10 @@ export class OfferService {
     });
 
     if (!offer) {
-      return null;
+      throw new Error('Offer not found');
     }
 
     await this.viewService.createView(offer.id, sessionId, userId);
-
-    offer.viewCount = offer.viewCount + 1;
-    await this.offerRepo.save(offer);
 
     return offer;
   }
@@ -191,7 +231,9 @@ export class OfferService {
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
       .leftJoinAndSelect('offer.reward', 'reward')
-      .where('offer.status = :status', { status: ItemStatus.PUBLISHED });
+      .where('offer.status = :status', { status: ItemStatus.PUBLISHED })
+      // brand.listOnStore is used to check if brand is active
+      .andWhere('brand.listOnStore = :listOnStore', { listOnStore: true });
 
     if (category) {
       offersQuery.andWhere('product.categoryId = :categoryId', {
@@ -213,9 +255,9 @@ export class OfferService {
       offersQuery.andWhere('offer.viewCount > :viewCount', {
         viewCount: 3, // TODO: Change this to 100,
       });
-      offersQuery.andWhere('offer.likeCount > :likeCount', {
-        likeCount: 2, // TODO: Change this to 100,
-      });
+      // offersQuery.andWhere('offer.likeCount > :likeCount', {
+      //   likeCount: 2, // TODO: Change this to 100,
+      // });
       offersQuery.orderBy('offer.updatedAt', 'DESC');
     }
 
@@ -269,6 +311,9 @@ export class OfferService {
         where: {
           status: ProductStatus.PUBLISHED,
           updatedAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
+          brand: {
+            listOnStore: true,
+          },
         },
         take: 10,
         order: {
@@ -335,6 +380,9 @@ export class OfferService {
               id: In(interests),
             },
           },
+          brand: {
+            listOnStore: true,
+          },
         },
         skip: (page - 1) * limit,
         take: limit,
@@ -380,6 +428,9 @@ export class OfferService {
     orderBy: OfferFilter,
     order: string,
     search: string,
+    productId?: string,
+    startDate?: Date,
+    endDate?: Date,
   ) {
     const offersQuery = this.offerRepo
       .createQueryBuilder('offer')
@@ -428,6 +479,19 @@ export class OfferService {
     if (search) {
       offersQuery.andWhere('offer.name LIKE :search', {
         search: `%${search}%`,
+      });
+    }
+
+    if (productId) {
+      offersQuery.andWhere('offer.productId = :productId', {
+        productId,
+      });
+    }
+
+    if (startDate && endDate) {
+      offersQuery.andWhere('offer.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
       });
     }
 
@@ -567,6 +631,15 @@ export class OfferService {
       customer.totalRedeemed += 1;
       customer.totalRedemptionAmount = +totalRedemptionAmountParse;
 
+      const brandCustomer = await this.brandCustomerRepo.findOne({
+        where: { userId: userId, brandId: offer.brandId },
+      });
+
+      brandCustomer.totalRedeemed += 1;
+      brandCustomer.totalRedemptionAmount = +totalRedemptionAmountParse;
+
+      await this.brandCustomerRepo.save(brandCustomer);
+
       await this.offerRepo.save(offer);
 
       await this.customerService.save(customer);
@@ -597,5 +670,44 @@ export class OfferService {
     await this.productService.saveProduct(product);
 
     // await this.offerRepo.save(offer);
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async syncElasticSearchIndex() {
+    const currentDate = new Date();
+
+    const offersQuery = this.offerRepo
+      .createQueryBuilder('offer')
+      .where('offer.endDate < :currentDate', { currentDate })
+      .andWhere('offer.status = :status', { status: ProductStatus.PUBLISHED })
+      .leftJoinAndSelect('offer.product', 'product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.subCategory', 'subCategory')
+      .leftJoinAndSelect('offer.offerImages', 'offerImages')
+      .leftJoinAndSelect('offer.brand', 'brand')
+      .leftJoinAndSelect('offer.reward', 'reward');
+
+    const allOffers = await offersQuery.getMany();
+    this.elasticIndex.batchCreateIndex(allOffers, offerIndex);
+  }
+
+  // get offers where the end date has passed and the status is expired
+  // TODO: We might need to change the cron expression to run every 5 minutes
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async updateOfferStatus() {
+    console.log('Updating offer status');
+
+    const offers = await this.offerRepo.find({
+      where: {
+        endDate: LessThan(new Date()),
+        status: ProductStatus.PUBLISHED,
+      },
+    });
+
+    for (const offer of offers) {
+      console.log('Updating offer status', offer.id);
+      offer.status = ProductStatus.EXPIRED;
+      await this.offerRepo.save(offer);
+    }
   }
 }
