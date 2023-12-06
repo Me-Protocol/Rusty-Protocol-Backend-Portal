@@ -81,9 +81,9 @@ export class LikeManagementService {
           // return this.response.error(res, usersCollection, 'DDD');
         } else {
           const newCollection = await this.collectionService.create({
-            name: 'My Collection',
+            name: 'My Favourites',
             userId: body.userId,
-            description: 'My Collection',
+            description: 'Your curated list of awesome products',
             image: offer.offerImages[0]?.url,
             status: ItemStatus.PRIVATE,
             isDefault: true,
