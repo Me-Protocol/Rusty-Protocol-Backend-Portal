@@ -22,6 +22,7 @@ export class CompleteOrderDto {
   @ApiProperty({
     type: 'object',
   })
+  @IsOptional()
   @IsObject({
     each: true,
   })
