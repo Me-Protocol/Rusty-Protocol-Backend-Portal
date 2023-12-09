@@ -135,6 +135,7 @@ export class OrderService {
 
     let percentageRedemption;
     let totalRedeemedAmount;
+    const ordersPerDay = {};
 
     if (offerId) {
       // percentage redemption based on offer inventory
@@ -160,11 +161,21 @@ export class OrderService {
       totalRedeemedAmount = redeemedAmount.reduce((acc, curr) => {
         return acc + curr.points;
       }, 0);
+
+      orders.forEach((follower) => {
+        const date = follower.createdAt.toISOString().split('T')[0];
+        if (ordersPerDay[date]) {
+          ordersPerDay[date] += 1;
+        } else {
+          ordersPerDay[date] = 1;
+        }
+      });
     }
 
     return {
       orders,
       total,
+      ordersPerDay,
       percentageRedemption,
       totalRedeemedAmount,
       nextPage: total > page * limit ? Number(page) + 1 : null,
