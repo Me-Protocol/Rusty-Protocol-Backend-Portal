@@ -247,9 +247,9 @@ export class TasksService {
 
       return {
         tasks,
-        page: page ? page : 1,
-        nextPage: Math.ceil(count / limit) > page ? page + 1 : null,
-        prevPage: page === 1 ? null : page - 1,
+        page: page ? +page : 1,
+        nextPage: Math.ceil(count / limit) > +page ? +page + 1 : null,
+        prevPage: +page === 1 ? null : +page - 1,
       };
     } catch (error) {
       console.log(error);
