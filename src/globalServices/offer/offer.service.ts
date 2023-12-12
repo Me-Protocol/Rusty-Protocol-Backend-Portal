@@ -674,12 +674,12 @@ export class OfferService {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async syncElasticSearchIndex() {
-    const currentDate = new Date();
+    //const currentDate = new Date();
 
     const offersQuery = this.offerRepo
       .createQueryBuilder('offer')
-      .where('offer.endDate < :currentDate', { currentDate })
-      .andWhere('offer.status = :status', { status: ProductStatus.PUBLISHED })
+      //.where('offer.endDate < :currentDate', { currentDate })
+      .where('offer.status = :status', { status: ProductStatus.PUBLISHED })
       .leftJoinAndSelect('offer.product', 'product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.subCategory', 'subCategory')
@@ -706,6 +706,7 @@ export class OfferService {
 
     for (const offer of offers) {
       console.log('Updating offer status', offer.id);
+      this.elasticIndex.deleteDocument(offerIndex, offer.id);
       offer.status = ProductStatus.EXPIRED;
       await this.offerRepo.save(offer);
     }
