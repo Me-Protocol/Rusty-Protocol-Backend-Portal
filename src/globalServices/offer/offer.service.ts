@@ -706,6 +706,7 @@ export class OfferService {
 
     for (const offer of offers) {
       console.log('Updating offer status', offer.id);
+      this.elasticIndex.deleteDocument(offerIndex, offer.id);
       offer.status = ProductStatus.EXPIRED;
       await this.offerRepo.save(offer);
     }
