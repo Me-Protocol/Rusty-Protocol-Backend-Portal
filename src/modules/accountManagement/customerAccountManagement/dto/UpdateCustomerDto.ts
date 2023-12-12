@@ -46,7 +46,6 @@ export class UpdateCustomerDto {
   profilePicture: string;
 
   @ApiProperty()
-  @IsOptional()
   @IsString()
   walletAddress: string;
 

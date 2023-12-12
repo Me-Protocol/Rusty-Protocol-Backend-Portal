@@ -44,6 +44,7 @@ export class RewarderService {
         addresses,
         amounts,
         signer,
+        RUNTIME_URL,
       );
 
       const distribute = await mutate_with_url(distributeData, RUNTIME_URL);

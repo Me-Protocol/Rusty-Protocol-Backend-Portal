@@ -20,15 +20,15 @@ import {
         // transport: config.get("MAIL_TRANSPORT"),
         // or
         transport: {
-          host: 'smtp.elasticemail.com',
-          port: 2525,
+          host: 'smtp.sendgrid.net',
+          secure: false,
           auth: {
-            user: ELASTIC_MAIL_USERNAME,
-            pass: ELASTIC_MAIL_PASSWORD,
+            user: 'apikey',
+            pass: SENDGRID_API_KEY,
           },
         },
         defaults: {
-          from: `"Me Protocol" <${ELASTIC_MAIL_USERNAME}>`,
+          from: `"Me Marketplace" <${SENDGRID_EMAIL}>`,
         },
         template: {
           // direction in src/views/template/mail.hbs
