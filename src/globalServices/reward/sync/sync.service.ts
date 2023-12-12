@@ -24,7 +24,6 @@ import { GetTreasuryPermitDto } from '@src/modules/storeManagement/reward/dto/Pu
 import { BrandService } from '@src/globalServices/brand/brand.service';
 import {
   distribute_reward_specific_with_url,
-  mutate_n_format,
   mutate_n_format_with_url,
   mutate_with_url,
   transfer_reward_with_url,
