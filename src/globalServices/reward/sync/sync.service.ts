@@ -1,6 +1,6 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Raw, Repository } from 'typeorm';
+import { Between, Raw, Repository } from 'typeorm';
 import slugify from 'slugify';
 import { SyncBatch } from '../entities/syncBatch.entity';
 import { RegistryHistory } from '../entities/registryHistory.entity';
@@ -756,9 +756,7 @@ export class SyncRewardService {
           userId,
         },
         transactionType: transactionsType,
-        createdAt: Raw(
-          (alias) => `DATE(${alias}) BETWEEN '${startDate}' AND '${endDate}'`,
-        ),
+        createdAt: Between(startDate, endDate),
       },
       relations: ['rewardRegistry', 'rewardRegistry.reward'],
     });

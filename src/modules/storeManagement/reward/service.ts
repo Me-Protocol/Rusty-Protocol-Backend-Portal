@@ -695,7 +695,6 @@ export class RewardManagementService {
 
     await Promise.all(
       syncData.map(async (syncDataJSON) => {
-        // @ts-ignore
         const syncData = JSON.parse(syncDataJSON);
 
         let user: User;

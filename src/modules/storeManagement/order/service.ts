@@ -42,6 +42,7 @@ import {
   redistributed_failed_tx_with_url,
 } from '@developeruche/runtime-sdk';
 import { RUNTIME_URL } from '@src/config/env.config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class OrderManagementService {
@@ -58,6 +59,7 @@ export class OrderManagementService {
     private readonly fiatWalletService: FiatWalletService,
     private readonly rewardService: RewardService,
     private readonly analyticsRecorder: AnalyticsRecorderService,
+    private eventEmitter: EventEmitter2,
 
     @InjectRepository(Transaction)
     private readonly transactionRepo: Repository<Transaction>,
@@ -280,6 +282,12 @@ export class OrderManagementService {
       const order = await this.orderService.saveOrder(orderRecord);
 
       await this.offerService.reduceInventory(offer, order);
+
+      this.eventEmitter.emit('process.bill.create', {
+        brandId: offer.brandId,
+        type: 'redeem-offer',
+        offerId: offerId,
+      });
 
       return order;
     } catch (error) {
