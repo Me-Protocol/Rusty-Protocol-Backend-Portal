@@ -48,6 +48,7 @@ export class UpdateCustomerDto {
   @ApiProperty()
   @IsOptional()
   @IsString()
+  @IsOptional()
   walletAddress: string;
 
   @ApiProperty()
