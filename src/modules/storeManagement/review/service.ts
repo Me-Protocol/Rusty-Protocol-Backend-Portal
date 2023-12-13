@@ -4,12 +4,14 @@ import { ReviewDto } from './dto/ReviewDto.dto';
 import { OfferService } from '@src/globalServices/offer/offer.service';
 import { Review } from '@src/globalServices/review/entities/review.entity';
 import { FilterReviewDto } from './dto/FilterReviewsDto.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ReviewManagementService {
   constructor(
     private readonly reviewService: ReviewService,
     private readonly offerService: OfferService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async createReview({ title, userId, offerId, review, rating }: ReviewDto) {
@@ -26,6 +28,12 @@ export class ReviewManagementService {
       reviewRecord.review = review;
       reviewRecord.rating = rating;
       reviewRecord.brandId = offer.brandId;
+
+      this.eventEmitter.emit('process.bill.create', {
+        brandId: offer.brandId,
+        type: 'redeem-view',
+        offerId: offerId,
+      });
 
       return await this.reviewService.createReview(reviewRecord);
     } catch (error) {
