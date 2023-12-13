@@ -695,7 +695,7 @@ export class RewardManagementService {
 
     await Promise.all(
       syncData.map(async (syncDataJSON) => {
-        const syncData = JSON.parse(syncDataJSON);
+        const syncData = JSON.parse(JSON.stringify(syncDataJSON));
 
         let user: User;
 
