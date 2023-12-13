@@ -50,6 +50,7 @@ export class RewarderService {
       const distribute = await mutate_with_url(distributeData, RUNTIME_URL);
 
       if (distribute.data?.error) {
+        console.log(distribute.data?.error);
         throw new Error('Rewarder service is down.');
       } else {
         return distribute.data;

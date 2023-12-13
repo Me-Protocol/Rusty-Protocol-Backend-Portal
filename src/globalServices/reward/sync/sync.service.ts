@@ -607,6 +607,8 @@ export class SyncRewardService {
     amount: number;
     email: string;
   }) {
+    // 1. The function distributeRewardWithPrivateKey takes in the rewardId, walletAddress, amount, and email as parameters. The amount parameter is the amount of rewards you want to send to the wallet address.
+    // 2. We then use the rewardId to get the reward and check if the brand has enough balance to distribute rewards.
     const reward = await this.rewardService.findOneById(rewardId);
 
     const canPayCost = await this.fiatWalletService.checkCanPayCost(
@@ -617,6 +619,7 @@ export class SyncRewardService {
       return 'Brand cannot pay cost';
     }
 
+    //3. If the brand has enough balance, we use the redistributionKeyIdentifierId to get the private key identifier and decrypt the private key.
     const keyIdentifier = await this.rewardService.getKeyIdentifier(
       reward.redistributionKeyIdentifierId,
       KeyIdentifierType.REDISTRIBUTION,
@@ -624,6 +627,7 @@ export class SyncRewardService {
     const decryptedPrivateKey = await this.keyManagementService.decryptKey(
       keyIdentifier.identifier,
     );
+    // 4. We then use the private key to sign the transaction and distribute the rewards to the wallet address.
     const signer = new Wallet(decryptedPrivateKey);
 
     const distributionData = await transfer_reward_with_url(
@@ -717,9 +721,13 @@ export class SyncRewardService {
       },
     });
 
+    //return where rewardRegistry > 0;
     return rewardRegistry.filter(
-      (registry) => Number(registry.undistributedBalance) > 0,
+      (registry) => registry.undistributedBalance > 0,
     );
+    // return rewardRegistry.filter(
+    //   (registry) => Number(registry.undistributedBalance) > 0,
+    // );
   }
 
   // getUserRegistry(userId: string, rewardId: string) {

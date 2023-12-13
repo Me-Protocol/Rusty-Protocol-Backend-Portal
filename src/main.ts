@@ -14,7 +14,7 @@ import { TracingInterceptor } from './interceptors/tracing.interceptor';
 import helmet from 'helmet';
 import { NestExpressApplication } from '@node_modules/@nestjs/platform-express';
 
-const cloudinary = require('cloudinary');
+import cloudinary from 'cloudinary';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
