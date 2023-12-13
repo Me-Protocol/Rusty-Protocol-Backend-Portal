@@ -48,7 +48,6 @@
     "@nestjs/swagger": "^7.0.2",
     "@nestjs/typeorm": "^10.0.0",
     "@nestjs/websockets": "9.1.6",
-    "@opentelemetry/tracing": "^0.24.0",
     "@sentry/node": "^7.73.0",
     "@sentry/profiling-node": "^1.2.1",
     "@sentry/tracing": "^7.73.0",
