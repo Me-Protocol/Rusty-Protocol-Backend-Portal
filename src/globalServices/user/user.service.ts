@@ -29,6 +29,17 @@ export class UserService {
     return await this.userRepository.save(user);
   }
 
+  async getUserByWalletAddress(walletAddress: string) {
+    return await this.userRepository.findOne({
+      where: {
+        customer: {
+          walletAddress,
+        },
+      },
+      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
+    });
+  }
+
   async deleteDeviceById(userId: string, id: string): Promise<any> {
     const device = await this.deviceRepository.findOne({
       where: {

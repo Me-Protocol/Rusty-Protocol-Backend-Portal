@@ -32,6 +32,9 @@ import { BrandService } from '@src/globalServices/brand/brand.service';
 import { AnalyticsRecorderService } from '@src/globalServices/analytics/analytic_recorder.service';
 import { RewardCirculation } from '@src/globalServices/analytics/entities/reward_circulation';
 import { UpdateRewardDto } from './dto/updateRewardDto';
+import { NotificationService } from '@src/globalServices/notification/notification.service';
+import { Notification } from '@src/globalServices/notification/entities/notification.entity';
+import { NotificationType } from '@src/utils/enums/notification.enum';
 
 @Injectable()
 export class RewardManagementService {
@@ -43,6 +46,7 @@ export class RewardManagementService {
     private readonly fiatWalletService: FiatWalletService,
     private readonly brandService: BrandService,
     private readonly analyticsRecorder: AnalyticsRecorderService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createReward(body: CreateRewardDto) {
@@ -879,5 +883,58 @@ export class RewardManagementService {
   async issueAndDistributeReward(body: UpdateBatchDto, apiKey: ApiKey) {
     await this.updateBatch(body);
     return await this.distributeWithApiKey(apiKey, body.rewardId);
+  }
+
+  async completeDistribution({
+    users,
+    rewardId,
+  }: {
+    users: {
+      wallet: string;
+      amount: number;
+    }[];
+    rewardId: string;
+  }) {
+    const reward = await this.rewardService.findOneById(rewardId);
+
+    for (const user of users) {
+      const userDetail = await this.userService.getUserByWalletAddress(
+        user.wallet,
+      );
+
+      if (userDetail) {
+        this.rewardDistrbutedEmail({
+          user: userDetail,
+          reward,
+          amount: user.amount,
+        });
+      }
+    }
+
+    return 'ok';
+  }
+
+  async rewardDistrbutedEmail({
+    user,
+    reward,
+    amount,
+  }: {
+    user: User;
+    reward: Reward;
+    amount: number;
+  }) {
+    const notification = new Notification();
+    notification.userId = user.id;
+    notification.message = `Hello ${user?.customer?.name} you just recieved ${amount} ${reward.rewardSymbol} from ${reward.brand.name}`;
+    notification.type = NotificationType.POINT;
+    notification.title = 'Order Failed';
+    notification.icon = reward.rewardImage;
+    notification.emailMessage = /* html */ `
+              <div>
+                <p>Hello ${user?.customer?.name},</p>
+                <p>You just recieved ${amount} ${reward.rewardSymbol} from ${reward.brand.name}<p>
+              `;
+
+    await this.notificationService.createNotification(notification);
   }
 }

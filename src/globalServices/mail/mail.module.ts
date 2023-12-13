@@ -28,7 +28,7 @@ import {
           },
         },
         defaults: {
-          from: `"Me Protocol" <${SENDGRID_EMAIL}>`,
+          from: `"Me Marketplace" <${SENDGRID_EMAIL}>`,
         },
         template: {
           // direction in src/views/template/mail.hbs
