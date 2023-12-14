@@ -589,9 +589,9 @@ export class AuthenticationService {
     }
   }
 
-  private async validateVerificationForLogin(user: User): Promise<any> {
+  private async validateVerificationForLogin(user: User) {
     if (user.email && !user.emailVerified) {
-      await this.sendEmailVerificationCode(user.email, user.customer.name);
+      await this.sendEmailVerificationCode(user.email, user.username);
 
       const token = await this.generateAndSignToken(user);
 
@@ -626,7 +626,11 @@ export class AuthenticationService {
       const user = await this.getUserForLogin(identifier, password);
       this.validateUserForLogin(user, identifier);
       await this.validatePasswordForLogin(password, user);
-      this.validateVerificationForLogin(user);
+      const isVerified = await this.validateVerificationForLogin(user);
+
+      if (isVerified.verifyToken) {
+        return isVerified;
+      }
 
       if (user.is2faEnabled) {
         await this.handleTwoFA(user);
