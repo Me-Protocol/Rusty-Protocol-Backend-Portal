@@ -589,9 +589,16 @@ export class AuthenticationService {
     }
   }
 
-  private validateVerificationForLogin(user: User): void {
+  private async validateVerificationForLogin(user: User): Promise<any> {
     if (user.email && !user.emailVerified) {
-      throw new Error('Email not verified');
+      await this.sendEmailVerificationCode(user.email, user.customer.name);
+
+      const token = await this.generateAndSignToken(user);
+
+      return {
+        message: 'Verify email address',
+        verifyToken: token,
+      };
     }
 
     if (user.phone && !user.phoneVerified) {
