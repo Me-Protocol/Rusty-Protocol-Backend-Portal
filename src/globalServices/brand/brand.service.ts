@@ -279,10 +279,11 @@ export class BrandService {
     };
   }
 
-  async getBrandMemberByUserEmail(email: string) {
+  async getBrandMemberByUserEmail(email: string, brandId: string) {
     return await this.brandMemberRepo.findOne({
       where: {
         verifyingEmail: email,
+        brandId,
       },
     });
   }

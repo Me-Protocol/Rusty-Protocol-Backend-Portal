@@ -367,7 +367,7 @@ export class AuthenticationService {
   }
 
   private validateVerificationCode(user: User, code: number): void {
-    if (user.accountVerificationCode !== code) {
+    if (user.accountVerificationCode !== Number(code)) {
       throw new Error('Invalid code');
     }
   }
@@ -1147,7 +1147,7 @@ export class AuthenticationService {
       throw new HttpException('User not found', 404);
     }
 
-    if (code !== user.accountVerificationCode) {
+    if (Number(code) !== user.accountVerificationCode) {
       throw new HttpException('Code is invalid', 400);
     }
 
