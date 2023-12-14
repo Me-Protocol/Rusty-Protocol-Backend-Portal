@@ -391,6 +391,7 @@ export class BrandAccountManagementService {
         query.page,
         query.limit,
         query.filterBy,
+        query.sort,
       );
     } catch (error) {
       console.log(error);

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsUUID } from 'class-validator';
+import { IsObject, IsOptional, IsString, IsUUID } from 'class-validator';
+import { FindOptionsOrderValue } from 'typeorm';
 
 export class FilterFollowDto {
   @ApiProperty()
@@ -13,6 +14,13 @@ export class FilterFollowDto {
   @ApiProperty()
   @IsUUID()
   brandId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsObject()
+  sort: {
+    createdAt: FindOptionsOrderValue;
+  };
 }
 
 export class FilteUserFollowDto {
