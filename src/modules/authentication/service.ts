@@ -628,7 +628,7 @@ export class AuthenticationService {
       await this.validatePasswordForLogin(password, user);
       const isVerified = await this.validateVerificationForLogin(user);
 
-      if (isVerified.verifyToken) {
+      if (isVerified?.verifyToken) {
         return isVerified;
       }
 
