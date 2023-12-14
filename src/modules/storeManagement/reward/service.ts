@@ -133,17 +133,9 @@ export class RewardManagementService {
     }
 
     // TODO generate private key and public key
-    let createRedistributionKey: {
-      pubKey: string;
-      privKey: string;
-    };
-    let createBountyKey: {
-      pubKey: string;
-      privKey: string;
-    };
 
-    createBountyKey = generateWalletRandom();
-    createRedistributionKey = generateWalletRandom();
+    const createBountyKey = generateWalletRandom();
+    const createRedistributionKey = generateWalletRandom();
 
     const { pubKey, privKey } = createRedistributionKey;
     const { pubKey: bountyPubKey, privKey: bountyPrivKey } = createBountyKey;
@@ -561,8 +553,9 @@ export class RewardManagementService {
     // Pick the rewards whose users exists and update balacne to 0
     return await Promise.all(
       batch.syncData.map(async (syncDataJSON) => {
-        // @ts-ignore
-        const syncData = JSON.parse(syncDataJSON) as typeof syncDataJSON;
+        const syncData = JSON.parse(
+          JSON.stringify(syncDataJSON),
+        ) as typeof syncDataJSON;
 
         let user: User;
 
@@ -695,7 +688,7 @@ export class RewardManagementService {
 
     await Promise.all(
       syncData.map(async (syncDataJSON) => {
-        const syncData = JSON.parse(syncDataJSON);
+        const syncData = JSON.parse(JSON.stringify(syncDataJSON));
 
         let user: User;
 

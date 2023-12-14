@@ -1,12 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { TwoFAType } from '@src/utils/enums/TwoFAType';
-import {
-  IsBoolean,
-  IsEnum,
-  IsString,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
+import { IsBoolean, IsEnum } from 'class-validator';
 
 export class Enable2FADto {
   @ApiProperty()

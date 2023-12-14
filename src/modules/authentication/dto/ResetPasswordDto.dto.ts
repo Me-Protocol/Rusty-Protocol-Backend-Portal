@@ -1,4 +1,4 @@
-import { IsString, MaxLength, MinLength } from 'class-validator';
+import { IsNumberString, IsString } from 'class-validator';
 import { PasswordDto } from './PasswordDto.dto';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -8,11 +8,6 @@ export class ResetPasswordDto extends PasswordDto {
   userId: string;
 
   @ApiProperty()
-  @MinLength(4, {
-    message: 'Code is invalid',
-  })
-  @MaxLength(4, {
-    message: 'Code is invalid',
-  })
+  @IsNumberString()
   code: number;
 }

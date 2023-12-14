@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { FilterBrandCustomer } from '@src/utils/enums/FilterBrandCustomer';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsObject, IsOptional, IsString } from 'class-validator';
+import { FindOptionsOrderValue } from 'typeorm';
 
 export class FilterCustomerDto {
   @ApiProperty({
@@ -22,4 +23,11 @@ export class FilterCustomerDto {
   limit: number;
 
   brandId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsObject()
+  sort: {
+    createdAt: FindOptionsOrderValue;
+  };
 }
