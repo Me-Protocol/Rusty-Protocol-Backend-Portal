@@ -35,14 +35,15 @@ export class RewarderService {
       const decryptedPrivateKey = await this.keyManagementService.decryptKey(
         keyIdentifier.identifier,
       );
+
       const signer = new Wallet(decryptedPrivateKey);
 
       console.log(
         addresses,
         rewardId,
         amounts,
-        signer.address,
         decryptedPrivateKey,
+        signer.address,
       );
 
       const distributeData = await distribute_bounty_by_reward_address_magic(

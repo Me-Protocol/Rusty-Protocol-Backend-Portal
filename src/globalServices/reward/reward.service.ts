@@ -124,6 +124,7 @@ export class RewardService {
         totalDistributedSupply: true,
         brandId: true,
         totalRedeemedSupply: true,
+        acceptedCustomerIdentitytypes: true,
       },
     });
   }
