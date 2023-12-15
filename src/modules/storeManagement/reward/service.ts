@@ -367,10 +367,11 @@ export class RewardManagementService {
 
   async updateBatch(body: UpdateBatchDto) {
     try {
-      const checkReward = await this.rewardService.findOneByIdAndBrand(
-        body.rewardId,
-        body.brandId,
-      );
+      const checkReward =
+        await this.rewardService.findOneByIdAndBrandWithSyncData(
+          body.rewardId,
+          body.brandId,
+        );
 
       if (!checkReward) {
         throw new Error('Reward not found');
@@ -553,9 +554,7 @@ export class RewardManagementService {
     // Pick the rewards whose users exists and update balacne to 0
     return await Promise.all(
       batch.syncData.map(async (syncDataJSON) => {
-        const syncData = JSON.parse(
-          JSON.stringify(syncDataJSON),
-        ) as typeof syncDataJSON;
+        const syncData = JSON.parse(syncDataJSON as any) as typeof syncDataJSON;
 
         let user: User;
 
@@ -688,7 +687,7 @@ export class RewardManagementService {
 
     await Promise.all(
       syncData.map(async (syncDataJSON) => {
-        const syncData = JSON.parse(JSON.stringify(syncDataJSON));
+        const syncData = JSON.parse(syncDataJSON as any) as typeof syncDataJSON;
 
         let user: User;
 

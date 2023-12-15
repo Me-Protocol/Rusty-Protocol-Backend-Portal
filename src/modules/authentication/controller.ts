@@ -150,7 +150,6 @@ export class AuthenticationController {
     );
   }
 
-  @ApiBearerAuth()
   @UseGuards(AuthGuard())
   @Get('me')
   async me(@Req() req: any): Promise<any> {

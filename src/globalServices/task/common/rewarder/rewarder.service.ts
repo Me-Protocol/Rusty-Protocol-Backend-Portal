@@ -25,8 +25,6 @@ export class RewarderService {
     rewardId: string;
     amounts: BigNumber[];
   }) {
-    console.log(addresses, rewardId, amounts);
-
     try {
       const reward = await this.rewardService.findOneById(rewardId);
 
@@ -38,6 +36,14 @@ export class RewarderService {
         keyIdentifier.identifier,
       );
       const signer = new Wallet(decryptedPrivateKey);
+
+      console.log(
+        addresses,
+        rewardId,
+        amounts,
+        signer.address,
+        decryptedPrivateKey,
+      );
 
       const distributeData = await distribute_bounty_by_reward_address_magic(
         reward.contractAddress,
