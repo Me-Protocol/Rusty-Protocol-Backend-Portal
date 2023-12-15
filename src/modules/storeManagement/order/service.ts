@@ -301,11 +301,13 @@ export class OrderManagementService {
     taskId,
     verifier,
     spendData,
+    rewardId,
   }: {
     orderId: string;
     taskId: string;
     verifier: OrderVerifier;
     spendData: SpendData;
+    rewardId: string;
   }) {
     try {
       const order = await this.orderService.getOrderByOrderId(orderId);
@@ -317,13 +319,14 @@ export class OrderManagementService {
       order.spendData = spendData;
       order.taskId = taskId;
       order.verifier = verifier;
+      order.rewardId = rewardId;
 
       const transaction = new Transaction();
       transaction.amount = order.points;
       transaction.transactionType = TransactionsType.DEBIT;
       transaction.paymentRef = generateTransactionCode();
       transaction.narration = `Redeem ${order.offer.name} from ${order.offer.brand.name}`;
-      transaction.rewardId = order.offer.rewardId;
+      transaction.rewardId = rewardId;
       transaction.orderId = order.id;
       transaction.paymentMethod = PaymentMethodEnum.REWARD;
       transaction.source = TransactionSource.OFFER_REDEMPTION;
@@ -390,7 +393,7 @@ export class OrderManagementService {
           if (balance.data?.result) {
             const registry = await this.syncService.findOneRegistryByUserId(
               customer.userId,
-              offer.rewardId,
+              order.rewardId,
             );
             if (registry) {
               registry.hasBalance =
@@ -450,7 +453,7 @@ export class OrderManagementService {
 
           const registry = await this.syncService.findOneRegistryByUserId(
             order.userId,
-            offer.rewardId,
+            order.rewardId,
           );
 
           const history = new RegistryHistory();
@@ -463,7 +466,7 @@ export class OrderManagementService {
           await this.syncService.saveRegistryHistory(history);
 
           const reward = await this.rewardService.getRewardByIdAndBrandId(
-            offer.rewardId,
+            order.rewardId,
             offer?.brandId,
           );
 
