@@ -228,7 +228,12 @@ export class OrderManagementService {
     }
   }
 
-  async redeemWithRewardSpend({ userId, offerId, quantity }: CreateOrderDto) {
+  async redeemWithRewardSpend({
+    userId,
+    offerId,
+    quantity,
+    rewardId,
+  }: CreateOrderDto) {
     try {
       const offer = await this.offerService.getOfferById(offerId);
 
@@ -278,6 +283,7 @@ export class OrderManagementService {
       orderRecord.points = totalAmount;
       orderRecord.quantity = quantity;
       orderRecord.brandId = offer.brandId;
+      orderRecord.rewardId = rewardId;
 
       const order = await this.orderService.saveOrder(orderRecord);
 
@@ -301,13 +307,11 @@ export class OrderManagementService {
     taskId,
     verifier,
     spendData,
-    rewardId,
   }: {
     orderId: string;
     taskId: string;
     verifier: OrderVerifier;
     spendData: SpendData;
-    rewardId: string;
   }) {
     try {
       const order = await this.orderService.getOrderByOrderId(orderId);
@@ -319,14 +323,13 @@ export class OrderManagementService {
       order.spendData = spendData;
       order.taskId = taskId;
       order.verifier = verifier;
-      order.rewardId = rewardId;
 
       const transaction = new Transaction();
       transaction.amount = order.points;
       transaction.transactionType = TransactionsType.DEBIT;
       transaction.paymentRef = generateTransactionCode();
       transaction.narration = `Redeem ${order.offer.name} from ${order.offer.brand.name}`;
-      transaction.rewardId = rewardId;
+      transaction.rewardId = order.rewardId;
       transaction.orderId = order.id;
       transaction.paymentMethod = PaymentMethodEnum.REWARD;
       transaction.source = TransactionSource.OFFER_REDEMPTION;
