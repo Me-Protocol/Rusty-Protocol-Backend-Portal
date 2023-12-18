@@ -385,17 +385,22 @@ export class OrderManagementService {
             await this.transactionRepo.save(transaction);
           }
 
+          const reward = await this.rewardService.getRewardByIdAndBrandId(
+            order.rewardId,
+            offer?.brandId,
+          );
+
           const balance = await get_user_reward_balance_with_url(
             {
               address: customer.walletAddress,
-              reward_address: offer.reward.contractAddress,
+              reward_address: reward.contractAddress,
             },
             RUNTIME_URL,
           );
 
           if (balance.data?.result) {
             const registry = await this.syncService.findOneRegistryByUserId(
-              customer.userId,
+              order.userId,
               order.rewardId,
             );
             if (registry) {
@@ -467,11 +472,6 @@ export class OrderManagementService {
           history.balance = 0;
 
           await this.syncService.saveRegistryHistory(history);
-
-          const reward = await this.rewardService.getRewardByIdAndBrandId(
-            order.rewardId,
-            offer?.brandId,
-          );
 
           reward.totalRedeemedSupply =
             reward.totalRedeemedSupply + offer.tokens;
