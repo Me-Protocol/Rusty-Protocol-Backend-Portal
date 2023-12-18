@@ -85,6 +85,7 @@ async function bootstrap() {
             'ipapi.co',
             '*.gelato.digital',
             '*.intercom.io',
+            'http://localhost:5173/',
           ],
         },
       },

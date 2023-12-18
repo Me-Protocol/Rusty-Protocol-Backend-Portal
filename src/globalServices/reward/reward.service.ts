@@ -1,11 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import slugify from 'slugify';
-import { BrandService } from '../brand/brand.service';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { Reward } from './entities/reward.entity';
-import { RewardType } from '@src/utils/enums/RewardType';
 import { rewardIndex } from '@src/modules/search/interface/search.interface';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { KeyIdentifier } from './entities/keyIdentifier.entity';
@@ -115,6 +112,45 @@ export class RewardService {
     return this.rewardsRepo.findOneBy({ id: id, brandId: brandId });
   }
 
+  async findOneByIdAndBrandWithSyncData(id: string, brandId: string) {
+    return this.rewardsRepo.findOne({
+      where: {
+        id: id,
+        brandId: brandId,
+      },
+      select: {
+        syncData: true,
+        id: true,
+        totalDistributedSupply: true,
+        brandId: true,
+        totalRedeemedSupply: true,
+        acceptedCustomerIdentitytypes: true,
+        description: true,
+        slug: true,
+        rewardImage: true,
+        otherRewardType: true,
+        rewardSymbol: true,
+        rewardName: true,
+        autoSyncEnabled: true,
+        contractAddress: true,
+        isBounty: true,
+        blockchain: true,
+        redistributionPublicKey: true,
+        bountyPublicKey: true,
+        redistributionKeyIdentifierId: true,
+        bountyKeyIdentifierId: true,
+        rewardValueInDollars: true,
+        rewardValueIsManual: true,
+        status: true,
+        poolTotalSupply: true,
+        rewardDollarPrice: true,
+        rOptimal: true,
+        treasurySupply: true,
+        totalSupply: true,
+      },
+    });
+  }
+
   async updateReward(reward: Reward) {
     return await this.rewardsRepo.update(reward.id, reward);
   }
@@ -128,8 +164,13 @@ export class RewardService {
     identifierType: SyncIdentifierType;
     amount: number;
   } | null> {
-    const reward = await this.rewardsRepo.findOneBy({
-      id: rewardId,
+    const reward = await this.rewardsRepo.findOne({
+      where: {
+        id: rewardId,
+      },
+      select: {
+        syncData: true,
+      },
     });
 
     const rewardPoint = reward.syncData?.find((sync) => {

@@ -8,7 +8,7 @@ import { FilterOfferDto, FilterUserOfferDto } from './dto/FilterOfferDto.dto';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { offerIndex } from '@src/modules/search/interface/search.interface';
-import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
+import { ProductStatus } from '@src/utils/enums/ItemStatus';
 import { logger } from '@src/globalServices/logger/logger.service';
 import { OrderService } from '@src/globalServices/order/order.service';
 

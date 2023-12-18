@@ -228,7 +228,12 @@ export class OrderManagementService {
     }
   }
 
-  async redeemWithRewardSpend({ userId, offerId, quantity }: CreateOrderDto) {
+  async redeemWithRewardSpend({
+    userId,
+    offerId,
+    quantity,
+    rewardId,
+  }: CreateOrderDto) {
     try {
       const offer = await this.offerService.getOfferById(offerId);
 
@@ -278,6 +283,7 @@ export class OrderManagementService {
       orderRecord.points = totalAmount;
       orderRecord.quantity = quantity;
       orderRecord.brandId = offer.brandId;
+      orderRecord.rewardId = rewardId;
 
       const order = await this.orderService.saveOrder(orderRecord);
 
@@ -323,7 +329,7 @@ export class OrderManagementService {
       transaction.transactionType = TransactionsType.DEBIT;
       transaction.paymentRef = generateTransactionCode();
       transaction.narration = `Redeem ${order.offer.name} from ${order.offer.brand.name}`;
-      transaction.rewardId = order.offer.rewardId;
+      transaction.rewardId = order.rewardId;
       transaction.orderId = order.id;
       transaction.paymentMethod = PaymentMethodEnum.REWARD;
       transaction.source = TransactionSource.OFFER_REDEMPTION;
@@ -379,18 +385,23 @@ export class OrderManagementService {
             await this.transactionRepo.save(transaction);
           }
 
+          const reward = await this.rewardService.getRewardByIdAndBrandId(
+            order.rewardId,
+            offer?.brandId,
+          );
+
           const balance = await get_user_reward_balance_with_url(
             {
               address: customer.walletAddress,
-              reward_address: offer.reward.contractAddress,
+              reward_address: reward.contractAddress,
             },
             RUNTIME_URL,
           );
 
           if (balance.data?.result) {
             const registry = await this.syncService.findOneRegistryByUserId(
-              customer.userId,
-              offer.rewardId,
+              order.userId,
+              order.rewardId,
             );
             if (registry) {
               registry.hasBalance =
@@ -450,7 +461,7 @@ export class OrderManagementService {
 
           const registry = await this.syncService.findOneRegistryByUserId(
             order.userId,
-            offer.rewardId,
+            order.rewardId,
           );
 
           const history = new RegistryHistory();
@@ -461,11 +472,6 @@ export class OrderManagementService {
           history.balance = 0;
 
           await this.syncService.saveRegistryHistory(history);
-
-          const reward = await this.rewardService.getRewardByIdAndBrandId(
-            offer.rewardId,
-            offer?.brandId,
-          );
 
           reward.totalRedeemedSupply =
             reward.totalRedeemedSupply + offer.tokens;

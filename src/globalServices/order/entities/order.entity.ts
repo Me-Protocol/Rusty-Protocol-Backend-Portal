@@ -99,4 +99,9 @@ export class Order extends BaseEntity {
     type: 'jsonb',
   })
   spendData: SpendData;
+
+  @Column({
+    nullable: true,
+  })
+  rewardId: string;
 }

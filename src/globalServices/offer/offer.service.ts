@@ -695,8 +695,6 @@ export class OfferService {
   // TODO: We might need to change the cron expression to run every 5 minutes
   @Cron(CronExpression.EVERY_5_MINUTES)
   async updateOfferStatus() {
-    console.log('Updating offer status');
-
     const offers = await this.offerRepo.find({
       where: {
         endDate: LessThan(new Date()),
@@ -705,7 +703,6 @@ export class OfferService {
     });
 
     for (const offer of offers) {
-      console.log('Updating offer status', offer.id);
       this.elasticIndex.deleteDocument(offerIndex, offer.id);
       offer.status = ProductStatus.EXPIRED;
       await this.offerRepo.save(offer);
