@@ -193,7 +193,7 @@ export class AuthenticationService {
     return verificationCode;
   }
 
-  private async sendVerificationEmail(
+  async sendVerificationEmail(
     email: string,
     name: string,
     verificationCode: number,

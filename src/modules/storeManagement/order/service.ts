@@ -25,7 +25,6 @@ import { emailButton } from '@src/utils/helpers/email';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { RegistryHistory } from '@src/globalServices/reward/entities/registryHistory.entity';
 import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
-import { result } from 'lodash';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { RewardCirculation } from '@src/globalServices/analytics/entities/reward_circulation';
 import { AnalyticsRecorderService } from '@src/globalServices/analytics/analytic_recorder.service';
@@ -34,7 +33,6 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { generateTransactionCode } from '@src/utils/helpers/generateRandomCode';
 import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
-import { SendTransactionData } from '../reward/dto/distributeBatch.dto';
 import { SpendData } from '@src/utils/types/spendData';
 import {
   get_transaction_by_hash_with_url,

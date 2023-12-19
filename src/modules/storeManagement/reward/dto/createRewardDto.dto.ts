@@ -58,6 +58,11 @@ export class CreateRewardDto {
   @ApiProperty()
   @IsOptional()
   @IsString()
+  totalSupply: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
   rewardDollarPrice: string;
 
   @ApiProperty()
