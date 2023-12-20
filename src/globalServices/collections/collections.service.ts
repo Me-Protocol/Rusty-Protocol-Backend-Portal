@@ -5,6 +5,7 @@ import { Collection } from './entities/collection.entity';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
 import { ProductService } from '../product/product.service';
 import { LikeService } from '../like/like.service';
+import { Product } from '../product/entities/product.entity';
 
 @Injectable()
 export class CollectionService {
@@ -127,19 +128,21 @@ export class CollectionService {
       if (status) collection.status = status;
 
       if (products && products?.length > 0) {
-        const newCollectionProducts = [];
+        const newCollectionProducts: Product[] = [];
 
         for (const productId of products) {
           const product = await this.productService.findOneProduct(productId);
 
           if (product) {
-            const checkProduct = collection.products.find(
-              (product) => product.id === productId,
-            );
+            // const checkProduct = collection.products.find(
+            //   (product) => product.id === productId,
+            // );
 
-            if (!checkProduct) {
-              newCollectionProducts.push(product);
-            }
+            // if (!checkProduct) {
+            //   newCollectionProducts.push(product);
+            // }
+
+            newCollectionProducts.push(product);
           }
         }
 
