@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Collection } from './entities/collection.entity';
@@ -89,59 +89,68 @@ export class CollectionService {
       products: string[];
     },
   ) {
-    let collection: Collection;
+    try {
+      let collection: Collection;
 
-    if (userId) {
-      collection = await this.collectionRepo.findOne({
-        where: {
-          id,
-          userId,
-        },
-        relations: ['products', 'products.productImages'],
-      });
-    }
+      if (userId) {
+        collection = await this.collectionRepo.findOne({
+          where: {
+            id,
+            userId,
+          },
+          relations: ['products', 'products.productImages'],
+        });
+      }
 
-    if (brandId) {
-      collection = await this.collectionRepo.findOne({
-        where: {
-          id,
-          brandId,
-        },
-        relations: ['products', 'products.productImages'],
-      });
-    }
+      if (brandId) {
+        collection = await this.collectionRepo.findOne({
+          where: {
+            id,
+            brandId,
+          },
+          relations: ['products', 'products.productImages'],
+        });
+      }
 
-    if (!collection) {
-      throw new NotFoundException('Collection not found');
-    }
+      if (!collection) {
+        throw new NotFoundException('Collection not found');
+      }
 
-    // await this.collectionRepo.update(
-    //   { id: collection.id },
-    //   { name, description, image, status },
-    // );
+      // await this.collectionRepo.update(
+      //   { id: collection.id },
+      //   { name, description, image, status },
+      // );
 
-    collection.name = name;
-    collection.description = description;
-    collection.image = image;
-    collection.status = status;
+      if (name) collection.name = name;
+      if (description) collection.description = description;
+      if (image) collection.image = image;
+      if (status) collection.status = status;
 
-    if (products && products?.length > 0) {
-      for (const productId of products) {
-        const product = await this.productService.findOneProduct(productId);
+      if (products && products?.length > 0) {
+        const newCollectionProducts = [];
 
-        if (product) {
-          const checkProduct = collection.products.find(
-            (product) => product.id === productId,
-          );
+        for (const productId of products) {
+          const product = await this.productService.findOneProduct(productId);
 
-          if (!checkProduct) {
-            collection.products.push(product);
+          if (product) {
+            const checkProduct = collection.products.find(
+              (product) => product.id === productId,
+            );
+
+            if (!checkProduct) {
+              newCollectionProducts.push(product);
+            }
           }
         }
-      }
-    }
 
-    return await this.collectionRepo.save(collection);
+        collection.products = newCollectionProducts;
+      }
+
+      return await this.collectionRepo.save(collection);
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, 400);
+    }
   }
 
   async findAll({

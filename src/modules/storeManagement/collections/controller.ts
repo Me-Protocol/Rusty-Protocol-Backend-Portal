@@ -52,8 +52,8 @@ export class CollectionManagementController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     const user = req.user as User;
-    updateCollectionDto.brandId = user.brand.id;
-    updateCollectionDto.userId = user.id;
+    updateCollectionDto.brandId = user?.brand?.id;
+    updateCollectionDto.userId = user?.id;
 
     return await this.collectionManagementService.update(
       id,
