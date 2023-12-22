@@ -97,6 +97,7 @@ export class Reward extends BaseEntity {
     array: true,
     name: 'syncData',
     nullable: true,
+    select: false,
   })
   syncData: {
     id: string;

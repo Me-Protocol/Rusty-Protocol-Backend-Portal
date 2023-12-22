@@ -19,7 +19,7 @@ export class ProcessBrandColor {
 
     bill.invoiceId = invoice.id;
     bill.brandId = event.brandId;
-    bill.amount = 20;
+    bill.amount = 0.2;
 
     try {
       await this.billService.createBill(bill);

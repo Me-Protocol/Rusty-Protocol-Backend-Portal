@@ -1,7 +1,7 @@
 import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
-import { Repository } from 'typeorm';
+import { FindOptionsOrderValue, Repository } from 'typeorm';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { brandIndex } from '@src/modules/search/interface/search.interface';
 import { UpdateBrandDto } from '@src/modules/accountManagement/brandAccountManagement/dto/UpdateBrandDto.dto';
@@ -233,6 +233,9 @@ export class BrandService {
     page: number,
     limit: number,
     filterBy: FilterBrandCustomer,
+    sort?: {
+      createdAt: FindOptionsOrderValue;
+    },
   ) {
     const brandCustomerQuery = this.brandCustomerRepo
       .createQueryBuilder('brandCustomer')
@@ -251,10 +254,10 @@ export class BrandService {
     if (filterBy === FilterBrandCustomer.MOST_RECENT) {
       // brand customer createdAt now to 1 month ago
 
-      const endDate = new Date();
-      endDate.setMonth(endDate.getMonth() - 1);
-
       const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 1);
+
+      const endDate = new Date();
 
       // where createdAt is between now to date ago
 
@@ -265,6 +268,14 @@ export class BrandService {
           endDate,
         },
       );
+    }
+
+    if (sort) {
+      if (sort.createdAt === 'ASC') {
+        brandCustomerQuery.orderBy('brandCustomer.createdAt', 'ASC');
+      } else if (sort.createdAt === 'DESC') {
+        brandCustomerQuery.orderBy('brandCustomer.createdAt', 'DESC');
+      }
     }
 
     brandCustomerQuery.skip((page - 1) * limit).take(limit);
@@ -279,10 +290,11 @@ export class BrandService {
     };
   }
 
-  async getBrandMemberByUserEmail(email: string) {
+  async getBrandMemberByUserEmail(email: string, brandId: string) {
     return await this.brandMemberRepo.findOne({
       where: {
         verifyingEmail: email,
+        brandId,
       },
     });
   }

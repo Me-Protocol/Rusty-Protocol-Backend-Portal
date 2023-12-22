@@ -1,13 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MaxLength, MinLength } from 'class-validator';
+import { IsNumberString } from 'class-validator';
 
 export class PhoneVerifyDto {
   @ApiProperty()
-  @MinLength(4, {
-    message: 'Code is invalid',
-  })
-  @MaxLength(4, {
-    message: 'Code is invalid',
-  })
+  @IsNumberString()
   code: number;
 }

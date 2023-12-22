@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, MaxLength, MinLength } from 'class-validator';
+import { IsNumberString, IsString } from 'class-validator';
 
 export class Verify2FADto {
   @ApiProperty()
@@ -7,11 +7,6 @@ export class Verify2FADto {
   userId: string;
 
   @ApiProperty()
-  @MinLength(4, {
-    message: 'Code is invalid',
-  })
-  @MaxLength(4, {
-    message: 'Code is invalid',
-  })
+  @IsNumberString()
   code: number;
 }

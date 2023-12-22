@@ -25,8 +25,6 @@ export class RewarderService {
     rewardId: string;
     amounts: BigNumber[];
   }) {
-    console.log(addresses, rewardId, amounts);
-
     try {
       const reward = await this.rewardService.findOneById(rewardId);
 
@@ -37,7 +35,16 @@ export class RewarderService {
       const decryptedPrivateKey = await this.keyManagementService.decryptKey(
         keyIdentifier.identifier,
       );
+
       const signer = new Wallet(decryptedPrivateKey);
+
+      console.log(
+        addresses,
+        rewardId,
+        amounts,
+        decryptedPrivateKey,
+        signer.address,
+      );
 
       const distributeData = await distribute_bounty_by_reward_address_magic(
         reward.contractAddress,
@@ -50,6 +57,7 @@ export class RewarderService {
       const distribute = await mutate_with_url(distributeData, RUNTIME_URL);
 
       if (distribute.data?.error) {
+        console.log(distribute.data?.error);
         throw new Error('Rewarder service is down.');
       } else {
         return distribute.data;

@@ -85,6 +85,7 @@ export class RewardManagementService {
       if (body.isBounty) reward.isBounty = body.isBounty;
       if (body.blockchain) reward.blockchain = body.blockchain;
       if (body.poolTotalSupply) reward.poolTotalSupply = body.poolTotalSupply;
+      if (body.totalSupply) reward.totalSupply = +body.totalSupply;
       if (body.rewardDollarPrice)
         reward.rewardDollarPrice = body.rewardDollarPrice;
       if (body.rOptimal) reward.rOptimal = body.rOptimal;
@@ -133,17 +134,9 @@ export class RewardManagementService {
     }
 
     // TODO generate private key and public key
-    let createRedistributionKey: {
-      pubKey: string;
-      privKey: string;
-    };
-    let createBountyKey: {
-      pubKey: string;
-      privKey: string;
-    };
 
-    createBountyKey = generateWalletRandom();
-    createRedistributionKey = generateWalletRandom();
+    const createBountyKey = generateWalletRandom();
+    const createRedistributionKey = generateWalletRandom();
 
     const { pubKey, privKey } = createRedistributionKey;
     const { pubKey: bountyPubKey, privKey: bountyPrivKey } = createBountyKey;
@@ -192,17 +185,18 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
-      if (reward.description) reward.description = body.description;
-      if (reward.rewardImage) reward.rewardImage = body.rewardImage;
-      if (reward.autoSyncEnabled) reward.autoSyncEnabled = body.autoSyncEnabled;
-      if (reward.acceptedCustomerIdentitytypes)
+      if (body.description) reward.description = body.description;
+      if (body.rewardImage) reward.rewardImage = body.rewardImage;
+      if (body.autoSyncEnabled) reward.autoSyncEnabled = body.autoSyncEnabled;
+      if (body.acceptedCustomerIdentitytypes)
         reward.acceptedCustomerIdentitytypes =
           body.acceptedCustomerIdentitytypes;
-      if (reward.isBounty) reward.isBounty = body.isBounty;
-      if (reward.acceptedCustomerIdentitytypes)
+      if (body.isBounty) reward.isBounty = body.isBounty;
+      if (body.acceptedCustomerIdentitytypes)
         reward.acceptedCustomerIdentitytypes =
           body.acceptedCustomerIdentitytypes;
-      if (reward.poolTotalSupply) reward.poolTotalSupply = body.poolTotalSupply;
+      if (body.poolTotalSupply) reward.poolTotalSupply = body.poolTotalSupply;
+      if (body.totalSupply) reward.totalSupply = +body.totalSupply;
       if (reward.rewardValueInDollars)
         reward.rewardValueInDollars = body.rewardValueInDollars;
 
@@ -375,10 +369,11 @@ export class RewardManagementService {
 
   async updateBatch(body: UpdateBatchDto) {
     try {
-      const checkReward = await this.rewardService.findOneByIdAndBrand(
-        body.rewardId,
-        body.brandId,
-      );
+      const checkReward =
+        await this.rewardService.findOneByIdAndBrandWithSyncData(
+          body.rewardId,
+          body.brandId,
+        );
 
       if (!checkReward) {
         throw new Error('Reward not found');
@@ -561,8 +556,7 @@ export class RewardManagementService {
     // Pick the rewards whose users exists and update balacne to 0
     return await Promise.all(
       batch.syncData.map(async (syncDataJSON) => {
-        // @ts-ignore
-        const syncData = JSON.parse(syncDataJSON) as typeof syncDataJSON;
+        const syncData = JSON.parse(syncDataJSON as any) as typeof syncDataJSON;
 
         let user: User;
 
@@ -695,8 +689,7 @@ export class RewardManagementService {
 
     await Promise.all(
       syncData.map(async (syncDataJSON) => {
-        // @ts-ignore
-        const syncData = JSON.parse(syncDataJSON);
+        const syncData = JSON.parse(syncDataJSON as any) as typeof syncDataJSON;
 
         let user: User;
 

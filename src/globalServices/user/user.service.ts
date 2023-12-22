@@ -15,14 +15,12 @@ export class UserService {
   ) {}
 
   async getDeviceById(userId: string, id: string): Promise<Device> {
-    const device = await this.deviceRepository.findOne({
+    return await this.deviceRepository.findOne({
       where: {
         id,
         userId,
       },
     });
-
-    return device;
   }
 
   async saveUserPrivate(user: User): Promise<User> {

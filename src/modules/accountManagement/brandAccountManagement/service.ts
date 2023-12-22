@@ -53,7 +53,7 @@ export class BrandAccountManagementService {
   async updateBrand(body: UpdateBrandDto, brandId: string) {
     try {
       if (body.logo || body.logo_white) {
-        let img = body.logo || body.logo_white;
+        const img = body.logo || body.logo_white;
         const processBrandColorPayload = new ProcessBrandColorEvent();
         processBrandColorPayload.url = img;
         processBrandColorPayload.brandId = brandId;
@@ -175,7 +175,8 @@ export class BrandAccountManagementService {
   }
 
   async createBrandMember(body: CreateMemberDto) {
-    let { name, email, role, brandId } = body;
+    let { email } = body;
+    const { name, role, brandId } = body;
 
     email = email.toLowerCase();
     try {
@@ -198,7 +199,7 @@ export class BrandAccountManagementService {
         }
 
         const checkBrandMember =
-          await this.brandService.getBrandMemberByUserEmail(email);
+          await this.brandService.getBrandMemberByUserEmail(email, brandId);
 
         if (checkBrandMember && checkBrandMember.isAccepted) {
           throw new HttpException('Brand member already exists', 400);
@@ -364,6 +365,7 @@ export class BrandAccountManagementService {
 
       const brandMember = await this.brandService.getBrandMemberByUserEmail(
         email,
+        brandId,
       );
 
       if (!brandMember) {
@@ -389,6 +391,7 @@ export class BrandAccountManagementService {
         query.page,
         query.limit,
         query.filterBy,
+        query.sort,
       );
     } catch (error) {
       console.log(error);

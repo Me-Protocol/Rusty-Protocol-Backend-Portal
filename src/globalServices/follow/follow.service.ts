@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsOrderValue, Repository } from 'typeorm';
 import { Follow } from './entities/follow.entity';
 import { BrandService } from '../brand/brand.service';
 
@@ -18,10 +18,14 @@ export class FollowService {
     brandId,
     page,
     limit,
+    sort,
   }: {
     brandId: string;
     page: number;
     limit: number;
+    sort?: {
+      createdAt: FindOptionsOrderValue;
+    };
   }) {
     const followerQuery = this.followerRepository
       .createQueryBuilder('follow')
@@ -35,7 +39,17 @@ export class FollowService {
         'user.username',
         'customer.name',
         'customer.profilePicture',
-      ])
+      ]);
+
+    if (sort) {
+      if (sort.createdAt === 'ASC') {
+        followerQuery.orderBy('follow.createdAt', 'ASC');
+      } else if (sort.createdAt === 'DESC') {
+        followerQuery.orderBy('follow.createdAt', 'DESC');
+      }
+    }
+
+    followerQuery
       .where('follow.brandId = :brandId', { brandId })
       .skip((page - 1) * limit)
       .take(limit);

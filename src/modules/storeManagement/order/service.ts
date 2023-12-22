@@ -25,7 +25,6 @@ import { emailButton } from '@src/utils/helpers/email';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { RegistryHistory } from '@src/globalServices/reward/entities/registryHistory.entity';
 import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
-import { result } from 'lodash';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { RewardCirculation } from '@src/globalServices/analytics/entities/reward_circulation';
 import { AnalyticsRecorderService } from '@src/globalServices/analytics/analytic_recorder.service';
@@ -34,7 +33,6 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { generateTransactionCode } from '@src/utils/helpers/generateRandomCode';
 import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
-import { SendTransactionData } from '../reward/dto/distributeBatch.dto';
 import { SpendData } from '@src/utils/types/spendData';
 import {
   get_transaction_by_hash_with_url,
@@ -42,6 +40,7 @@ import {
   redistributed_failed_tx_with_url,
 } from '@developeruche/runtime-sdk';
 import { RUNTIME_URL } from '@src/config/env.config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class OrderManagementService {
@@ -58,6 +57,7 @@ export class OrderManagementService {
     private readonly fiatWalletService: FiatWalletService,
     private readonly rewardService: RewardService,
     private readonly analyticsRecorder: AnalyticsRecorderService,
+    private eventEmitter: EventEmitter2,
 
     @InjectRepository(Transaction)
     private readonly transactionRepo: Repository<Transaction>,
@@ -226,7 +226,12 @@ export class OrderManagementService {
     }
   }
 
-  async redeemWithRewardSpend({ userId, offerId, quantity }: CreateOrderDto) {
+  async redeemWithRewardSpend({
+    userId,
+    offerId,
+    quantity,
+    rewardId,
+  }: CreateOrderDto) {
     try {
       const offer = await this.offerService.getOfferById(offerId);
 
@@ -276,10 +281,17 @@ export class OrderManagementService {
       orderRecord.points = totalAmount;
       orderRecord.quantity = quantity;
       orderRecord.brandId = offer.brandId;
+      orderRecord.rewardId = rewardId;
 
       const order = await this.orderService.saveOrder(orderRecord);
 
       await this.offerService.reduceInventory(offer, order);
+
+      this.eventEmitter.emit('process.bill.create', {
+        brandId: offer.brandId,
+        type: 'redeem-offer',
+        offerId: offerId,
+      });
 
       return order;
     } catch (error) {
@@ -315,7 +327,7 @@ export class OrderManagementService {
       transaction.transactionType = TransactionsType.DEBIT;
       transaction.paymentRef = generateTransactionCode();
       transaction.narration = `Redeem ${order.offer.name} from ${order.offer.brand.name}`;
-      transaction.rewardId = order.offer.rewardId;
+      transaction.rewardId = order.rewardId;
       transaction.orderId = order.id;
       transaction.paymentMethod = PaymentMethodEnum.REWARD;
       transaction.source = TransactionSource.OFFER_REDEMPTION;
@@ -371,18 +383,23 @@ export class OrderManagementService {
             await this.transactionRepo.save(transaction);
           }
 
+          const reward = await this.rewardService.getRewardByIdAndBrandId(
+            order.rewardId,
+            offer?.brandId,
+          );
+
           const balance = await get_user_reward_balance_with_url(
             {
               address: customer.walletAddress,
-              reward_address: offer.reward.contractAddress,
+              reward_address: reward.contractAddress,
             },
             RUNTIME_URL,
           );
 
           if (balance.data?.result) {
             const registry = await this.syncService.findOneRegistryByUserId(
-              customer.userId,
-              offer.rewardId,
+              order.userId,
+              order.rewardId,
             );
             if (registry) {
               registry.hasBalance =
@@ -442,7 +459,7 @@ export class OrderManagementService {
 
           const registry = await this.syncService.findOneRegistryByUserId(
             order.userId,
-            offer.rewardId,
+            order.rewardId,
           );
 
           const history = new RegistryHistory();
@@ -453,11 +470,6 @@ export class OrderManagementService {
           history.balance = 0;
 
           await this.syncService.saveRegistryHistory(history);
-
-          const reward = await this.rewardService.getRewardByIdAndBrandId(
-            offer.rewardId,
-            offer?.brandId,
-          );
 
           reward.totalRedeemedSupply =
             reward.totalRedeemedSupply + offer.tokens;
