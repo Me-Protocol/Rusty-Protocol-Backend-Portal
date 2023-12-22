@@ -47,5 +47,10 @@ export class UpdateRewardDto {
   @ApiProperty()
   @IsOptional()
   @IsNumberString()
+  totalSupply: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumberString()
   rewardValueInDollars: number;
 }

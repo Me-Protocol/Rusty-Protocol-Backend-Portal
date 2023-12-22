@@ -85,6 +85,7 @@ export class RewardManagementService {
       if (body.isBounty) reward.isBounty = body.isBounty;
       if (body.blockchain) reward.blockchain = body.blockchain;
       if (body.poolTotalSupply) reward.poolTotalSupply = body.poolTotalSupply;
+      if (body.totalSupply) reward.totalSupply = +body.totalSupply;
       if (body.rewardDollarPrice)
         reward.rewardDollarPrice = body.rewardDollarPrice;
       if (body.rOptimal) reward.rOptimal = body.rOptimal;
@@ -184,17 +185,18 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
-      if (reward.description) reward.description = body.description;
-      if (reward.rewardImage) reward.rewardImage = body.rewardImage;
-      if (reward.autoSyncEnabled) reward.autoSyncEnabled = body.autoSyncEnabled;
-      if (reward.acceptedCustomerIdentitytypes)
+      if (body.description) reward.description = body.description;
+      if (body.rewardImage) reward.rewardImage = body.rewardImage;
+      if (body.autoSyncEnabled) reward.autoSyncEnabled = body.autoSyncEnabled;
+      if (body.acceptedCustomerIdentitytypes)
         reward.acceptedCustomerIdentitytypes =
           body.acceptedCustomerIdentitytypes;
-      if (reward.isBounty) reward.isBounty = body.isBounty;
-      if (reward.acceptedCustomerIdentitytypes)
+      if (body.isBounty) reward.isBounty = body.isBounty;
+      if (body.acceptedCustomerIdentitytypes)
         reward.acceptedCustomerIdentitytypes =
           body.acceptedCustomerIdentitytypes;
-      if (reward.poolTotalSupply) reward.poolTotalSupply = body.poolTotalSupply;
+      if (body.poolTotalSupply) reward.poolTotalSupply = body.poolTotalSupply;
+      if (body.totalSupply) reward.totalSupply = +body.totalSupply;
       if (reward.rewardValueInDollars)
         reward.rewardValueInDollars = body.rewardValueInDollars;
 
