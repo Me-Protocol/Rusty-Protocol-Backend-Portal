@@ -1,6 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { UserAppType } from '@src/utils/enums/UserAppType';
-import { IsEmail, IsEnum, IsString, Matches, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsString,
+  IsEthereumAddress,
+  MinLength,
+} from 'class-validator';
 
 export class EmailSignupDto {
   @ApiProperty()
@@ -38,4 +44,8 @@ export class EmailSignupDto {
     message: 'User type is invalid',
   })
   userType: UserAppType;
+
+  @ApiProperty()
+  @IsEthereumAddress()
+  walletAddress: string;
 }

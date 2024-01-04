@@ -42,6 +42,7 @@ export class CustomerManagementController {
     @Req() req: any,
   ) {
     const userId = req.user.id;
+    return 'Deprecated';
 
     return await this.customerAccountManagementService.setWalletAddress(
       body.walletAddress,

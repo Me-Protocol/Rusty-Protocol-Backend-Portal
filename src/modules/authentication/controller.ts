@@ -55,8 +55,14 @@ export class AuthenticationController {
   @Post('signup/email')
   async signupWithEmail(
     @Body(ValidationPipe) body: EmailSignupDto,
+    @RealIP() ip: string,
+    @Req() req: any,
   ): Promise<any> {
-    return await this.authService.signupEmail(body);
+    return await this.authService.signupEmail({
+      ...body,
+      userAgent: req.headers['user-agent'],
+      ip,
+    });
   }
 
   @UseGuards(JwtAuthStrategy)
@@ -321,14 +327,14 @@ export class AuthenticationController {
       return res
         .status(302)
         .redirect(
-          `${process.env.CLIENT_APP_URI}?access_token=null&message=Something went wrong. Please try again later.`,
+          `${process.env.CLIENT_APP_URI}/login?access_token=null&message=Something went wrong. Please try again later.`,
         );
     }
 
     return res
       .status(302)
       .redirect(
-        `${process.env.CLIENT_APP_URI}?token=${access_token.token}&provider=${access_token.provider}`,
+        `${process.env.CLIENT_APP_URI}/login?token=${access_token.token}&provider=${access_token.provider}`,
       );
   }
 
@@ -396,7 +402,9 @@ export class AuthenticationController {
     if (!user) {
       return res
         .status(302)
-        .redirect(`${process.env.CLIENT_APP_URI}?token=null&provider=null`);
+        .redirect(
+          `${process.env.CLIENT_APP_URI}/login?token=null&provider=null`,
+        );
     } else {
       const newUser = await this.authService.socialAuth({
         email: user.profile._json.email,
@@ -418,7 +426,7 @@ export class AuthenticationController {
       return res
         .status(302)
         .redirect(
-          `${process.env.CLIENT_APP_URI}?token=${newUser.token}&provider=${newUser.provider}`,
+          `${process.env.CLIENT_APP_URI}/login?token=${newUser.token}&provider=${newUser.provider}`,
         );
     }
   }
@@ -435,7 +443,9 @@ export class AuthenticationController {
     if (!user) {
       return res
         .status(302)
-        .redirect(`${process.env.CLIENT_APP_URI}?token=null&provider=null`);
+        .redirect(
+          `${process.env.CLIENT_APP_URI}/login?token=null&provider=null`,
+        );
     } else {
       const newUser = await this.authService.socialAuth({
         email: user.profile._json.email,
@@ -457,7 +467,7 @@ export class AuthenticationController {
       return res
         .status(302)
         .redirect(
-          `${process.env.CLIENT_APP_URI}?token=${newUser.token}&provider=${newUser.provider}`,
+          `${process.env.CLIENT_APP_URI}/login?token=${newUser.token}&provider=${newUser.provider}`,
         );
     }
   }
@@ -480,7 +490,9 @@ export class AuthenticationController {
     if (!user) {
       return res
         .status(302)
-        .redirect(`${process.env.CLIENT_APP_URI}?token=null&provider=null`);
+        .redirect(
+          `${process.env.CLIENT_APP_URI}/login?token=null&provider=null`,
+        );
     } else {
       const newUser = await this.authService.socialAuth({
         email:
@@ -503,7 +515,7 @@ export class AuthenticationController {
       return res
         .status(302)
         .redirect(
-          `${process.env.CLIENT_APP_URI}?token=${newUser.token}&provider=${newUser.provider}`,
+          `${process.env.CLIENT_APP_URI}/login?token=${newUser.token}&provider=${newUser.provider}`,
         );
     }
   }

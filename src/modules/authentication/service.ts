@@ -32,6 +32,7 @@ import { Enable2FADto } from './dto/Enable2FADto.dto';
 import { UpdatePreferenceDto } from './dto/UpdatePreferenceDto.dto';
 import fetch from 'node-fetch';
 import { emailCode } from '@src/utils/helpers/email';
+import { CustomerAccountManagementService } from '../accountManagement/customerAccountManagement/service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -51,6 +52,7 @@ export class AuthenticationService {
     private brandService: BrandService,
     private walletService: FiatWalletService,
     private syncService: SyncRewardService,
+    private customerAccountManagementService: CustomerAccountManagementService,
   ) {}
 
   // Signs a token
@@ -333,7 +335,13 @@ export class AuthenticationService {
     confirmPassword,
     name,
     userType,
-  }: EmailSignupDto): Promise<string> {
+    userAgent,
+    ip,
+    walletAddress,
+  }: EmailSignupDto & {
+    userAgent: string;
+    ip: string;
+  }): Promise<string> {
     try {
       const lowerCasedEmail = email.toLowerCase();
       await this.checkIfUserExists(lowerCasedEmail);
@@ -345,8 +353,24 @@ export class AuthenticationService {
         userType,
       );
       await this.handleUserTypeRoles(userType, newUser, name);
+      if (userType === UserAppType.BRAND) {
+        await this.sendEmailVerificationCode(newUser.email, newUser.username);
+      } else {
+        await this.generateVerificationCode(newUser);
+        await this.verifyEmail(
+          newUser,
+          newUser.accountVerificationCode,
+          userAgent,
+          ip,
+        );
+        await this.customerAccountManagementService.setWalletAddress(
+          walletAddress,
+          newUser.id,
+        );
+      }
+
       const token = await this.generateAndSignToken(newUser);
-      await this.sendEmailVerificationCode(lowerCasedEmail, name);
+
       return token;
     } catch (error) {
       logger.error(error);
