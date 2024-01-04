@@ -6,6 +6,7 @@ import {
   IsString,
   IsEthereumAddress,
   MinLength,
+  IsOptional,
 } from 'class-validator';
 
 export class EmailSignupDto {
@@ -46,6 +47,7 @@ export class EmailSignupDto {
   userType: UserAppType;
 
   @ApiProperty()
+  @IsOptional()
   @IsEthereumAddress()
   walletAddress: string;
 }

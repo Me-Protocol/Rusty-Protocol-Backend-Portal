@@ -343,6 +343,10 @@ export class AuthenticationService {
     ip: string;
   }): Promise<string> {
     try {
+      if (userType === UserAppType.USER && !walletAddress) {
+        throw new Error('Wallet address is required');
+      }
+
       const lowerCasedEmail = email.toLowerCase();
       await this.checkIfUserExists(lowerCasedEmail);
       await this.checkDuplicateBrandName(userType, name);
