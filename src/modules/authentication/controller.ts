@@ -327,14 +327,14 @@ export class AuthenticationController {
       return res
         .status(302)
         .redirect(
-          `${process.env.CLIENT_APP_URI}/login/qwedfqwe/qwedqwd/qwdqwd?access_token=null&message=Something went wrong. Please try again later.`,
+          `${process.env.CLIENT_APP_URI}/login?access_token=null&message=Something went wrong. Please try again later.`,
         );
     }
 
     return res
       .status(302)
       .redirect(
-        `${process.env.CLIENT_APP_URI}/login/qwdqwd/qwdqwd/qwdqwd/qwdwq?token=${access_token.token}&provider=${access_token.provider}`,
+        `${process.env.CLIENT_APP_URI}/login?token=${access_token.token}&provider=${access_token.provider}`,
       );
   }
 
@@ -403,7 +403,7 @@ export class AuthenticationController {
       return res
         .status(302)
         .redirect(
-          `${process.env.CLIENT_APP_URI}/login/qwdqwd/qwdwqd/qwdqwd/qwdqwd?token=null&provider=null`,
+          `${process.env.CLIENT_APP_URI}/login?token=null&provider=null`,
         );
     } else {
       const newUser = await this.authService.socialAuth({
@@ -426,7 +426,7 @@ export class AuthenticationController {
       return res
         .status(302)
         .redirect(
-          `${process.env.CLIENT_APP_URI}/login/qdqwd/qwdqwd/qdqwd/qwdqw?token=${newUser.token}&provider=${newUser.provider}`,
+          `${process.env.CLIENT_APP_URI}/login?token=${newUser.token}&provider=${newUser.provider}`,
         );
     }
   }
