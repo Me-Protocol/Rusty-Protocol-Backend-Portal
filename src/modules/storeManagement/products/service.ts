@@ -64,6 +64,7 @@ export class ProductManagementService {
     const productCollections = [];
 
     if (body.collections && body.collections.length > 0) {
+      // eslint-disable-next-line no-unsafe-optional-chaining
       for (const collectionId of body?.collections) {
         const collection = await this.collectionService.findOne({
           id: collectionId,
