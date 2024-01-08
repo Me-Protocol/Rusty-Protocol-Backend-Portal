@@ -4,7 +4,6 @@ import {
   Controller,
   Get,
   HttpException,
-  NotFoundException,
   Param,
   ParseUUIDPipe,
   Post,
@@ -13,7 +12,6 @@ import {
   Req,
   Res,
   UseGuards,
-  UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
@@ -327,14 +325,14 @@ export class AuthenticationController {
       return res
         .status(302)
         .redirect(
-          `${process.env.CLIENT_APP_URI}/login?access_token=null&message=Something went wrong. Please try again later.`,
+          `${process.env.CLIENT_APP_URI}/login/?access_token=null&message=Something went wrong. Please try again later.`,
         );
     }
 
     return res
       .status(302)
       .redirect(
-        `${process.env.CLIENT_APP_URI}/login?token=${access_token.token}&provider=${access_token.provider}`,
+        `${process.env.CLIENT_APP_URI}/login/?token=${access_token.token}&provider=${access_token.provider}`,
       );
   }
 
@@ -403,7 +401,7 @@ export class AuthenticationController {
       return res
         .status(302)
         .redirect(
-          `${process.env.CLIENT_APP_URI}/login?token=null&provider=null`,
+          `${process.env.CLIENT_APP_URI}/login/?token=null&provider=null`,
         );
     } else {
       const newUser = await this.authService.socialAuth({
@@ -426,7 +424,7 @@ export class AuthenticationController {
       return res
         .status(302)
         .redirect(
-          `${process.env.CLIENT_APP_URI}/login?token=${newUser.token}&provider=${newUser.provider}`,
+          `${process.env.CLIENT_APP_URI}/login/?token=${newUser.token}&provider=${newUser.provider}`,
         );
     }
   }
@@ -444,7 +442,7 @@ export class AuthenticationController {
       return res
         .status(302)
         .redirect(
-          `${process.env.CLIENT_APP_URI}/login?token=null&provider=null`,
+          `${process.env.CLIENT_APP_URI}/login/?token=null&provider=null`,
         );
     } else {
       const newUser = await this.authService.socialAuth({
@@ -467,7 +465,7 @@ export class AuthenticationController {
       return res
         .status(302)
         .redirect(
-          `${process.env.CLIENT_APP_URI}/login?token=${newUser.token}&provider=${newUser.provider}`,
+          `${process.env.CLIENT_APP_URI}/login/?token=${newUser.token}&provider=${newUser.provider}`,
         );
     }
   }
@@ -491,7 +489,7 @@ export class AuthenticationController {
       return res
         .status(302)
         .redirect(
-          `${process.env.CLIENT_APP_URI}/login?token=null&provider=null`,
+          `${process.env.CLIENT_APP_URI}/login/?token=null&provider=null`,
         );
     } else {
       const newUser = await this.authService.socialAuth({
@@ -515,7 +513,7 @@ export class AuthenticationController {
       return res
         .status(302)
         .redirect(
-          `${process.env.CLIENT_APP_URI}/login?token=${newUser.token}&provider=${newUser.provider}`,
+          `${process.env.CLIENT_APP_URI}/login/?token=${newUser.token}&provider=${newUser.provider}`,
         );
     }
   }

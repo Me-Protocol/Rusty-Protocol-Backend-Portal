@@ -39,7 +39,7 @@ export class SettingsService {
   }
 
   async getPublicSettings() {
-    let settings = await this.adminSettingsRepo.findOne({
+    const settings = await this.adminSettingsRepo.findOne({
       where: { isDefault: true },
     });
 
