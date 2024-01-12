@@ -109,4 +109,9 @@ export class UpdateProductDto {
   @IsOptional()
   @IsUrl()
   productUrl: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumber()
+  minAge: number;
 }
