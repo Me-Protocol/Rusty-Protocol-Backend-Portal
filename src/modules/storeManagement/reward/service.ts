@@ -668,6 +668,9 @@ export class RewardManagementService {
       endDate: query.endDate,
       userId: query.userId,
       transactionsType: query.transactionsType,
+      rewardId: query.rewardId,
+      page: query.page,
+      limit: query.limit,
     });
   }
 

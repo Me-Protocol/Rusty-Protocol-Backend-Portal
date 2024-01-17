@@ -1,6 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { TransactionsType } from '@src/utils/enums/Transactions';
-import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsNumberString,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class FilterRegistryHistoryDto {
   @ApiProperty({
@@ -26,4 +33,17 @@ export class FilterRegistryHistoryDto {
   transactionsType: TransactionsType;
 
   userId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsUUID()
+  rewardId: string;
+
+  @ApiProperty()
+  @IsNumberString()
+  page: number;
+
+  @ApiProperty()
+  @IsNumberString()
+  limit: number;
 }

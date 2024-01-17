@@ -383,10 +383,7 @@ export class OrderManagementService {
             await this.transactionRepo.save(transaction);
           }
 
-          const reward = await this.rewardService.getRewardByIdAndBrandId(
-            order.rewardId,
-            offer?.brandId,
-          );
+          const reward = await this.rewardService.findOneById(order.rewardId);
 
           const balance = await get_user_reward_balance_with_url(
             {
@@ -399,7 +396,7 @@ export class OrderManagementService {
           if (balance.data?.result) {
             const registry = await this.syncService.findOneRegistryByUserId(
               order.userId,
-              order.rewardId,
+              reward.id,
             );
             if (registry) {
               registry.hasBalance =
@@ -459,7 +456,7 @@ export class OrderManagementService {
 
           const registry = await this.syncService.findOneRegistryByUserId(
             order.userId,
-            order.rewardId,
+            reward.id,
           );
 
           const history = new RegistryHistory();
@@ -472,7 +469,7 @@ export class OrderManagementService {
           await this.syncService.saveRegistryHistory(history);
 
           reward.totalRedeemedSupply =
-            reward.totalRedeemedSupply + offer.tokens;
+            Number(reward.totalRedeemedSupply) + Number(order.points);
           await this.rewardService.save(reward);
 
           // Update circulating supply

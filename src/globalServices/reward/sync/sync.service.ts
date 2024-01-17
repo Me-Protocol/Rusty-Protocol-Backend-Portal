@@ -744,21 +744,57 @@ export class SyncRewardService {
     startDate,
     endDate,
     transactionsType,
+    rewardId,
+    page,
+    limit,
   }: {
     userId: string;
     startDate: Date;
     endDate: Date;
     transactionsType: TransactionsType;
+    rewardId: string;
+    page: number;
+    limit: number;
   }) {
-    return this.registryHistoryRepo.find({
-      where: {
-        rewardRegistry: {
-          userId,
-        },
-        transactionType: transactionsType,
-        createdAt: Between(startDate, endDate),
-      },
-      relations: ['rewardRegistry', 'rewardRegistry.reward'],
-    });
+    const registryHistoryQuery =
+      this.registryHistoryRepo.createQueryBuilder('registryHistory');
+
+    registryHistoryQuery
+      .leftJoinAndSelect('registryHistory.rewardRegistry', 'rewardRegistry')
+      .leftJoinAndSelect('rewardRegistry.reward', 'reward')
+      .leftJoinAndSelect('reward.brand', 'brand')
+      .where('rewardRegistry.userId = :userId', { userId });
+
+    if (rewardId) {
+      registryHistoryQuery.andWhere('rewardRegistry.rewardId = :rewardId', {
+        rewardId,
+      });
+    }
+
+    if (transactionsType) {
+      registryHistoryQuery.andWhere(
+        'registryHistory.transactionType = :transactionsType',
+        { transactionsType },
+      );
+    }
+
+    if (startDate && endDate) {
+      registryHistoryQuery.andWhere(
+        'registryHistory.createdAt BETWEEN :startDate AND :endDate',
+        { startDate, endDate },
+      );
+    }
+
+    registryHistoryQuery.skip((page - 1) * limit).take(limit);
+
+    const registryHistory = await registryHistoryQuery.getMany();
+    const total = await registryHistoryQuery.getCount();
+
+    return {
+      total: total,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
+      registryHistory,
+    };
   }
 }
