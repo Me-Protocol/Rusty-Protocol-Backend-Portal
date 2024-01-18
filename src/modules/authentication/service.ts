@@ -33,6 +33,8 @@ import { UpdatePreferenceDto } from './dto/UpdatePreferenceDto.dto';
 import fetch from 'node-fetch';
 import { emailCode } from '@src/utils/helpers/email';
 import { CustomerAccountManagementService } from '../accountManagement/customerAccountManagement/service';
+import { CollectionService } from '@src/globalServices/collections/collections.service';
+import { ItemStatus } from '@src/utils/enums/ItemStatus';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -53,6 +55,7 @@ export class AuthenticationService {
     private walletService: FiatWalletService,
     private syncService: SyncRewardService,
     private customerAccountManagementService: CustomerAccountManagementService,
+    private collectionService: CollectionService,
   ) {}
 
   // Signs a token
@@ -371,6 +374,14 @@ export class AuthenticationService {
           walletAddress,
           newUser.id,
         );
+        await this.collectionService.create({
+          name: 'Favorites',
+          description: 'Favorites',
+          image: '',
+          status: ItemStatus.ACTIVE,
+          userId: newUser.id,
+          isDefault: true,
+        });
       }
 
       const token = await this.generateAndSignToken(newUser);
