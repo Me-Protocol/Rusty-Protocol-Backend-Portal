@@ -266,7 +266,6 @@ export class BrandService {
         'customer.totalRedemptionAmount',
         'customer.name',
         'customer.profilePicture',
-        'customer.username',
       ]);
 
     brandCustomerQuery.where('brandCustomer.brandId = :brandId', { brandId });

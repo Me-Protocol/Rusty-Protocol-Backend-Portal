@@ -376,7 +376,7 @@ export class AuthenticationService {
         );
         await this.collectionService.create({
           name: 'Favorites',
-          description: 'Favorites',
+          description: 'Favorites collection',
           image: '',
           status: ItemStatus.ACTIVE,
           userId: newUser.id,
