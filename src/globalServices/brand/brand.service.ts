@@ -262,10 +262,11 @@ export class BrandService {
         'registry.undistributedBalance',
         'registry.totalBalance',
         'registry.userId',
-        'customer.totalRedeemed',
-        'customer.totalRedemptionAmount',
-        'customer.name',
-        'customer.profilePicture',
+        'user.customer.totalRedeemed',
+        'user.customer.totalRedemptionAmount',
+        'user.customer.name',
+        'user.customer.profilePicture',
+        'user.username',
       ]);
 
     brandCustomerQuery.where('brandCustomer.brandId = :brandId', { brandId });
