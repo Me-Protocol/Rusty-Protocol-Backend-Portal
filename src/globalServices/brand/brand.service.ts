@@ -190,16 +190,24 @@ export class BrandService {
     });
   }
 
-  async createBrandCustomer(userId: string, brandId: string) {
+  async createBrandCustomer(
+    userId: string,
+    brandId: string,
+    registryId: string,
+  ) {
     const checkCustomer = await this.brandCustomerRepo.findOne({
       where: {
         userId,
         brandId,
+        registryId,
       },
       relations: ['brand', 'user', 'user.customer'],
     });
 
     if (checkCustomer) {
+      checkCustomer.registryId = registryId;
+      await this.brandCustomerRepo.save(checkCustomer);
+
       return checkCustomer;
     }
 
@@ -241,7 +249,25 @@ export class BrandService {
       .createQueryBuilder('brandCustomer')
       .leftJoinAndSelect('brandCustomer.brand', 'brand')
       .leftJoinAndSelect('brandCustomer.user', 'user')
-      .leftJoinAndSelect('user.customer', 'customer');
+      .leftJoinAndSelect('user.customer', 'customer')
+      .leftJoinAndSelect('brandCustomer.registry', 'registry')
+      .select([
+        'brandCustomer',
+        'customer',
+        'registry',
+        'registry.id',
+        'registry.rewardId',
+        'registry.balance',
+        'registry.pendingBalance',
+        'registry.undistributedBalance',
+        'registry.totalBalance',
+        'registry.userId',
+        'customer.totalRedeemed',
+        'customer.totalRedemptionAmount',
+        'customer.name',
+        'customer.profilePicture',
+        'customer.username',
+      ]);
 
     brandCustomerQuery.where('brandCustomer.brandId = :brandId', { brandId });
 

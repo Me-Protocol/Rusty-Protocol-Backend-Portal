@@ -29,6 +29,7 @@ import {
   transfer_reward_with_url,
 } from '@developeruche/runtime-sdk';
 import { RUNTIME_URL } from '@src/config/env.config';
+import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 
 @Injectable()
 export class SyncRewardService {
@@ -497,11 +498,29 @@ export class SyncRewardService {
     return rewardRegistry;
   }
 
-  async getRegistryRecordByIdentifer(identifier: string, rewardId: string) {
-    return this.rewardRegistryRepo.findOneBy({
+  async getRegistryRecordByIdentifer(
+    identifier: string,
+    rewardId: string,
+    identifierType: SyncIdentifierType,
+  ) {
+    const checkReg = await this.rewardRegistryRepo.findOneBy({
       rewardId,
       customerIdentiyOnBrandSite: identifier,
     });
+
+    if (checkReg) {
+      return checkReg;
+    }
+
+    const registry = new RewardRegistry();
+    registry.rewardId = rewardId;
+    registry.customerIdentiyOnBrandSite = identifier; // TODO Using email for now
+    registry.customerIdentityType = identifierType;
+    registry.balance = 0;
+
+    const rewardRegistry = await this.addRegistry(registry);
+
+    return rewardRegistry;
   }
 
   async getAllRegistryRecordsByIdentifer(identifier: string) {
@@ -640,14 +659,16 @@ export class SyncRewardService {
 
     const user = await this.userService.getUserByEmail(email);
     if (user) {
-      const checkCustomer = await this.brandService.getBrandCustomer(
-        reward.brandId,
-        user.id,
+      const registry = await this.findOneRegistryByEmailIdentifier(
+        email,
+        rewardId,
       );
 
-      if (!checkCustomer) {
-        await this.brandService.createBrandCustomer(user.id, reward.brandId);
-      }
+      await this.brandService.createBrandCustomer(
+        user.id,
+        reward.brandId,
+        registry.id,
+      );
     }
 
     if (distributionData?.data?.error) {

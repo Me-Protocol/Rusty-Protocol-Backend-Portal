@@ -382,14 +382,14 @@ export class TasksService {
       const isTaskInAvailableTaskTypes =
         availableTaskTypes.filter((type) => type === task?.taskType).length > 0;
 
-      console.log(user);
-
       if (isTaskInAvailableTaskTypes && !user?.twitterAuth?.username) {
         throw new HttpException(
           'Please connect your twitter account to join this task',
           400,
         );
       }
+
+      console.log(task);
 
       if (task.expired) {
         throw new HttpException('Task is no longer active', 400);

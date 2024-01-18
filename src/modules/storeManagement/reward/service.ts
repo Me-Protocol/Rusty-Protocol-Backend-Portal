@@ -325,15 +325,8 @@ export class RewardManagementService {
   }
 
   // create customer
-  async createCustomers(userId: string, brandId: string) {
-    const checkCustomer = await this.brandService.getBrandCustomer(
-      brandId,
-      userId,
-    );
-
-    if (!checkCustomer) {
-      await this.brandService.createBrandCustomer(userId, brandId);
-    }
+  async createCustomers(userId: string, brandId: string, rewardId: string) {
+    await this.brandService.createBrandCustomer(userId, brandId, rewardId);
 
     return true;
   }
@@ -344,6 +337,7 @@ export class RewardManagementService {
       const checkRegistry = await this.syncService.getRegistryRecordByIdentifer(
         identifier,
         rewardId,
+        syncData.identifierType,
       );
 
       if (checkRegistry) {
@@ -573,17 +567,16 @@ export class RewardManagementService {
           const registry = await this.syncService.getRegistryRecordByIdentifer(
             syncData.identifier,
             rewardId,
+            syncData.identifierType,
           );
 
-          if (registry) {
-            await this.syncService.disbutributeRewardToExistingUsers({
-              registryId: registry.id,
-              amount: syncData.amount,
-              description: `Reward distributed to ${user.customer.walletAddress}`,
-            });
-          }
+          await this.syncService.disbutributeRewardToExistingUsers({
+            registryId: registry.id,
+            amount: syncData.amount,
+            description: `Reward distributed to ${user.customer.walletAddress}`,
+          });
 
-          await this.createCustomers(user.id, batch.reward.brandId);
+          await this.createCustomers(user.id, batch.reward.brandId, rewardId);
         } else {
           await this.syncService.moveRewardPointToUndistribted({
             customerIdentiyOnBrandSite: syncData.identifier,
@@ -714,6 +707,7 @@ export class RewardManagementService {
               await this.syncService.getRegistryRecordByIdentifer(
                 syncData.identifier,
                 rewardId,
+                syncData.identifierType,
               );
 
             if (registry) {
