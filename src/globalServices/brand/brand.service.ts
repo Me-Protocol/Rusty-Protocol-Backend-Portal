@@ -253,8 +253,11 @@ export class BrandService {
       .leftJoinAndSelect('brandCustomer.registry', 'registry')
       .select([
         'brandCustomer',
-        'customer',
-        'registry',
+        'user.id',
+        'customer.totalRedeemed',
+        'customer.totalRedemptionAmount',
+        'customer.name',
+        'customer.profilePicture',
         'registry.id',
         'registry.rewardId',
         'registry.balance',
@@ -262,11 +265,6 @@ export class BrandService {
         'registry.undistributedBalance',
         'registry.totalBalance',
         'registry.userId',
-        'user.customer.totalRedeemed',
-        'user.customer.totalRedemptionAmount',
-        'user.customer.name',
-        'user.customer.profilePicture',
-        'user.username',
       ]);
 
     brandCustomerQuery.where('brandCustomer.brandId = :brandId', { brandId });
