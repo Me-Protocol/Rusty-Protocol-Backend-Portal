@@ -254,6 +254,7 @@ export class BrandService {
       .select([
         'brandCustomer',
         'user.id',
+        'user.email',
         'customer.totalRedeemed',
         'customer.totalRedemptionAmount',
         'customer.name',

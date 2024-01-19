@@ -312,6 +312,7 @@ export class RewardManagementService {
     registry.customerIdentityType = identifierType;
     registry.balance = 0;
     registry.userId = user?.id;
+    registry.brandCustomerId = user?.customer?.id;
 
     const newReg = await this.syncService.addRegistry(registry);
 
@@ -348,6 +349,16 @@ export class RewardManagementService {
           amount: syncData.amount,
           description: `Reward sync`,
         });
+
+        if (!checkRegistry.brandCustomerId) {
+          const user = await this.userService.getUserById(checkRegistry.userId);
+
+          if (user) {
+            checkRegistry.brandCustomerId = user.customer.id;
+          }
+
+          await this.syncService.saveRegistry(checkRegistry);
+        }
       } else {
         await this.createRewardRegistry({
           amount: syncData.amount,

@@ -31,7 +31,7 @@ export class BrandCustomer extends BaseEntity {
   @Column({ nullable: true })
   registryId: string;
 
-  @OneToOne(() => RewardRegistry, (registry) => registry.id)
+  @OneToOne(() => RewardRegistry, (registry) => registry.brandCustomer)
   @JoinColumn({ name: 'registryId' })
   registry: RewardRegistry;
 }
