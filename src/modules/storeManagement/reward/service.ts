@@ -341,6 +341,8 @@ export class RewardManagementService {
         syncData.identifierType,
       );
 
+      console.log(checkRegistry);
+
       if (checkRegistry) {
         // create transaction
         await this.syncService.fullBalanceUpdate({
@@ -350,7 +352,7 @@ export class RewardManagementService {
           description: `Reward sync`,
         });
 
-        if (!checkRegistry.brandCustomerId) {
+        if (checkRegistry.userId && !checkRegistry.brandCustomerId) {
           const customer = await this.brandService.getBrandCustomerByUserId(
             checkRegistry.userId,
           );
@@ -533,6 +535,7 @@ export class RewardManagementService {
         batch: savedBatch,
       };
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
