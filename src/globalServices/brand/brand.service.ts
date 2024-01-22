@@ -236,6 +236,15 @@ export class BrandService {
     });
   }
 
+  async getBrandCustomerByUserId(userId: string) {
+    return await this.brandCustomerRepo.findOne({
+      where: {
+        userId,
+      },
+      relations: ['brand', 'user', 'user.customer'],
+    });
+  }
+
   async getBrandCustomers(
     brandId: string,
     page: number,

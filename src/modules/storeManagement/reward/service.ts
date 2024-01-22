@@ -351,13 +351,14 @@ export class RewardManagementService {
         });
 
         if (!checkRegistry.brandCustomerId) {
-          const user = await this.userService.getUserById(checkRegistry.userId);
+          const customer = await this.brandService.getBrandCustomerByUserId(
+            checkRegistry.userId,
+          );
 
-          if (user) {
-            checkRegistry.brandCustomerId = user.customer.id;
+          if (customer) {
+            checkRegistry.brandCustomerId = customer.id;
+            await this.syncService.saveRegistry(checkRegistry);
           }
-
-          await this.syncService.saveRegistry(checkRegistry);
         }
       } else {
         await this.createRewardRegistry({
@@ -882,8 +883,16 @@ export class RewardManagementService {
   }
 
   async issueAndDistributeReward(body: UpdateBatchDto, apiKey: ApiKey) {
-    await this.updateBatch(body);
-    return await this.distributeWithApiKey(apiKey, body.rewardId);
+    try {
+      await this.updateBatch(body);
+      return await this.distributeWithApiKey(apiKey, body.rewardId);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
+    }
   }
 
   async completeDistribution({
