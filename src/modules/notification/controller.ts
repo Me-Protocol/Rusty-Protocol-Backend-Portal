@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -40,5 +41,20 @@ export class NotificationController {
     @Req() req: any,
   ) {
     return await this.notificationService.getNotificationById(id, req.user.id);
+  }
+
+  @UseGuards(AuthGuard())
+  @Delete(':id')
+  async deleteNotificationById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: any,
+  ) {
+    return await this.notificationService.deleteNotification(id, req.user.id);
+  }
+
+  @UseGuards(AuthGuard())
+  @Delete('clear')
+  async clearNotification(@Req() req: any) {
+    return await this.notificationService.clearAllNotifications(req.user.id);
   }
 }
