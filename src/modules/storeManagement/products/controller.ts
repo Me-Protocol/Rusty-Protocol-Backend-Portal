@@ -19,6 +19,7 @@ import { CreateProductDto } from './dto/CreateProductDto';
 import { FilterDto } from './dto/FilterDto';
 import { ApiTags } from '@nestjs/swagger';
 import { UpdateProductDto } from './dto/UpdateProductDto';
+import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
 
 ApiTags('Products');
 @Controller('store/product')
@@ -30,6 +31,18 @@ export class ProductManagementController {
   @UseGuards(BrandJwtStrategy)
   @Post()
   async createProduct(
+    @Body(ValidationPipe) body: CreateProductDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    body.brandId = brandId;
+
+    return await this.productManagementService.createProduct(body);
+  }
+
+  @UseGuards(ApiKeyJwtStrategy)
+  @Post('create')
+  async createProductWithApiKey(
     @Body(ValidationPipe) body: CreateProductDto,
     @Req() req: any,
   ) {
