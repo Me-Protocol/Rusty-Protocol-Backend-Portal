@@ -53,7 +53,7 @@ export class NotificationController {
   }
 
   @UseGuards(AuthGuard())
-  @Delete('clear')
+  @Delete('clear/all')
   async clearNotification(@Req() req: any) {
     return await this.notificationService.clearAllNotifications(req.user.id);
   }
