@@ -77,7 +77,10 @@ export class Customer extends BaseEntity {
   totalRedeemed: number;
 
   @Column({
-    default: 0,
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0.0,
   })
   totalRedemptionAmount: number;
 

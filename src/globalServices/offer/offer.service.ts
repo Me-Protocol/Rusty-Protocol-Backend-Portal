@@ -643,10 +643,12 @@ export class OfferService {
         where: { userId: userId, brandId: offer.brandId },
       });
 
-      brandCustomer.totalRedeemed += 1;
-      brandCustomer.totalRedemptionAmount = +totalRedemptionAmountParse;
+      if (brandCustomer) {
+        brandCustomer.totalRedeemed += 1;
+        brandCustomer.totalRedemptionAmount = +totalRedemptionAmountParse;
 
-      await this.brandCustomerRepo.save(brandCustomer);
+        await this.brandCustomerRepo.save(brandCustomer);
+      }
 
       await this.offerRepo.save(offer);
 

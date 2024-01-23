@@ -204,16 +204,16 @@ export class BrandService {
       relations: ['brand', 'user', 'user.customer'],
     });
 
-    if (checkCustomer) {
-      checkCustomer.registryId = registryId;
-      await this.brandCustomerRepo.save(checkCustomer);
+    console.log(registryId);
 
+    if (checkCustomer) {
       return checkCustomer;
     }
 
     const brandCustomer = new BrandCustomer();
     brandCustomer.brandId = brandId;
     brandCustomer.userId = userId;
+    brandCustomer.registryId = registryId;
 
     await this.brandCustomerRepo.save(brandCustomer);
 

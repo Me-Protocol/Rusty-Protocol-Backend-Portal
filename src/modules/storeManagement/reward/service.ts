@@ -326,8 +326,50 @@ export class RewardManagementService {
   }
 
   // create customer
-  async createCustomers(userId: string, brandId: string, rewardId: string) {
-    await this.brandService.createBrandCustomer(userId, brandId, rewardId);
+  async createCustomers(userId: string, brandId: string, registryId: string) {
+    await this.brandService.createBrandCustomer(userId, brandId, registryId);
+
+    return true;
+  }
+
+  async attachUserToRewardRegistry({
+    identifier,
+    identifierType,
+    registryId,
+  }: {
+    identifierType: SyncIdentifierType;
+    identifier: string;
+    registryId: string;
+  }) {
+    let user: User;
+    if (identifierType === SyncIdentifierType.EMAIL) {
+      user = await this.userService.getUserByEmail(identifier);
+    }
+
+    if (identifierType === SyncIdentifierType.PHONE) {
+      user = await this.userService.getUserByPhone(identifier);
+    }
+
+    if (user) {
+      const registry = await this.syncService.getRegistryRecordByIdentifer(
+        identifier,
+        registryId,
+        identifierType,
+      );
+
+      if (registry) {
+        registry.userId = user.id;
+
+        const brandCustomer = await this.brandService.getBrandCustomerByUserId(
+          user.id,
+        );
+        if (brandCustomer) {
+          registry.brandCustomerId = brandCustomer.id;
+        }
+
+        await this.syncService.saveRegistry(registry);
+      }
+    }
 
     return true;
   }
@@ -341,8 +383,6 @@ export class RewardManagementService {
         syncData.identifierType,
       );
 
-      console.log(checkRegistry);
-
       if (checkRegistry) {
         // create transaction
         await this.syncService.fullBalanceUpdate({
@@ -351,17 +391,6 @@ export class RewardManagementService {
           amount: syncData.amount,
           description: `Reward sync`,
         });
-
-        if (checkRegistry.userId && !checkRegistry.brandCustomerId) {
-          const customer = await this.brandService.getBrandCustomerByUserId(
-            checkRegistry.userId,
-          );
-
-          if (customer) {
-            checkRegistry.brandCustomerId = customer.id;
-            await this.syncService.saveRegistry(checkRegistry);
-          }
-        }
       } else {
         await this.createRewardRegistry({
           amount: syncData.amount,
@@ -591,7 +620,11 @@ export class RewardManagementService {
             description: `Reward distributed to ${user.customer.walletAddress}`,
           });
 
-          await this.createCustomers(user.id, batch.reward.brandId, rewardId);
+          await this.createCustomers(
+            user.id,
+            batch.reward.brandId,
+            registry.id,
+          );
         } else {
           await this.syncService.moveRewardPointToUndistribted({
             customerIdentiyOnBrandSite: syncData.identifier,
