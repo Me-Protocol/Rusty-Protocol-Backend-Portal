@@ -17,10 +17,7 @@ import { TaskStatus } from '@src/utils/enums/TasksTypes';
 import { HttpException } from '@nestjs/common';
 import { writeFile } from 'fs/promises';
 import { constructHmtManifest } from '../../constructHmtManifest';
-import { createReadStream, readFileSync } from 'fs';
-import path from 'path';
-import { distribute_bounty_by_reward_address_magic } from '@developeruche/runtime-sdk';
-const FormData = require('form-data');
+import { createReadStream } from 'fs';
 
 export class HMTTaskVerifier {
   constructor(
@@ -129,7 +126,9 @@ export class HMTTaskVerifier {
     }
   }
 
-  async listenToJobCompletion() {}
+  async listenToJobCompletion() {
+    // webhook for hmt
+  }
 
   // TODO listen for when it fails
   async closeTask(taskId: string) {
@@ -151,9 +150,8 @@ export class HMTTaskVerifier {
 
     await writeFile(manifestPath, JSON.stringify(manifest));
 
-    let data = createReadStream(manifestPath);
-
-    let config = {
+    const data = createReadStream(manifestPath);
+    const config = {
       method: 'post',
       maxBodyLength: Infinity,
       url: `https://foundation-accounts.hmt.ai/requester/quick_launch?api_key=${HMT_JOB_API_KEY}`,
@@ -163,9 +161,11 @@ export class HMTTaskVerifier {
       data: data,
     };
 
-    axios
+    await axios
       .request(config)
       .then(async (response) => {
+        console.log(response);
+
         // create job response
         const taskResponseRecord = new TaskResponseRecord();
         taskResponseRecord.taskId = task.id;

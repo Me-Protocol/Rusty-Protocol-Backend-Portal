@@ -99,6 +99,8 @@ export class CustomerAccountManagementService {
       const undistributedRewards =
         await this.syncService.getUndistributedReward(userId);
 
+      console.log('undistributedRewards', undistributedRewards);
+
       if (undistributedRewards.length > 0) {
         // 9. We iterate through the undistributed points and distribute them to the new walletAddress.
         for (const point of undistributedRewards) {
@@ -115,6 +117,7 @@ export class CustomerAccountManagementService {
         message: 'Wallet address updated successfully',
       };
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400);
     }

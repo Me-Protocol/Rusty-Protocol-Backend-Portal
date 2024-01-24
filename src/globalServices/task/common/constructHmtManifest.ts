@@ -39,7 +39,7 @@ export const constructHmtManifest = ({
         sig_figs: 1,
       },
       requester_question: {
-        en: 'Does this review make sense, Answer 1 for yes and 0 for no?',
+        en: `Does this [review](${taskResponses?.[0]?.responseUrl}) make sense, Answer 1 for yes and 0 for no?`,
       },
       restricted_audience: {
         sitekey: [

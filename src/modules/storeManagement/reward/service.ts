@@ -312,6 +312,7 @@ export class RewardManagementService {
     registry.customerIdentityType = identifierType;
     registry.balance = 0;
     registry.userId = user?.id;
+    registry.brandCustomerId = user?.customer?.id;
 
     const newReg = await this.syncService.addRegistry(registry);
 
@@ -325,14 +326,49 @@ export class RewardManagementService {
   }
 
   // create customer
-  async createCustomers(userId: string, brandId: string) {
-    const checkCustomer = await this.brandService.getBrandCustomer(
-      brandId,
-      userId,
-    );
+  async createCustomers(userId: string, brandId: string, registryId: string) {
+    await this.brandService.createBrandCustomer(userId, brandId, registryId);
 
-    if (!checkCustomer) {
-      await this.brandService.createBrandCustomer(userId, brandId);
+    return true;
+  }
+
+  async attachUserToRewardRegistry({
+    identifier,
+    identifierType,
+    registryId,
+  }: {
+    identifierType: SyncIdentifierType;
+    identifier: string;
+    registryId: string;
+  }) {
+    let user: User;
+    if (identifierType === SyncIdentifierType.EMAIL) {
+      user = await this.userService.getUserByEmail(identifier);
+    }
+
+    if (identifierType === SyncIdentifierType.PHONE) {
+      user = await this.userService.getUserByPhone(identifier);
+    }
+
+    if (user) {
+      const registry = await this.syncService.getRegistryRecordByIdentifer(
+        identifier,
+        registryId,
+        identifierType,
+      );
+
+      if (registry) {
+        registry.userId = user.id;
+
+        const brandCustomer = await this.brandService.getBrandCustomerByUserId(
+          user.id,
+        );
+        if (brandCustomer) {
+          registry.brandCustomerId = brandCustomer.id;
+        }
+
+        await this.syncService.saveRegistry(registry);
+      }
     }
 
     return true;
@@ -344,6 +380,7 @@ export class RewardManagementService {
       const checkRegistry = await this.syncService.getRegistryRecordByIdentifer(
         identifier,
         rewardId,
+        syncData.identifierType,
       );
 
       if (checkRegistry) {
@@ -527,6 +564,7 @@ export class RewardManagementService {
         batch: savedBatch,
       };
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
@@ -573,17 +611,20 @@ export class RewardManagementService {
           const registry = await this.syncService.getRegistryRecordByIdentifer(
             syncData.identifier,
             rewardId,
+            syncData.identifierType,
           );
 
-          if (registry) {
-            await this.syncService.disbutributeRewardToExistingUsers({
-              registryId: registry.id,
-              amount: syncData.amount,
-              description: `Reward distributed to ${user.customer.walletAddress}`,
-            });
-          }
+          await this.syncService.disbutributeRewardToExistingUsers({
+            registryId: registry.id,
+            amount: syncData.amount,
+            description: `Reward distributed to ${user.customer.walletAddress}`,
+          });
 
-          await this.createCustomers(user.id, batch.reward.brandId);
+          await this.createCustomers(
+            user.id,
+            batch.reward.brandId,
+            registry.id,
+          );
         } else {
           await this.syncService.moveRewardPointToUndistribted({
             customerIdentiyOnBrandSite: syncData.identifier,
@@ -668,6 +709,9 @@ export class RewardManagementService {
       endDate: query.endDate,
       userId: query.userId,
       transactionsType: query.transactionsType,
+      rewardId: query.rewardId,
+      page: query.page,
+      limit: query.limit,
     });
   }
 
@@ -711,6 +755,7 @@ export class RewardManagementService {
               await this.syncService.getRegistryRecordByIdentifer(
                 syncData.identifier,
                 rewardId,
+                syncData.identifierType,
               );
 
             if (registry) {
@@ -874,8 +919,16 @@ export class RewardManagementService {
   }
 
   async issueAndDistributeReward(body: UpdateBatchDto, apiKey: ApiKey) {
-    await this.updateBatch(body);
-    return await this.distributeWithApiKey(apiKey, body.rewardId);
+    try {
+      await this.updateBatch(body);
+      return await this.distributeWithApiKey(apiKey, body.rewardId);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
+    }
   }
 
   async completeDistribution({

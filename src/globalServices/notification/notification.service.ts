@@ -99,7 +99,20 @@ export class NotificationService {
   }
 
   // delete notification
-  async deleteNotification(id: string) {
+  async deleteNotification(id: string, userId: string) {
+    const checkNotification = await this.notificationRepository.findOneBy({
+      id,
+      userId,
+    });
+
+    if (!checkNotification) {
+      throw new HttpException('Notification not found', 404);
+    }
+
     return await this.notificationRepository.softDelete(id);
+  }
+
+  async clearAllNotifications(userId: string) {
+    return await this.notificationRepository.softDelete({ userId });
   }
 }

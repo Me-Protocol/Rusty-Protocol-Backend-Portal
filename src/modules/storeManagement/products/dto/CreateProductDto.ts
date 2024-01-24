@@ -98,4 +98,9 @@ export class CreateProductDto {
   @ApiProperty()
   @IsUrl()
   productUrl: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumber()
+  minAge: number;
 }

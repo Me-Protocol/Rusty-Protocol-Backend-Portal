@@ -190,14 +190,21 @@ export class BrandService {
     });
   }
 
-  async createBrandCustomer(userId: string, brandId: string) {
+  async createBrandCustomer(
+    userId: string,
+    brandId: string,
+    registryId: string,
+  ) {
     const checkCustomer = await this.brandCustomerRepo.findOne({
       where: {
         userId,
         brandId,
+        registryId,
       },
       relations: ['brand', 'user', 'user.customer'],
     });
+
+    console.log(registryId);
 
     if (checkCustomer) {
       return checkCustomer;
@@ -206,6 +213,7 @@ export class BrandService {
     const brandCustomer = new BrandCustomer();
     brandCustomer.brandId = brandId;
     brandCustomer.userId = userId;
+    brandCustomer.registryId = registryId;
 
     await this.brandCustomerRepo.save(brandCustomer);
 
@@ -228,6 +236,15 @@ export class BrandService {
     });
   }
 
+  async getBrandCustomerByUserId(userId: string) {
+    return await this.brandCustomerRepo.findOne({
+      where: {
+        userId,
+      },
+      relations: ['brand', 'user', 'user.customer'],
+    });
+  }
+
   async getBrandCustomers(
     brandId: string,
     page: number,
@@ -241,7 +258,24 @@ export class BrandService {
       .createQueryBuilder('brandCustomer')
       .leftJoinAndSelect('brandCustomer.brand', 'brand')
       .leftJoinAndSelect('brandCustomer.user', 'user')
-      .leftJoinAndSelect('user.customer', 'customer');
+      .leftJoinAndSelect('user.customer', 'customer')
+      .leftJoinAndSelect('brandCustomer.registry', 'registry')
+      .select([
+        'brandCustomer',
+        'user.id',
+        'user.email',
+        'customer.totalRedeemed',
+        'customer.totalRedemptionAmount',
+        'customer.name',
+        'customer.profilePicture',
+        'registry.id',
+        'registry.rewardId',
+        'registry.balance',
+        'registry.pendingBalance',
+        'registry.undistributedBalance',
+        'registry.totalBalance',
+        'registry.userId',
+      ]);
 
     brandCustomerQuery.where('brandCustomer.brandId = :brandId', { brandId });
 

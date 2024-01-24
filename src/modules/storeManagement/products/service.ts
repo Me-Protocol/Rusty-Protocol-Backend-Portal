@@ -59,11 +59,13 @@ export class ProductManagementService {
     if (body.isUnlimited) product.isUnlimited = body.isUnlimited;
     if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
     if (body.productUrl) product.productUrl = body.productUrl;
+    if (body.minAge) product.minAge = body.minAge;
     product.productCode = productCode;
 
     const productCollections = [];
 
     if (body.collections && body.collections.length > 0) {
+      // eslint-disable-next-line no-unsafe-optional-chaining
       for (const collectionId of body?.collections) {
         const collection = await this.collectionService.findOne({
           id: collectionId,
@@ -151,6 +153,7 @@ export class ProductManagementService {
     if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
     if (body.categoryId) product.categoryId = body.categoryId;
     if (body.productUrl) product.productUrl = body.productUrl;
+    if (body.minAge) product.minAge = body.minAge;
 
     if (body.productImages && body.productImages.length > 0) {
       // upload images

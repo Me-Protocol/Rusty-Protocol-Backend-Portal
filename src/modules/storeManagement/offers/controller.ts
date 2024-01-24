@@ -1,7 +1,6 @@
 import {
   Controller,
   Body,
-  UseInterceptors,
   UseGuards,
   ValidationPipe,
   Put,
@@ -11,9 +10,7 @@ import {
   Query,
   Req,
   Delete,
-  HttpException,
 } from '@nestjs/common';
-import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { ApiTags } from '@nestjs/swagger';
 import { OfferManagementService } from './service';

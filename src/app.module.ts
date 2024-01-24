@@ -7,7 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MailModule } from './globalServices/mail/mail.module';
 import { SmsModule } from './globalServices/sms/sms.module';
 import { jwtConfigurations } from './config/jwt.config';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { JwtStrategy } from './middlewares/jwt-strategy.middleware';
 import { SearchService } from './modules/search/search.service';
 import { SearchModule } from './modules/search/search.module';
@@ -323,7 +323,8 @@ import { RewardCirculation } from './globalServices/analytics/entities/reward_ci
     AnalyticsManagementService,
     RewarderService,
     AnalyticsRecorderService,
+    JwtService,
   ],
-  exports: [JwtStrategy, PassportModule],
+  exports: [JwtStrategy, PassportModule, AuthenticationModule],
 })
 export class AppModule {}

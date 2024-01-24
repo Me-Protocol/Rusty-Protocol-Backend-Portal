@@ -9,7 +9,10 @@ import {
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
-import { UpdateCustomerDto } from './dto/UpdateCustomerDto';
+import {
+  UpdateCustomerDto,
+  UpdateCustomerWalletDto,
+} from './dto/UpdateCustomerDto';
 import { CustomerAccountManagementService } from './service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
@@ -38,10 +41,11 @@ export class CustomerManagementController {
   @UseGuards(AuthGuard())
   @Put('/setup-wallet-address')
   async setWalletAddress(
-    @Body(ValidationPipe) body: UpdateCustomerDto,
+    @Body(ValidationPipe) body: UpdateCustomerWalletDto,
     @Req() req: any,
   ) {
     const userId = req.user.id;
+    // return 'Deprecated';
 
     return await this.customerAccountManagementService.setWalletAddress(
       body.walletAddress,

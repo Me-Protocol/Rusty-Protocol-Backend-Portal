@@ -113,4 +113,9 @@ export class Product extends BaseEntity {
     default: 'N/A',
   })
   productUrl: string;
+
+  @Column({
+    nullable: true,
+  })
+  minAge: number;
 }

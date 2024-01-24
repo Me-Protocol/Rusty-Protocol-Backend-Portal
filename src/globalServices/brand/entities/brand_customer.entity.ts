@@ -2,8 +2,9 @@
 
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { BaseEntity } from '@src/common/entities/base.entity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import { Brand } from './brand.entity';
+import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
 
 @Entity('brand_customer')
 export class BrandCustomer extends BaseEntity {
@@ -24,8 +25,20 @@ export class BrandCustomer extends BaseEntity {
   @Column({ default: 0 })
   totalRedeemed: number;
 
-  @Column({ default: 0 })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0.0,
+  })
   totalRedemptionAmount: number;
+
+  @Column({ nullable: true })
+  registryId: string;
+
+  @OneToOne(() => RewardRegistry, (registry) => registry.brandCustomer)
+  @JoinColumn({ name: 'registryId' })
+  registry: RewardRegistry;
 }
 
 // await this.createCustomers(user.id, batch.reward.brandId);
