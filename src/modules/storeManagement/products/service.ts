@@ -26,87 +26,93 @@ export class ProductManagementService {
   }
 
   async createProduct(body: CreateProductDto) {
-    if (body.categoryId) {
-      const category = await this.categoryService.findOne(body.categoryId);
+    try {
+      if (body.categoryId) {
+        const category = await this.categoryService.findOne(body.categoryId);
 
-      if (!category) {
-        throw new HttpException('Category does not exist', 400);
-      }
-    }
-
-    if (body.subCategoryId) {
-      const subCategory = await this.categoryService.findOne(
-        body.subCategoryId,
-      );
-
-      if (!subCategory) {
-        throw new HttpException('Sub Category does not exist', 400);
-      }
-    }
-
-    const productCode = await this.productService.generateProductCode(
-      body.name,
-    );
-
-    const product = new Product();
-    product.brandId = body.brandId;
-    if (body.categoryId) product.categoryId = body.categoryId;
-    if (body.name) product.name = body.name;
-    if (body.description) product.description = body.description;
-    if (body.price) product.price = body.price;
-    if (body.status) product.status = body.status;
-    if (body.inventory) product.inventory = body.inventory;
-    if (body.isUnlimited) product.isUnlimited = body.isUnlimited;
-    if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
-    if (body.productUrl) product.productUrl = body.productUrl;
-    if (body.minAge) product.minAge = body.minAge;
-    product.productCode = productCode;
-
-    const productCollections = [];
-
-    if (body.collections && body.collections.length > 0) {
-      // eslint-disable-next-line no-unsafe-optional-chaining
-      for (const collectionId of body?.collections) {
-        const collection = await this.collectionService.findOne({
-          id: collectionId,
-          brandId: body.brandId,
-        });
-
-        if (collection) {
-          productCollections.push(collection);
+        if (!category) {
+          throw new HttpException('Category does not exist', 400);
         }
       }
+
+      if (body.subCategoryId) {
+        const subCategory = await this.categoryService.findOne(
+          body.subCategoryId,
+        );
+
+        if (!subCategory) {
+          throw new HttpException('Sub Category does not exist', 400);
+        }
+      }
+
+      const productCode = await this.productService.generateProductCode(
+        body.name,
+      );
+
+      const product = new Product();
+      product.brandId = body.brandId;
+      if (body.categoryId) product.categoryId = body.categoryId;
+      if (body.name) product.name = body.name;
+      if (body.description) product.description = body.description;
+      if (body.price) product.price = body.price;
+      if (body.status) product.status = body.status;
+      if (body.inventory) product.inventory = body.inventory;
+      if (body.isUnlimited) product.isUnlimited = body.isUnlimited;
+      if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
+      if (body.productUrl) product.productUrl = body.productUrl;
+      if (body.minAge) product.minAge = body.minAge;
+      product.productCode = productCode;
+
+      const productCollections = [];
+
+      if (body.collections && body.collections.length > 0) {
+        // eslint-disable-next-line no-unsafe-optional-chaining
+        for (const collectionId of body?.collections) {
+          const collection = await this.collectionService.findOne({
+            id: collectionId,
+            brandId: body.brandId,
+          });
+
+          if (collection) {
+            productCollections.push(collection);
+          }
+        }
+      }
+
+      product.collections = productCollections;
+
+      const newProduct = await this.productService.createProduct(product);
+
+      // upload images
+      await this.productService.bulkAddProductImage(
+        body.brandId,
+        newProduct.id,
+        body.productImages,
+      );
+
+      // add variants
+      await this.productService.addVariants(
+        body.brandId,
+        newProduct.id,
+        body.variants,
+      );
+
+      const findOneProduct = await this.productService.getOneProduct(
+        newProduct.id,
+        body.brandId,
+      );
+
+      if (body.status === ProductStatus.PUBLISHED) {
+        // index product
+        await this.elasticIndex.insertDocument(findOneProduct, productIndex);
+      }
+
+      return findOneProduct;
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
     }
-
-    product.collections = productCollections;
-
-    const newProduct = await this.productService.createProduct(product);
-
-    // upload images
-    await this.productService.bulkAddProductImage(
-      body.brandId,
-      newProduct.id,
-      body.productImages,
-    );
-
-    // add variants
-    await this.productService.addVariants(
-      body.brandId,
-      newProduct.id,
-      body.variants,
-    );
-
-    const findOneProduct = await this.productService.getOneProduct(
-      newProduct.id,
-      body.brandId,
-    );
-
-    if (body.status === ProductStatus.PUBLISHED) {
-      // index product
-      await this.elasticIndex.insertDocument(findOneProduct, productIndex);
-    }
-
-    return findOneProduct;
   }
 
   async updateProduct(body: UpdateProductDto, id: string) {
