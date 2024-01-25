@@ -9,6 +9,7 @@ export const constructHmtManifest = ({
   taskId: string;
 }) => {
   const newManifest = {
+    skip_upload_pipeline: true,
     direct: true,
     manifest: {
       batch_result_delivery_webhook: `${SERVER_URL}/task/${taskId}/job-completed`,

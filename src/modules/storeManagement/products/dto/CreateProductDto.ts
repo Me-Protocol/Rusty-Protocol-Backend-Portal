@@ -25,8 +25,8 @@ export class CreateProductDto {
   brandId: string;
 
   @ApiProperty()
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty({ message: 'Please provide a category id' })
   categoryId: string;
 
   @ApiProperty()
@@ -77,6 +77,7 @@ export class CreateProductDto {
       },
     },
   })
+  @IsOptional()
   @IsArray({
     message: 'Variants must be an array of objects',
     // each: true,

@@ -270,6 +270,7 @@ export class ProductService {
     startDate,
     subCategoryId,
     endDate,
+    collectionId,
   }: FilterDto) {
     const products = this.productRepo
       .createQueryBuilder('product')
@@ -317,6 +318,12 @@ export class ProductService {
       products.andWhere('product.createdAt BETWEEN :startDate AND :endDate', {
         startDate,
         endDate,
+      });
+    }
+
+    if (collectionId) {
+      products.andWhere('collections.id = :collectionId', {
+        collectionId,
       });
     }
 
