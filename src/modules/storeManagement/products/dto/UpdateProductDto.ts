@@ -24,9 +24,6 @@ export class UpdateProductDto {
   @IsString()
   description: string;
 
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsUUID()
   brandId: string;
 
   @ApiProperty()
