@@ -64,6 +64,18 @@ export class ProductManagementController {
     return await this.productManagementService.updateProduct(body, productId);
   }
 
+  @UseGuards(ApiKeyJwtStrategy)
+  @Put('/update/:productId')
+  async updateProductWithAPIKey(
+    @Body(ValidationPipe) body: UpdateProductDto,
+    @Param('productId') productId: string,
+    @Req() req: any,
+  ) {
+    const brandId = req.brand.id;
+    body.brandId = brandId;
+    return await this.productManagementService.updateProduct(body, productId);
+  }
+
   @UseGuards(BrandJwtStrategy)
   @Get('/images')
   async getProductImages(
