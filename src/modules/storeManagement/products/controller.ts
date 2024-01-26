@@ -46,7 +46,7 @@ export class ProductManagementController {
     @Body(ValidationPipe) body: CreateProductDto,
     @Req() req: any,
   ) {
-    const brandId = req.user.brand.id;
+    const brandId = req.brand.id;
     body.brandId = brandId;
 
     return await this.productManagementService.createProduct(body);

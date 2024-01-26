@@ -91,11 +91,13 @@ export class ProductManagementService {
       );
 
       // add variants
-      await this.productService.addVariants(
-        body.brandId,
-        newProduct.id,
-        body.variants,
-      );
+      if (body?.variants && body?.variants?.length > 0) {
+        await this.productService.addVariants(
+          body.brandId,
+          newProduct.id,
+          body.variants,
+        );
+      }
 
       const findOneProduct = await this.productService.getOneProduct(
         newProduct.id,

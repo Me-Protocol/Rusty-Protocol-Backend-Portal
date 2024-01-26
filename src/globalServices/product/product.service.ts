@@ -126,7 +126,7 @@ export class ProductService {
       throw new Error('Product not found');
     }
 
-    const productVariants = variants.map((variant) =>
+    const productVariants = variants?.map((variant) =>
       this.variantRepo.create({
         ...variant,
         productId,
