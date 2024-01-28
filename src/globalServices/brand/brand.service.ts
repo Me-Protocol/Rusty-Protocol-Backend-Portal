@@ -14,6 +14,7 @@ import { generateBrandIdBytes10 } from '@developeruche/protocol-core';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ProcessBrandColorEvent } from './events/process-brand-color.event';
+import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 
 @Injectable()
 export class BrandService {
@@ -191,38 +192,39 @@ export class BrandService {
   }
 
   async createBrandCustomer(
-    userId: string,
     brandId: string,
-    registryId: string,
+    identifier: string,
+    identifierType: SyncIdentifierType,
   ) {
     const checkCustomer = await this.brandCustomerRepo.findOne({
       where: {
-        userId,
         brandId,
-        registryId,
+        identifier,
+        identifierType,
       },
       relations: ['brand', 'user', 'user.customer'],
     });
 
-    console.log(registryId);
-
     if (checkCustomer) {
+      checkCustomer.identifier = identifier;
+      checkCustomer.identifierType = identifierType;
+      await this.brandCustomerRepo.save(checkCustomer);
+
       return checkCustomer;
     }
 
     const brandCustomer = new BrandCustomer();
     brandCustomer.brandId = brandId;
-    brandCustomer.userId = userId;
-    brandCustomer.registryId = registryId;
+    brandCustomer.identifier = identifier;
+    brandCustomer.identifierType = identifierType;
 
     await this.brandCustomerRepo.save(brandCustomer);
 
     return await this.brandCustomerRepo.findOne({
       where: {
-        userId,
         brandId,
       },
-      relations: ['brand', 'user', 'user.customer'],
+      relations: ['brand'],
     });
   }
 
@@ -232,7 +234,7 @@ export class BrandService {
         brandId,
         userId,
       },
-      relations: ['brand', 'user', 'user.customer'],
+      relations: ['brand'],
     });
   }
 
@@ -241,7 +243,7 @@ export class BrandService {
       where: {
         userId,
       },
-      relations: ['brand', 'user', 'user.customer'],
+      relations: ['brand'],
     });
   }
 
@@ -259,23 +261,7 @@ export class BrandService {
       .leftJoinAndSelect('brandCustomer.brand', 'brand')
       .leftJoinAndSelect('brandCustomer.user', 'user')
       .leftJoinAndSelect('user.customer', 'customer')
-      .leftJoinAndSelect('brandCustomer.registry', 'registry')
-      .select([
-        'brandCustomer',
-        'user.id',
-        'user.email',
-        'customer.totalRedeemed',
-        'customer.totalRedemptionAmount',
-        'customer.name',
-        'customer.profilePicture',
-        'registry.id',
-        'registry.rewardId',
-        'registry.balance',
-        'registry.pendingBalance',
-        'registry.undistributedBalance',
-        'registry.totalBalance',
-        'registry.userId',
-      ]);
+      .leftJoinAndSelect('brandCustomer.registry', 'registry');
 
     brandCustomerQuery.where('brandCustomer.brandId = :brandId', { brandId });
 

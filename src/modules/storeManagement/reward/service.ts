@@ -35,6 +35,7 @@ import { UpdateRewardDto } from './dto/updateRewardDto';
 import { NotificationService } from '@src/globalServices/notification/notification.service';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 import { NotificationType } from '@src/utils/enums/notification.enum';
+import { API_KEY_SALT } from '@src/config/env.config';
 
 @Injectable()
 export class RewardManagementService {
@@ -312,7 +313,6 @@ export class RewardManagementService {
     registry.customerIdentityType = identifierType;
     registry.balance = 0;
     registry.userId = user?.id;
-    registry.brandCustomerId = user?.customer?.id;
 
     const newReg = await this.syncService.addRegistry(registry);
 
@@ -326,51 +326,16 @@ export class RewardManagementService {
   }
 
   // create customer
-  async createCustomers(userId: string, brandId: string, registryId: string) {
-    await this.brandService.createBrandCustomer(userId, brandId, registryId);
-
-    return true;
-  }
-
-  async attachUserToRewardRegistry({
-    identifier,
-    identifierType,
-    registryId,
-  }: {
-    identifierType: SyncIdentifierType;
-    identifier: string;
-    registryId: string;
-  }) {
-    let user: User;
-    if (identifierType === SyncIdentifierType.EMAIL) {
-      user = await this.userService.getUserByEmail(identifier);
-    }
-
-    if (identifierType === SyncIdentifierType.PHONE) {
-      user = await this.userService.getUserByPhone(identifier);
-    }
-
-    if (user) {
-      const registry = await this.syncService.getRegistryRecordByIdentifer(
-        identifier,
-        registryId,
-        identifierType,
-      );
-
-      if (registry) {
-        registry.userId = user.id;
-
-        const brandCustomer = await this.brandService.getBrandCustomerByUserId(
-          user.id,
-        );
-        if (brandCustomer) {
-          registry.brandCustomerId = brandCustomer.id;
-        }
-
-        await this.syncService.saveRegistry(registry);
-      }
-    }
-
+  async createCustomers(
+    brandId: string,
+    identifier: string,
+    identifierType: SyncIdentifierType,
+  ) {
+    await this.brandService.createBrandCustomer(
+      brandId,
+      identifier,
+      identifierType,
+    );
     return true;
   }
 
@@ -382,6 +347,8 @@ export class RewardManagementService {
         rewardId,
         syncData.identifierType,
       );
+
+      const reward = await this.rewardService.findOneById(rewardId);
 
       if (checkRegistry) {
         // create transaction
@@ -399,6 +366,12 @@ export class RewardManagementService {
           rewardId: rewardId,
         });
       }
+
+      await this.createCustomers(
+        reward.brandId,
+        identifier,
+        syncData.identifierType,
+      );
     }
 
     return true;
@@ -619,12 +592,6 @@ export class RewardManagementService {
             amount: syncData.amount,
             description: `Reward distributed to ${user.customer.walletAddress}`,
           });
-
-          await this.createCustomers(
-            user.id,
-            batch.reward.brandId,
-            registry.id,
-          );
         } else {
           await this.syncService.moveRewardPointToUndistribted({
             customerIdentiyOnBrandSite: syncData.identifier,
@@ -804,10 +771,7 @@ export class RewardManagementService {
 
       const syncData = batch.syncData;
 
-      const { privKey } = generateWalletWithApiKey(
-        privateKey,
-        process.env.API_KEY_SALT,
-      );
+      const { privKey } = generateWalletWithApiKey(privateKey, API_KEY_SALT);
 
       const wallet = new ethers.Wallet(privKey);
 

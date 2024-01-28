@@ -5,6 +5,7 @@ import { BaseEntity } from '@src/common/entities/base.entity';
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import { Brand } from './brand.entity';
 import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
+import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 
 @Entity('brand_customer')
 export class BrandCustomer extends BaseEntity {
@@ -15,7 +16,9 @@ export class BrandCustomer extends BaseEntity {
   @JoinColumn({ name: 'brandId' })
   brand: Brand;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   userId: string;
 
   @ManyToOne(() => User, (user) => user.brandCustomers)
@@ -33,12 +36,25 @@ export class BrandCustomer extends BaseEntity {
   })
   totalRedemptionAmount: number;
 
-  @Column({ nullable: true })
-  registryId: string;
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0.0,
+  })
+  totalIssued: number;
 
-  @OneToOne(() => RewardRegistry, (registry) => registry.brandCustomer)
-  @JoinColumn({ name: 'registryId' })
-  registry: RewardRegistry;
+  @Column({
+    nullable: true,
+  })
+  identifier: string;
+
+  @Column({
+    type: 'enum',
+    enum: SyncIdentifierType,
+    nullable: true,
+  })
+  identifierType: SyncIdentifierType;
 }
 
 // await this.createCustomers(user.id, batch.reward.brandId);

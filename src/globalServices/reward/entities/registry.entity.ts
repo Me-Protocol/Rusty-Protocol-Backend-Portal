@@ -82,13 +82,4 @@ export class RewardRegistry extends BaseEntity {
     default: false,
   })
   hasBalance: boolean;
-
-  @Column({
-    nullable: true,
-  })
-  brandCustomerId: string;
-
-  @OneToOne(() => BrandCustomer, (user) => user.registry)
-  @JoinColumn({ name: 'brandCustomerId' })
-  brandCustomer: BrandCustomer;
 }
