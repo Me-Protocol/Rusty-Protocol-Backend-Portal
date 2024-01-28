@@ -37,6 +37,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BrandRole } from '@src/utils/enums/BrandRole';
 import { onboard_brand_with_url } from '@developeruche/runtime-sdk';
 import { RUNTIME_URL } from '@src/config/env.config';
+import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -510,5 +511,13 @@ export class BrandAccountManagementService {
       logger.error(error);
       throw new HttpException(error.message, 400);
     }
+  }
+
+  async createBrandCustomer(body: CreateCustomerDto) {
+    return await this.brandService.createBrandCustomer(
+      body.brandId,
+      body.identifier,
+      body.identifierType,
+    );
   }
 }
