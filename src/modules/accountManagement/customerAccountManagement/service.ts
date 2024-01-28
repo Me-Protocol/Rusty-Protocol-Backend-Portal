@@ -5,6 +5,8 @@ import { logger } from '@src/globalServices/logger/logger.service';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
 import { UserService } from '@src/globalServices/user/user.service';
+import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
+import { User } from '@src/globalServices/user/entities/user.entity';
 
 @Injectable()
 export class CustomerAccountManagementService {
@@ -120,6 +122,27 @@ export class CustomerAccountManagementService {
       console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400);
+    }
+  }
+
+  async checkIfCustomerExist(
+    identifier: string,
+    identifierType: SyncIdentifierType,
+  ) {
+    let user: User;
+
+    if (identifierType === SyncIdentifierType.EMAIL) {
+      user = await this.userService.getUserByEmail(identifier);
+    }
+
+    if (identifierType === SyncIdentifierType.PHONE) {
+      user = await this.userService.getUserByPhone(identifier);
+    }
+
+    if (user) {
+      return true;
+    } else {
+      return false;
     }
   }
 }

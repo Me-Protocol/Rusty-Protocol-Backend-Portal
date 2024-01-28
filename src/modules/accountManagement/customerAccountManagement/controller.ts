@@ -1,13 +1,13 @@
 import {
   Controller,
   Body,
-  UseInterceptors,
   UseGuards,
   ValidationPipe,
   Req,
   Put,
+  Get,
+  Param,
 } from '@nestjs/common';
-import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import {
   UpdateCustomerDto,
@@ -15,6 +15,7 @@ import {
 } from './dto/UpdateCustomerDto';
 import { CustomerAccountManagementService } from './service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 
 @ApiTags('Customer')
 @ApiBearerAuth()
@@ -50,6 +51,18 @@ export class CustomerManagementController {
     return await this.customerAccountManagementService.setWalletAddress(
       body.walletAddress,
       userId,
+    );
+  }
+
+  @UseGuards(AuthGuard())
+  @Get('customer-exist')
+  async verifyBrandMemberExistingUser(
+    @Param('identifier') identifier: string,
+    @Param('identifierType') identifierType: SyncIdentifierType,
+  ) {
+    return this.customerAccountManagementService.checkIfCustomerExist(
+      identifier,
+      identifierType,
     );
   }
 }
