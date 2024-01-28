@@ -326,18 +326,6 @@ export class RewardManagementService {
   }
 
   // create customer
-  async createCustomers(
-    brandId: string,
-    identifier: string,
-    identifierType: SyncIdentifierType,
-  ) {
-    await this.brandService.createBrandCustomer(
-      brandId,
-      identifier,
-      identifierType,
-    );
-    return true;
-  }
 
   async addPointsToRewardRegistry(addableSyncData: any[], rewardId: string) {
     for (const syncData of addableSyncData) {
@@ -367,11 +355,15 @@ export class RewardManagementService {
         });
       }
 
-      await this.createCustomers(
+      const brandCustomer = await this.brandService.createBrandCustomer(
         reward.brandId,
         identifier,
         syncData.identifierType,
       );
+
+      brandCustomer.totalIssued =
+        Number(brandCustomer.totalIssued) + Number(syncData.amount);
+      await this.brandService.saveBrandCustomer(brandCustomer);
     }
 
     return true;

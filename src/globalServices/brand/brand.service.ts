@@ -206,10 +206,6 @@ export class BrandService {
     });
 
     if (checkCustomer) {
-      checkCustomer.identifier = identifier;
-      checkCustomer.identifierType = identifierType;
-      await this.brandCustomerRepo.save(checkCustomer);
-
       return checkCustomer;
     }
 
@@ -226,6 +222,10 @@ export class BrandService {
       },
       relations: ['brand'],
     });
+  }
+
+  async saveBrandCustomer(brandCustomer: BrandCustomer) {
+    return await this.brandCustomerRepo.save(brandCustomer);
   }
 
   async getBrandCustomer(brandId: string, userId: string) {
