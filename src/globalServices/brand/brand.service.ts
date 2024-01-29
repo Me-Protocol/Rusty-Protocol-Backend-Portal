@@ -258,17 +258,14 @@ export class BrandService {
   ) {
     const brandCustomerQuery = this.brandCustomerRepo
       .createQueryBuilder('brandCustomer')
-      .leftJoinAndSelect('brandCustomer.brand', 'brand')
-      .leftJoinAndSelect('brandCustomer.user', 'user')
-      .leftJoinAndSelect('user.customer', 'customer')
-      .leftJoinAndSelect('brandCustomer.registry', 'registry');
+      .leftJoinAndSelect('brandCustomer.brand', 'brand');
 
     brandCustomerQuery.where('brandCustomer.brandId = :brandId', { brandId });
 
     if (filterBy === FilterBrandCustomer.MOST_ACTIVE) {
       // where customer redeemed greater than 2
-      brandCustomerQuery.andWhere('customer.totalRedeemed > 2');
-      brandCustomerQuery.orderBy('customer.totalRedeemed', 'DESC');
+      brandCustomerQuery.andWhere('brandCustomer.totalRedeemed > 2');
+      brandCustomerQuery.orderBy('brandCustomer.totalRedeemed', 'DESC');
     }
 
     if (filterBy === FilterBrandCustomer.MOST_RECENT) {
