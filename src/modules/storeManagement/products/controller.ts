@@ -106,6 +106,19 @@ export class ProductManagementController {
     );
   }
 
+  @UseGuards(ApiKeyJwtStrategy)
+  @Delete('/delete/:productId')
+  async deleteProductWithApiKey(
+    @Param('productId') productId: string,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    return await this.productManagementService.deleteProduct(
+      brandId,
+      productId,
+    );
+  }
+
   @UseGuards(BrandJwtStrategy)
   @Put('/archive/:productId')
   async archiveProduct(@Param('productId') productId: string, @Req() req: any) {
