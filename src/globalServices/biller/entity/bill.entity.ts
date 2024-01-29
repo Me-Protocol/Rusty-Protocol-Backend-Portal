@@ -22,6 +22,9 @@ export class Bill extends BaseEntity {
   amount: number;
 
   @Column()
+  type: string;
+
+  @Column()
   brandId: string;
 
   @ManyToOne(() => Brand, (brand) => brand.bills)

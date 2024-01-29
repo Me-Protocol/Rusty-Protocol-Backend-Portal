@@ -22,7 +22,7 @@ export class ProcessBrandColor {
     bill.amount = 0.2;
 
     try {
-      await this.billService.createBill(bill);
+      // await this.billService.createBill(bill);
     } catch (error) {
       logger.error(error);
     }

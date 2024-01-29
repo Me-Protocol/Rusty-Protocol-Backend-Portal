@@ -41,6 +41,7 @@ import {
 } from '@developeruche/runtime-sdk';
 import { RUNTIME_URL } from '@src/config/env.config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { BillerService } from '@src/globalServices/biller/biller.service';
 
 @Injectable()
 export class OrderManagementService {
@@ -58,6 +59,7 @@ export class OrderManagementService {
     private readonly rewardService: RewardService,
     private readonly analyticsRecorder: AnalyticsRecorderService,
     private eventEmitter: EventEmitter2,
+    private readonly billerService: BillerService,
 
     @InjectRepository(Transaction)
     private readonly transactionRepo: Repository<Transaction>,
@@ -287,10 +289,10 @@ export class OrderManagementService {
 
       await this.offerService.reduceInventory(offer, order);
 
-      this.eventEmitter.emit('process.bill.create', {
-        brandId: offer.brandId,
+      await this.billerService.createBill({
         type: 'redeem-offer',
-        offerId: offerId,
+        amount: 1.5,
+        brandId: offer.brandId,
       });
 
       return order;
