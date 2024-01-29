@@ -112,7 +112,7 @@ export class ProductManagementController {
     @Param('productId') productId: string,
     @Req() req: any,
   ) {
-    const brandId = req.user.brand.id;
+    const brandId = req.brand.id;
     return await this.productManagementService.deleteProduct(
       brandId,
       productId,
