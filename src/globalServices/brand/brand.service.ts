@@ -422,6 +422,8 @@ export class BrandService {
 
     await this.billerService.getActiveInvoiceOrCreate(brandId);
 
-    return 'success';
+    brand.planId = planId;
+
+    return await this.brandRepo.save(brand);
   }
 }
