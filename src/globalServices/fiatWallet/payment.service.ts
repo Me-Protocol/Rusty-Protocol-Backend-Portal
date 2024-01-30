@@ -146,6 +146,14 @@ export class PaymentService {
     return await stripe.paymentMethods.detach(paymentMethodId);
   }
 
+  async getPaymentMethods(walletId: string) {
+    return await this.paymentRepo.find({
+      where: {
+        walletId,
+      },
+    });
+  }
+
   generateTransactionCode() {
     const code = Math.floor(100000 + Math.random() * 900000);
     return process.env.TNX_PREFIX + '-' + code;

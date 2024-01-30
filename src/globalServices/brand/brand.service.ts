@@ -1,4 +1,10 @@
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  HttpException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
 import { FindOptionsOrderValue, Repository } from 'typeorm';
@@ -18,7 +24,7 @@ import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { BrandSubscriptionPlan } from './entities/brand_subscription_plan.entity';
 import { BillerService } from '../biller/biller.service';
 import { PaymentService } from '../fiatWallet/payment.service';
-import { FiatWalletService } from '../fiatWallet/fiatWallet.service';
+import { FiatWallet } from '../fiatWallet/entities/fiatWallet.entity';
 
 @Injectable()
 export class BrandService {
@@ -39,7 +45,9 @@ export class BrandService {
     private readonly eventEmitter: EventEmitter2,
     private readonly billerService: BillerService,
     private readonly paymentService: PaymentService,
-    private readonly walletService: FiatWalletService,
+
+    @InjectRepository(FiatWallet)
+    private readonly walletRepo: Repository<FiatWallet>,
   ) {}
 
   async create({ userId, name }: { userId: string; name: string }) {
@@ -399,7 +407,11 @@ export class BrandService {
       throw new NotFoundException('Plan not found');
     }
 
-    const wallet = await this.walletService.getWalletByBrandId(brandId);
+    const wallet = await this.walletRepo.findOne({
+      where: {
+        brandId,
+      },
+    });
 
     await this.paymentService.chargePaymentMethod({
       amount: plan.monthlyAmount * 100,

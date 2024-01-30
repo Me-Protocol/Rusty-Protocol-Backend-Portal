@@ -1,6 +1,6 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { CustomerService } from '@src/globalServices/customer/customer.service';
-import { UpdateCustomerDto } from '../customerAccountManagement/dto/UpdateCustomerDto';
+import { UpdateCustomerDto } from './dto/UpdateCustomerDto.dto';
 import { logger } from '@src/globalServices/logger/logger.service';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
@@ -133,10 +133,10 @@ export class CustomerAccountManagementService {
 
     if (identifierType === SyncIdentifierType.EMAIL) {
       user = await this.userService.getUserByEmail(identifier);
-    }
-
-    if (identifierType === SyncIdentifierType.PHONE) {
+    } else if (identifierType === SyncIdentifierType.PHONE) {
       user = await this.userService.getUserByPhone(identifier);
+    } else {
+      user = null;
     }
 
     if (user) {

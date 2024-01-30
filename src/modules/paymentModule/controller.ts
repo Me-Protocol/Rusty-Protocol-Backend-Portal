@@ -49,11 +49,16 @@ export class PaymentModuleController {
   }
 
   @Get('plan')
-  async getSubscriptionPlans(
-    @Body(ValidationPipe) body: CreatePlanDto,
-    @Req() req: any,
-  ) {
+  async getSubscriptionPlans(@Req() req: any) {
     return await this.paymentService.getSubscriptionPlans();
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Get('methods')
+  async getPaymentMethods(@Req() req: any) {
+    const brand = req.user.brand as Brand;
+
+    return await this.paymentService.getPaymentMethods(brand.id);
   }
 
   @UseGuards(BrandJwtStrategy)

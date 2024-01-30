@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Bill } from './entity/bill.entity';
@@ -18,6 +18,7 @@ export class BillerService {
     @InjectRepository(Invoice)
     private readonly invoiceRepo: Repository<Invoice>,
 
+    @Inject(forwardRef(() => BrandService))
     private readonly brandService: BrandService,
   ) {}
 

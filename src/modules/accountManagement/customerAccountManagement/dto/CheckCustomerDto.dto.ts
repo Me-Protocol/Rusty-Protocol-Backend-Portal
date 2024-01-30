@@ -2,11 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { IsEnum, IsString } from 'class-validator';
 
-export class CreateCustomerDto {
+export class CheckCustomerDto {
   @ApiProperty()
-  @IsString({
-    message: 'Enter a valid identifier',
-  })
+  @IsString()
   identifier: string;
 
   @ApiProperty({
@@ -17,6 +15,4 @@ export class CreateCustomerDto {
     message: 'Enter a valid identifier type',
   })
   identifierType: SyncIdentifierType;
-
-  brandId: string;
 }

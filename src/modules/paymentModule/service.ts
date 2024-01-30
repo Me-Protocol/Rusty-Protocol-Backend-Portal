@@ -29,6 +29,12 @@ export class PaymentModuleService {
     }
   }
 
+  async getPaymentMethods(brandId: string) {
+    const wallet = await this.walletService.getWalletByBrandId(brandId);
+
+    return await this.paymentService.getPaymentMethods(wallet.id);
+  }
+
   async getInvoices(query: { brandId: string; page: number; limit: number }) {
     try {
       return await this.billerService.getBrandInvoices(query);

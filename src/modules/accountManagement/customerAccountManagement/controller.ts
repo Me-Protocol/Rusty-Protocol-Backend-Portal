@@ -7,15 +7,16 @@ import {
   Put,
   Get,
   Param,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import {
   UpdateCustomerDto,
   UpdateCustomerWalletDto,
-} from './dto/UpdateCustomerDto';
+} from './dto/UpdateCustomerDto.dto';
 import { CustomerAccountManagementService } from './service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
+import { CheckCustomerDto } from './dto/CheckCustomerDto.dto';
 
 @ApiTags('Customer')
 @ApiBearerAuth()
@@ -57,8 +58,7 @@ export class CustomerManagementController {
   @UseGuards(AuthGuard())
   @Get('customer-exist')
   async verifyBrandMemberExistingUser(
-    @Param('identifier') identifier: string,
-    @Param('identifierType') identifierType: SyncIdentifierType,
+    @Query(ValidationPipe) { identifier, identifierType }: CheckCustomerDto,
   ) {
     return this.customerAccountManagementService.checkIfCustomerExist(
       identifier,
