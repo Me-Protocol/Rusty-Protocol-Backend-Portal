@@ -162,7 +162,7 @@ export class BrandManagementController {
   @Post('customers/create')
   async createBrandCustomer(
     @Req() req: any,
-    @Query(ValidationPipe) body: CreateCustomerDto,
+    @Body(ValidationPipe) body: CreateCustomerDto,
   ) {
     const user = req.user as User;
     body.brandId = user.brand.id;
