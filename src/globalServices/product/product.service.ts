@@ -148,6 +148,21 @@ export class ProductService {
     return this.productRepo.save(product);
   }
 
+  async deleteVariant(id: string, brandId: string) {
+    return await this.variantRepo.softDelete({
+      id,
+      product: {
+        brandId,
+      },
+    });
+  }
+
+  async getVariant(id: string, brandId: string) {
+    return await this.variantRepo.findOne({
+      where: { id, product: { brandId } },
+    });
+  }
+
   async getBrandProducts(
     brandId: string,
     page: number,

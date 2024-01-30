@@ -20,6 +20,7 @@ import { FilterDto } from './dto/FilterDto';
 import { ApiTags } from '@nestjs/swagger';
 import { UpdateProductDto } from './dto/UpdateProductDto';
 import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
+import { DeleteVariantDto } from './dto/DeleteVariantDto.dto';
 
 ApiTags('Products');
 @Controller('store/product')
@@ -74,6 +75,20 @@ export class ProductManagementController {
     const brandId = req.brand.id;
     body.brandId = brandId;
     return await this.productManagementService.updateProduct(body, productId);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Delete('/variant/delete')
+  async deleteVariant(
+    @Body(ValidationPipe) body: DeleteVariantDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    body.brandId = brandId;
+    return await this.productManagementService.deleteVariant(
+      body.variantId,
+      brandId,
+    );
   }
 
   @UseGuards(BrandJwtStrategy)

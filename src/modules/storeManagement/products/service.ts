@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { ProductService } from '@src/globalServices/product/product.service';
 import { CreateProductDto } from './dto/CreateProductDto';
 import { CategoryService } from '@src/globalServices/category/category.service';
@@ -232,6 +232,17 @@ export class ProductManagementService {
     return {
       message: 'Product deleted successfully',
     };
+  }
+
+  async deleteVariant(variantId: string, brandId: string) {
+    const variant = await this.productService.getVariant(variantId, brandId);
+    if (!variant) {
+      throw new NotFoundException('Variant not found');
+    }
+
+    await this.productService.deleteVariant(variantId, brandId);
+
+    return 'Variant deleted';
   }
 
   async archiveProduct(brandId: string, id: string) {
