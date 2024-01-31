@@ -25,7 +25,7 @@
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org me-protocol-c1f3212fa --project node-express ./dist && sentry-cli sourcemaps upload --org me-protocol-c1f3212fa --project node-express ./dist"
   },
   "dependencies": {
-    "@developeruche/protocol-core": "^0.5.2-development",
+    "@developeruche/protocol-core": "^0.5.0",
     "@developeruche/runtime-sdk": "0.4.0",
     "@elastic/elasticsearch": "^8.6.0",
     "@gelatonetwork/relay-sdk": "^4.0.0",
