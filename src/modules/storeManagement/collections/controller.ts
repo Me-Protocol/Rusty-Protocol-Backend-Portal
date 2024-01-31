@@ -25,7 +25,7 @@ import { UpdateCollectionDto } from './dto/UpdateCollectionDto.dto';
 import { FIlterCollectionDto } from './dto/FilterCollectionDto.dto';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
-ApiTags('Collection');
+@ApiTags('Collection')
 @Controller('collections')
 @ApiBearerAuth()
 export class CollectionManagementController {

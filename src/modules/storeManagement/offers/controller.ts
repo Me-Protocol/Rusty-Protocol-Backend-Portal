@@ -21,7 +21,7 @@ import { FilterOfferDto, FilterUserOfferDto } from './dto/FilterOfferDto.dto';
 import { GetOfferDto } from './dto/GetOfferDto.dto';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
-ApiTags('Offers');
+@ApiTags('Offers')
 @Controller('store/offer')
 @ApiBearerAuth()
 export class OfferManagementController {
