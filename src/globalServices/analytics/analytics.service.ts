@@ -97,7 +97,6 @@ export class AnalyticsService {
   }) {
     let whereCondition: any = {
       brandId,
-      identifier: Not(null),
       identifierType: In([SyncIdentifierType.EMAIL, SyncIdentifierType.PHONE]),
     };
 
@@ -115,10 +114,13 @@ export class AnalyticsService {
       [SyncIdentifierType.PHONE]: [],
     };
 
+    // resolved possibility of null identifier from brandCustomers
     for (const brandCustomer of brandCustomers) {
-      identifiersByType[brandCustomer.identifierType].push(
-        brandCustomer.identifier,
-      );
+      if (brandCustomer.identifierType && brandCustomer.identifier) {
+        identifiersByType[brandCustomer.identifierType].push(
+          brandCustomer.identifier,
+        );
+      }
     }
 
     const users: User[] = [];
