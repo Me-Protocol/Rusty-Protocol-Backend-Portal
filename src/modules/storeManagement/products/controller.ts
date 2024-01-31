@@ -21,9 +21,11 @@ import { ApiTags } from '@nestjs/swagger';
 import { UpdateProductDto } from './dto/UpdateProductDto';
 import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
 import { DeleteVariantDto } from './dto/DeleteVariantDto.dto';
+import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
 ApiTags('Products');
 @Controller('store/product')
+@ApiBearerAuth()
 export class ProductManagementController {
   constructor(
     private readonly productManagementService: ProductManagementService,

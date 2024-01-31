@@ -41,9 +41,11 @@ import { ServerGuard } from '@src/middlewares/server-guard';
 import { FilterRegistryHistoryDto } from './dto/filterRegistryHistoryDto.dto';
 import { CheckExistingRewardParams } from './dto/check-existing-reward.dto';
 import { UpdateRewardDto } from './dto/updateRewardDto';
+import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
 @ApiTags('Reward')
 @Controller('reward')
+@ApiBearerAuth()
 export class RewardManagementController {
   constructor(
     private readonly rewardManagementService: RewardManagementService,

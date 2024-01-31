@@ -6,7 +6,7 @@ import {
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AnalyticsManagementService } from './service';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import {
@@ -21,6 +21,7 @@ import { AnalyticsService } from '@src/globalServices/analytics/analytics.servic
 
 ApiTags('Analytics');
 @Controller('store/analytics')
+@ApiBearerAuth()
 export class AnalyticsManagementController {
   constructor(
     private readonly analyticsManagementService: AnalyticsManagementService,
