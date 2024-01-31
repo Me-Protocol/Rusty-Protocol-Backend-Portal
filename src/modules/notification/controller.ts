@@ -17,9 +17,11 @@ import { ApiTags } from '@nestjs/swagger';
 import { NotificationService } from '@src/globalServices/notification/notification.service';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { FilterNotificationDto } from './dto/FilterNotificationDto.dto';
+import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
 @ApiTags('Notification')
 @Controller('notification')
+@ApiBearerAuth()
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 

@@ -76,11 +76,12 @@ export class AnalyticsService {
 
     const activeOrderingUsers = await this.orderRepo
       .createQueryBuilder('order')
-      .select('DISTINCT "userId"', 'userId')
+      .select('DISTINCT order.userId', 'userId')
       .innerJoin('order.brand', 'brand')
       .where('order.createdAt BETWEEN :start AND :end', { start, end })
       .andWhere('brand.id = :brandId', { brandId })
       .getRawMany();
+
     return {
       total_active_ordering_users: activeOrderingUsers.length,
     };

@@ -28,9 +28,11 @@ import { CreateMemberDto } from './dto/CreateMemberDto.dto';
 import { FilterCustomerDto } from './dto/FilterCustomerDto.dto';
 import { OnboardBrandDto } from './dto/OnboardBrandDto.dto';
 import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
+import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
 @ApiTags('Brand')
 @Controller('brand')
+@ApiBearerAuth()
 export class BrandManagementController {
   constructor(
     private readonly brandAccountManagementService: BrandAccountManagementService,

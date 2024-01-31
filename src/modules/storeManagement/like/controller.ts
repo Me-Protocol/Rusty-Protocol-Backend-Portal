@@ -15,9 +15,11 @@ import { ApiTags } from '@nestjs/swagger';
 import { LikeManagementService } from './service';
 import { LikeDto } from './dto/LikeDto.dto';
 import { FilterLikeDto } from './dto/FilterLikeDto.dto';
+import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
 @ApiTags('Like')
 @Controller('like')
+@ApiBearerAuth()
 export class LikeManagementController {
   constructor(private readonly likeManagementService: LikeManagementService) {}
 

@@ -20,9 +20,11 @@ import { SubscribeDto } from './dto/SubscribeDto.dto';
 import { query } from 'express';
 import { FilterInvoiceDto } from './dto/FilterInvoiceDto.dto';
 import { PayInvoiceDto } from './dto/PayInvoiceDto.dto';
+import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
 @ApiTags('Payment')
 @Controller('payment')
+@ApiBearerAuth()
 export class PaymentModuleController {
   constructor(private readonly paymentService: PaymentModuleService) {}
 
