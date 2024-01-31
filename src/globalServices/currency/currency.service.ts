@@ -8,7 +8,7 @@ import axios from 'axios';
 @Injectable()
 export class CurrencyService {
   constructor(
-    @InjectRepository(CurrencyService)
+    @InjectRepository(Currency)
     private readonly currencyRepo: Repository<Currency>,
   ) {}
 

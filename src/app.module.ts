@@ -327,6 +327,7 @@ import { Currency } from './globalServices/currency/entities/currency.entity';
     RewarderService,
     AnalyticsRecorderService,
     JwtService,
+    CurrencyService,
   ],
   exports: [JwtStrategy, PassportModule, AuthenticationModule],
 })
