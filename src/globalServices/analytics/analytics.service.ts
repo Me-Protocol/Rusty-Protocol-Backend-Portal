@@ -15,6 +15,10 @@ import { RewardCirculation } from './entities/reward_circulation';
 import { RewardCirculationFilter } from '@src/utils/enums/RewardCirculationFilter';
 import moment from 'moment';
 import { Transaction } from '../fiatWallet/entities/transaction.entity';
+import { User } from '@src/globalServices/user/entities/user.entity';
+import { Not } from '@node_modules/typeorm';
+import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
+import { UserAppType } from '@src/utils/enums/UserAppType';
 
 /**
  *
@@ -30,37 +34,125 @@ export class AnalyticsService {
   constructor(
     @InjectRepository(Offer)
     private readonly offerRepo: Repository<Offer>,
-
     @InjectRepository(View)
     private readonly viewRepo: Repository<View>,
-
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
-
     @InjectRepository(Reward)
     private readonly rewardRepo: Repository<Reward>,
-
     @InjectRepository(RewardRegistry)
     private readonly rewardRegistryRepo: Repository<RewardRegistry>,
-
     @InjectRepository(Task)
     private readonly taskRepo: Repository<Task>,
-
     @InjectRepository(BrandCustomer)
     private readonly brandCustomerRepo: Repository<BrandCustomer>,
-
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
     @InjectRepository(Follow)
     private readonly followRepo: Repository<Follow>,
-
     @InjectRepository(Review)
     private readonly reviewRepo: Repository<Review>,
-
     @InjectRepository(RewardCirculation)
     private readonly rewardCirculationRepo: Repository<RewardCirculation>,
-
     @InjectRepository(Transaction)
     private readonly transactionRepo: Repository<Transaction>,
   ) {}
+
+  async getTotalNumberOfActiveUsersBasedOnOrder({
+    brandId,
+    start,
+    end,
+  }: {
+    brandId: string;
+    start: Date;
+    end: Date;
+  }) {
+    if (!start || !end) {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      start = sevenDaysAgo;
+      end = new Date();
+    }
+
+    const activeOrderingUsers = await this.orderRepo
+      .createQueryBuilder('order')
+      .select('DISTINCT "userId"', 'userId')
+      .innerJoin('order.brand', 'brand')
+      .where('order.createdAt BETWEEN :start AND :end', { start, end })
+      .andWhere('brand.id = :brandId', { brandId })
+      .getRawMany();
+    return {
+      total_active_ordering_users: activeOrderingUsers.length,
+    };
+  }
+
+  async getBrandAnalytics({
+    brandId,
+    start,
+    end,
+  }: {
+    start?: Date;
+    end?: Date;
+    brandId: string;
+  }) {
+    let whereCondition: any = {
+      brandId,
+      identifier: Not(null),
+      identifierType: In([SyncIdentifierType.EMAIL, SyncIdentifierType.PHONE]),
+    };
+
+    if (start && end) {
+      whereCondition.createdAt = Between(start, end);
+    }
+
+    const brandCustomers = await this.brandCustomerRepo.find({
+      where: whereCondition,
+      relations: ['brand'],
+    });
+
+    const identifiersByType: Record<SyncIdentifierType, string[]> = {
+      [SyncIdentifierType.EMAIL]: [],
+      [SyncIdentifierType.PHONE]: [],
+    };
+
+    for (const brandCustomer of brandCustomers) {
+      identifiersByType[brandCustomer.identifierType].push(
+        brandCustomer.identifier,
+      );
+    }
+
+    const users: User[] = [];
+    for (const identifierType in identifiersByType) {
+      if (identifiersByType[identifierType].length > 0) {
+        const usersOfType = await this.userRepo.find({
+          where: {
+            [identifierType]: In(identifiersByType[identifierType]),
+            userType: UserAppType.USER,
+          },
+        });
+        users.push(...usersOfType);
+      }
+    }
+
+    const validIdentifiers = new Set(
+      users.map((user) => (user.email ? user.email : user.phone)),
+    );
+
+    let totalActiveCustomers = 0;
+    let totalNonActiveCustomers = 0;
+
+    for (const brandCustomer of brandCustomers) {
+      if (validIdentifiers.has(brandCustomer.identifier)) {
+        totalActiveCustomers++;
+      } else {
+        totalNonActiveCustomers++;
+      }
+    }
+    return {
+      total_active_customers: totalActiveCustomers,
+      total_pending_customers: totalNonActiveCustomers,
+    };
+  }
 
   async getTotalNumberOfOffers({
     status,
