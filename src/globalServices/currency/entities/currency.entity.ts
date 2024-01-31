@@ -5,8 +5,6 @@ import { Entity, Column } from 'typeorm';
 export class Currency extends BaseEntity {
   @Column({
     type: 'decimal',
-    precision: 20,
-    scale: 20,
   })
   value: number;
 

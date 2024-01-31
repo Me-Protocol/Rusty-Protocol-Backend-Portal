@@ -21,12 +21,16 @@ import { query } from 'express';
 import { FilterInvoiceDto } from './dto/FilterInvoiceDto.dto';
 import { PayInvoiceDto } from './dto/PayInvoiceDto.dto';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
+import { CurrencyService } from '@src/globalServices/currency/currency.service';
 
 @ApiTags('Payment')
 @Controller('payment')
 @ApiBearerAuth()
 export class PaymentModuleController {
-  constructor(private readonly paymentService: PaymentModuleService) {}
+  constructor(
+    private readonly paymentService: PaymentModuleService,
+    private readonly currencyService: CurrencyService,
+  ) {}
 
   @UseGuards(BrandJwtStrategy)
   @Post('add-payment-method')
@@ -102,5 +106,10 @@ export class PaymentModuleController {
       brand.id,
       body.paymentMethodId,
     );
+  }
+
+  @Get('currencies')
+  async getCurrency() {
+    return await this.currencyService.getCurrency();
   }
 }

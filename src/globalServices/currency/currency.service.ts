@@ -60,14 +60,34 @@ export class CurrencyService {
     return currencyRecord;
   }
 
-  @Cron(CronExpression.EVERY_5_SECONDS)
+  @Cron(CronExpression.EVERY_DAY_AT_1AM)
   async syncCurrencyValue() {
     await axios
       .get(
         'https://api.currencyapi.com/v3/latest?apikey=cur_live_j5pPTc9oFwO4xCe4Y08efmcB6V6RiaOVCDskxTOR',
       )
       .then(async (response) => {
-        console.log(response);
+        const data = response.data?.data;
+
+        const currencies = Object.keys(data).map((key) => data[key]);
+
+        await Promise.all(
+          currencies.map(async (currency) => {
+            const currencyRecord = await this.getCurrencyByCurrency(
+              currency.code,
+            );
+
+            if (currencyRecord) {
+              currencyRecord.value = currency.value;
+              await this.updateCurrency(currencyRecord);
+            } else {
+              const newCurrency = new Currency();
+              newCurrency.currency = currency.code;
+              newCurrency.value = currency.value;
+              await this.createCurrency(newCurrency);
+            }
+          }),
+        );
       })
       .catch((error) => {
         console.log(error);
