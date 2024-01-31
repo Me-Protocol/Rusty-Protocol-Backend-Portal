@@ -5,6 +5,7 @@ import { logger } from '@src/globalServices/logger/logger.service';
 import { BillerService } from '@src/globalServices/biller/biller.service';
 import { BrandService } from '@src/globalServices/brand/brand.service';
 import { CreatePlanDto } from './dto/CreatePlanDto.dto';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class PaymentModuleService {
@@ -103,4 +104,10 @@ export class PaymentModuleService {
       paymentMethodId,
     );
   }
+
+  // @Cron(CronExpression.EVERY_30_SECONDS)
+  // async checkBrandForTopup() {}
+
+  // @Cron(CronExpression.EVERY_30_SECONDS)
+  // async handleAutoTop() {}
 }

@@ -345,6 +345,18 @@ export class OrderManagementService {
     }
   }
 
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async resolveIncompleteOrders() {
+    const orders = await this.orderService.getOrderWithoutTaskId();
+
+    if (orders.length > 0) {
+      for (const order of orders) {
+        order.status = StatusType.ABANDONED;
+        await this.orderService.saveOrder(order);
+      }
+    }
+  }
+
   @Cron(CronExpression.EVERY_30_SECONDS)
   async checkOrderStatus() {
     const pendingOrders = await this.orderService.getPendingOrders();
