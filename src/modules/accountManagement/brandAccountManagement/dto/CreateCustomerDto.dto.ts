@@ -18,5 +18,9 @@ export class CreateCustomerDto {
   })
   identifierType: SyncIdentifierType;
 
+  @ApiProperty()
+  @IsString()
+  phone: string;
+
   brandId: string;
 }

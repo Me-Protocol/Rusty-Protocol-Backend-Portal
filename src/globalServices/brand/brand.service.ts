@@ -212,6 +212,7 @@ export class BrandService {
     brandId: string,
     identifier: string,
     identifierType: SyncIdentifierType,
+    phone?: string,
   ) {
     const checkCustomer = await this.brandCustomerRepo.findOne({
       where: {
@@ -230,6 +231,7 @@ export class BrandService {
     brandCustomer.brandId = brandId;
     brandCustomer.identifier = identifier;
     brandCustomer.identifierType = identifierType;
+    brandCustomer.phone = phone;
 
     await this.brandCustomerRepo.save(brandCustomer);
 
