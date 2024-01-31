@@ -26,6 +26,7 @@ import { Notification } from '@src/globalServices/notification/entities/notifica
 import { Order } from '@src/globalServices/order/entities/order.entity';
 import { Review } from '@src/globalServices/review/entities/review.entity';
 import { Bill } from '@src/globalServices/biller/entity/bill.entity';
+import { BrandSubscriptionPlan } from './brand_subscription_plan.entity';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -294,4 +295,13 @@ export class Brand extends BaseEntity {
     default: true,
   })
   firstTimeLogin: boolean;
+
+  @Column({
+    nullable: true,
+  })
+  planId: string;
+
+  @ManyToOne(() => BrandSubscriptionPlan, (plan) => plan.id)
+  @JoinColumn({ name: 'planId' })
+  plan: BrandSubscriptionPlan;
 }

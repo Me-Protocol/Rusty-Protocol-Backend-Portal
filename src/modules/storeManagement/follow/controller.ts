@@ -16,9 +16,11 @@ import { ApiTags } from '@nestjs/swagger';
 import { FollowManagementService } from './service';
 import { FollowDto } from './dto/FollowDto.dto';
 import { FilteUserFollowDto, FilterFollowDto } from './dto/FilterFollowDto.dto';
+import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
 @ApiTags('Followers')
 @Controller('follow')
+@ApiBearerAuth()
 export class FollowManagementController {
   constructor(
     private readonly followManagementService: FollowManagementService,

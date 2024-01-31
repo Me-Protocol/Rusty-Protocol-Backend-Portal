@@ -23,9 +23,11 @@ import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { UpdateCollectionDto } from './dto/UpdateCollectionDto.dto';
 import { FIlterCollectionDto } from './dto/FilterCollectionDto.dto';
+import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
-ApiTags('Collection');
+@ApiTags('Collection')
 @Controller('collections')
+@ApiBearerAuth()
 export class CollectionManagementController {
   constructor(
     private readonly collectionManagementService: CollectionManagementService,

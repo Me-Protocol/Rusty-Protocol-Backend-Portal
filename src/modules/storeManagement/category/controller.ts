@@ -17,9 +17,11 @@ import { CreateCategoryDto } from './dto/CreateCategoryDto';
 import { UpdateCategoryDto } from './dto/UpdateCategoryDto';
 import { FilterCategoryDto } from './dto/FilterCategoryDto';
 import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
 @ApiTags('Category')
 @Controller('category')
+@ApiBearerAuth()
 export class CategoryManagementController {
   constructor(
     private readonly categoryManagementService: CategoryManagementService,

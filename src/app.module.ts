@@ -147,6 +147,7 @@ import { AnalyticsManagementController } from './modules/storeManagement/analyti
 import { RewarderService } from './globalServices/task/common/rewarder/rewarder.service';
 import { AnalyticsRecorderService } from './globalServices/analytics/analytic_recorder.service';
 import { RewardCirculation } from './globalServices/analytics/entities/reward_circulation';
+import { BrandSubscriptionPlan } from './globalServices/brand/entities/brand_subscription_plan.entity';
 
 @Module({
   imports: [
@@ -197,6 +198,7 @@ import { RewardCirculation } from './globalServices/analytics/entities/reward_ci
       Bill,
       Invoice,
       RewardCirculation,
+      BrandSubscriptionPlan,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),

@@ -126,7 +126,7 @@ export class ProductService {
       throw new Error('Product not found');
     }
 
-    const productVariants = variants.map((variant) =>
+    const productVariants = variants?.map((variant) =>
       this.variantRepo.create({
         ...variant,
         productId,
@@ -146,6 +146,21 @@ export class ProductService {
 
   async saveProduct(product: Product) {
     return this.productRepo.save(product);
+  }
+
+  async deleteVariant(id: string, brandId: string) {
+    return await this.variantRepo.softDelete({
+      id,
+      product: {
+        brandId,
+      },
+    });
+  }
+
+  async getVariant(id: string, brandId: string) {
+    return await this.variantRepo.findOne({
+      where: { id, product: { brandId } },
+    });
   }
 
   async getBrandProducts(
@@ -270,6 +285,7 @@ export class ProductService {
     startDate,
     subCategoryId,
     endDate,
+    collectionId,
   }: FilterDto) {
     const products = this.productRepo
       .createQueryBuilder('product')
@@ -317,6 +333,12 @@ export class ProductService {
       products.andWhere('product.createdAt BETWEEN :startDate AND :endDate', {
         startDate,
         endDate,
+      });
+    }
+
+    if (collectionId) {
+      products.andWhere('collections.id = :collectionId', {
+        collectionId,
       });
     }
 

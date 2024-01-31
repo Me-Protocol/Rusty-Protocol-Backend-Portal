@@ -17,9 +17,11 @@ export class Bill extends BaseEntity {
     type: 'decimal',
     precision: 20,
     scale: 20,
-    nullable: true,
   })
   amount: number;
+
+  @Column()
+  type: string;
 
   @Column()
   brandId: string;

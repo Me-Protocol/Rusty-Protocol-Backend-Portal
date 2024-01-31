@@ -22,9 +22,11 @@ import { UseCouponDto } from './dto/UseCouponDto.dto';
 import { ServerGuard } from '@src/middlewares/server-guard';
 import { InAppApiKeyJwtStrategy } from '@src/middlewares/inapp-api-jwt-strategy.middleware';
 import { CompleteOrderDto } from './dto/CompleteOrderDto.dto';
+import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
 @ApiTags('Order')
 @Controller('order')
+@ApiBearerAuth()
 export class OrderManagementController {
   constructor(
     private readonly orderManagementService: OrderManagementService,

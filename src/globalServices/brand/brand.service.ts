@@ -1,4 +1,10 @@
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  HttpException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
 import { FindOptionsOrderValue, Repository } from 'typeorm';
@@ -14,6 +20,11 @@ import { generateBrandIdBytes10 } from '@developeruche/protocol-core';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ProcessBrandColorEvent } from './events/process-brand-color.event';
+import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
+import { BrandSubscriptionPlan } from './entities/brand_subscription_plan.entity';
+import { BillerService } from '../biller/biller.service';
+import { PaymentService } from '../fiatWallet/payment.service';
+import { FiatWallet } from '../fiatWallet/entities/fiatWallet.entity';
 
 @Injectable()
 export class BrandService {
@@ -27,9 +38,16 @@ export class BrandService {
     @InjectRepository(BrandCustomer)
     private readonly brandCustomerRepo: Repository<BrandCustomer>,
 
-    private readonly elasticIndex: ElasticIndex,
+    @InjectRepository(BrandSubscriptionPlan)
+    private readonly brandSubscriptionPlanRepo: Repository<BrandSubscriptionPlan>,
 
+    private readonly elasticIndex: ElasticIndex,
     private readonly eventEmitter: EventEmitter2,
+    private readonly billerService: BillerService,
+    private readonly paymentService: PaymentService,
+
+    @InjectRepository(FiatWallet)
+    private readonly walletRepo: Repository<FiatWallet>,
   ) {}
 
   async create({ userId, name }: { userId: string; name: string }) {
@@ -191,20 +209,19 @@ export class BrandService {
   }
 
   async createBrandCustomer(
-    userId: string,
     brandId: string,
-    registryId: string,
+    identifier: string,
+    identifierType: SyncIdentifierType,
+    phone?: string,
   ) {
     const checkCustomer = await this.brandCustomerRepo.findOne({
       where: {
-        userId,
         brandId,
-        registryId,
+        identifier,
+        identifierType,
       },
       relations: ['brand', 'user', 'user.customer'],
     });
-
-    console.log(registryId);
 
     if (checkCustomer) {
       return checkCustomer;
@@ -212,18 +229,22 @@ export class BrandService {
 
     const brandCustomer = new BrandCustomer();
     brandCustomer.brandId = brandId;
-    brandCustomer.userId = userId;
-    brandCustomer.registryId = registryId;
+    brandCustomer.identifier = identifier;
+    brandCustomer.identifierType = identifierType;
+    brandCustomer.phone = phone;
 
     await this.brandCustomerRepo.save(brandCustomer);
 
     return await this.brandCustomerRepo.findOne({
       where: {
-        userId,
         brandId,
       },
-      relations: ['brand', 'user', 'user.customer'],
+      relations: ['brand'],
     });
+  }
+
+  async saveBrandCustomer(brandCustomer: BrandCustomer) {
+    return await this.brandCustomerRepo.save(brandCustomer);
   }
 
   async getBrandCustomer(brandId: string, userId: string) {
@@ -232,7 +253,7 @@ export class BrandService {
         brandId,
         userId,
       },
-      relations: ['brand', 'user', 'user.customer'],
+      relations: ['brand'],
     });
   }
 
@@ -241,7 +262,7 @@ export class BrandService {
       where: {
         userId,
       },
-      relations: ['brand', 'user', 'user.customer'],
+      relations: ['brand'],
     });
   }
 
@@ -256,33 +277,14 @@ export class BrandService {
   ) {
     const brandCustomerQuery = this.brandCustomerRepo
       .createQueryBuilder('brandCustomer')
-      .leftJoinAndSelect('brandCustomer.brand', 'brand')
-      .leftJoinAndSelect('brandCustomer.user', 'user')
-      .leftJoinAndSelect('user.customer', 'customer')
-      .leftJoinAndSelect('brandCustomer.registry', 'registry')
-      .select([
-        'brandCustomer',
-        'user.id',
-        'user.email',
-        'customer.totalRedeemed',
-        'customer.totalRedemptionAmount',
-        'customer.name',
-        'customer.profilePicture',
-        'registry.id',
-        'registry.rewardId',
-        'registry.balance',
-        'registry.pendingBalance',
-        'registry.undistributedBalance',
-        'registry.totalBalance',
-        'registry.userId',
-      ]);
+      .leftJoinAndSelect('brandCustomer.brand', 'brand');
 
     brandCustomerQuery.where('brandCustomer.brandId = :brandId', { brandId });
 
     if (filterBy === FilterBrandCustomer.MOST_ACTIVE) {
       // where customer redeemed greater than 2
-      brandCustomerQuery.andWhere('customer.totalRedeemed > 2');
-      brandCustomerQuery.orderBy('customer.totalRedeemed', 'DESC');
+      brandCustomerQuery.andWhere('brandCustomer.totalRedeemed > 2');
+      brandCustomerQuery.orderBy('brandCustomer.totalRedeemed', 'DESC');
     }
 
     if (filterBy === FilterBrandCustomer.MOST_RECENT) {
@@ -365,5 +367,65 @@ export class BrandService {
 
   async removeBrandMember(brandMember: BrandMember) {
     return await this.brandMemberRepo.remove(brandMember);
+  }
+
+  async createBrandSubscriptionPlan({
+    name,
+    amount,
+    description,
+  }: {
+    name: string;
+    amount: number;
+    description: string;
+  }) {
+    const plan = new BrandSubscriptionPlan();
+    plan.name = name;
+    plan.description = description;
+    plan.monthlyAmount = amount;
+
+    return await this.brandSubscriptionPlanRepo.save(plan);
+  }
+
+  async getBrandSubscriptionPlans() {
+    return await this.brandSubscriptionPlanRepo.find();
+  }
+
+  async getBrandSubscriptionPlanById(id: string) {
+    return await this.brandSubscriptionPlanRepo.findOne({ where: { id } });
+  }
+
+  async subscribeBrandToPlan(
+    brandId: string,
+    planId: string,
+    paymentMethodId: string,
+  ) {
+    const brand = await this.getBrandById(brandId);
+    if (!brand) {
+      throw new NotFoundException('Brand not found');
+    }
+
+    const plan = await this.getBrandSubscriptionPlanById(planId);
+    if (!plan) {
+      throw new NotFoundException('Plan not found');
+    }
+
+    const wallet = await this.walletRepo.findOne({
+      where: {
+        brandId,
+      },
+    });
+
+    await this.paymentService.chargePaymentMethod({
+      amount: plan.monthlyAmount * 100,
+      paymentMethodId,
+      wallet,
+      narration: `Payment for ${plan.name} subscription`,
+    });
+
+    await this.billerService.getActiveInvoiceOrCreate(brandId);
+
+    brand.planId = planId;
+
+    return await this.brandRepo.save(brand);
   }
 }

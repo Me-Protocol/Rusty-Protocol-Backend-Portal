@@ -29,12 +29,6 @@ export class ReviewManagementService {
       reviewRecord.rating = rating;
       reviewRecord.brandId = offer.brandId;
 
-      this.eventEmitter.emit('process.bill.create', {
-        brandId: offer.brandId,
-        type: 'redeem-view',
-        offerId: offerId,
-      });
-
       return await this.reviewService.createReview(reviewRecord);
     } catch (error) {
       throw new HttpException(error.message, 400, {

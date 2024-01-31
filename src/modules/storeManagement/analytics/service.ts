@@ -16,6 +16,8 @@ export class AnalyticsManagementService {
       this.analyticsService.totalRewardSpentOnOtherBrandOffers(query),
       this.analyticsService.totalBrandCustomers(query),
       this.analyticsService.brandFollowers(query),
+      this.analyticsService.getBrandAnalytics(query),
+      this.analyticsService.getTotalNumberOfActiveUsersBasedOnOrder(query),
     ]);
 
     return {
@@ -27,6 +29,10 @@ export class AnalyticsManagementService {
       totalRewardSpentOnOtherBrandOffers: analyticsObject[5],
       totalBrandCustomers: analyticsObject[6],
       brandFollowers: analyticsObject[7],
+      totalActiveCustomersForBrand: analyticsObject[8].total_active_customers,
+      totalPendingCustomersForBrand: analyticsObject[8].total_pending_customers,
+      totalActiveUsersBasedOnOrder:
+        analyticsObject[9].total_active_ordering_users,
     };
   }
 }

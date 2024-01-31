@@ -658,18 +658,18 @@ export class SyncRewardService {
     );
 
     const user = await this.userService.getUserByEmail(email);
-    if (user) {
-      const registry = await this.findOneRegistryByEmailIdentifier(
-        email,
-        rewardId,
-      );
+    // if (user) {
+    //   const registry = await this.findOneRegistryByEmailIdentifier(
+    //     email,
+    //     rewardId,
+    //   );
 
-      await this.brandService.createBrandCustomer(
-        user.id,
-        reward.brandId,
-        registry.id,
-      );
-    }
+    //   await this.brandService.createBrandCustomer(
+    //     reward.brandId,
+    //     email,
+    //     SyncIdentifierType.EMAIL,
+    //   );
+    // }
 
     if (distributionData?.data?.error) {
       console.log(distributionData.data);

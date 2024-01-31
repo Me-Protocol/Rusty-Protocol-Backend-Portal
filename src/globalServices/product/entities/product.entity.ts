@@ -41,7 +41,9 @@ export class Product extends BaseEntity {
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   categoryId: string;
 
   @OneToMany(() => ProductImage, (productImage) => productImage.product)
