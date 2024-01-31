@@ -19,7 +19,7 @@ import {
 } from './analytics.dto';
 import { AnalyticsService } from '@src/globalServices/analytics/analytics.service';
 
-ApiTags('Analytics');
+@ApiTags('Analytics')
 @Controller('store/analytics')
 @ApiBearerAuth()
 export class AnalyticsManagementController {
