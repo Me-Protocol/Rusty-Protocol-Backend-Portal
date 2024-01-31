@@ -112,7 +112,7 @@ export class BillerService {
     try {
       const invoice = await this.getActiveInvoiceOrCreate(brandId);
 
-      invoice.total = Number(invoice.total) + Number(amount);
+      invoice.total = Number(invoice.total ?? 0) + Number(amount);
 
       await this.invoiceRepo.save(invoice);
 

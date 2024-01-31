@@ -33,7 +33,7 @@ export class Invoice extends BaseEntity {
     type: 'decimal',
     precision: 20,
     scale: 20,
-    nullable: true,
+    default: 0,
   })
   total: number;
 }

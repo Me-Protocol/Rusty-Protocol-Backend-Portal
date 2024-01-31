@@ -289,12 +289,6 @@ export class OrderManagementService {
 
       await this.offerService.reduceInventory(offer, order);
 
-      await this.billerService.createBill({
-        type: 'redeem-offer',
-        amount: 1.5,
-        brandId: offer.brandId,
-      });
-
       return order;
     } catch (error) {
       logger.error(error);
@@ -336,6 +330,12 @@ export class OrderManagementService {
       transaction.status = StatusType.PROCESSING;
 
       await this.transactionRepo.save(transaction);
+
+      await this.billerService.createBill({
+        type: 'redeem-offer',
+        amount: 1.5,
+        brandId: order.offer.brandId,
+      });
 
       return await this.orderService.saveOrder(order);
     } catch (error) {
