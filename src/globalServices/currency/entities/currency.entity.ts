@@ -9,5 +9,11 @@ export class Currency extends BaseEntity {
   value: number;
 
   @Column()
-  currency: string;
+  symbol: string;
+
+  @Column()
+  name: string;
+
+  @Column()
+  code: string;
 }

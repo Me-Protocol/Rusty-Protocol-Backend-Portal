@@ -13,7 +13,11 @@ export class CurrencyService {
   ) {}
 
   async getCurrency() {
-    const currency = await this.currencyRepo.findOne({});
+    const currency = await this.currencyRepo.find({
+      order: {
+        code: 'DESC',
+      },
+    });
 
     return currency;
   }
@@ -21,7 +25,7 @@ export class CurrencyService {
   async getCurrencyByCurrency(currency: string) {
     const currencyRecord = await this.currencyRepo.findOne({
       where: {
-        currency,
+        code: currency,
       },
     });
 
@@ -56,37 +60,94 @@ export class CurrencyService {
     return currencyRecord;
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_1AM)
+  @Cron(CronExpression.EVERY_4_HOURS)
   async syncCurrencyValue() {
-    await axios
-      .get(
-        'https://api.currencyapi.com/v3/latest?apikey=cur_live_j5pPTc9oFwO4xCe4Y08efmcB6V6RiaOVCDskxTOR',
-      )
-      .then(async (response) => {
-        const data = response.data?.data;
+    try {
+      const apiKey = 'sgiPfh4j3aXFR3l2CnjWqdKQzxpqGn9pX5b3CUsz';
 
-        const currencies = Object.keys(data).map((key) => data[key]);
+      const countriesData = await axios.get(
+        `https://api.freecurrencyapi.com/v1/currencies?apikey=${apiKey}`,
+      );
 
-        await Promise.all(
-          currencies.map(async (currency) => {
-            const currencyRecord = await this.getCurrencyByCurrency(
-              currency.code,
+      const countries = Object.keys(countriesData?.data?.data).map(
+        (key) => countriesData?.data?.data[key],
+      );
+
+      const currenciesData = await axios.get(
+        `https://api.freecurrencyapi.com/v1/latest?apikey=${apiKey}`,
+      );
+
+      const currencies = Object.keys(currenciesData?.data?.data).map((key) => ({
+        value: currenciesData?.data?.data[key],
+        currency: key,
+      }));
+
+      await Promise.all(
+        currencies.map(async (currency) => {
+          const currencyRecord = await this.getCurrencyByCurrency(
+            currency.currency,
+          );
+
+          if (currencyRecord) {
+            currencyRecord.value = currency.value;
+            await this.updateCurrency(currencyRecord);
+          } else {
+            const country = countries.find(
+              (country) => country.code === currency.currency,
             );
 
-            if (currencyRecord) {
-              currencyRecord.value = currency.value;
-              await this.updateCurrency(currencyRecord);
-            } else {
-              const newCurrency = new Currency();
-              newCurrency.currency = currency.code;
-              newCurrency.value = currency.value;
-              await this.createCurrency(newCurrency);
-            }
-          }),
-        );
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+            const newCurrency = new Currency();
+            newCurrency.code = country.code;
+            newCurrency.value = currency.value;
+            newCurrency.name = country.code;
+            newCurrency.symbol = country.symbol;
+
+            await this.createCurrency(newCurrency);
+          }
+        }),
+      );
+    } catch (error) {}
+
+    // await axios
+    //   .get(
+    //     'https://api.currencyapi.com/v3/latest?apikey=cur_live_j5pPTc9oFwO4xCe4Y08efmcB6V6RiaOVCDskxTOR',
+    //   )
+    //   .then(async (response) => {
+    //     const data = response.data?.data;
+
+    //     const currencies = Object.keys(data).map((key) => data[key]);
+
+    //     await Promise.all(
+    //       currencies.map(async (currency) => {
+    //         const currencyRecord = await this.getCurrencyByCurrency(
+    //           currency.code,
+    //         );
+
+    //         if (currencyRecord) {
+    //           currencyRecord.value = currency.value;
+    //           await this.updateCurrency(currencyRecord);
+    //         } else {
+    //           const newCurrency = new Currency();
+    //           newCurrency.currency = currency.code;
+    //           newCurrency.value = currency.value;
+    //           await this.createCurrency(newCurrency);
+    //         }
+    //       }),
+    //     );
+    //   })
+    //   .catch((error) => {
+    //     console.log(error);
+    //   });
+  }
+
+  @Cron(CronExpression.EVERY_SECOND)
+  async deleteAllCurrency() {
+    const currencies = await this.currencyRepo.find();
+
+    await Promise.all(
+      currencies.map(async (currency) => {
+        await this.deleteCurrency(currency);
+      }),
+    );
   }
 }
