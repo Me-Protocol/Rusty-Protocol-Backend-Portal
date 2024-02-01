@@ -8,6 +8,7 @@ import {
   ValidationPipe,
   Get,
   Query,
+  Param,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { LinkCardDto } from './dto/LinkCardDto.dto';
@@ -22,6 +23,7 @@ import { FilterInvoiceDto } from './dto/FilterInvoiceDto.dto';
 import { PayInvoiceDto } from './dto/PayInvoiceDto.dto';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 import { CurrencyService } from '@src/globalServices/currency/currency.service';
+import { CreateVoucherDto } from './dto/CreateVoucherDto.dto';
 
 @ApiTags('Payment')
 @Controller('payment')
@@ -80,6 +82,7 @@ export class PaymentModuleController {
       brand.id,
       body.planId,
       body.paymentMethodId,
+      body.voucherCode,
     );
   }
 
@@ -111,5 +114,18 @@ export class PaymentModuleController {
   @Get('currencies')
   async getCurrency() {
     return await this.currencyService.getCurrency();
+  }
+
+  @Post('voucher')
+  async createVoucher(@Body(ValidationPipe) body: CreateVoucherDto) {
+    return await this.paymentService.createVouchers(
+      body.discount,
+      body.brandIds,
+    );
+  }
+
+  @Get('voucher/:code')
+  async getVoucherByCode(@Param('code', ValidationPipe) code: string) {
+    return await this.paymentService.getVoucherByCode(code);
   }
 }

@@ -8,6 +8,7 @@ import { logger } from '../logger/logger.service';
 import { ProcessBillerEvent } from './biller.event';
 import { BrandService } from '../brand/brand.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { Voucher } from './entity/voucher.entity';
 
 @Injectable()
 export class BillerService {
@@ -17,6 +18,9 @@ export class BillerService {
 
     @InjectRepository(Invoice)
     private readonly invoiceRepo: Repository<Invoice>,
+
+    @InjectRepository(Voucher)
+    private readonly voucherRepo: Repository<Voucher>,
 
     @Inject(forwardRef(() => BrandService))
     private readonly brandService: BrandService,
@@ -44,7 +48,7 @@ export class BillerService {
   }
 
   async getBrandDueInvoices(brandId: string): Promise<Invoice[]> {
-    return this.invoiceRepo.find({
+    return await this.invoiceRepo.find({
       where: {
         brandId,
         isDue: true,
@@ -122,7 +126,7 @@ export class BillerService {
       bill.brandId = brandId;
       bill.type = type;
 
-      return this.billRepo.save(bill);
+      return await this.billRepo.save(bill);
     } catch (error) {
       logger.error(error);
     }
@@ -163,7 +167,7 @@ export class BillerService {
   }
 
   async saveInvoice(invoice: Invoice) {
-    return this.invoiceRepo.save(invoice);
+    return await this.invoiceRepo.save(invoice);
   }
 
   @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT)
@@ -200,5 +204,35 @@ export class BillerService {
         await this.billRepo.save(bill);
       }
     }
+  }
+
+  async createVoucher(discount: number, brandId: string) {
+    const newVoucher = new Voucher();
+    newVoucher.code = generateRandomCode();
+    newVoucher.discount = discount;
+    newVoucher.isUsed = false;
+    newVoucher.brandId = brandId;
+
+    return await this.voucherRepo.save(newVoucher);
+  }
+
+  async getVoucherByCode(code: string) {
+    return await this.voucherRepo.findOne({
+      where: {
+        code,
+      },
+    });
+  }
+
+  async getVoucherById(id: string) {
+    return await this.voucherRepo.findOne({
+      where: {
+        id,
+      },
+    });
+  }
+
+  async saveVoucher(voucher: Voucher) {
+    return await this.voucherRepo.save(voucher);
   }
 }

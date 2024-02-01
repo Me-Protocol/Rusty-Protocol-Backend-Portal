@@ -5,7 +5,8 @@ import { logger } from '@src/globalServices/logger/logger.service';
 import { BillerService } from '@src/globalServices/biller/biller.service';
 import { BrandService } from '@src/globalServices/brand/brand.service';
 import { CreatePlanDto } from './dto/CreatePlanDto.dto';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { MailService } from '@src/globalServices/mail/mail.service';
+import { emailCode } from '@src/utils/helpers/email';
 
 @Injectable()
 export class PaymentModuleService {
@@ -14,6 +15,7 @@ export class PaymentModuleService {
     private readonly paymentService: PaymentService,
     private readonly billerService: BillerService,
     private readonly brandService: BrandService,
+    private readonly mailService: MailService,
   ) {}
 
   async savePaymentMethodBrand(paymentMethodId: string, brandId: string) {
@@ -97,12 +99,53 @@ export class PaymentModuleService {
     brandId: string,
     planId: string,
     paymentMethodId: string,
+    voucherCode: string,
   ) {
     return await this.brandService.subscribeBrandToPlan(
       brandId,
       planId,
       paymentMethodId,
+      voucherCode,
     );
+  }
+
+  async createVouchers(discount: number, brandIds: string[]) {
+    try {
+      await Promise.all(
+        brandIds.map(async (brandId) => {
+          const brand = await this.brandService.getBrandById(brandId);
+
+          if (brand) {
+            const voucher = await this.billerService.createVoucher(
+              discount,
+              brandId,
+            );
+
+            await this.mailService.sendMail({
+              to: brand.user.email,
+              subject: `New Voucher gift`,
+              text: `You have been gifted a voucher of ${discount}% discount on your next payment. Use the code ${voucher.code} to redeem your voucher.`,
+              html: `
+              <div>
+                <p>You have been gifted a voucher of ${discount}% discount on your next payment. Use the code ${emailCode(
+                { code: voucher.code },
+              )} to redeem your voucher.</p>
+              </div>
+              `,
+            });
+          }
+        }),
+      );
+
+      return 'ok';
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async getVoucherByCode(code: string) {
+    return await this.billerService.getVoucherByCode(code);
   }
 
   // @Cron(CronExpression.EVERY_30_SECONDS)

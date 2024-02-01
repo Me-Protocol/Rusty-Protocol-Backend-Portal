@@ -148,6 +148,7 @@ import { RewardCirculation } from './globalServices/analytics/entities/reward_ci
 import { BrandSubscriptionPlan } from './globalServices/brand/entities/brand_subscription_plan.entity';
 import { CurrencyService } from './globalServices/currency/currency.service';
 import { Currency } from './globalServices/currency/entities/currency.entity';
+import { Voucher } from './globalServices/biller/entity/voucher.entity';
 
 @Module({
   imports: [
@@ -200,6 +201,7 @@ import { Currency } from './globalServices/currency/entities/currency.entity';
       RewardCirculation,
       BrandSubscriptionPlan,
       Currency,
+      Voucher,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),

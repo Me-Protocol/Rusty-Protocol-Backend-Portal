@@ -398,6 +398,7 @@ export class BrandService {
     brandId: string,
     planId: string,
     paymentMethodId: string,
+    voucherCode: string,
   ) {
     const brand = await this.getBrandById(brandId);
     if (!brand) {
@@ -409,6 +410,26 @@ export class BrandService {
       throw new NotFoundException('Plan not found');
     }
 
+    const voucher = await this.billerService.getVoucherByCode(voucherCode);
+
+    if (!voucher) {
+      throw new NotFoundException('Voucher not found');
+    }
+
+    if (voucher.brandId !== brandId) {
+      throw new HttpException('Voucher not found', 400);
+    }
+
+    if (voucher.isExpired) {
+      throw new HttpException('Voucher has expired', 400);
+    }
+
+    if (voucher.isUsed) {
+      throw new HttpException('Voucher has been used', 400);
+    }
+
+    const amount = plan.monthlyAmount * 100 - voucher.discount * 100;
+
     const wallet = await this.walletRepo.findOne({
       where: {
         brandId,
@@ -416,7 +437,7 @@ export class BrandService {
     });
 
     await this.paymentService.chargePaymentMethod({
-      amount: plan.monthlyAmount * 100,
+      amount,
       paymentMethodId,
       wallet,
       narration: `Payment for ${plan.name} subscription`,
