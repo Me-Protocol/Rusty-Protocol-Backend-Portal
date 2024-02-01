@@ -331,14 +331,6 @@ export class OrderManagementService {
 
       await this.transactionRepo.save(transaction);
 
-      const bill = await this.billerService.createBill({
-        type: 'redeem-offer',
-        amount: 1.5,
-        brandId: order.offer.brandId,
-      });
-
-      console.log('bill', bill);
-
       return await this.orderService.saveOrder(order);
     } catch (error) {
       console.log(error);
@@ -347,7 +339,7 @@ export class OrderManagementService {
     }
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  // @Cron(CronExpression.EVERY_5_MINUTES)
   async resolveIncompleteOrders() {
     const orders = await this.orderService.getOrderWithoutTaskId();
 
@@ -378,6 +370,14 @@ export class OrderManagementService {
         });
 
         if (status === 'success') {
+          const bill = await this.billerService.createBill({
+            type: 'redeem-offer',
+            amount: 1.5,
+            brandId: order.offer.brandId,
+          });
+
+          console.log('bill', bill);
+
           await this.offerService.increaseOfferSales({
             offer,
             amount: order.points,
