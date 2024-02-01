@@ -148,6 +148,7 @@ import { RewarderService } from './globalServices/task/common/rewarder/rewarder.
 import { AnalyticsRecorderService } from './globalServices/analytics/analytic_recorder.service';
 import { RewardCirculation } from './globalServices/analytics/entities/reward_circulation';
 import { BrandSubscriptionPlan } from './globalServices/brand/entities/brand_subscription_plan.entity';
+import { NotificationHandler } from '@src/globalServices/notification/notification.handler';
 
 @Module({
   imports: [
@@ -326,6 +327,7 @@ import { BrandSubscriptionPlan } from './globalServices/brand/entities/brand_sub
     RewarderService,
     AnalyticsRecorderService,
     JwtService,
+    NotificationHandler,
   ],
   exports: [JwtStrategy, PassportModule, AuthenticationModule],
 })

@@ -5,18 +5,117 @@ import { MailService } from '../mail/mail.service';
 import { UserService } from '../user/user.service';
 import { Notification } from './entities/notification.entity';
 import { FilterNotificationDto } from '@src/modules/notification/dto/FilterNotificationDto.dto';
+import { BrandService } from '@src/globalServices/brand/brand.service';
+import { ISendBulkNotification } from '@src/utils/interfaces/notification';
+import { SmsService } from '@src/globalServices/sms/sms.service';
+import { NotificationHandler } from '@src/globalServices/notification/notification.handler';
+import { EventEmitter } from '@node_modules/typeorm/browser/platform/BrowserPlatformTools';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  CreateEmailNotificationEvent,
+  CreatePhoneNotificationEvent,
+  SEND_EMAIL_NOTIFICATION,
+  SEND_PHONE_NOTIFICATION,
+} from '@src/globalServices/notification/notification.event';
+import { User } from '@src/globalServices/user/entities/user.entity';
+import { NotificationType } from '@src/utils/enums/notification.enum';
 
 @Injectable()
 export class NotificationService {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
-
     private readonly userService: UserService,
     private readonly mailService: MailService,
+    private readonly brandService: BrandService,
+    private readonly smsService: SmsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  // create notification
+  async sendBulkNotification(
+    brandId: string,
+    notification: ISendBulkNotification,
+  ) {
+    const { emailUsers, phoneUsers } =
+      await this.brandService.getActiveBrandCustomers(brandId);
+
+    let notifications: Partial<Notification>[] = [];
+
+    if (notification.notification_type === 'email') {
+      notifications = this.createEmailNotifications(notification, emailUsers);
+    } else if (notification.notification_type === 'phone') {
+      notifications = this.createPhoneNotifications(notification, phoneUsers);
+    }
+
+    await this.saveNotifications(notifications);
+    return;
+  }
+
+  private createEmailNotifications(
+    notification: ISendBulkNotification,
+    emailUsers: User[],
+  ): Partial<Notification>[] {
+    return emailUsers.map((user) => {
+      const createdNotification = this.createNotificationObject(
+        notification,
+        user,
+      );
+
+      this.eventEmitter.emit(
+        SEND_EMAIL_NOTIFICATION,
+        new CreateEmailNotificationEvent(
+          createdNotification.title,
+          createdNotification.emailMessage,
+          user.email,
+        ),
+      );
+      return createdNotification;
+    });
+  }
+
+  private createPhoneNotifications(
+    notification: ISendBulkNotification,
+    phoneUsers: User[],
+  ): Partial<Notification>[] {
+    return phoneUsers.map((user) => {
+      const createdNotification = this.createNotificationObject(
+        notification,
+        user,
+      );
+      this.eventEmitter.emit(
+        SEND_PHONE_NOTIFICATION,
+        new CreatePhoneNotificationEvent(
+          createdNotification.title,
+          createdNotification.message,
+          user.phone,
+        ),
+      );
+      return createdNotification;
+    });
+  }
+
+  private createNotificationObject(
+    notification: ISendBulkNotification,
+    user: User,
+  ): Partial<Notification> {
+    return {
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
+      emailMessage: notification.emailMessage || '',
+      userId: user.id,
+      icon: notification.icon || null,
+      orderId: notification.orderId || null,
+      image: notification.image || null,
+    };
+  }
+
+  private async saveNotifications(
+    notifications: Partial<Notification>[],
+  ): Promise<void> {
+    await this.notificationRepository.insert(notifications);
+  }
+
   async createNotification(notification: Notification) {
     const user_id = notification.userId;
     const user = await this.userService.getUserById(user_id);

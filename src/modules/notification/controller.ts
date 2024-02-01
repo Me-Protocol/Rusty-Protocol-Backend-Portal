@@ -5,6 +5,7 @@ import {
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
+  Post,
   Query,
   Req,
   Res,
@@ -18,6 +19,8 @@ import { NotificationService } from '@src/globalServices/notification/notificati
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { FilterNotificationDto } from './dto/FilterNotificationDto.dto';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
+import { SendBulkNotificationDto } from '@src/modules/notification/dto/SendBulkNotification.dto';
+import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 
 @ApiTags('Notification')
 @Controller('notification')
@@ -36,7 +39,16 @@ export class NotificationController {
     return await this.notificationService.getAllNotifications(query);
   }
 
-  @UseGuards(AuthGuard())
+  @Post('send-bulk')
+  @UseGuards(BrandJwtStrategy)
+  async sendBulkNotification(
+    @Req() req: any,
+    @Query(ValidationPipe) body: SendBulkNotificationDto,
+  ) {
+    const brandId = req.user.brand.id;
+
+    return await this.notificationService.sendBulkNotification(brandId, body);
+  }
   @Get(':id')
   async getNotificationById(
     @Param('id', ParseUUIDPipe) id: string,
