@@ -118,10 +118,7 @@ export class PaymentModuleController {
 
   @Post('voucher')
   async createVoucher(@Body(ValidationPipe) body: CreateVoucherDto) {
-    return await this.paymentService.createVouchers(
-      body.discount,
-      body.brandIds,
-    );
+    return await this.paymentService.createVouchers(body.vouchers);
   }
 
   @Get('voucher/:code')

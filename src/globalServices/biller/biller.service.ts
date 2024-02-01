@@ -206,12 +206,19 @@ export class BillerService {
     }
   }
 
-  async createVoucher(discount: number, brandId: string) {
+  async createVoucher(
+    discount: number,
+    brandId: string,
+    planId: string,
+    usageLimit: number,
+  ) {
     const newVoucher = new Voucher();
     newVoucher.code = generateRandomCode();
     newVoucher.discount = discount;
     newVoucher.isUsed = false;
     newVoucher.brandId = brandId;
+    newVoucher.planId = planId;
+    newVoucher.usageLimit = usageLimit;
 
     return await this.voucherRepo.save(newVoucher);
   }

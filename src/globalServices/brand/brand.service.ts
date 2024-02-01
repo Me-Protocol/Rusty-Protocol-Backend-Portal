@@ -75,6 +75,16 @@ export class BrandService {
     return await this.brandRepo.save(saveBrand);
   }
 
+  async getBrandOwner(brandId: string) {
+    return await this.brandMemberRepo.findOne({
+      where: {
+        brandId,
+        role: BrandRole.OWNER,
+      },
+      relations: ['user'],
+    });
+  }
+
   save(brand: Brand) {
     return this.brandRepo.save(brand);
   }
@@ -410,25 +420,45 @@ export class BrandService {
       throw new NotFoundException('Plan not found');
     }
 
-    const voucher = await this.billerService.getVoucherByCode(voucherCode);
+    let amount: number;
 
-    if (!voucher) {
-      throw new NotFoundException('Voucher not found');
+    if (voucherCode) {
+      const voucher = await this.billerService.getVoucherByCode(voucherCode);
+
+      if (!voucher) {
+        throw new NotFoundException('Voucher not found');
+      }
+
+      if (voucher.brandId !== brandId) {
+        throw new HttpException('Voucher not found', 400);
+      }
+
+      if (voucher.isExpired) {
+        throw new HttpException('Voucher has expired', 400);
+      }
+
+      if (voucher.isUsed) {
+        throw new HttpException('Voucher has been used', 400);
+      }
+
+      if (voucher.usageLimit && voucher.usageCount >= voucher.usageLimit) {
+        throw new HttpException('Voucher has been used', 400);
+      }
+
+      if (voucher.planId !== planId) {
+        throw new HttpException('Voucher not found', 400);
+      }
+
+      amount = (plan.monthlyAmount - voucher.discount) * 100;
+
+      voucher.isUsed = true;
+      voucher.usedAt = new Date();
+      voucher.usageCount = Number(voucher.usageCount) + 1;
+
+      await this.billerService.saveVoucher(voucher);
     }
 
-    if (voucher.brandId !== brandId) {
-      throw new HttpException('Voucher not found', 400);
-    }
-
-    if (voucher.isExpired) {
-      throw new HttpException('Voucher has expired', 400);
-    }
-
-    if (voucher.isUsed) {
-      throw new HttpException('Voucher has been used', 400);
-    }
-
-    const amount = plan.monthlyAmount * 100 - voucher.discount * 100;
+    amount = plan.monthlyAmount * 100;
 
     const wallet = await this.walletRepo.findOne({
       where: {

@@ -331,11 +331,13 @@ export class OrderManagementService {
 
       await this.transactionRepo.save(transaction);
 
-      await this.billerService.createBill({
+      const bill = await this.billerService.createBill({
         type: 'redeem-offer',
         amount: 1.5,
         brandId: order.offer.brandId,
       });
+
+      console.log('bill', bill);
 
       return await this.orderService.saveOrder(order);
     } catch (error) {

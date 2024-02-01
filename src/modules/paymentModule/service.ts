@@ -109,31 +109,54 @@ export class PaymentModuleService {
     );
   }
 
-  async createVouchers(discount: number, brandIds: string[]) {
+  async createVouchers(
+    vouchers: {
+      brandId: string;
+      planId: string;
+      discount: number;
+      usageLimit: number;
+    }[],
+  ) {
     try {
       await Promise.all(
-        brandIds.map(async (brandId) => {
-          const brand = await this.brandService.getBrandById(brandId);
+        vouchers.map(async (item) => {
+          const brand = await this.brandService.getBrandById(item.brandId);
 
-          if (brand) {
-            const voucher = await this.billerService.createVoucher(
-              discount,
-              brandId,
-            );
+          if (!brand) {
+            throw new HttpException('Brand not found', 404);
+          }
 
-            await this.mailService.sendMail({
-              to: brand.user.email,
-              subject: `New Voucher gift`,
-              text: `You have been gifted a voucher of ${discount}% discount on your next payment. Use the code ${voucher.code} to redeem your voucher.`,
-              html: `
+          const plan = await this.brandService.getBrandSubscriptionPlanById(
+            item.planId,
+          );
+
+          if (!plan) {
+            throw new HttpException('Plan not found', 404);
+          }
+
+          const voucher = await this.billerService.createVoucher(
+            item.discount,
+            item.brandId,
+            item.planId,
+            item.usageLimit,
+          );
+
+          const brandOwner = await this.brandService.getBrandOwner(brand.id);
+
+          await this.mailService.sendMail({
+            to: brandOwner.user.email,
+            subject: `New Voucher gift`,
+            text: `You have been gifted a voucher of ${item.discount}% discount on your next payment. Use the code ${voucher.code} to redeem your voucher.`,
+            html: `
               <div>
-                <p>You have been gifted a voucher of ${discount}% discount on your next payment. Use the code ${emailCode(
-                { code: voucher.code },
-              )} to redeem your voucher.</p>
+                <p>You have been gifted a voucher of ${
+                  item.discount
+                }% discount on your next payment. Use the code ${emailCode({
+              code: voucher.code,
+            })} to redeem your voucher.</p>
               </div>
               `,
-            });
-          }
+          });
         }),
       );
 

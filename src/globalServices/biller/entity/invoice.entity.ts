@@ -31,8 +31,6 @@ export class Invoice extends BaseEntity {
 
   @Column({
     type: 'decimal',
-    precision: 20,
-    scale: 20,
     default: 0,
     nullable: true,
   })

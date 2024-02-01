@@ -1,17 +1,32 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNumber } from 'class-validator';
+import { IsArray } from 'class-validator';
 
 export class CreateVoucherDto {
-  @ApiProperty()
-  @IsNumber()
-  discount: number;
-
   @ApiProperty({
     type: 'array',
     items: {
-      type: 'string',
+      type: 'object',
+      properties: {
+        brandId: {
+          type: 'string',
+        },
+        planId: {
+          type: 'string',
+        },
+        discount: {
+          type: 'number',
+        },
+        usageLimit: {
+          type: 'number',
+        },
+      },
     },
   })
   @IsArray()
-  brandIds: string[];
+  vouchers: {
+    brandId: string;
+    planId: string;
+    discount: number;
+    usageLimit: number;
+  }[];
 }

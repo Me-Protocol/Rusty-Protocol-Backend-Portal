@@ -13,11 +13,7 @@ export class CurrencyService {
   ) {}
 
   async getCurrency() {
-    const currency = await this.currencyRepo.findOne({
-      order: {
-        currency: 'DESC',
-      },
-    });
+    const currency = await this.currencyRepo.findOne({});
 
     return currency;
   }
