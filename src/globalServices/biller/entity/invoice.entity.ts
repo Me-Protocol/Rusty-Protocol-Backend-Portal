@@ -2,7 +2,8 @@
 
 import { BaseEntity } from '@src/common/entities/base.entity';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
-import { Entity, Column, ManyToOne } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany } from 'typeorm';
+import { Bill } from './bill.entity';
 
 @Entity('invoice')
 export class Invoice extends BaseEntity {
@@ -24,6 +25,9 @@ export class Invoice extends BaseEntity {
     default: false,
   })
   isDue: boolean;
+
+  @OneToMany(() => Bill, (bill) => bill.invoice)
+  bills: Bill[];
 
   @Column({
     type: 'decimal',

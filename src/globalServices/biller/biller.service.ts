@@ -129,11 +129,8 @@ export class BillerService {
 
       const saveBill = await this.billRepo.save(bill);
 
-      console.log('Saved Bill', saveBill);
-
       return saveBill;
     } catch (error) {
-      console.log(error, 'Error');
       logger.error(error);
     }
   }

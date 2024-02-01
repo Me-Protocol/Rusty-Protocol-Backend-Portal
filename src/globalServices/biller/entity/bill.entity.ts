@@ -10,7 +10,7 @@ export class Bill extends BaseEntity {
   @Column()
   invoiceId: string;
 
-  @ManyToOne(() => Invoice, (invoice) => invoice.id)
+  @ManyToOne(() => Invoice, (invoice) => invoice.bills)
   @JoinColumn({ name: 'invoiceId' })
   invoice: Invoice;
 
