@@ -139,15 +139,4 @@ export class CurrencyService {
     //     console.log(error);
     //   });
   }
-
-  @Cron(CronExpression.EVERY_SECOND)
-  async deleteAllCurrency() {
-    const currencies = await this.currencyRepo.find();
-
-    await Promise.all(
-      currencies.map(async (currency) => {
-        await this.deleteCurrency(currency);
-      }),
-    );
-  }
 }
