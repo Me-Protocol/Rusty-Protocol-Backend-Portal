@@ -339,7 +339,7 @@ export class OrderManagementService {
     }
   }
 
-  // @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async resolveIncompleteOrders() {
     const orders = await this.orderService.getOrderWithoutTaskId();
 
@@ -351,7 +351,7 @@ export class OrderManagementService {
     }
   }
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  // @Cron(CronExpression.EVERY_30_SECONDS)
   async checkOrderStatus() {
     const pendingOrders = await this.orderService.getPendingOrders();
     if (pendingOrders.length > 0) {
