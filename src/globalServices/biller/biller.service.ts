@@ -120,14 +120,20 @@ export class BillerService {
 
       await this.invoiceRepo.save(invoice);
 
-      const bill = new Bill();
-      bill.invoiceId = invoice.id;
-      bill.amount = amount;
-      bill.brandId = brandId;
-      bill.type = type;
+      const bill = this.billRepo.create({
+        amount,
+        brandId,
+        invoiceId: invoice.id,
+        type,
+      });
 
-      return await this.billRepo.save(bill);
+      const saveBill = await this.billRepo.save(bill);
+
+      console.log('Saved Bill', saveBill);
+
+      return saveBill;
     } catch (error) {
+      console.log(error, 'Error');
       logger.error(error);
     }
   }

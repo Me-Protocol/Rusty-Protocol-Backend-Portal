@@ -331,6 +331,14 @@ export class OrderManagementService {
 
       await this.transactionRepo.save(transaction);
 
+      const offer = await this.offerService.getOfferById(order.offerId);
+
+      await this.billerService.createBill({
+        type: 'redeem-offer',
+        amount: 1.5,
+        brandId: offer.brandId,
+      });
+
       return await this.orderService.saveOrder(order);
     } catch (error) {
       console.log(error);
@@ -351,9 +359,10 @@ export class OrderManagementService {
     }
   }
 
-  // @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async checkOrderStatus() {
     const pendingOrders = await this.orderService.getPendingOrders();
+
     if (pendingOrders.length > 0) {
       for (const order of pendingOrders) {
         const status = await this.checkOrderStatusGelatoOrRuntime(
@@ -370,14 +379,6 @@ export class OrderManagementService {
         });
 
         if (status === 'success') {
-          const bill = await this.billerService.createBill({
-            type: 'redeem-offer',
-            amount: 1.5,
-            brandId: order.offer.brandId,
-          });
-
-          console.log('bill', bill);
-
           await this.offerService.increaseOfferSales({
             offer,
             amount: order.points,
