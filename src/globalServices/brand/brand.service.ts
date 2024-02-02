@@ -27,6 +27,7 @@ import { PaymentService } from '../fiatWallet/payment.service';
 import { FiatWallet } from '../fiatWallet/entities/fiatWallet.entity';
 import { UserAppType } from '@src/utils/enums/UserAppType';
 import { User } from '@src/globalServices/user/entities/user.entity';
+import { TopupEventBlock } from './entities/topup_event_block.entity';
 
 @Injectable()
 export class BrandService {
@@ -39,6 +40,10 @@ export class BrandService {
     private readonly brandCustomerRepo: Repository<BrandCustomer>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+
+    @InjectRepository(TopupEventBlock)
+    private readonly topupEventBlock: Repository<TopupEventBlock>,
+
     @InjectRepository(BrandSubscriptionPlan)
     private readonly brandSubscriptionPlanRepo: Repository<BrandSubscriptionPlan>,
     private readonly elasticIndex: ElasticIndex,
@@ -526,5 +531,21 @@ export class BrandService {
     brand.planId = planId;
 
     return await this.brandRepo.save(brand);
+  }
+
+  async getLastTopupEventBlock() {
+    return await this.topupEventBlock.find({
+      order: {
+        lastBlock: 'DESC',
+      },
+      take: 1,
+    })[0];
+  }
+
+  async saveTopupEventBlock(blockNumber) {
+    const topupEventBlock = new TopupEventBlock();
+    topupEventBlock.lastBlock = blockNumber;
+
+    return await this.topupEventBlock.save(topupEventBlock);
   }
 }

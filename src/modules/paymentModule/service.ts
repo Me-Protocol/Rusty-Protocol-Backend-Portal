@@ -7,6 +7,11 @@ import { BrandService } from '@src/globalServices/brand/brand.service';
 import { CreatePlanDto } from './dto/CreatePlanDto.dto';
 import { MailService } from '@src/globalServices/mail/mail.service';
 import { emailCode } from '@src/utils/helpers/email';
+import {
+  getCurrentPoolState,
+  getLatestBlock,
+} from '@developeruche/protocol-core';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class PaymentModuleService {
@@ -64,6 +69,9 @@ export class PaymentModuleService {
   ) {
     try {
       const invoice = await this.billerService.getInvoiceById(invoiceId);
+
+      console.log(invoice, brandId, paymentMethodId);
+
       if (!invoice) {
         throw new HttpException('Invoice not found', 404);
       }
@@ -182,7 +190,22 @@ export class PaymentModuleService {
   }
 
   // @Cron(CronExpression.EVERY_30_SECONDS)
-  // async checkBrandForTopup() {}
+  async checkBrandForTopup() {
+    try {
+      const lastBlock = await this.brandService.getLastTopupEventBlock();
+      const fromBlock = lastBlock ? lastBlock.lastBlock : 0;
+
+      const toBlock = await getLatestBlock();
+      await this.brandService.saveTopupEventBlock(toBlock);
+
+      const state = await getCurrentPoolState(fromBlock, toBlock);
+
+      console.log('Pool state', state);
+    } catch (error) {
+      logger.error(error);
+      console.log('Error', error);
+    }
+  }
 
   // @Cron(CronExpression.EVERY_30_SECONDS)
   // async handleAutoTop() {}

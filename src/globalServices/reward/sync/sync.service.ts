@@ -673,7 +673,8 @@ export class SyncRewardService {
 
     if (distributionData?.data?.error) {
       console.log(distributionData.data);
-      throw new Error("We couldn't distribute reward");
+      // throw new Error("We couldn't distribute reward");
+      return distributionData.data;
     } else {
       const registry = await this.findOneRegistryByEmailIdentifier(
         email,

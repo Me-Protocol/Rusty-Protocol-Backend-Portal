@@ -80,7 +80,6 @@ export class BillerService {
     const invoice = await this.invoiceRepo.findOne({
       where: {
         id: invoiceId,
-        isDue: false,
       },
     });
 

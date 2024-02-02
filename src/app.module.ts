@@ -151,6 +151,7 @@ import { CurrencyService } from './globalServices/currency/currency.service';
 import { Currency } from './globalServices/currency/entities/currency.entity';
 import { Voucher } from './globalServices/biller/entity/voucher.entity';
 import { CreateSendgridContactHandler } from '@src/globalServices/mail/create-sendgrid-contact.handler';
+import { TopupEventBlock } from './globalServices/brand/entities/topup_event_block.entity';
 
 @Module({
   imports: [
@@ -204,6 +205,7 @@ import { CreateSendgridContactHandler } from '@src/globalServices/mail/create-se
       BrandSubscriptionPlan,
       Currency,
       Voucher,
+      TopupEventBlock,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
