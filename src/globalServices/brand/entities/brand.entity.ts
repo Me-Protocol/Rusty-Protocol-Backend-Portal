@@ -27,6 +27,7 @@ import { Order } from '@src/globalServices/order/entities/order.entity';
 import { Review } from '@src/globalServices/review/entities/review.entity';
 import { Bill } from '@src/globalServices/biller/entity/bill.entity';
 import { BrandSubscriptionPlan } from './brand_subscription_plan.entity';
+import { BrandStore } from '@src/globalServices/brand-store/brand-store.dto';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -143,6 +144,11 @@ export class Brand extends BaseEntity {
     default: 0,
   })
   viewsCount: number;
+
+  @Column('simple-json', {
+    nullable: true,
+  })
+  brandStore: BrandStore;
 
   @OneToMany(() => Product, (product) => product.brand)
   products: Product[];
