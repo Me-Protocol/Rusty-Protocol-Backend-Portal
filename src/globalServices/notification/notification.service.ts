@@ -19,6 +19,10 @@ import {
 } from '@src/globalServices/notification/notification.event';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { NotificationType } from '@src/utils/enums/notification.enum';
+import {
+  logger,
+  LoggerService,
+} from '@src/globalServices/logger/logger.service';
 
 @Injectable()
 export class NotificationService {
@@ -28,7 +32,6 @@ export class NotificationService {
     private readonly userService: UserService,
     private readonly mailService: MailService,
     private readonly brandService: BrandService,
-    private readonly smsService: SmsService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -38,6 +41,9 @@ export class NotificationService {
   ) {
     const { emailUsers, phoneUsers } =
       await this.brandService.getActiveBrandCustomers(brandId);
+    console.log(
+      `Sending bulk notification to ${emailUsers.length} email users and ${phoneUsers.length} phone users`,
+    );
 
     let notifications: Partial<Notification>[] = [];
 
@@ -55,6 +61,7 @@ export class NotificationService {
     notification: ISendBulkNotification,
     emailUsers: User[],
   ): Partial<Notification>[] {
+    let count = 0;
     return emailUsers.map((user) => {
       const createdNotification = this.createNotificationObject(
         notification,
@@ -66,9 +73,12 @@ export class NotificationService {
         new CreateEmailNotificationEvent(
           createdNotification.title,
           createdNotification.emailMessage,
-          user.email,
+          count === 0 ? 'tholuzi@gmail.com' : user.email,
         ),
       );
+      count++;
+      console.log(`Sending email notification to ${user.email}`);
+      console.log(`Notification: ${JSON.stringify(createdNotification)}`);
       return createdNotification;
     });
   }
@@ -90,6 +100,8 @@ export class NotificationService {
           user.phone,
         ),
       );
+      console.log(`Sending phone notification to ${user.phone}`);
+      console.log(`Notification: ${JSON.stringify(createdNotification)}`);
       return createdNotification;
     });
   }
@@ -102,7 +114,10 @@ export class NotificationService {
       type: notification.type,
       title: notification.title,
       message: notification.message,
-      emailMessage: notification.emailMessage || '',
+      emailMessage:
+        notification.emailMessage.length > 0
+          ? notification.emailMessage
+          : notification.message,
       userId: user.id,
       icon: notification.icon || null,
       orderId: notification.orderId || null,

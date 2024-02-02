@@ -289,12 +289,6 @@ export class OrderManagementService {
 
       await this.offerService.reduceInventory(offer, order);
 
-      await this.billerService.createBill({
-        type: 'redeem-offer',
-        amount: 1.5,
-        brandId: offer.brandId,
-      });
-
       return order;
     } catch (error) {
       logger.error(error);
@@ -337,6 +331,14 @@ export class OrderManagementService {
 
       await this.transactionRepo.save(transaction);
 
+      const offer = await this.offerService.getOfferById(order.offerId);
+
+      await this.billerService.createBill({
+        type: 'redeem-offer',
+        amount: 1.5,
+        brandId: offer.brandId,
+      });
+
       return await this.orderService.saveOrder(order);
     } catch (error) {
       console.log(error);
@@ -345,9 +347,22 @@ export class OrderManagementService {
     }
   }
 
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async resolveIncompleteOrders() {
+    const orders = await this.orderService.getOrderWithoutTaskId();
+
+    if (orders.length > 0) {
+      for (const order of orders) {
+        order.status = StatusType.ABANDONED;
+        await this.orderService.saveOrder(order);
+      }
+    }
+  }
+
   @Cron(CronExpression.EVERY_30_SECONDS)
   async checkOrderStatus() {
     const pendingOrders = await this.orderService.getPendingOrders();
+
     if (pendingOrders.length > 0) {
       for (const order of pendingOrders) {
         const status = await this.checkOrderStatusGelatoOrRuntime(

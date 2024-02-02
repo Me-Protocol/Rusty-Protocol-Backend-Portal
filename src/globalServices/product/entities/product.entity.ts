@@ -17,6 +17,7 @@ import { ProductStatus } from '@src/utils/enums/ItemStatus';
 import { Offer } from '@src/globalServices/offer/entities/offer.entity';
 import { Variant } from './variants.entity';
 import { Collection } from '@src/globalServices/collections/entities/collection.entity';
+import { Currency } from '@src/globalServices/currency/entities/currency.entity';
 
 @Entity('product')
 export class Product extends BaseEntity {
@@ -120,4 +121,13 @@ export class Product extends BaseEntity {
     nullable: true,
   })
   minAge: number;
+
+  @Column({
+    nullable: true,
+  })
+  currencyId: string;
+
+  @ManyToOne(() => Currency, (currency) => currency.id)
+  @JoinColumn({ name: 'currencyId' })
+  currency: Currency;
 }

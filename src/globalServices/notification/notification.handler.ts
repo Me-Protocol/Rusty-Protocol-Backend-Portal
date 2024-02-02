@@ -18,6 +18,8 @@ export class NotificationHandler {
 
   @OnEvent(SEND_PHONE_NOTIFICATION)
   async handleCreatePhoneNotification(event: CreatePhoneNotificationEvent) {
+    console.log('event listener for phone notification');
+    console.log('event.phoneNumber', event.phoneNumber);
     await this.smsService.sendSms({
       to: event.phoneNumber,
       body: event.message,
@@ -27,6 +29,8 @@ export class NotificationHandler {
 
   @OnEvent(SEND_EMAIL_NOTIFICATION)
   async handleCreateEmailNotification(event: CreateEmailNotificationEvent) {
+    console.log('event listener for email notification');
+    console.log('event.email', event.email);
     await this.mailService.sendMail({
       to: event.email,
       subject: event.title,

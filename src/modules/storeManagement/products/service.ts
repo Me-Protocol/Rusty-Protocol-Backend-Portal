@@ -10,7 +10,7 @@ import { CollectionService } from '@src/globalServices/collections/collections.s
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { productIndex } from '@src/modules/search/interface/search.interface';
 import { ProductStatus } from '@src/utils/enums/ItemStatus';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { CurrencyService } from '@src/globalServices/currency/currency.service';
 
 @Injectable()
 export class ProductManagementService {
@@ -19,6 +19,7 @@ export class ProductManagementService {
     private readonly categoryService: CategoryService,
     private readonly collectionService: CollectionService,
     private readonly elasticIndex: ElasticIndex,
+    private readonly currencyService: CurrencyService,
   ) {}
 
   async getProductImages(brandId: string, page: number, limit: number) {
@@ -49,6 +50,16 @@ export class ProductManagementService {
         body.name,
       );
 
+      if (body.currencyId) {
+        const currency = await this.currencyService.getCurrencyById(
+          body.currencyId,
+        );
+
+        if (!currency) {
+          throw new HttpException('Currency not found', 404);
+        }
+      }
+
       const product = new Product();
       product.brandId = body.brandId;
       if (body.categoryId) product.categoryId = body.categoryId;
@@ -61,6 +72,7 @@ export class ProductManagementService {
       if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
       if (body.productUrl) product.productUrl = body.productUrl;
       if (body.minAge) product.minAge = body.minAge;
+      if (body.currencyId) product.currencyId = body.currencyId;
       product.productCode = productCode;
 
       const productCollections = [];
@@ -151,6 +163,16 @@ export class ProductManagementService {
       }
     }
 
+    if (body.currencyId) {
+      const currency = await this.currencyService.getCurrencyById(
+        body.currencyId,
+      );
+
+      if (!currency) {
+        throw new HttpException('Currency not found', 404);
+      }
+    }
+
     // update only what is provided
     if (body.name) product.name = body.name;
     if (body.description) product.description = body.description;
@@ -162,6 +184,7 @@ export class ProductManagementService {
     if (body.categoryId) product.categoryId = body.categoryId;
     if (body.productUrl) product.productUrl = body.productUrl;
     if (body.minAge) product.minAge = body.minAge;
+    if (body.currencyId) product.currencyId = body.currencyId;
 
     if (body.productImages && body.productImages.length > 0) {
       // upload images

@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -43,7 +44,7 @@ export class NotificationController {
   @UseGuards(BrandJwtStrategy)
   async sendBulkNotification(
     @Req() req: any,
-    @Query(ValidationPipe) body: SendBulkNotificationDto,
+    @Body(ValidationPipe) body: SendBulkNotificationDto,
   ) {
     const brandId = req.user.brand.id;
 

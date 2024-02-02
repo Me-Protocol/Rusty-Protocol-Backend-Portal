@@ -518,6 +518,7 @@ export class BrandAccountManagementService {
       body.brandId,
       body.identifier,
       body.identifierType,
+      body.phone,
     );
   }
 }

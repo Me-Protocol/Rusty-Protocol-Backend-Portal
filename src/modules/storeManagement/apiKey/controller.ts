@@ -62,4 +62,10 @@ export class ApiKeyManagementController {
       rpcPolygonKey: process.env.RPC_POLYGON_KEY,
     };
   }
+
+  @UseGuards(ApiKeyJwtStrategy)
+  @Get('/brand')
+  async checkApiKey(@Req() req: any) {
+    return req.brand;
+  }
 }

@@ -7,6 +7,7 @@ export enum StatusType {
   SUCCEDDED = 'SUCCEDDED',
   PROCESSING = 'PROCESSING',
   FAILED = 'FAILED',
+  ABANDONED = 'ABANDONED',
 }
 
 export enum TransactionSource {

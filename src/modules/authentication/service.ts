@@ -35,6 +35,11 @@ import { emailCode } from '@src/utils/helpers/email';
 import { CustomerAccountManagementService } from '../accountManagement/customerAccountManagement/service';
 import { CollectionService } from '@src/globalServices/collections/collections.service';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import { EventEmitter2 } from '@node_modules/@nestjs/event-emitter';
+import {
+  CREATE_SENDGRID_CONTACT,
+  CreateSendgridContactEvent,
+} from '@src/globalServices/mail/create-sendgrid-contact.event';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -56,6 +61,7 @@ export class AuthenticationService {
     private syncService: SyncRewardService,
     private customerAccountManagementService: CustomerAccountManagementService,
     private collectionService: CollectionService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   // Signs a token
@@ -385,6 +391,11 @@ export class AuthenticationService {
       }
 
       const token = await this.generateAndSignToken(newUser);
+
+      this.eventEmitter.emit(
+        CREATE_SENDGRID_CONTACT,
+        new CreateSendgridContactEvent(newUser.email, name, name),
+      );
 
       return token;
     } catch (error) {

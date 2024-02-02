@@ -147,11 +147,28 @@ export class PaymentService {
   }
 
   async getPaymentMethods(walletId: string) {
-    return await this.paymentRepo.find({
+    const paymentMethods = await this.paymentRepo.find({
       where: {
         walletId,
       },
     });
+
+    const paymentMethodsDetails = [];
+
+    await Promise.all(
+      paymentMethods.map(async (paymentMethod) => {
+        const paymentMethodDetail = await stripe.paymentMethods.retrieve(
+          paymentMethod.stripePaymentMethodId,
+        );
+
+        paymentMethodsDetails.push({
+          ...paymentMethod,
+          stripe: paymentMethodDetail,
+        });
+      }),
+    );
+
+    return paymentMethodsDetails;
   }
 
   generateTransactionCode() {

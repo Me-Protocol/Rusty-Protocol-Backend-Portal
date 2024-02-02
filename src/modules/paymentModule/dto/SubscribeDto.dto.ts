@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class SubscribeDto {
   @ApiProperty()
@@ -9,6 +9,11 @@ export class SubscribeDto {
   @ApiProperty()
   @IsString()
   planId: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  voucherCode: string;
 
   brandId: string;
 }

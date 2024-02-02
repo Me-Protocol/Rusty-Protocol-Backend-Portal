@@ -111,4 +111,9 @@ export class UpdateProductDto {
   @IsOptional()
   @IsNumber()
   minAge: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsUUID()
+  currencyId: string;
 }

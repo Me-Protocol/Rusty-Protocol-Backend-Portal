@@ -718,7 +718,7 @@ export class RewardManagementService {
               );
 
             if (registry) {
-              users.push(user.customer.walletAddress);
+              users.push(user?.customer?.walletAddress);
               amounts.push(ethers.utils.parseEther(syncData.amount.toString()));
             }
           }

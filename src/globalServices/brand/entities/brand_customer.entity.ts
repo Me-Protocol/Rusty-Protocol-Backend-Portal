@@ -55,6 +55,11 @@ export class BrandCustomer extends BaseEntity {
     nullable: true,
   })
   identifierType: SyncIdentifierType;
+
+  @Column({
+    nullable: true,
+  })
+  phone: string;
 }
 
 // await this.createCustomers(user.id, batch.reward.brandId);

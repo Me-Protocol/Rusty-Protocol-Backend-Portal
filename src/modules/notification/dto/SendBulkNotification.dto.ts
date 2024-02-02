@@ -1,6 +1,6 @@
 import { NotificationType } from '@src/utils/enums/notification.enum';
 import { IsEnum, IsOptional, IsString, ValidateIf } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SendBulkNotificationDto {
   @IsString()
@@ -13,20 +13,26 @@ export class SendBulkNotificationDto {
   type: NotificationType;
 
   @IsString()
+  @ApiProperty()
   title: string;
 
   @IsString()
+  @ApiProperty()
   message: string;
 
   @IsOptional()
+  @ApiPropertyOptional()
   emailMessage?: string;
 
   @IsOptional()
+  @ApiPropertyOptional()
   icon?: string;
 
   @IsOptional()
+  @ApiPropertyOptional()
   image?: string;
 
   @IsOptional()
+  @ApiPropertyOptional()
   orderId?: string;
 }
