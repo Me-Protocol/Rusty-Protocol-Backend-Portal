@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
-import { FindOptionsOrderValue, Repository } from 'typeorm';
+import { FindOptionsOrderValue, In, Repository } from 'typeorm';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { brandIndex } from '@src/modules/search/interface/search.interface';
 import { UpdateBrandDto } from '@src/modules/accountManagement/brandAccountManagement/dto/UpdateBrandDto.dto';
@@ -25,27 +25,26 @@ import { BrandSubscriptionPlan } from './entities/brand_subscription_plan.entity
 import { BillerService } from '../biller/biller.service';
 import { PaymentService } from '../fiatWallet/payment.service';
 import { FiatWallet } from '../fiatWallet/entities/fiatWallet.entity';
+import { UserAppType } from '@src/utils/enums/UserAppType';
+import { User } from '@src/globalServices/user/entities/user.entity';
 
 @Injectable()
 export class BrandService {
   constructor(
     @InjectRepository(Brand)
     private readonly brandRepo: Repository<Brand>,
-
     @InjectRepository(BrandMember)
     private readonly brandMemberRepo: Repository<BrandMember>,
-
     @InjectRepository(BrandCustomer)
     private readonly brandCustomerRepo: Repository<BrandCustomer>,
-
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
     @InjectRepository(BrandSubscriptionPlan)
     private readonly brandSubscriptionPlanRepo: Repository<BrandSubscriptionPlan>,
-
     private readonly elasticIndex: ElasticIndex,
     private readonly eventEmitter: EventEmitter2,
     private readonly billerService: BillerService,
     private readonly paymentService: PaymentService,
-
     @InjectRepository(FiatWallet)
     private readonly walletRepo: Repository<FiatWallet>,
   ) {}
@@ -216,6 +215,55 @@ export class BrandService {
         id,
       },
     });
+  }
+
+  async getActiveBrandCustomers(
+    brandId: string,
+  ): Promise<{ emailUsers: User[]; phoneUsers: User[] }> {
+    let whereCondition: any = {
+      brandId,
+      identifierType: In([SyncIdentifierType.EMAIL, SyncIdentifierType.PHONE]),
+    };
+
+    const brandCustomers = await this.brandCustomerRepo.find({
+      where: whereCondition,
+      relations: ['brand'],
+    });
+
+    const identifiersByType: Record<SyncIdentifierType, string[]> = {
+      [SyncIdentifierType.EMAIL]: [],
+      [SyncIdentifierType.PHONE]: [],
+    };
+
+    for (const brandCustomer of brandCustomers) {
+      if (brandCustomer.identifierType && brandCustomer.identifier) {
+        identifiersByType[brandCustomer.identifierType].push(
+          brandCustomer.identifier,
+        );
+      }
+    }
+
+    const emailUsers: User[] = [];
+    const phoneUsers: User[] = [];
+
+    for (const identifierType in identifiersByType) {
+      if (identifiersByType[identifierType].length > 0) {
+        const usersOfType = await this.userRepo.find({
+          where: {
+            [identifierType]: In(identifiersByType[identifierType]),
+            userType: UserAppType.USER,
+          },
+        });
+
+        if (identifierType === SyncIdentifierType.EMAIL) {
+          emailUsers.push(...usersOfType);
+        } else if (identifierType === SyncIdentifierType.PHONE) {
+          phoneUsers.push(...usersOfType);
+        }
+      }
+    }
+
+    return { emailUsers, phoneUsers };
   }
 
   async createBrandCustomer(

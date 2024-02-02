@@ -146,9 +146,11 @@ import { RewarderService } from './globalServices/task/common/rewarder/rewarder.
 import { AnalyticsRecorderService } from './globalServices/analytics/analytic_recorder.service';
 import { RewardCirculation } from './globalServices/analytics/entities/reward_circulation';
 import { BrandSubscriptionPlan } from './globalServices/brand/entities/brand_subscription_plan.entity';
+import { NotificationHandler } from '@src/globalServices/notification/notification.handler';
 import { CurrencyService } from './globalServices/currency/currency.service';
 import { Currency } from './globalServices/currency/entities/currency.entity';
 import { Voucher } from './globalServices/biller/entity/voucher.entity';
+import { CreateSendgridContactHandler } from '@src/globalServices/mail/create-sendgrid-contact.handler';
 
 @Module({
   imports: [
@@ -329,6 +331,8 @@ import { Voucher } from './globalServices/biller/entity/voucher.entity';
     RewarderService,
     AnalyticsRecorderService,
     JwtService,
+    NotificationHandler,
+    CreateSendgridContactHandler,
     CurrencyService,
   ],
   exports: [JwtStrategy, PassportModule, AuthenticationModule],
