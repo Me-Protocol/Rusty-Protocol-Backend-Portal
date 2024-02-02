@@ -9,6 +9,7 @@ import {
   Get,
   Query,
   Param,
+  Delete,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { LinkCardDto } from './dto/LinkCardDto.dto';
@@ -67,6 +68,17 @@ export class PaymentModuleController {
     const brand = req.user.brand as Brand;
 
     return await this.paymentService.getPaymentMethods(brand.id);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Delete('methods/:id')
+  async deleteBrandPaymentMethod(
+    @Req() req: any,
+    @Param('id', ValidationPipe) id: string,
+  ) {
+    const brand = req.user.brand as Brand;
+
+    return await this.paymentService.deleteBrandPaymentMethod(id, brand.id);
   }
 
   @UseGuards(BrandJwtStrategy)

@@ -142,8 +142,20 @@ export class PaymentService {
     });
   }
 
-  async deletePaymentMethod(paymentMethodId: string) {
-    return await stripe.paymentMethods.detach(paymentMethodId);
+  async deletePaymentMethod(id: string, walletId: string) {
+    const paymentMethod = await this.paymentRepo.findOne({
+      where: { id, walletId },
+    });
+
+    if (!paymentMethod) {
+      throw new HttpException('Payment method not found', 404);
+    }
+
+    await stripe.paymentMethods.detach(paymentMethod.stripePaymentMethodId);
+
+    await this.paymentRepo.delete(id);
+
+    return 'ok';
   }
 
   async getPaymentMethods(walletId: string) {

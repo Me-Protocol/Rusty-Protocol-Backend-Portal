@@ -38,6 +38,16 @@ export class PaymentModuleService {
     return await this.paymentService.getPaymentMethods(wallet.id);
   }
 
+  async deleteBrandPaymentMethod(id: string, brandId: string) {
+    try {
+      const wallet = await this.walletService.getWalletByBrandId(brandId);
+      return await this.paymentService.deletePaymentMethod(id, wallet.id);
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
   async getInvoices(query: { brandId: string; page: number; limit: number }) {
     try {
       return await this.billerService.getBrandInvoices(query);
