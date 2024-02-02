@@ -71,18 +71,17 @@ export class Customer extends BaseEntity {
   @Column({ nullable: true })
   walletAddress: string;
 
-  @Column({
-    default: 0,
-  })
+  @Column({ default: 0 })
   totalRedeemed: number;
 
-  @Column({
-    type: 'decimal',
-    precision: 10,
-    scale: 2,
-    default: 0.0,
-  })
+  @Column({ type: 'decimal' })
   totalRedemptionAmount: number;
+
+  @Column({ default: 0, nullable: true })
+  totalExternalRedeemed: number;
+
+  @Column({ type: 'decimal', nullable: true })
+  totalExternalRedemptionAmount: number;
 
   @Column({
     default: true,

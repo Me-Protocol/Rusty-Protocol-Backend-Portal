@@ -162,13 +162,6 @@ export class OrderManagementService {
       //   couponCode: coupon.code,
       // };
 
-      // update customer total redeem
-      const customer = await this.customerService.getByUserId(userId);
-      customer.totalRedeemed += 1;
-      customer.totalRedemptionAmount += totalAmount;
-
-      await this.customerService.save(customer);
-
       await this.markOrderAsRedeemed(userId, order.id);
 
       return {
@@ -503,6 +496,47 @@ export class OrderManagementService {
           await this.analyticsRecorder.createRewardCirculation(
             circulatingSupply,
           );
+
+          // update customer total redeem
+
+          const isExternalOffer = offer.rewardId !== order.rewardId;
+
+          customer.totalRedeemed =
+            Number(customer.totalRedeemed ?? 0) + Number(order.points);
+          customer.totalRedemptionAmount =
+            Number(customer.totalRedemptionAmount ?? 0) + Number(order.points);
+          if (isExternalOffer) {
+            customer.totalExternalRedeemed =
+              Number(customer.totalExternalRedeemed ?? 0) +
+              Number(order.points);
+            customer.totalExternalRedemptionAmount =
+              Number(customer.totalExternalRedemptionAmount ?? 0) +
+              Number(order.points);
+          }
+
+          await this.customerService.save(customer);
+
+          const brandCustomer = await this.brandService.getBrandCustomer(
+            reward.brandId,
+            customer.userId,
+          );
+
+          brandCustomer.totalRedeemed =
+            Number(brandCustomer.totalRedeemed ?? 0) + Number(order.points);
+          brandCustomer.totalRedemptionAmount =
+            Number(brandCustomer.totalRedemptionAmount ?? 0) +
+            Number(order.points);
+
+          if (isExternalOffer) {
+            brandCustomer.totalExternalRedeemed =
+              Number(brandCustomer.totalExternalRedeemed ?? 0) +
+              Number(order.points);
+            brandCustomer.totalExternalRedemptionAmount =
+              Number(brandCustomer.totalExternalRedemptionAmount ?? 0) +
+              Number(order.points);
+          }
+
+          await this.brandService.saveBrandCustomer(brandCustomer);
         } else if (status === 'failed') {
           await redistributed_failed_tx_with_url(order.spendData, RUNTIME_URL);
 
