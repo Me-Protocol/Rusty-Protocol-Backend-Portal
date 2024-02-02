@@ -30,6 +30,7 @@ import {
 } from '@developeruche/runtime-sdk';
 import { RUNTIME_URL } from '@src/config/env.config';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
+import { User } from '@src/globalServices/user/entities/user.entity';
 
 @Injectable()
 export class SyncRewardService {
@@ -503,13 +504,24 @@ export class SyncRewardService {
     rewardId: string,
     identifierType: SyncIdentifierType,
   ) {
-    const checkReg = await this.rewardRegistryRepo.findOneBy({
-      rewardId,
-      customerIdentiyOnBrandSite: identifier,
+    const checkReg = await this.rewardRegistryRepo.findOne({
+      where: {
+        rewardId,
+        customerIdentiyOnBrandSite: identifier,
+      },
+      relations: ['user', 'user.customer'],
     });
+
+    let user: User;
 
     if (checkReg) {
       return checkReg;
+    }
+
+    if (identifierType === SyncIdentifierType.EMAIL) {
+      user = await this.userService.getUserByEmail(identifier);
+    } else {
+      user = await this.userService.getUserByPhone(identifier);
     }
 
     const registry = new RewardRegistry();
@@ -517,10 +529,16 @@ export class SyncRewardService {
     registry.customerIdentiyOnBrandSite = identifier; // TODO Using email for now
     registry.customerIdentityType = identifierType;
     registry.balance = 0;
+    registry.userId = user.id;
 
     const rewardRegistry = await this.addRegistry(registry);
 
-    return rewardRegistry;
+    return await this.rewardRegistryRepo.findOne({
+      where: {
+        id: rewardRegistry.id,
+      },
+      relations: ['user', 'user.customer'],
+    });
   }
 
   async getAllRegistryRecordsByIdentifer(identifier: string) {

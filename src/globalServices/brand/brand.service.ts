@@ -28,6 +28,7 @@ import { FiatWallet } from '../fiatWallet/entities/fiatWallet.entity';
 import { UserAppType } from '@src/utils/enums/UserAppType';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { TopupEventBlock } from './entities/topup_event_block.entity';
+import { isEmail } from 'class-validator';
 
 @Injectable()
 export class BrandService {
@@ -226,7 +227,7 @@ export class BrandService {
   async getActiveBrandCustomers(
     brandId: string,
   ): Promise<{ emailUsers: User[]; phoneUsers: User[] }> {
-    let whereCondition: any = {
+    const whereCondition: any = {
       brandId,
       identifierType: In([SyncIdentifierType.EMAIL, SyncIdentifierType.PHONE]),
     };
@@ -272,12 +273,22 @@ export class BrandService {
     return { emailUsers, phoneUsers };
   }
 
-  async createBrandCustomer(
-    brandId: string,
-    identifier: string,
-    identifierType: SyncIdentifierType,
-    phone?: string,
-  ) {
+  async createBrandCustomer({
+    email,
+    name,
+    phone,
+    brandId,
+  }: {
+    brandId: string;
+    name?: string;
+    email: string;
+    phone?: string;
+  }) {
+    const identifier = isEmail(email) ? email : phone;
+    const identifierType = isEmail(email)
+      ? SyncIdentifierType.EMAIL
+      : SyncIdentifierType.PHONE;
+
     const checkCustomer = await this.brandCustomerRepo.findOne({
       where: {
         brandId,
@@ -296,6 +307,8 @@ export class BrandService {
     brandCustomer.identifier = identifier;
     brandCustomer.identifierType = identifierType;
     brandCustomer.phone = phone;
+    brandCustomer.email = email;
+    brandCustomer.name = name;
 
     await this.brandCustomerRepo.save(brandCustomer);
 
