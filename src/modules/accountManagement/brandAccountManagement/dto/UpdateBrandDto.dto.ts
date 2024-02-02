@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { BrandStore } from '@src/globalServices/brand-store/brand-store.dto';
 import { RevenueRange } from '@src/utils/enums/RevenueRange';
 import {
   IsArray,
@@ -6,6 +7,7 @@ import {
   IsBooleanString,
   IsEnum,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   IsTaxId,
@@ -188,4 +190,9 @@ export class UpdateBrandDto {
   @IsOptional()
   @IsBooleanString()
   firstTimeLogin: 'true' | 'false';
+
+  @ApiProperty()
+  @IsOptional()
+  @IsObject()
+  brandStore: BrandStore;
 }
