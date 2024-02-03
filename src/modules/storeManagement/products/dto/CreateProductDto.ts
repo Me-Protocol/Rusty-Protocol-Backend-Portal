@@ -109,4 +109,8 @@ export class CreateProductDto {
   @IsOptional()
   @IsUUID()
   currencyId: string;
+
+  @ApiProperty()
+  @IsString()
+  coverImage: string;
 }

@@ -116,4 +116,9 @@ export class UpdateProductDto {
   @IsOptional()
   @IsUUID()
   currencyId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  coverImage: string;
 }

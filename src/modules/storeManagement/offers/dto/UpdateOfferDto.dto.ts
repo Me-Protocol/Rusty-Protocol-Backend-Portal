@@ -78,4 +78,9 @@ export class UpdateOfferDto {
   @IsOptional()
   @IsNumber()
   inventory: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  coverImage: string;
 }

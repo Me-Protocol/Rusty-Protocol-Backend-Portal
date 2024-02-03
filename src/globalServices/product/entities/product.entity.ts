@@ -130,4 +130,9 @@ export class Product extends BaseEntity {
   @ManyToOne(() => Currency, (currency) => currency.id)
   @JoinColumn({ name: 'currencyId' })
   currency: Currency;
+
+  @Column({
+    nullable: true,
+  })
+  coverImage: string;
 }

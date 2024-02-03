@@ -8,6 +8,7 @@ import { Variant } from './entities/variants.entity';
 import { VarientType } from '@src/utils/enums/VarientType';
 import { ProductFilter } from '@src/utils/enums/OfferFiilter';
 import { FilterDto } from '@src/modules/storeManagement/products/dto/FilterDto';
+import { UpdateProductDto } from '@src/modules/storeManagement/products/dto/UpdateProductDto';
 
 @Injectable()
 export class ProductService {
@@ -67,6 +68,7 @@ export class ProductService {
       },
       relations: ['productImages'],
     });
+
     if (!product) {
       throw new Error('Product not found');
     }
@@ -133,15 +135,39 @@ export class ProductService {
       }),
     );
 
-    return this.variantRepo.save(productVariants);
+    console.log(productVariants);
+
+    return await this.variantRepo.save(productVariants);
   }
 
   async createProduct(product: Product) {
     return this.productRepo.save(product);
   }
 
-  async updateProduct(product: Product) {
-    return this.productRepo.save(product);
+  async updateProduct(body: UpdateProductDto, id: string) {
+    const product = await this.productRepo.findOne({
+      where: {
+        id,
+      },
+    });
+
+    return this.productRepo.update(
+      { id: id },
+      {
+        name: body.name ?? product.name,
+        description: body.description ?? product.description,
+        categoryId: body.categoryId ?? product.categoryId,
+        status: body.status ?? product.status,
+        price: body.price ?? product.price,
+        inventory: body.inventory ?? product.inventory,
+        isUnlimited: body.isUnlimited ?? product.isUnlimited,
+        subCategoryId: body.subCategoryId ?? product.subCategoryId,
+        productUrl: body.productUrl ?? product.productUrl,
+        minAge: body.minAge ?? product.minAge,
+        currencyId: body.currencyId ?? product.currencyId,
+        coverImage: body.coverImage ?? product.coverImage,
+      },
+    );
   }
 
   async saveProduct(product: Product) {

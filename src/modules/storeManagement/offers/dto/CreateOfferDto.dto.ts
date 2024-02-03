@@ -66,4 +66,8 @@ export class CreateOfferDto {
   @IsOptional()
   @IsUUID()
   rewardId: string;
+
+  @ApiProperty()
+  @IsString()
+  coverImage: string;
 }
