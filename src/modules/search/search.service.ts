@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { ConfigSearch } from '@src/config/search.config';
-import {
-  SearchIndex,
-  SearchServiceInterface,
-} from './interface/search.interface';
+import { SearchServiceInterface } from './interface/search.interface';
 import { ELASTIC_NODE } from '@src/config/env.config';
 
 @Injectable()

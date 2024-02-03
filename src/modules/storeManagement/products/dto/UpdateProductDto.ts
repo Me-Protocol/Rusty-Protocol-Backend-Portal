@@ -111,4 +111,14 @@ export class UpdateProductDto {
   @IsOptional()
   @IsNumber()
   minAge: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsUUID()
+  currencyId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  coverImage: string;
 }

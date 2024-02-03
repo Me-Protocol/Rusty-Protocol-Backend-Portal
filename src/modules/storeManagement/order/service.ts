@@ -162,13 +162,6 @@ export class OrderManagementService {
       //   couponCode: coupon.code,
       // };
 
-      // update customer total redeem
-      const customer = await this.customerService.getByUserId(userId);
-      customer.totalRedeemed += 1;
-      customer.totalRedemptionAmount += totalAmount;
-
-      await this.customerService.save(customer);
-
       await this.markOrderAsRedeemed(userId, order.id);
 
       return {
@@ -289,12 +282,6 @@ export class OrderManagementService {
 
       await this.offerService.reduceInventory(offer, order);
 
-      await this.billerService.createBill({
-        type: 'redeem-offer',
-        amount: 1.5,
-        brandId: offer.brandId,
-      });
-
       return order;
     } catch (error) {
       logger.error(error);
@@ -337,6 +324,14 @@ export class OrderManagementService {
 
       await this.transactionRepo.save(transaction);
 
+      const offer = await this.offerService.getOfferById(order.offerId);
+
+      await this.billerService.createBill({
+        type: 'redeem-offer',
+        amount: 1.5,
+        brandId: offer.brandId,
+      });
+
       return await this.orderService.saveOrder(order);
     } catch (error) {
       console.log(error);
@@ -345,9 +340,22 @@ export class OrderManagementService {
     }
   }
 
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async resolveIncompleteOrders() {
+    const orders = await this.orderService.getOrderWithoutTaskId();
+
+    if (orders.length > 0) {
+      for (const order of orders) {
+        order.status = StatusType.ABANDONED;
+        await this.orderService.saveOrder(order);
+      }
+    }
+  }
+
   @Cron(CronExpression.EVERY_30_SECONDS)
   async checkOrderStatus() {
     const pendingOrders = await this.orderService.getPendingOrders();
+
     if (pendingOrders.length > 0) {
       for (const order of pendingOrders) {
         const status = await this.checkOrderStatusGelatoOrRuntime(
@@ -488,6 +496,47 @@ export class OrderManagementService {
           await this.analyticsRecorder.createRewardCirculation(
             circulatingSupply,
           );
+
+          // update customer total redeem
+
+          const isExternalOffer = offer.rewardId !== order.rewardId;
+
+          customer.totalRedeemed =
+            Number(customer.totalRedeemed ?? 0) + Number(order.points);
+          customer.totalRedemptionAmount =
+            Number(customer.totalRedemptionAmount ?? 0) + Number(order.points);
+          if (isExternalOffer) {
+            customer.totalExternalRedeemed =
+              Number(customer.totalExternalRedeemed ?? 0) +
+              Number(order.points);
+            customer.totalExternalRedemptionAmount =
+              Number(customer.totalExternalRedemptionAmount ?? 0) +
+              Number(order.points);
+          }
+
+          await this.customerService.save(customer);
+
+          const brandCustomer = await this.brandService.getBrandCustomer(
+            reward.brandId,
+            customer.userId,
+          );
+
+          brandCustomer.totalRedeemed =
+            Number(brandCustomer.totalRedeemed ?? 0) + Number(order.points);
+          brandCustomer.totalRedemptionAmount =
+            Number(brandCustomer.totalRedemptionAmount ?? 0) +
+            Number(order.points);
+
+          if (isExternalOffer) {
+            brandCustomer.totalExternalRedeemed =
+              Number(brandCustomer.totalExternalRedeemed ?? 0) +
+              Number(order.points);
+            brandCustomer.totalExternalRedemptionAmount =
+              Number(brandCustomer.totalExternalRedemptionAmount ?? 0) +
+              Number(order.points);
+          }
+
+          await this.brandService.saveBrandCustomer(brandCustomer);
         } else if (status === 'failed') {
           await redistributed_failed_tx_with_url(order.spendData, RUNTIME_URL);
 

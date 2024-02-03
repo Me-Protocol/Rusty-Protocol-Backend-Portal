@@ -160,4 +160,9 @@ export class Offer extends BaseEntity {
 
   @ManyToMany(() => Notification, (notification) => notification.offers)
   notifications: Notification[];
+
+  @Column({
+    nullable: true,
+  })
+  coverImage: string;
 }

@@ -104,4 +104,13 @@ export class CreateProductDto {
   @IsOptional()
   @IsNumber()
   minAge: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsUUID()
+  currencyId: string;
+
+  @ApiProperty()
+  @IsString()
+  coverImage: string;
 }

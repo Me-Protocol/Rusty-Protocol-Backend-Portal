@@ -355,11 +355,18 @@ export class RewardManagementService {
         });
       }
 
-      const brandCustomer = await this.brandService.createBrandCustomer(
-        reward.brandId,
-        identifier,
-        syncData.identifierType,
-      );
+      const brandCustomer = await this.brandService.createBrandCustomer({
+        name: checkRegistry?.user?.customer?.name ?? identifier,
+        phone:
+          syncData.identifierType === SyncIdentifierType.PHONE
+            ? identifier
+            : null,
+        email:
+          syncData.identifierType === SyncIdentifierType.EMAIL
+            ? identifier
+            : null,
+        brandId: reward.brandId,
+      });
 
       brandCustomer.totalIssued =
         Number(brandCustomer.totalIssued) + Number(syncData.amount);

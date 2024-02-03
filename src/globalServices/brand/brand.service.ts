@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
-import { FindOptionsOrderValue, Repository } from 'typeorm';
+import { FindOptionsOrderValue, In, Repository } from 'typeorm';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { brandIndex } from '@src/modules/search/interface/search.interface';
 import { UpdateBrandDto } from '@src/modules/accountManagement/brandAccountManagement/dto/UpdateBrandDto.dto';
@@ -25,27 +25,32 @@ import { BrandSubscriptionPlan } from './entities/brand_subscription_plan.entity
 import { BillerService } from '../biller/biller.service';
 import { PaymentService } from '../fiatWallet/payment.service';
 import { FiatWallet } from '../fiatWallet/entities/fiatWallet.entity';
+import { UserAppType } from '@src/utils/enums/UserAppType';
+import { User } from '@src/globalServices/user/entities/user.entity';
+import { TopupEventBlock } from './entities/topup_event_block.entity';
+import { isEmail } from 'class-validator';
 
 @Injectable()
 export class BrandService {
   constructor(
     @InjectRepository(Brand)
     private readonly brandRepo: Repository<Brand>,
-
     @InjectRepository(BrandMember)
     private readonly brandMemberRepo: Repository<BrandMember>,
-
     @InjectRepository(BrandCustomer)
     private readonly brandCustomerRepo: Repository<BrandCustomer>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+
+    @InjectRepository(TopupEventBlock)
+    private readonly topupEventBlock: Repository<TopupEventBlock>,
 
     @InjectRepository(BrandSubscriptionPlan)
     private readonly brandSubscriptionPlanRepo: Repository<BrandSubscriptionPlan>,
-
     private readonly elasticIndex: ElasticIndex,
     private readonly eventEmitter: EventEmitter2,
     private readonly billerService: BillerService,
     private readonly paymentService: PaymentService,
-
     @InjectRepository(FiatWallet)
     private readonly walletRepo: Repository<FiatWallet>,
   ) {}
@@ -73,6 +78,16 @@ export class BrandService {
     saveBrand.brandProtocolId = brandId.toString();
 
     return await this.brandRepo.save(saveBrand);
+  }
+
+  async getBrandOwner(brandId: string) {
+    return await this.brandMemberRepo.findOne({
+      where: {
+        brandId,
+        role: BrandRole.OWNER,
+      },
+      relations: ['user'],
+    });
   }
 
   save(brand: Brand) {
@@ -127,6 +142,7 @@ export class BrandService {
       brand.city = dto.city;
       brand.postalCode = dto.postalCode;
       brand.firstTimeLogin = dto.firstTimeLogin === 'true' ? true : false;
+      brand.brandStore = dto.brandStore;
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);
@@ -208,12 +224,71 @@ export class BrandService {
     });
   }
 
-  async createBrandCustomer(
+  async getActiveBrandCustomers(
     brandId: string,
-    identifier: string,
-    identifierType: SyncIdentifierType,
-    phone?: string,
-  ) {
+  ): Promise<{ emailUsers: User[]; phoneUsers: User[] }> {
+    const whereCondition: any = {
+      brandId,
+      identifierType: In([SyncIdentifierType.EMAIL, SyncIdentifierType.PHONE]),
+    };
+
+    const brandCustomers = await this.brandCustomerRepo.find({
+      where: whereCondition,
+      relations: ['brand'],
+    });
+
+    const identifiersByType: Record<SyncIdentifierType, string[]> = {
+      [SyncIdentifierType.EMAIL]: [],
+      [SyncIdentifierType.PHONE]: [],
+    };
+
+    for (const brandCustomer of brandCustomers) {
+      if (brandCustomer.identifierType && brandCustomer.identifier) {
+        identifiersByType[brandCustomer.identifierType].push(
+          brandCustomer.identifier,
+        );
+      }
+    }
+
+    const emailUsers: User[] = [];
+    const phoneUsers: User[] = [];
+
+    for (const identifierType in identifiersByType) {
+      if (identifiersByType[identifierType].length > 0) {
+        const usersOfType = await this.userRepo.find({
+          where: {
+            [identifierType]: In(identifiersByType[identifierType]),
+            userType: UserAppType.USER,
+          },
+        });
+
+        if (identifierType === SyncIdentifierType.EMAIL) {
+          emailUsers.push(...usersOfType);
+        } else if (identifierType === SyncIdentifierType.PHONE) {
+          phoneUsers.push(...usersOfType);
+        }
+      }
+    }
+
+    return { emailUsers, phoneUsers };
+  }
+
+  async createBrandCustomer({
+    email,
+    name,
+    phone,
+    brandId,
+  }: {
+    brandId: string;
+    name?: string;
+    email: string;
+    phone?: string;
+  }) {
+    const identifier = isEmail(email) ? email : phone;
+    const identifierType = isEmail(email)
+      ? SyncIdentifierType.EMAIL
+      : SyncIdentifierType.PHONE;
+
     const checkCustomer = await this.brandCustomerRepo.findOne({
       where: {
         brandId,
@@ -232,6 +307,8 @@ export class BrandService {
     brandCustomer.identifier = identifier;
     brandCustomer.identifierType = identifierType;
     brandCustomer.phone = phone;
+    brandCustomer.email = email;
+    brandCustomer.name = name;
 
     await this.brandCustomerRepo.save(brandCustomer);
 
@@ -398,6 +475,7 @@ export class BrandService {
     brandId: string,
     planId: string,
     paymentMethodId: string,
+    voucherCode: string,
   ) {
     const brand = await this.getBrandById(brandId);
     if (!brand) {
@@ -409,6 +487,46 @@ export class BrandService {
       throw new NotFoundException('Plan not found');
     }
 
+    let amount: number;
+
+    if (voucherCode) {
+      const voucher = await this.billerService.getVoucherByCode(voucherCode);
+
+      if (!voucher) {
+        throw new NotFoundException('Voucher not found');
+      }
+
+      if (voucher.brandId !== brandId) {
+        throw new HttpException('Voucher not found', 400);
+      }
+
+      if (voucher.isExpired) {
+        throw new HttpException('Voucher has expired', 400);
+      }
+
+      if (voucher.isUsed) {
+        throw new HttpException('Voucher has been used', 400);
+      }
+
+      if (voucher.usageLimit && voucher.usageCount >= voucher.usageLimit) {
+        throw new HttpException('Voucher has been used', 400);
+      }
+
+      if (voucher.planId !== planId) {
+        throw new HttpException('Voucher not found', 400);
+      }
+
+      amount = (plan.monthlyAmount - voucher.discount) * 100;
+
+      voucher.isUsed = true;
+      voucher.usedAt = new Date();
+      voucher.usageCount = Number(voucher.usageCount) + 1;
+
+      await this.billerService.saveVoucher(voucher);
+    }
+
+    amount = plan.monthlyAmount * 100;
+
     const wallet = await this.walletRepo.findOne({
       where: {
         brandId,
@@ -416,7 +534,7 @@ export class BrandService {
     });
 
     await this.paymentService.chargePaymentMethod({
-      amount: plan.monthlyAmount * 100,
+      amount,
       paymentMethodId,
       wallet,
       narration: `Payment for ${plan.name} subscription`,
@@ -427,5 +545,21 @@ export class BrandService {
     brand.planId = planId;
 
     return await this.brandRepo.save(brand);
+  }
+
+  async getLastTopupEventBlock() {
+    return await this.topupEventBlock.find({
+      order: {
+        lastBlock: 'DESC',
+      },
+      take: 1,
+    })[0];
+  }
+
+  async saveTopupEventBlock(blockNumber) {
+    const topupEventBlock = new TopupEventBlock();
+    topupEventBlock.lastBlock = blockNumber;
+
+    return await this.topupEventBlock.save(topupEventBlock);
   }
 }

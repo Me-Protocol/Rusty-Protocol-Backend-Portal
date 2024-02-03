@@ -219,6 +219,16 @@ export class OrderService {
     });
   }
 
+  async getOrderWithoutTaskId() {
+    return await this.orderRepo.find({
+      where: {
+        status: StatusType.PROCESSING,
+        taskId: IsNull(),
+      },
+      relations: ['coupon'],
+    });
+  }
+
   async markOrderAsRedeemed(userId: string, id: string) {
     const order = await this.orderRepo.findOne({
       where: { id: id, userId: userId },

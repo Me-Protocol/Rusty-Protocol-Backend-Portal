@@ -10,7 +10,7 @@ import { CollectionService } from '@src/globalServices/collections/collections.s
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { productIndex } from '@src/modules/search/interface/search.interface';
 import { ProductStatus } from '@src/utils/enums/ItemStatus';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { CurrencyService } from '@src/globalServices/currency/currency.service';
 
 @Injectable()
 export class ProductManagementService {
@@ -19,6 +19,7 @@ export class ProductManagementService {
     private readonly categoryService: CategoryService,
     private readonly collectionService: CollectionService,
     private readonly elasticIndex: ElasticIndex,
+    private readonly currencyService: CurrencyService,
   ) {}
 
   async getProductImages(brandId: string, page: number, limit: number) {
@@ -49,6 +50,16 @@ export class ProductManagementService {
         body.name,
       );
 
+      if (body.currencyId) {
+        const currency = await this.currencyService.getCurrencyById(
+          body.currencyId,
+        );
+
+        if (!currency) {
+          throw new HttpException('Currency not found', 404);
+        }
+      }
+
       const product = new Product();
       product.brandId = body.brandId;
       if (body.categoryId) product.categoryId = body.categoryId;
@@ -61,6 +72,8 @@ export class ProductManagementService {
       if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
       if (body.productUrl) product.productUrl = body.productUrl;
       if (body.minAge) product.minAge = body.minAge;
+      if (body.currencyId) product.currencyId = body.currencyId;
+      if (body.coverImage) product.coverImage = body.coverImage;
       product.productCode = productCode;
 
       const productCollections = [];
@@ -118,103 +131,120 @@ export class ProductManagementService {
   }
 
   async updateProduct(body: UpdateProductDto, id: string) {
-    const product = await this.productService.getOneProduct(id, body.brandId);
+    try {
+      const product = await this.productService.getOneProduct(id, body.brandId);
 
-    if (!product) {
-      throw new HttpException(
-        'Product does not exist or has been deleted',
-        400,
-      );
-    }
-
-    if (body.categoryId) {
-      const category = await this.categoryService.findOne(body.categoryId);
-
-      if (!category) {
-        throw new HttpException('Category does not exist', 400);
+      if (!product) {
+        throw new HttpException(
+          'Product does not exist or has been deleted',
+          400,
+        );
       }
-    }
 
-    if (body.subCategoryId) {
-      const subCategory = await this.categoryService.findOne(
-        body.subCategoryId,
-      );
+      if (body.categoryId) {
+        const category = await this.categoryService.findOne(body.categoryId);
 
-      if (!subCategory) {
-        throw new HttpException('Sub Category does not exist', 400);
-      }
-    }
-
-    if (product.status === ProductStatus.ARCHIVED) {
-      if (body.status === ProductStatus.PUBLISHED) {
-        await this.productService.unarchiveProduct(product.id, body.brandId);
-      }
-    }
-
-    // update only what is provided
-    if (body.name) product.name = body.name;
-    if (body.description) product.description = body.description;
-    if (body.price) product.price = body.price;
-    if (body.status) product.status = body.status;
-    if (body.inventory) product.inventory = body.inventory;
-    if (body.isUnlimited) product.isUnlimited = body.isUnlimited;
-    if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
-    if (body.categoryId) product.categoryId = body.categoryId;
-    if (body.productUrl) product.productUrl = body.productUrl;
-    if (body.minAge) product.minAge = body.minAge;
-
-    if (body.productImages && body.productImages.length > 0) {
-      // upload images
-      await this.productService.bulkAddProductImage(
-        body.brandId,
-        product.id,
-        body.productImages,
-      );
-    }
-
-    if (body.variants && body.variants.length > 0) {
-      // add variants
-      await this.productService.addVariants(
-        body.brandId,
-        product.id,
-        body.variants,
-      );
-    }
-
-    const productCollections = product.collections ?? [];
-
-    if (body.collections && body.collections.length > 0) {
-      for (const collectionId of body.collections) {
-        const collection = await this.collectionService.findOne({
-          id: collectionId,
-          brandId: body.brandId,
-        });
-
-        if (collection) {
-          const checkIfCollectionExists = product?.collections?.find(
-            (collection) => collection.id === collectionId,
-          );
-
-          if (!checkIfCollectionExists) {
-            productCollections.push(collection);
-          }
+        if (!category) {
+          throw new HttpException('Category does not exist', 400);
         }
       }
+
+      if (body.subCategoryId) {
+        const subCategory = await this.categoryService.findOne(
+          body.subCategoryId,
+        );
+
+        if (!subCategory) {
+          throw new HttpException('Sub Category does not exist', 400);
+        }
+      }
+
+      if (product.status === ProductStatus.ARCHIVED) {
+        if (body.status === ProductStatus.PUBLISHED) {
+          await this.productService.unarchiveProduct(product.id, body.brandId);
+        }
+      }
+
+      if (body.currencyId) {
+        const currency = await this.currencyService.getCurrencyById(
+          body.currencyId,
+        );
+
+        if (!currency) {
+          throw new HttpException('Currency not found', 404);
+        }
+      }
+
+      // update only what is provided
+      // if (body.name) product.name = body.name;
+      // if (body.description) product.description = body.description;
+      // if (body.price) product.price = body.price;
+      // if (body.status) product.status = body.status;
+      // if (body.inventory) product.inventory = body.inventory;
+      // if (body.isUnlimited) product.isUnlimited = body.isUnlimited;
+      // if (body.productUrl) product.productUrl = body.productUrl;
+      // if (body.minAge) product.minAge = body.minAge;
+      // if (body.currencyId) product.currencyId = body.currencyId;
+
+      if (body.productImages && body.productImages.length > 0) {
+        // upload images
+        await this.productService.bulkAddProductImage(
+          body.brandId,
+          product.id,
+          body.productImages,
+        );
+      }
+
+      if (body.variants && body.variants.length > 0) {
+        // add variants
+        await this.productService.addVariants(
+          body.brandId,
+          product.id,
+          body.variants,
+        );
+      }
+
+      if (body.collections && body.collections.length > 0) {
+        const productCollections = product.collections ?? [];
+
+        for (const collectionId of body.collections) {
+          const collection = await this.collectionService.findOne({
+            id: collectionId,
+            brandId: body.brandId,
+          });
+
+          if (collection) {
+            const checkIfCollectionExists = product?.collections?.find(
+              (collection) => collection.id === collectionId,
+            );
+
+            if (!checkIfCollectionExists) {
+              productCollections.push(collection);
+            }
+          }
+        }
+
+        product.collections = productCollections;
+
+        await this.productService.saveProduct(product);
+      }
+
+      await this.productService.updateProduct(body, id);
+
+      const findOneProduct = await this.productService.getOneProduct(
+        product.id,
+        body.brandId,
+      );
+
+      // index product
+      this.elasticIndex.updateDocument(findOneProduct, productIndex);
+
+      return findOneProduct;
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
     }
-
-    product.collections = productCollections;
-
-    await this.productService.updateProduct(product);
-
-    const findOneProduct = await this.productService.getOneProduct(
-      product.id,
-      body.brandId,
-    );
-
-    // index product
-    this.elasticIndex.updateDocument(findOneProduct, productIndex);
-
-    return findOneProduct;
   }
 
   async deleteProduct(brandId: string, id: string) {

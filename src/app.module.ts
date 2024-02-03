@@ -118,8 +118,6 @@ import { DebugController } from './debug/debug.controller';
 import { ReviewManagementController } from './modules/storeManagement/review/controller';
 import { ReviewService } from './globalServices/review/review.service';
 import { ReviewManagementService } from './modules/storeManagement/review/service';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
 import { TasksService } from './globalServices/task/task.service';
 import { TasksController } from './modules/taskModule/tasks.controller';
 import { Task } from './globalServices/task/entities/task.entity';
@@ -129,7 +127,7 @@ import { BountyRecord } from './globalServices/task/entities/bountyRecord.entity
 import { Bounty } from './globalServices/oracles/bounty/entities/bounty.entity';
 import { TaskResponseRecord } from './globalServices/task/entities/taskResponseRecord.entity';
 import { JobResponse } from './globalServices/task/entities/jobResponse.entity';
-import { HttpModule, HttpService } from '@nestjs/axios';
+import { HttpModule } from '@nestjs/axios';
 import { InAppTaskVerifier } from './globalServices/task/common/verifier/inapp.service';
 import { TwitterTaskVerifier } from './globalServices/task/common/verifier/outapp/twitter.verifier';
 import { BullModule } from '@nestjs/bull';
@@ -148,6 +146,12 @@ import { RewarderService } from './globalServices/task/common/rewarder/rewarder.
 import { AnalyticsRecorderService } from './globalServices/analytics/analytic_recorder.service';
 import { RewardCirculation } from './globalServices/analytics/entities/reward_circulation';
 import { BrandSubscriptionPlan } from './globalServices/brand/entities/brand_subscription_plan.entity';
+import { NotificationHandler } from '@src/globalServices/notification/notification.handler';
+import { CurrencyService } from './globalServices/currency/currency.service';
+import { Currency } from './globalServices/currency/entities/currency.entity';
+import { Voucher } from './globalServices/biller/entity/voucher.entity';
+import { CreateSendgridContactHandler } from '@src/globalServices/mail/create-sendgrid-contact.handler';
+import { TopupEventBlock } from './globalServices/brand/entities/topup_event_block.entity';
 
 @Module({
   imports: [
@@ -199,6 +203,9 @@ import { BrandSubscriptionPlan } from './globalServices/brand/entities/brand_sub
       Invoice,
       RewardCirculation,
       BrandSubscriptionPlan,
+      Currency,
+      Voucher,
+      TopupEventBlock,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
@@ -326,6 +333,9 @@ import { BrandSubscriptionPlan } from './globalServices/brand/entities/brand_sub
     RewarderService,
     AnalyticsRecorderService,
     JwtService,
+    NotificationHandler,
+    CreateSendgridContactHandler,
+    CurrencyService,
   ],
   exports: [JwtStrategy, PassportModule, AuthenticationModule],
 })

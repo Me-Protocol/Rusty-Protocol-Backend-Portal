@@ -6,7 +6,7 @@ export const emailButton = ({ url, text }: { url: string; text: string }) => {
   `;
 };
 
-export const emailCode = ({ code }: { code: number }) => {
+export const emailCode = ({ code }: { code: any }) => {
   return `<div class="x-between">
           <div class="otp box">${code}</div>
         </div>`;

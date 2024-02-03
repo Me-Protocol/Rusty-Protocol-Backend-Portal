@@ -514,11 +514,11 @@ export class BrandAccountManagementService {
   }
 
   async createBrandCustomer(body: CreateCustomerDto) {
-    return await this.brandService.createBrandCustomer(
-      body.brandId,
-      body.identifier,
-      body.identifierType,
-      body.phone,
-    );
+    return await this.brandService.createBrandCustomer({
+      name: body.name,
+      email: body.email,
+      phone: body.phone,
+      brandId: body.brandId,
+    });
   }
 }
