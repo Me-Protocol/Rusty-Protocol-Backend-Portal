@@ -61,4 +61,10 @@ export class Voucher extends BaseEntity {
     nullable: true,
   })
   usageCount: number;
+
+  @Column({
+    nullable: true,
+    default: false,
+  })
+  isPlan: boolean;
 }

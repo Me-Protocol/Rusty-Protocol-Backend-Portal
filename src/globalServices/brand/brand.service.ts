@@ -181,6 +181,14 @@ export class BrandService {
     return this.brandRepo.find();
   }
 
+  async getSubscribedBrands() {
+    return this.brandRepo.find({
+      where: {
+        isPlanActive: true,
+      },
+    });
+  }
+
   async getAllFilteredBrands({
     categoryId,
     page,
@@ -563,6 +571,13 @@ export class BrandService {
     await this.billerService.getActiveInvoiceOrCreate(brandId);
 
     brand.planId = planId;
+    brand.lastPlanRenewalDate = new Date();
+    brand.nextPlanRenewalDate = new Date(
+      brand.lastPlanRenewalDate.setMonth(
+        brand.lastPlanRenewalDate.getMonth() + 1,
+      ),
+    );
+    brand.isPlanActive = true;
 
     return await this.brandRepo.save(brand);
   }
