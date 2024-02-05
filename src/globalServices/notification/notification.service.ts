@@ -189,22 +189,27 @@ export class NotificationService {
 
   // get notification by id
   async getNotificationById(id: string, userId: string) {
-    const notification = await this.notificationRepository.findOne({
-      where: {
-        id,
-        userId,
-      },
-      relations: ['offers', 'rewards', 'brands'],
-    });
+    try {
+      const notification = await this.notificationRepository.findOne({
+        where: {
+          id,
+          userId,
+        },
+      });
 
-    if (!notification) {
-      throw new HttpException('Notification not found', 404);
+      if (!notification) {
+        throw new HttpException('Notification not found', 404);
+      }
+
+      notification.isRead = true;
+      await this.notificationRepository.save(notification);
+
+      return notification;
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
     }
-
-    notification.isRead = true;
-    await this.notificationRepository.save(notification);
-
-    return notification;
   }
 
   // update notification
