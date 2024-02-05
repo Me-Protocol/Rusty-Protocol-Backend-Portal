@@ -6,7 +6,10 @@ import { UserService } from '../user/user.service';
 import { Notification } from './entities/notification.entity';
 import { FilterNotificationDto } from '@src/modules/notification/dto/FilterNotificationDto.dto';
 import { BrandService } from '@src/globalServices/brand/brand.service';
-import { ISendBulkNotification } from '@src/utils/interfaces/notification';
+import {
+  ISendBulkNotification,
+  ISendNotification,
+} from '@src/utils/interfaces/notification';
 import { SmsService } from '@src/globalServices/sms/sms.service';
 import { NotificationHandler } from '@src/globalServices/notification/notification.handler';
 import { EventEmitter } from '@node_modules/typeorm/browser/platform/BrowserPlatformTools';
@@ -23,6 +26,7 @@ import {
   logger,
   LoggerService,
 } from '@src/globalServices/logger/logger.service';
+import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 
 @Injectable()
 export class NotificationService {
@@ -57,8 +61,34 @@ export class NotificationService {
     return;
   }
 
+  async sendNotificationToUser(
+    brandId: string,
+    notification: ISendNotification,
+  ) {
+    const user = await this.brandService.getActiveBrandCustomer(
+      brandId,
+      notification.identifier,
+      notification.notification_type as SyncIdentifierType,
+    );
+
+    if (!user) {
+      throw new HttpException('User not found', 404);
+    }
+
+    let notifications: Partial<Notification>[] = [];
+
+    if (notification.notification_type === 'email') {
+      notifications = this.createEmailNotifications(notification, [user]);
+    } else if (notification.notification_type === 'phone') {
+      notifications = this.createPhoneNotifications(notification, [user]);
+    }
+
+    await this.saveNotifications(notifications);
+    return;
+  }
+
   private createEmailNotifications(
-    notification: ISendBulkNotification,
+    notification: ISendBulkNotification | ISendNotification,
     emailUsers: User[],
   ): Partial<Notification>[] {
     let count = 0;
