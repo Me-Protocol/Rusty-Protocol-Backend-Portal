@@ -29,6 +29,7 @@ import { UserAppType } from '@src/utils/enums/UserAppType';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { TopupEventBlock } from './entities/topup_event_block.entity';
 import { isEmail } from 'class-validator';
+import { RewardService } from '../reward/reward.service';
 
 @Injectable()
 export class BrandService {
@@ -53,6 +54,9 @@ export class BrandService {
     private readonly paymentService: PaymentService,
     @InjectRepository(FiatWallet)
     private readonly walletRepo: Repository<FiatWallet>,
+
+    @Inject(forwardRef(() => RewardService))
+    private readonly rewardService: RewardService,
   ) {}
 
   async create({ userId, name }: { userId: string; name: string }) {
@@ -181,10 +185,12 @@ export class BrandService {
     categoryId,
     page,
     limit,
+    order,
   }: {
     categoryId: string;
     page: number;
     limit: number;
+    order: string;
   }) {
     const brandQuery = this.brandRepo
       .createQueryBuilder('brand')
@@ -193,6 +199,20 @@ export class BrandService {
 
     if (categoryId) {
       brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
+    }
+
+    if (order) {
+      const formatedOrder = order.split(':')[0];
+      const acceptedOrder = ['name', 'createdAt', 'updatedAt'];
+
+      if (!acceptedOrder.includes(formatedOrder)) {
+        throw new Error('Invalid order param');
+      }
+
+      brandQuery.orderBy(
+        `brand.${order.split(':')[0]}`,
+        order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+      );
     }
 
     brandQuery.skip((page - 1) * limit).take(limit);
@@ -561,5 +581,21 @@ export class BrandService {
     topupEventBlock.lastBlock = blockNumber;
 
     return await this.topupEventBlock.save(topupEventBlock);
+  }
+
+  async getBrandByMeTokenAddress(meTokenAddress: string) {
+    const reward = await this.rewardService.getRewardByContractAddress(
+      meTokenAddress,
+    );
+
+    if (!reward) {
+      return null;
+    }
+
+    return await this.brandRepo.findOne({
+      where: {
+        id: reward.brandId,
+      },
+    });
   }
 }

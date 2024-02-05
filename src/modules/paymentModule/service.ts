@@ -10,8 +10,12 @@ import { emailCode } from '@src/utils/helpers/email';
 import {
   getCurrentPoolState,
   getLatestBlock,
+  getPoolMeTokenDueForTopUp,
+  meTokenToDollar,
 } from '@developeruche/protocol-core';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { SettingsService } from '@src/globalServices/settings/settings.service';
+import { BigNumber, ethers } from 'ethers';
 
 @Injectable()
 export class PaymentModuleService {
@@ -21,6 +25,7 @@ export class PaymentModuleService {
     private readonly billerService: BillerService,
     private readonly brandService: BrandService,
     private readonly mailService: MailService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   async savePaymentMethodBrand(paymentMethodId: string, brandId: string) {
@@ -193,14 +198,47 @@ export class PaymentModuleService {
   async checkBrandForTopup() {
     try {
       const lastBlock = await this.brandService.getLastTopupEventBlock();
-      const fromBlock = lastBlock ? lastBlock.lastBlock : 0;
+      const fromBlock = lastBlock ? lastBlock.lastBlock : 45495364;
 
       const toBlock = await getLatestBlock();
       await this.brandService.saveTopupEventBlock(toBlock);
 
-      const state = await getCurrentPoolState(fromBlock, toBlock);
+      const poolRewardBalance = await getPoolMeTokenDueForTopUp(
+        fromBlock,
+        toBlock,
+      );
 
-      console.log('Pool state', state);
+      //  remove duplicates
+      const uniquePoolState = poolRewardBalance.filter(
+        (v, i, a) =>
+          a.findIndex((t) => t.meTokenAddress === v.meTokenAddress) === i,
+      );
+
+      const settings = await this.settingsService.getPublicSettings();
+
+      await Promise.all(
+        uniquePoolState.map(async (item) => {
+          const brand = await this.brandService.getBrandByMeTokenAddress(
+            item.meTokenAddress,
+          );
+
+          if (!brand) {
+            return;
+          }
+
+          const amount = item.meNotifyLimit.mul(settings?.meAutoTopUpFactor);
+          const amountInDollars = await meTokenToDollar(amount);
+
+          console.log('Amount in dollars', amountInDollars.toString());
+
+          // await this.billerService.createBill({
+          //   amount: amount,
+          //   brandId: brand.id,
+          //   type:"auto-topup"
+
+          // })
+        }),
+      );
     } catch (error) {
       logger.error(error);
       console.log('Error', error);
