@@ -70,11 +70,13 @@ export class BrandAccountManagementService {
 
   async getAllFilteredBrands(query: FilterBrandDto) {
     try {
-      const { categoryId, page, limit } = query;
+      const { categoryId, page, limit, order } = query;
       const brands = await this.brandService.getAllFilteredBrands({
         categoryId,
         page,
         limit,
+
+        order,
       });
       return brands;
     } catch (error) {
