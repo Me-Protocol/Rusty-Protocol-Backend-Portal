@@ -17,7 +17,6 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags } from '@nestjs/swagger';
 import { NotificationService } from '@src/globalServices/notification/notification.service';
-import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { FilterNotificationDto } from './dto/FilterNotificationDto.dto';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 import { SendBulkNotificationDto } from '@src/modules/notification/dto/SendBulkNotification.dto';
@@ -50,6 +49,8 @@ export class NotificationController {
 
     return await this.notificationService.sendBulkNotification(brandId, body);
   }
+
+  @UseGuards(AuthGuard())
   @Get(':id')
   async getNotificationById(
     @Param('id', ParseUUIDPipe) id: string,
