@@ -42,10 +42,8 @@ export class BrandService {
     private readonly brandCustomerRepo: Repository<BrandCustomer>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
-
     @InjectRepository(TopupEventBlock)
     private readonly topupEventBlock: Repository<TopupEventBlock>,
-
     @InjectRepository(BrandSubscriptionPlan)
     private readonly brandSubscriptionPlanRepo: Repository<BrandSubscriptionPlan>,
     private readonly elasticIndex: ElasticIndex,
@@ -299,6 +297,36 @@ export class BrandService {
     }
 
     return { emailUsers, phoneUsers };
+  }
+
+  async getActiveBrandCustomer(
+    brandId: string,
+    identifier: string,
+    identifierType: SyncIdentifierType,
+  ): Promise<User | null> {
+    const whereCondition: any = {
+      brandId,
+      identifierType,
+      identifier,
+    };
+
+    const brandCustomer = await this.brandCustomerRepo.findOne({
+      where: whereCondition,
+      relations: ['brand'],
+    });
+
+    if (!brandCustomer) {
+      return null;
+    }
+
+    const user = await this.userRepo.findOne({
+      where: {
+        [identifierType]: identifier,
+        userType: UserAppType.USER,
+      },
+    });
+
+    return user || null;
   }
 
   async createBrandCustomer({
