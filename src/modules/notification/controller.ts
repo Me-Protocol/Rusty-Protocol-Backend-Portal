@@ -21,6 +21,7 @@ import { FilterNotificationDto } from './dto/FilterNotificationDto.dto';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 import { SendBulkNotificationDto } from '@src/modules/notification/dto/SendBulkNotification.dto';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
+import { SendNotificationDto } from '@src/modules/notification/dto/SendNotification.dto';
 
 @ApiTags('Notification')
 @Controller('notification')
@@ -48,6 +49,16 @@ export class NotificationController {
     const brandId = req.user.brand.id;
 
     return await this.notificationService.sendBulkNotification(brandId, body);
+  }
+
+  @Post('send')
+  @UseGuards(BrandJwtStrategy)
+  async sendNotification(
+    @Req() req: any,
+    @Body(ValidationPipe) body: SendNotificationDto,
+  ) {
+    const brandId = req.user.brand.id;
+    return await this.notificationService.sendNotificationToUser(brandId, body);
   }
 
   @UseGuards(AuthGuard())
