@@ -3,8 +3,13 @@ import {
   CreateSendgridContactEvent,
 } from '@src/globalServices/mail/create-sendgrid-contact.event';
 import { OnEvent } from '@nestjs/event-emitter';
-import { SENDGRID_API_KEY } from '@src/config/env.config';
+import {
+  SENDGRID_API_KEY,
+  SENDGRID_BRAND_CONTACT_LIST_ID,
+  SENDGRID_USER_CONTACT_LIST_ID,
+} from '@src/config/env.config';
 import axios from 'axios';
+import { UserAppType } from '@src/utils/enums/UserAppType';
 
 export class CreateSendgridContactHandler {
   @OnEvent(CREATE_SENDGRID_CONTACT)
@@ -19,6 +24,11 @@ export class CreateSendgridContactHandler {
     console.log('event.email', event.email);
 
     const data = {
+      list_ids: [
+        event.userType === UserAppType.USER
+          ? SENDGRID_USER_CONTACT_LIST_ID
+          : SENDGRID_BRAND_CONTACT_LIST_ID,
+      ],
       contacts: [
         {
           email: event.email,
@@ -29,12 +39,6 @@ export class CreateSendgridContactHandler {
           },
         },
       ],
-    };
-
-    const request = {
-      url: `/v3/marketing/contacts`,
-      method: 'PUT',
-      body: data,
     };
     try {
       await axios.post(apiUrl, data, { headers });
