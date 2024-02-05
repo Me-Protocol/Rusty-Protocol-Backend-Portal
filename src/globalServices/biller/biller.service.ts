@@ -223,7 +223,7 @@ export class BillerService {
         return;
       }
 
-      // if the nextRenewalDate is 3 days away then send a reminder to the brand
+      // if the nextRenewalDate is 3 days away then send a reminder to the brand and create a new invoice
       if (
         moment(brand.nextPlanRenewalDate).isSame(
           moment(new Date()).add(3, 'days'),
@@ -243,7 +243,6 @@ export class BillerService {
               text: 'Renew Plan',
               url: `${CLIENT_APP_URI}/brand/subscription`,
             })}
-            
           `,
         });
 

@@ -91,6 +91,7 @@ export class CostManagementController {
     return await this.costModuleManagementService.manualTopUp(
       brand.id,
       body.amount,
+      body.paymentMethodId,
     );
   }
 }

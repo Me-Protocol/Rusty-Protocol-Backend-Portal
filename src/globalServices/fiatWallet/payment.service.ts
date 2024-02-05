@@ -158,6 +158,14 @@ export class PaymentService {
     return 'ok';
   }
 
+  async getPaymentMethodByStripePaymentMethodId(stripePaymentMethodId: string) {
+    return await this.paymentRepo.findOne({
+      where: {
+        stripePaymentMethodId,
+      },
+    });
+  }
+
   async getPaymentMethods(walletId: string) {
     const paymentMethods = await this.paymentRepo.find({
       where: {

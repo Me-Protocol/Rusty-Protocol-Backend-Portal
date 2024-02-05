@@ -171,7 +171,7 @@ export class FiatWalletService {
 
     if (!brandServices) return false;
 
-    let triggerTopup: boolean = false;
+    let triggerTopup = false;
 
     for (const service of brandServices) {
       const cost = await this.brandServiceSubscription.getServiceCost(service);
@@ -183,6 +183,8 @@ export class FiatWalletService {
           brand.canPayCost_inApp = canPay;
           await this.brandService.save(brand);
           triggerTopup = !canPay;
+
+          break;
 
         case BrandSubServices.API:
           brand.canPayCost = canPay;
@@ -202,6 +204,7 @@ export class FiatWalletService {
     wallet: FiatWallet,
     brand: Brand,
     amount?: number,
+    paymentMethodId?: string,
   ) {
     const { topupAmountFactor } = await this.settingsService.getCostSettings();
 
@@ -226,11 +229,11 @@ export class FiatWalletService {
       return false;
     }
 
-    if (defaultPaymentMethod?.stripePaymentMethodId) {
+    if (defaultPaymentMethod?.stripePaymentMethodId || paymentMethodId) {
       try {
         const paymentIntent =
           await this.paymentService.createAutoCardChargePaymentIntent(
-            defaultPaymentMethod.stripePaymentMethodId,
+            paymentMethodId ?? defaultPaymentMethod.stripePaymentMethodId,
             autoTopupAmountInDollar,
             wallet.stripeCustomerId,
           );

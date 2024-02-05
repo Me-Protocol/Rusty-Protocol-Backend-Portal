@@ -5,4 +5,8 @@ export class ManualTopupDto {
   @ApiProperty()
   @IsString()
   amount: number;
+
+  @ApiProperty()
+  @IsString()
+  paymentMethodId: string;
 }
