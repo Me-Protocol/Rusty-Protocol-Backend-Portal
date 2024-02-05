@@ -32,18 +32,38 @@ export class CategoryManagementService {
 
   async updateCategory(id: string, category: UpdateCategoryDto) {
     try {
+      console.log(category.name);
+
+      const categoryExist = await this.categoryService.findOne(id);
+
+      if (!categoryExist) {
+        throw new Error('Category does not exist');
+      }
+
       const checkCategory = await this.categoryService.findOneByName(
         category.name,
       );
-      if (checkCategory && checkCategory.id !== id) {
+
+      if (
+        checkCategory &&
+        checkCategory.name === category.name &&
+        checkCategory.id !== id
+      ) {
         throw new Error('Category already exists');
       }
 
-      if (category.name !== checkCategory.name) {
+      if (category.name && category.name !== checkCategory.name) {
         category.slug = getSlug(category.name);
       }
 
-      return this.categoryService.update(id, category);
+      if (category.image) checkCategory.image = category.image;
+      if (category.banner) checkCategory.banner = category.banner;
+      if (category.description)
+        checkCategory.description = category.description;
+      if (category.name) checkCategory.name = category.name;
+      if (category.type) checkCategory.type = category.type;
+
+      return this.categoryService.update(id, checkCategory);
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400, {
