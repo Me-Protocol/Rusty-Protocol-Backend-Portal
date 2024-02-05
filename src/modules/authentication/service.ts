@@ -394,7 +394,7 @@ export class AuthenticationService {
 
       this.eventEmitter.emit(
         CREATE_SENDGRID_CONTACT,
-        new CreateSendgridContactEvent(newUser.email, name, name),
+        new CreateSendgridContactEvent(newUser.email, name, name, userType),
       );
 
       return token;
