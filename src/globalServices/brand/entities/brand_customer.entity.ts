@@ -28,17 +28,18 @@ export class BrandCustomer extends BaseEntity {
   @Column({ default: 0 })
   totalRedeemed: number;
 
-  @Column({ type: 'decimal' })
+  @Column({ type: 'decimal', default: 0 })
   totalRedemptionAmount: number;
 
   @Column({ default: 0, nullable: true })
   totalExternalRedeemed: number;
 
-  @Column({ type: 'decimal', nullable: true })
+  @Column({ type: 'decimal', nullable: true, default: 0 })
   totalExternalRedemptionAmount: number;
 
   @Column({
     type: 'decimal',
+    default: 0,
   })
   totalIssued: number;
 
