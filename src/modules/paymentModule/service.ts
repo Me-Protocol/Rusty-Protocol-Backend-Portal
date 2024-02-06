@@ -53,7 +53,14 @@ export class PaymentModuleService {
 
   async getMeCredits(brandId: string) {
     const wallet = await this.walletService.getWalletByBrandId(brandId);
-    return wallet.meCredits;
+    const settings = await this.settingsService.getPublicSettings();
+
+    const meCreditsInDollars = wallet.meCredits * settings.meTokenValue;
+
+    return {
+      meCredits: wallet.meCredits,
+      meCreditsInDollars,
+    };
   }
 
   async getPaymentMethods(brandId: string) {
