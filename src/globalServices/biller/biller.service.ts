@@ -13,6 +13,7 @@ import moment from 'moment';
 import { MailService } from '../mail/mail.service';
 import { emailButton } from '@src/utils/helpers/email';
 import { CLIENT_APP_URI } from '@src/config/env.config';
+import { VoucherType } from '@src/utils/enums/VoucherType';
 
 @Injectable()
 export class BillerService {
@@ -278,6 +279,7 @@ export class BillerService {
     brandId: string,
     planId: string,
     usageLimit: number,
+    type: VoucherType,
   ) {
     const newVoucher = new Voucher();
     newVoucher.code = generateRandomCode();
@@ -286,6 +288,7 @@ export class BillerService {
     newVoucher.brandId = brandId;
     newVoucher.planId = planId;
     newVoucher.usageLimit = usageLimit;
+    newVoucher.type = type;
 
     return await this.voucherRepo.save(newVoucher);
   }
@@ -296,6 +299,46 @@ export class BillerService {
         code,
       },
     });
+  }
+
+  async getVoucherForUse({
+    voucherCode,
+    brandId,
+    planId,
+    type,
+  }: {
+    voucherCode: string;
+    brandId: string;
+    planId?: string;
+    type: VoucherType;
+  }) {
+    const voucher = await this.voucherRepo.findOne({
+      where: {
+        code: voucherCode,
+        isUsed: false,
+        isExpired: false,
+        brandId,
+        type,
+      },
+    });
+
+    if (!voucher) {
+      throw new Error('Voucher not found or has been used');
+    }
+
+    if (voucher.usageLimit && voucher.usageCount >= voucher.usageLimit) {
+      throw new Error('Voucher has been used');
+    }
+
+    if (planId && voucher.planId !== planId) {
+      throw new Error('Voucher not found');
+    }
+
+    voucher.isUsed = true;
+    voucher.usedAt = new Date();
+    voucher.usageCount = Number(voucher.usageCount) + 1;
+
+    return await this.saveVoucher(voucher);
   }
 
   async getVoucherById(id: string) {

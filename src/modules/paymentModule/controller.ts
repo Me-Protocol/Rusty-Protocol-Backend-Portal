@@ -120,6 +120,7 @@ export class PaymentModuleController {
       body.invoiceId,
       brand.id,
       body.paymentMethodId,
+      body.voucherCode,
     );
   }
 

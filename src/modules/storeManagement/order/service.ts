@@ -254,13 +254,14 @@ export class OrderManagementService {
         throw new Error('Offer has expired');
       }
 
-      const canPayCost = await this.fiatWalletService.checkCanPayCost(
-        offer.brandId,
-      );
+      // TODO: uncomment this
+      // const canPayCost = await this.fiatWalletService.checkCanPayCost(
+      //   offer.brandId,
+      // );
 
-      if (!canPayCost) {
-        throw new Error('Brand cannot pay cost');
-      }
+      // if (!canPayCost) {
+      //   throw new Error('Brand cannot pay cost');
+      // }
       // TODO: uncomment this
 
       const user = await this.userService.getUserById(userId);
@@ -352,7 +353,7 @@ export class OrderManagementService {
     }
   }
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron(CronExpression.EVERY_5_SECONDS)
   async checkOrderStatus() {
     const pendingOrders = await this.orderService.getPendingOrders();
 
@@ -402,6 +403,8 @@ export class OrderManagementService {
             },
             RUNTIME_URL,
           );
+
+          console.log(balance.data?.result, 'Balance');
 
           if (balance.data?.result) {
             const registry = await this.syncService.findOneRegistryByUserId(
@@ -474,7 +477,6 @@ export class OrderManagementService {
           history.amount = order.points;
           history.description = `Redeem ${offer.name} from ${offer.brand.name}`;
           history.transactionType = TransactionsType.DEBIT;
-          history.balance = 0;
 
           await this.syncService.saveRegistryHistory(history);
 

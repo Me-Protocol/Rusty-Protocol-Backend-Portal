@@ -626,11 +626,12 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
-      const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
+      // TODO: Check if brand can pay cost
+      // const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
 
-      if (!canPayCost) {
-        throw new Error('Brand cannot pay cost');
-      }
+      // if (!canPayCost) {
+      //   throw new Error('Brand cannot pay cost');
+      // }
 
       await this.syncService.pushTransactionToRuntime(body.params);
 
@@ -762,11 +763,12 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
-      const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
+      // TODO: Create bill
+      // const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
 
-      if (!canPayCost) {
-        throw new Error('Brand cannot pay cost');
-      }
+      // if (!canPayCost) {
+      //   throw new Error('Brand cannot pay cost');
+      // }
 
       const syncData = batch.syncData;
 
@@ -833,11 +835,11 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
-      const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
+      // const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
 
-      if (!canPayCost) {
-        throw new Error('Brand cannot pay cost');
-      }
+      // if (!canPayCost) {
+      //   throw new Error('Brand cannot pay cost');
+      // }
 
       const syncData = batch.syncData;
 

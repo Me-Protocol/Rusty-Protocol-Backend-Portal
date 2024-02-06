@@ -16,6 +16,8 @@ import {
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { BigNumber, ethers } from 'ethers';
+import { VoucherType } from '@src/utils/enums/VoucherType';
+import { calculateDiscount } from '@src/utils/helpers/calculateDiscount';
 
 @Injectable()
 export class PaymentModuleService {
@@ -71,11 +73,10 @@ export class PaymentModuleService {
     invoiceId: string,
     brandId: string,
     paymentMethodId: string,
+    voucherCode: string,
   ) {
     try {
       const invoice = await this.billerService.getInvoiceById(invoiceId);
-
-      console.log(invoice, brandId, paymentMethodId);
 
       if (!invoice) {
         throw new HttpException('Invoice not found', 404);
@@ -89,12 +90,26 @@ export class PaymentModuleService {
         throw new HttpException('Invoice already paid', 400);
       }
 
+      let amount: number;
+
+      if (voucherCode) {
+        const voucher = await this.billerService.getVoucherForUse({
+          voucherCode,
+          brandId,
+          type: VoucherType.METOKEN_CREDIT,
+        });
+
+        amount = calculateDiscount(voucher.discount, invoice.total) * 100;
+      }
+
+      amount = invoice.total * 100;
+
       const wallet = await this.walletService.getWalletByBrandId(
         invoice.brandId,
       );
 
       const payment = await this.paymentService.chargePaymentMethod({
-        amount: invoice.total * 100,
+        amount: amount,
         paymentMethodId,
         wallet,
         narration: `Payment for invoice ${invoice.invoiceCode}`,
@@ -138,6 +153,7 @@ export class PaymentModuleService {
       planId: string;
       discount: number;
       usageLimit: number;
+      type: VoucherType;
     }[],
   ) {
     try {
@@ -162,6 +178,7 @@ export class PaymentModuleService {
             item.brandId,
             item.planId,
             item.usageLimit,
+            item.type,
           );
 
           const brandOwner = await this.brandService.getBrandOwner(brand.id);

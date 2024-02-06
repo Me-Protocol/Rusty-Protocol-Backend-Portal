@@ -446,6 +446,17 @@ export class SyncRewardService {
   }
 
   async saveRegistryHistory(registryHistory: RegistryHistory) {
+    const registry = await this.rewardRegistryRepo.findOne({
+      where: {
+        id: registryHistory.rewardRegistryId,
+      },
+      relations: ['user', 'user.customer'],
+    });
+
+    if (registry.userId) {
+      const walletAddress = registry.user.customer.walletAddress;
+    }
+
     return this.registryHistoryRepo.save(registryHistory);
   }
 
@@ -648,13 +659,14 @@ export class SyncRewardService {
     // 2. We then use the rewardId to get the reward and check if the brand has enough balance to distribute rewards.
     const reward = await this.rewardService.findOneById(rewardId);
 
-    const canPayCost = await this.fiatWalletService.checkCanPayCost(
-      reward.brandId,
-    );
+    // TODO: Check
+    // const canPayCost = await this.fiatWalletService.checkCanPayCost(
+    //   reward.brandId,
+    // );
 
-    if (!canPayCost) {
-      return 'Brand cannot pay cost';
-    }
+    // if (!canPayCost) {
+    //   return 'Brand cannot pay cost';
+    // }
 
     //3. If the brand has enough balance, we use the redistributionKeyIdentifierId to get the private key identifier and decrypt the private key.
     const keyIdentifier = await this.rewardService.getKeyIdentifier(
@@ -721,13 +733,14 @@ export class SyncRewardService {
   }) {
     const reward = await this.rewardService.findOneById(rewardId);
 
-    const canPayCost = await this.fiatWalletService.checkCanPayCost(
-      reward.brandId,
-    );
+    // TODO: Check
+    // const canPayCost = await this.fiatWalletService.checkCanPayCost(
+    //   reward.brandId,
+    // );
 
-    if (!canPayCost) {
-      return 'Brand cannot pay cost';
-    }
+    // if (!canPayCost) {
+    //   return 'Brand cannot pay cost';
+    // }
 
     const keyIdentifier = await this.rewardService.getKeyIdentifier(
       reward.redistributionKeyIdentifierId,
