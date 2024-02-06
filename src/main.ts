@@ -41,56 +41,56 @@ async function bootstrap() {
 
   app.enableCors();
 
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: [`'self'`, 'unpkg.com'],
-          styleSrc: [
-            `'self'`,
-            `'unsafe-inline'`,
-            'cdn.jsdelivr.net',
-            'fonts.googleapis.com',
-            'unpkg.com',
-            'cdnjs.cloudflare.com',
-          ],
-          fontSrc: [
-            `'self'`,
-            'fonts.gstatic.com',
-            'cdnjs.cloudflare.com',
-            'data:',
-          ],
-          imgSrc: [
-            `'self'`,
-            'data:',
-            'cdn.jsdelivr.net',
-            '*.cloudinary.com',
-            'flagcdn.com',
-            '*.freepik.com',
-            'blob:',
-          ],
-          frameSrc: ['*.magic.link'],
-          scriptSrc: [
-            `'self'`,
-            `https: 'unsafe-inline'`,
-            `cdn.jsdelivr.net`,
-            `'unsafe-eval'`,
-          ],
-          connectSrc: [
-            `'self'`,
-            '*.meappbounty.com',
-            '*.usemeprotocol.com',
-            '*.alchemy.com',
-            '*.magic.link',
-            'ipapi.co',
-            '*.gelato.digital',
-            '*.intercom.io',
-            'http://localhost:5173/',
-          ],
-        },
-      },
-    }),
-  );
+  // app.use(
+  //   helmet({
+  //     contentSecurityPolicy: {
+  //       directives: {
+  //         defaultSrc: [`'self'`, 'unpkg.com'],
+  //         styleSrc: [
+  //           `'self'`,
+  //           `'unsafe-inline'`,
+  //           'cdn.jsdelivr.net',
+  //           'fonts.googleapis.com',
+  //           'unpkg.com',
+  //           'cdnjs.cloudflare.com',
+  //         ],
+  //         fontSrc: [
+  //           `'self'`,
+  //           'fonts.gstatic.com',
+  //           'cdnjs.cloudflare.com',
+  //           'data:',
+  //         ],
+  //         imgSrc: [
+  //           `'self'`,
+  //           'data:',
+  //           'cdn.jsdelivr.net',
+  //           '*.cloudinary.com',
+  //           'flagcdn.com',
+  //           '*.freepik.com',
+  //           'blob:',
+  //         ],
+  //         frameSrc: ['*.magic.link'],
+  //         scriptSrc: [
+  //           `'self'`,
+  //           `https: 'unsafe-inline'`,
+  //           `cdn.jsdelivr.net`,
+  //           `'unsafe-eval'`,
+  //         ],
+  //         connectSrc: [
+  //           `'self'`,
+  //           '*.meappbounty.com',
+  //           '*.usemeprotocol.com',
+  //           '*.alchemy.com',
+  //           '*.magic.link',
+  //           'ipapi.co',
+  //           '*.gelato.digital',
+  //           '*.intercom.io',
+  //           'http://localhost:5173/',
+  //         ],
+  //       },
+  //     },
+  //   }),
+  // );
 
   await app.listen(APP_SERVER_LISTEN_PORT, APP_SERVER_LISTEN_IP, () => {
     logger.log(`Server listening on ${APP_SERVER_LISTEN_PORT}`);

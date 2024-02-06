@@ -10,8 +10,14 @@ import { emailCode } from '@src/utils/helpers/email';
 import {
   getCurrentPoolState,
   getLatestBlock,
+  getPoolMeTokenDueForTopUp,
+  meTokenToDollar,
 } from '@developeruche/protocol-core';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { SettingsService } from '@src/globalServices/settings/settings.service';
+import { BigNumber, ethers } from 'ethers';
+import { VoucherType } from '@src/utils/enums/VoucherType';
+import { calculateDiscount } from '@src/utils/helpers/calculateDiscount';
 
 @Injectable()
 export class PaymentModuleService {
@@ -21,6 +27,7 @@ export class PaymentModuleService {
     private readonly billerService: BillerService,
     private readonly brandService: BrandService,
     private readonly mailService: MailService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   async savePaymentMethodBrand(paymentMethodId: string, brandId: string) {
@@ -66,11 +73,10 @@ export class PaymentModuleService {
     invoiceId: string,
     brandId: string,
     paymentMethodId: string,
+    voucherCode: string,
   ) {
     try {
       const invoice = await this.billerService.getInvoiceById(invoiceId);
-
-      console.log(invoice, brandId, paymentMethodId);
 
       if (!invoice) {
         throw new HttpException('Invoice not found', 404);
@@ -84,12 +90,26 @@ export class PaymentModuleService {
         throw new HttpException('Invoice already paid', 400);
       }
 
+      let amount: number;
+
+      if (voucherCode) {
+        const voucher = await this.billerService.getVoucherForUse({
+          voucherCode,
+          brandId,
+          type: VoucherType.METOKEN_CREDIT,
+        });
+
+        amount = calculateDiscount(voucher.discount, invoice.total) * 100;
+      }
+
+      amount = invoice.total * 100;
+
       const wallet = await this.walletService.getWalletByBrandId(
         invoice.brandId,
       );
 
       const payment = await this.paymentService.chargePaymentMethod({
-        amount: invoice.total * 100,
+        amount: amount,
         paymentMethodId,
         wallet,
         narration: `Payment for invoice ${invoice.invoiceCode}`,
@@ -133,6 +153,7 @@ export class PaymentModuleService {
       planId: string;
       discount: number;
       usageLimit: number;
+      type: VoucherType;
     }[],
   ) {
     try {
@@ -157,6 +178,7 @@ export class PaymentModuleService {
             item.brandId,
             item.planId,
             item.usageLimit,
+            item.type,
           );
 
           const brandOwner = await this.brandService.getBrandOwner(brand.id);
@@ -193,14 +215,47 @@ export class PaymentModuleService {
   async checkBrandForTopup() {
     try {
       const lastBlock = await this.brandService.getLastTopupEventBlock();
-      const fromBlock = lastBlock ? lastBlock.lastBlock : 0;
+      const fromBlock = lastBlock ? lastBlock.lastBlock : 45495364;
 
       const toBlock = await getLatestBlock();
       await this.brandService.saveTopupEventBlock(toBlock);
 
-      const state = await getCurrentPoolState(fromBlock, toBlock);
+      const poolRewardBalance = await getPoolMeTokenDueForTopUp(
+        fromBlock,
+        toBlock,
+      );
 
-      console.log('Pool state', state);
+      //  remove duplicates
+      const uniquePoolState = poolRewardBalance.filter(
+        (v, i, a) =>
+          a.findIndex((t) => t.meTokenAddress === v.meTokenAddress) === i,
+      );
+
+      const settings = await this.settingsService.getPublicSettings();
+
+      await Promise.all(
+        uniquePoolState.map(async (item) => {
+          const brand = await this.brandService.getBrandByMeTokenAddress(
+            item.meTokenAddress,
+          );
+
+          if (!brand) {
+            return;
+          }
+
+          const amount = item.meNotifyLimit.mul(settings?.meAutoTopUpFactor);
+          const amountInDollars = await meTokenToDollar(amount);
+
+          console.log('Amount in dollars', amountInDollars.toString());
+
+          // await this.billerService.createBill({
+          //   amount: amount,
+          //   brandId: brand.id,
+          //   type:"auto-topup"
+
+          // })
+        }),
+      );
     } catch (error) {
       logger.error(error);
       console.log('Error', error);

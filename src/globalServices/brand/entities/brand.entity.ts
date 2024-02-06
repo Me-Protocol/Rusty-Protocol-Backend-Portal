@@ -310,4 +310,29 @@ export class Brand extends BaseEntity {
   @ManyToOne(() => BrandSubscriptionPlan, (plan) => plan.id)
   @JoinColumn({ name: 'planId' })
   plan: BrandSubscriptionPlan;
+
+  @Column({
+    nullable: true,
+  })
+  lastPlanRenewalDate: Date;
+
+  @Column({
+    nullable: true,
+  })
+  nextPlanRenewalDate: Date;
+
+  @Column({
+    default: false,
+  })
+  isPlanActive: boolean;
+
+  @Column({
+    default: false,
+  })
+  isPlanExpired: boolean;
+
+  @Column({
+    default: false,
+  })
+  isPlanExpiringEmailSent: boolean;
 }

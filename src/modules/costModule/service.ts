@@ -280,7 +280,7 @@ export class CostModuleManagementService {
           0,
         );
 
-        let wallet = await this.walletService.getWalletByBrandId(brandId);
+        const wallet = await this.walletService.getWalletByBrandId(brandId);
 
         // Debit brand account with total cost
         const paidCost = await this.walletService.minusBrandBalance({
@@ -355,15 +355,17 @@ export class CostModuleManagementService {
     return true;
   }
 
-  async manualTopUp(brandId: string, amount: number) {
-    const brand = await this.brandService.getBrandById(brandId);
-    const wallet = await this.walletService.getWalletByBrandId(brandId);
-
-    const defaultPaymentMethod =
-      await this.paymentService.getDefaultPaymentMethod(wallet.id);
-
+  async manualTopUp(brandId: string, amount: number, paymentMethodId: string) {
     try {
-      if (!defaultPaymentMethod?.stripePaymentMethodId) {
+      const brand = await this.brandService.getBrandById(brandId);
+      const wallet = await this.walletService.getWalletByBrandId(brandId);
+
+      const paymentMethod =
+        await this.paymentService.getPaymentMethodByStripePaymentMethodId(
+          paymentMethodId,
+        );
+
+      if (!paymentMethod?.stripePaymentMethodId) {
         throw new HttpException('Please link your card first.', 400, {});
       }
 
@@ -371,6 +373,7 @@ export class CostModuleManagementService {
         wallet,
         brand,
         amount,
+        paymentMethodId,
       );
     } catch (error) {
       logger.error(error);

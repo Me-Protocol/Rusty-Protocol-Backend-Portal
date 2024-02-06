@@ -26,8 +26,8 @@ export class CategoryService {
     return category;
   }
 
-  async update(id: string, category: UpdateCategoryDto) {
-    await this.categoryRepo.update({ id }, category);
+  async update(id: string, category: Category) {
+    await this.categoryRepo.save(category);
 
     const cate = await this.categoryRepo.findOneBy({ id });
 
@@ -67,8 +67,12 @@ export class CategoryService {
     return this.categoryRepo.findOneBy({ slug });
   }
 
-  findOneByName(name: string) {
-    return this.categoryRepo.findOneBy({ name });
+  async findOneByName(name: string) {
+    return await this.categoryRepo.findOne({
+      where: {
+        name,
+      },
+    });
   }
 
   remove(id: string) {
@@ -77,7 +81,7 @@ export class CategoryService {
     return this.categoryRepo.softDelete({ id });
   }
 
-   @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async syncElasticSearchIndex() {
     const allCategories = await this.categoryRepo.find();
     this.elasticIndex.batchCreateIndex(allCategories, categoryIndex);

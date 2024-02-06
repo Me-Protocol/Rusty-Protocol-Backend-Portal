@@ -29,6 +29,8 @@ import { UserAppType } from '@src/utils/enums/UserAppType';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { TopupEventBlock } from './entities/topup_event_block.entity';
 import { isEmail } from 'class-validator';
+import { RewardService } from '../reward/reward.service';
+import { VoucherType } from '@src/utils/enums/VoucherType';
 
 @Injectable()
 export class BrandService {
@@ -41,10 +43,8 @@ export class BrandService {
     private readonly brandCustomerRepo: Repository<BrandCustomer>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
-
     @InjectRepository(TopupEventBlock)
     private readonly topupEventBlock: Repository<TopupEventBlock>,
-
     @InjectRepository(BrandSubscriptionPlan)
     private readonly brandSubscriptionPlanRepo: Repository<BrandSubscriptionPlan>,
     private readonly elasticIndex: ElasticIndex,
@@ -53,6 +53,9 @@ export class BrandService {
     private readonly paymentService: PaymentService,
     @InjectRepository(FiatWallet)
     private readonly walletRepo: Repository<FiatWallet>,
+
+    @Inject(forwardRef(() => RewardService))
+    private readonly rewardService: RewardService,
   ) {}
 
   async create({ userId, name }: { userId: string; name: string }) {
@@ -177,14 +180,24 @@ export class BrandService {
     return this.brandRepo.find();
   }
 
+  async getSubscribedBrands() {
+    return this.brandRepo.find({
+      where: {
+        isPlanActive: true,
+      },
+    });
+  }
+
   async getAllFilteredBrands({
     categoryId,
     page,
     limit,
+    order,
   }: {
     categoryId: string;
     page: number;
     limit: number;
+    order: string;
   }) {
     const brandQuery = this.brandRepo
       .createQueryBuilder('brand')
@@ -193,6 +206,20 @@ export class BrandService {
 
     if (categoryId) {
       brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
+    }
+
+    if (order) {
+      const formatedOrder = order.split(':')[0];
+      const acceptedOrder = ['name', 'createdAt', 'updatedAt'];
+
+      if (!acceptedOrder.includes(formatedOrder)) {
+        throw new Error('Invalid order param');
+      }
+
+      brandQuery.orderBy(
+        `brand.${order.split(':')[0]}`,
+        order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+      );
     }
 
     brandQuery.skip((page - 1) * limit).take(limit);
@@ -271,6 +298,36 @@ export class BrandService {
     }
 
     return { emailUsers, phoneUsers };
+  }
+
+  async getActiveBrandCustomer(
+    brandId: string,
+    identifier: string,
+    identifierType: SyncIdentifierType,
+  ): Promise<User | null> {
+    const whereCondition: any = {
+      brandId,
+      identifierType,
+      identifier,
+    };
+
+    const brandCustomer = await this.brandCustomerRepo.findOne({
+      where: whereCondition,
+      relations: ['brand'],
+    });
+
+    if (!brandCustomer) {
+      return null;
+    }
+
+    const user = await this.userRepo.findOne({
+      where: {
+        [identifierType]: identifier,
+        userType: UserAppType.USER,
+      },
+    });
+
+    return user || null;
   }
 
   async createBrandCustomer({
@@ -490,39 +547,14 @@ export class BrandService {
     let amount: number;
 
     if (voucherCode) {
-      const voucher = await this.billerService.getVoucherByCode(voucherCode);
-
-      if (!voucher) {
-        throw new NotFoundException('Voucher not found');
-      }
-
-      if (voucher.brandId !== brandId) {
-        throw new HttpException('Voucher not found', 400);
-      }
-
-      if (voucher.isExpired) {
-        throw new HttpException('Voucher has expired', 400);
-      }
-
-      if (voucher.isUsed) {
-        throw new HttpException('Voucher has been used', 400);
-      }
-
-      if (voucher.usageLimit && voucher.usageCount >= voucher.usageLimit) {
-        throw new HttpException('Voucher has been used', 400);
-      }
-
-      if (voucher.planId !== planId) {
-        throw new HttpException('Voucher not found', 400);
-      }
+      const voucher = await this.billerService.getVoucherForUse({
+        voucherCode,
+        brandId,
+        planId,
+        type: VoucherType.SUBSCRIPTION,
+      });
 
       amount = (plan.monthlyAmount - voucher.discount) * 100;
-
-      voucher.isUsed = true;
-      voucher.usedAt = new Date();
-      voucher.usageCount = Number(voucher.usageCount) + 1;
-
-      await this.billerService.saveVoucher(voucher);
     }
 
     amount = plan.monthlyAmount * 100;
@@ -543,6 +575,13 @@ export class BrandService {
     await this.billerService.getActiveInvoiceOrCreate(brandId);
 
     brand.planId = planId;
+    brand.lastPlanRenewalDate = new Date();
+    brand.nextPlanRenewalDate = new Date(
+      brand.lastPlanRenewalDate.setMonth(
+        brand.lastPlanRenewalDate.getMonth() + 1,
+      ),
+    );
+    brand.isPlanActive = true;
 
     return await this.brandRepo.save(brand);
   }
@@ -561,5 +600,21 @@ export class BrandService {
     topupEventBlock.lastBlock = blockNumber;
 
     return await this.topupEventBlock.save(topupEventBlock);
+  }
+
+  async getBrandByMeTokenAddress(meTokenAddress: string) {
+    const reward = await this.rewardService.getRewardByContractAddress(
+      meTokenAddress,
+    );
+
+    if (!reward) {
+      return null;
+    }
+
+    return await this.brandRepo.findOne({
+      where: {
+        id: reward.brandId,
+      },
+    });
   }
 }

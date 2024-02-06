@@ -42,6 +42,14 @@ export const TWILIO_MSG_SID = env.get('TWILIO_MSG_SID').asString();
 export const SENDGRID_API_KEY = env.get('SENDGRID_API_KEY').asString();
 export const SENDGRID_EMAIL = env.get('SENDGRID_EMAIL').asString();
 
+export const SENDGRID_USER_CONTACT_LIST_ID = env
+  .get('SENDGRID_USER_CONTACT_LIST_ID')
+  .asString();
+
+export const SENDGRID_BRAND_CONTACT_LIST_ID = env
+  .get('SENDGRID_BRAND_CONTACT_LIST_ID')
+  .asString();
+
 export const ELASTIC_MAIL_USERNAME = env
   .get('ELASTIC_MAIL_USERNAME')
   .asString();

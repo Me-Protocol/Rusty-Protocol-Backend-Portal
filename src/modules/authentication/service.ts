@@ -392,9 +392,17 @@ export class AuthenticationService {
 
       const token = await this.generateAndSignToken(newUser);
 
+      const nameParts = name.split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ');
       this.eventEmitter.emit(
         CREATE_SENDGRID_CONTACT,
-        new CreateSendgridContactEvent(newUser.email, name, name),
+        new CreateSendgridContactEvent(
+          newUser.email,
+          firstName,
+          lastName,
+          userType,
+        ),
       );
 
       return token;

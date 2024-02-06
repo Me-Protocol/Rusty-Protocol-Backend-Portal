@@ -3,6 +3,7 @@
 import { BaseEntity } from '@src/common/entities/base.entity';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { BrandSubscriptionPlan } from '@src/globalServices/brand/entities/brand_subscription_plan.entity';
+import { VoucherType } from '@src/utils/enums/VoucherType';
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 
 @Entity('voucher')
@@ -61,4 +62,18 @@ export class Voucher extends BaseEntity {
     nullable: true,
   })
   usageCount: number;
+
+  @Column({
+    nullable: true,
+    default: false,
+  })
+  isPlan: boolean;
+
+  @Column({
+    type: 'enum',
+    enum: VoucherType,
+    default: VoucherType.SUBSCRIPTION,
+    nullable: true,
+  })
+  type: VoucherType;
 }

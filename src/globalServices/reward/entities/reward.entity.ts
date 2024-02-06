@@ -185,4 +185,14 @@ export class Reward extends BaseEntity {
     default: 0.0,
   })
   totalRedeemedSupply: number;
+
+  @Column({
+    default: 2,
+  })
+  rewardAutoTopUpFactor: number;
+
+  @Column({
+    default: 2,
+  })
+  meAutoTopUpFactor: number;
 }

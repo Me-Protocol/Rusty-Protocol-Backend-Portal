@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { VoucherType } from '@src/utils/enums/VoucherType';
 import { IsArray } from 'class-validator';
 
 export class CreateVoucherDto {
@@ -19,6 +20,10 @@ export class CreateVoucherDto {
         usageLimit: {
           type: 'number',
         },
+        type: {
+          type: 'string',
+          enum: Object.values(VoucherType),
+        },
       },
     },
   })
@@ -28,5 +33,6 @@ export class CreateVoucherDto {
     planId: string;
     discount: number;
     usageLimit: number;
+    type: VoucherType;
   }[];
 }
