@@ -24,6 +24,7 @@ import { GetTreasuryPermitDto } from '@src/modules/storeManagement/reward/dto/Pu
 import { BrandService } from '@src/globalServices/brand/brand.service';
 import {
   distribute_reward_specific_with_url,
+  get_user_reward_balance_with_url,
   mutate_n_format_with_url,
   mutate_with_url,
   transfer_reward_with_url,
@@ -450,11 +451,28 @@ export class SyncRewardService {
       where: {
         id: registryHistory.rewardRegistryId,
       },
-      relations: ['user', 'user.customer'],
+      relations: ['user', 'user.customer', 'reward'],
     });
 
     if (registry.userId) {
       const walletAddress = registry.user.customer.walletAddress;
+
+      const balance = await get_user_reward_balance_with_url(
+        {
+          address: walletAddress,
+          reward_address: registry.reward.contractAddress,
+        },
+        RUNTIME_URL,
+      );
+
+      if (balance.data?.result) {
+        const formattedBalance = ethers.utils.formatEther(balance.data.result);
+        registry.balance = Number(formattedBalance);
+
+        await this.rewardRegistryRepo.save(registry);
+
+        registryHistory.balance = registry.balance;
+      }
     }
 
     return this.registryHistoryRepo.save(registryHistory);

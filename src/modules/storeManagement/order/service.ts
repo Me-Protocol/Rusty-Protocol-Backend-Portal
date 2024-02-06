@@ -404,8 +404,6 @@ export class OrderManagementService {
             RUNTIME_URL,
           );
 
-          console.log(balance.data?.result, 'Balance');
-
           if (balance.data?.result) {
             const registry = await this.syncService.findOneRegistryByUserId(
               order.userId,
