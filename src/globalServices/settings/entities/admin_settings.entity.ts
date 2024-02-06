@@ -94,4 +94,10 @@ export class AdminSettings extends BaseEntity {
     default: 2,
   })
   meAutoTopUpFactor: number;
+
+  @Column({
+    type: 'decimal',
+    default: 0.05,
+  })
+  meTokenValue: number;
 }

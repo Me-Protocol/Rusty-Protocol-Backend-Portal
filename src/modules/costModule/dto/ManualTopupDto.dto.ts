@@ -1,12 +1,24 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { IsBoolean, IsString, IsUUID } from 'class-validator';
 
 export class ManualTopupDto {
   @ApiProperty()
   @IsString()
-  amount: number;
+  liquidityAmount: number;
 
   @ApiProperty()
   @IsString()
   paymentMethodId: string;
+
+  brandId: string;
+
+  @ApiProperty({
+    type: 'boolean',
+  })
+  @IsBoolean()
+  useMeCredit: boolean;
+
+  @ApiProperty()
+  @IsUUID()
+  planId: string;
 }

@@ -79,19 +79,4 @@ export class CostManagementController {
       brand,
     );
   }
-
-  @UseGuards(BrandJwtStrategy)
-  @Post('/manual-topup')
-  async manualTopUp(
-    @Req() req: any,
-    @Body(ValidationPipe) body: ManualTopupDto,
-  ) {
-    const brand = req.user.brand as Brand;
-
-    return await this.costModuleManagementService.manualTopUp(
-      brand.id,
-      body.amount,
-      body.paymentMethodId,
-    );
-  }
 }

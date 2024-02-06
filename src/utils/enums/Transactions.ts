@@ -15,4 +15,6 @@ export enum TransactionSource {
   OFFER_REDEMPTION = 'offer_redemption',
   EARN_REWARD = 'earn_reward',
   AUTO_TOPUP = 'auto_topup',
+  SUBSCRIPTION = 'subscription',
+  INVOICE = 'invoice',
 }

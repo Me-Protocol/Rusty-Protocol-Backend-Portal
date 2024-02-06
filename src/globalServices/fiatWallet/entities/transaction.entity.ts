@@ -96,4 +96,9 @@ export class Transaction extends BaseEntity {
   @ManyToOne(() => Order, (order) => order.id)
   @JoinColumn({ name: 'orderId' })
   order: Order;
+
+  @Column({
+    default: false,
+  })
+  appliedMeCredit: boolean;
 }

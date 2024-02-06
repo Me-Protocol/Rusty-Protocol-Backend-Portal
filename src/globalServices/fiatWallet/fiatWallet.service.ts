@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Transaction } from './entities/transaction.entity';
@@ -23,7 +23,10 @@ export class FiatWalletService {
     private readonly walletRepo: Repository<FiatWallet>,
 
     private readonly paymentService: PaymentService,
+
+    @Inject(forwardRef(() => BrandService))
     private readonly brandService: BrandService,
+
     private readonly settingsService: SettingsService,
     private readonly brandServiceSubscription: BrandSubscriptionService,
   ) {}
@@ -283,5 +286,39 @@ export class FiatWalletService {
     transaction.walletId = wallet.id;
 
     return await this.transactionRepo.save(transaction);
+  }
+
+  async applyMeCredit({
+    walletId,
+    amount,
+  }: {
+    walletId: string;
+    amount: number;
+  }) {
+    const wallet = await this.walletRepo.findOne({
+      where: {
+        id: walletId,
+      },
+    });
+
+    // TODO: Use costgetter for this
+
+    const meTokenValue = (await this.settingsService.getPublicSettings())
+      .meTokenValue;
+
+    const meCredit = Number(wallet.meCredits) * Number(meTokenValue);
+
+    if (meCredit > 0) {
+      const amountToPay = amount - meCredit;
+      const meCreditsUsed = amount - amountToPay;
+
+      wallet.meCredits = wallet.meCredits - meCreditsUsed / meTokenValue;
+
+      await this.walletRepo.save(wallet);
+
+      return amountToPay;
+    }
+
+    return amount;
   }
 }

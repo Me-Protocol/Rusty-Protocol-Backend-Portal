@@ -201,11 +201,17 @@ export class PaymentService {
     paymentMethodId,
     wallet,
     narration,
+    source,
+    paymentMethod,
+    appliedMeCredit,
   }: {
     amount: number;
     paymentMethodId: string;
     wallet: FiatWallet;
     narration: string;
+    source: TransactionSource;
+    paymentMethod: PaymentMethodEnum;
+    appliedMeCredit?: boolean;
   }) {
     const paymentIntent = await this.createAutoCardChargePaymentIntent(
       paymentMethodId,
@@ -227,11 +233,18 @@ export class PaymentService {
     transaction.paymentRef = this.generateTransactionCode();
     transaction.narration = narration;
     transaction.walletId = wallet.id;
-    transaction.paymentMethod = PaymentMethodEnum.STRIPE;
-    transaction.source = TransactionSource.AUTO_TOPUP;
+    transaction.paymentMethod = paymentMethod;
+    transaction.source = source;
+    transaction.appliedMeCredit = appliedMeCredit;
 
     await this.transactionRepo.save(transaction);
 
     return paymentDetail;
+  }
+
+  async createTransaction(transaction: Transaction) {
+    transaction.paymentRef = this.generateTransactionCode();
+
+    await this.transactionRepo.save(transaction);
   }
 }

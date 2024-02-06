@@ -59,4 +59,11 @@ export class FiatWallet extends BaseEntity {
 
   @OneToMany(() => PaymentMethod, (paymentMethod) => paymentMethod.fiatWallet)
   paymentMethods: PaymentMethod[];
+
+  @Column({
+    type: 'decimal',
+    default: 0,
+    nullable: true,
+  })
+  meCredits: number;
 }
