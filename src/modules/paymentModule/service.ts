@@ -211,7 +211,6 @@ export class PaymentModuleService {
     planId: string;
   }) {
     try {
-      const brand = await this.brandService.getBrandById(brandId);
       const wallet = await this.walletService.getWalletByBrandId(brandId);
 
       const plan = await this.brandService.getBrandSubscriptionPlanById(planId);

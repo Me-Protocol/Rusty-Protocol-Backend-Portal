@@ -97,7 +97,7 @@ export class AdminSettings extends BaseEntity {
 
   @Column({
     type: 'decimal',
-    default: 0.05,
+    default: 0.09,
   })
   meTokenValue: number;
 }

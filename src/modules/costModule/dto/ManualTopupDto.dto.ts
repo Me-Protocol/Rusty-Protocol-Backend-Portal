@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsNumber, IsString, IsUUID } from 'class-validator';
 
 export class ManualTopupDto {
   @ApiProperty()
-  @IsString()
+  @IsNumber()
   liquidityAmount: number;
 
   @ApiProperty()

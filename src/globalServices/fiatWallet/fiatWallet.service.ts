@@ -306,13 +306,16 @@ export class FiatWalletService {
     const meTokenValue = (await this.settingsService.getPublicSettings())
       .meTokenValue;
 
-    const meCredit = Number(wallet.meCredits) * Number(meTokenValue);
+    const meCreditsInDollars = Number(wallet.meCredits) * Number(meTokenValue);
 
-    if (meCredit > 0) {
-      const amountToPay = amount - meCredit;
-      const meCreditsUsed = amount - amountToPay;
+    if (meCreditsInDollars > 0) {
+      const amountToPay =
+        amount > meCreditsInDollars ? amount - meCreditsInDollars : 0;
+      const meCreditsUsedInDollar =
+        amount > meCreditsInDollars ? meCreditsInDollars : amount;
+      const meCreditsUsed = meCreditsUsedInDollar / meTokenValue;
 
-      wallet.meCredits = wallet.meCredits - meCreditsUsed / meTokenValue;
+      wallet.meCredits = wallet.meCredits - meCreditsUsed;
 
       await this.walletRepo.save(wallet);
 

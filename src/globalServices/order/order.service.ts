@@ -27,7 +27,7 @@ export class OrderService {
 
     return await this.orderRepo.findOne({
       where: { id: orderRecord.id },
-      relations: ['coupon'],
+      relations: ['coupon', 'offer', 'reward'],
     });
   }
 
@@ -201,8 +201,8 @@ export class OrderService {
       where: { id: orderId },
       relations: [
         'coupon',
+        'reward',
         'offer',
-        'offer.reward',
         'offer.offerImages',
         'offer.brand',
       ],

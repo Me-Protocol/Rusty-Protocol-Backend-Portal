@@ -16,6 +16,7 @@ import { OrderPaymentType } from '@src/utils/enums/OrderPaymentType';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
 import { SpendData } from '@src/utils/types/spendData';
+import { Reward } from '@src/globalServices/reward/entities/reward.entity';
 
 @Entity('order')
 export class Order extends BaseEntity {
@@ -103,5 +104,9 @@ export class Order extends BaseEntity {
   @Column({
     nullable: true,
   })
-  rewardId: string;
+  redeemRewardId: string;
+
+  @ManyToOne(() => Reward, (reward) => reward.id)
+  @JoinColumn({ name: 'redeemRewardId' })
+  reward: Reward;
 }
