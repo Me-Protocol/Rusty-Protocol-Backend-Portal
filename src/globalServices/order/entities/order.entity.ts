@@ -109,4 +109,9 @@ export class Order extends BaseEntity {
   @ManyToOne(() => Reward, (reward) => reward.id)
   @JoinColumn({ name: 'redeemRewardId' })
   reward: Reward;
+
+  @Column({
+    default: 0,
+  })
+  retries: number;
 }

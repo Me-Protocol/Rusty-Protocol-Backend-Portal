@@ -219,6 +219,7 @@ export class PaymentModuleService {
       }
 
       let totalPaymentAmount = liquidityAmount + plan.monthlyAmount;
+      totalPaymentAmount = +totalPaymentAmount.toFixed(2);
 
       if (useMeCredit) {
         const newAmount = await this.walletService.applyMeCredit({

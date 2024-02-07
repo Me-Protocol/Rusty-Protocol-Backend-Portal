@@ -8,6 +8,7 @@ export enum StatusType {
   PROCESSING = 'PROCESSING',
   FAILED = 'FAILED',
   ABANDONED = 'ABANDONED',
+  INCOMPLETE = 'INCOMPLETE',
 }
 
 export enum TransactionSource {

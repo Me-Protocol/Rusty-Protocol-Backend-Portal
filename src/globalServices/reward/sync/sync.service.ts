@@ -171,7 +171,7 @@ export class SyncRewardService {
 
   // findOne registry by userId
   async findOneRegistryByUserId(userId: string, rewardId: string) {
-    return this.rewardRegistryRepo.findOne({
+    return await this.rewardRegistryRepo.findOne({
       where: {
         userId,
         rewardId,
@@ -473,9 +473,11 @@ export class SyncRewardService {
 
         registryHistory.balance = registry.balance;
       }
+    } else {
+      registry.balance = 0;
     }
 
-    return this.registryHistoryRepo.save(registryHistory);
+    return await this.registryHistoryRepo.save(registryHistory);
   }
 
   async checkActiveBatch(brandId: string, rewardId: string) {

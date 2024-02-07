@@ -215,7 +215,7 @@ export class OrderService {
         status: StatusType.PROCESSING,
         taskId: Not(IsNull()),
       },
-      relations: ['coupon'],
+      relations: ['coupon', 'user'],
     });
   }
 

@@ -42,6 +42,7 @@ import {
 import { RUNTIME_URL } from '@src/config/env.config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BillerService } from '@src/globalServices/biller/biller.service';
+import { ethers } from 'ethers';
 
 @Injectable()
 export class OrderManagementService {
@@ -358,6 +359,7 @@ export class OrderManagementService {
   async checkOrderStatus() {
     try {
       const pendingOrders = await this.orderService.getPendingOrders();
+      console.log(pendingOrders.length);
 
       if (pendingOrders.length > 0) {
         for (const order of pendingOrders) {
@@ -459,7 +461,7 @@ export class OrderManagementService {
                 })}
              `;
 
-            await this.notificationService.createNotification(notification);
+            // await this.notificationService.createNotification(notification);
 
             //   balance: registry.balance,
             //   description,
@@ -469,18 +471,21 @@ export class OrderManagementService {
 
             // create history
 
-            const registry = await this.syncService.findOneRegistryByUserId(
-              order.userId,
-              reward.id,
-            );
-
-            console.log(registry, 'registry');
+            const registry =
+              await this.syncService.findOneRegistryByEmailIdentifier(
+                order.user.email,
+                reward.id,
+              );
 
             const history = new RegistryHistory();
             history.rewardRegistryId = registry.id;
             history.amount = order.points;
             history.description = `Redeem ${offer.name} from ${offer.brand.name}`;
             history.transactionType = TransactionsType.DEBIT;
+            history.balance =
+              balance?.data?.result === '0x0'
+                ? 0
+                : Number(ethers.utils.formatEther(balance.data.result) ?? 0);
 
             await this.syncService.saveRegistryHistory(history);
 
@@ -507,16 +512,6 @@ export class OrderManagementService {
 
             const isExternalOffer = offer.rewardId !== order.redeemRewardId;
 
-            console.log(customer, 'Customer');
-            const totalCustomerRedeemed =
-              Number(customer?.totalRedeemed ?? 0) + Number(order.points);
-
-            customer.totalRedeemed = Number(totalCustomerRedeemed.toFixed(0));
-            Number(customer.totalRedeemed ?? 0) + Number(order.points);
-            customer.totalRedemptionAmount =
-              Number(customer?.totalRedemptionAmount ?? 0) +
-              Number(order.points);
-
             if (isExternalOffer) {
               const totalCustomerExternalRedeemed =
                 Number(customer?.totalExternalRedeemed ?? 0) +
@@ -528,6 +523,15 @@ export class OrderManagementService {
               customer.totalExternalRedemptionAmount =
                 Number(customer?.totalExternalRedemptionAmount ?? 0) +
                 Number(order.points);
+            } else {
+              const totalCustomerRedeemed =
+                Number(customer?.totalRedeemed ?? 0) + Number(order.points);
+
+              customer.totalRedeemed = Number(totalCustomerRedeemed.toFixed(0));
+              Number(customer.totalRedeemed ?? 0) + Number(order.points);
+              customer.totalRedemptionAmount =
+                Number(customer?.totalRedemptionAmount ?? 0) +
+                Number(order.points);
             }
 
             await this.customerService.save(customer);
@@ -537,26 +541,25 @@ export class OrderManagementService {
               customer.userId,
             );
 
-            const totalBrandCustomerRedeemed =
-              Number(brandCustomer?.totalRedeemed ?? 0) + Number(order.points);
-
-            brandCustomer.totalRedeemed = Number(
-              totalBrandCustomerRedeemed.toFixed(0),
-            );
-            brandCustomer.totalRedemptionAmount =
-              Number(brandCustomer?.totalRedemptionAmount ?? 0) +
-              Number(order.points);
-
             if (isExternalOffer) {
               const totalBrandCustomerExternalRedeemed =
-                Number(brandCustomer?.totalExternalRedeemed ?? 0) +
-                Number(order.points);
+                Number(brandCustomer?.totalExternalRedeemed ?? 0) + 1;
 
               brandCustomer.totalExternalRedeemed = Number(
                 totalBrandCustomerExternalRedeemed.toFixed(0),
               );
               brandCustomer.totalExternalRedemptionAmount =
                 Number(brandCustomer?.totalExternalRedemptionAmount ?? 0) +
+                Number(order.points);
+            } else {
+              const totalBrandCustomerRedeemed =
+                Number(brandCustomer?.totalRedeemed ?? 0) + 1;
+
+              brandCustomer.totalRedeemed = Number(
+                totalBrandCustomerRedeemed.toFixed(0),
+              );
+              brandCustomer.totalRedemptionAmount =
+                Number(brandCustomer?.totalRedemptionAmount ?? 0) +
                 Number(order.points);
             }
 
@@ -606,6 +609,17 @@ export class OrderManagementService {
               `;
 
             await this.notificationService.createNotification(notification);
+          } else {
+            if (order.retries > 3) {
+              order.status = StatusType.INCOMPLETE;
+
+              await this.orderService.saveOrder(order);
+
+              console.log(order.status);
+            }
+
+            order.retries = order.retries + 1;
+            await this.orderService.saveOrder(order);
           }
         }
       }

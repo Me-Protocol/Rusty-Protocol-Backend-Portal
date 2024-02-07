@@ -383,6 +383,7 @@ export class BrandService {
     return await this.brandCustomerRepo.findOne({
       where: {
         brandId,
+        email,
       },
       relations: ['brand'],
     });
@@ -393,13 +394,30 @@ export class BrandService {
   }
 
   async getBrandCustomer(brandId: string, userId: string) {
-    return await this.brandCustomerRepo.findOne({
+    const customer = await this.brandCustomerRepo.findOne({
       where: {
         brandId,
         userId,
       },
       relations: ['brand'],
     });
+
+    if (!customer) {
+      const user = await this.userRepo.findOne({
+        where: {
+          id: userId,
+        },
+      });
+
+      return await this.createBrandCustomer({
+        email: user?.email,
+        name: user?.customer?.name,
+        phone: user?.phone,
+        brandId,
+      });
+    }
+
+    return customer;
   }
 
   async getBrandCustomerByUserId(userId: string) {
