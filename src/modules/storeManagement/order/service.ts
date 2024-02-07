@@ -285,6 +285,7 @@ export class OrderManagementService {
 
       return order;
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
@@ -353,7 +354,7 @@ export class OrderManagementService {
     }
   }
 
-  @Cron(CronExpression.EVERY_5_SECONDS)
+  // @Cron(CronExpression.EVERY_SECOND)
   async checkOrderStatus() {
     const pendingOrders = await this.orderService.getPendingOrders();
 
@@ -395,6 +396,8 @@ export class OrderManagementService {
           }
 
           const reward = await this.rewardService.findOneById(order.rewardId);
+
+          console.log(reward);
 
           const balance = await get_user_reward_balance_with_url(
             {
@@ -470,6 +473,8 @@ export class OrderManagementService {
             reward.id,
           );
 
+          console.log(registry, 'registry');
+
           const history = new RegistryHistory();
           history.rewardRegistryId = registry.id;
           history.amount = order.points;
@@ -535,6 +540,8 @@ export class OrderManagementService {
               Number(brandCustomer.totalExternalRedemptionAmount ?? 0) +
               Number(order.points);
           }
+
+          console.log(brandCustomer, 'Updated brandCustomer');
 
           await this.brandService.saveBrandCustomer(brandCustomer);
         } else if (status === 'failed') {
