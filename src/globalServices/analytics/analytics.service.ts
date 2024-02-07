@@ -78,8 +78,11 @@ export class AnalyticsService {
       .createQueryBuilder('order')
       .select('DISTINCT order.userId', 'userId')
       .innerJoin('order.brand', 'brand')
+      .innerJoin('order.offer', 'offer')
+      .innerJoin('order.reward', 'reward')
       .where('order.createdAt BETWEEN :start AND :end', { start, end })
-      .andWhere('brand.id = :brandId', { brandId })
+      // where reward.brandId = :brandId
+      .andWhere('reward.brandId = :brandId', { brandId })
       .getRawMany();
 
     return {
@@ -96,7 +99,7 @@ export class AnalyticsService {
     end?: Date;
     brandId: string;
   }) {
-    let whereCondition: any = {
+    const whereCondition: any = {
       brandId,
       identifierType: In([SyncIdentifierType.EMAIL, SyncIdentifierType.PHONE]),
     };
