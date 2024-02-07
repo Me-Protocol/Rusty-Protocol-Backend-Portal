@@ -310,6 +310,10 @@ export class OrderManagementService {
         throw new Error('Order not found');
       }
 
+      if (order.status === StatusType.INCOMPLETE) {
+        throw new Error('Order has been marked as incomplete');
+      }
+
       order.spendData = spendData;
       order.taskId = taskId;
       order.verifier = verifier;
@@ -343,23 +347,10 @@ export class OrderManagementService {
     }
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
-  async resolveIncompleteOrders() {
-    const orders = await this.orderService.getOrderWithoutTaskId();
-
-    if (orders.length > 0) {
-      for (const order of orders) {
-        order.status = StatusType.ABANDONED;
-        await this.orderService.saveOrder(order);
-      }
-    }
-  }
-
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron(CronExpression.EVERY_5_SECONDS)
   async checkOrderStatus() {
     try {
       const pendingOrders = await this.orderService.getPendingOrders();
-      console.log(pendingOrders.length);
 
       if (pendingOrders.length > 0) {
         for (const order of pendingOrders) {
@@ -529,6 +520,7 @@ export class OrderManagementService {
 
               customer.totalRedeemed = Number(totalCustomerRedeemed.toFixed(0));
               Number(customer.totalRedeemed ?? 0) + Number(order.points);
+
               customer.totalRedemptionAmount =
                 Number(customer?.totalRedemptionAmount ?? 0) +
                 Number(order.points);
@@ -562,8 +554,6 @@ export class OrderManagementService {
                 Number(brandCustomer?.totalRedemptionAmount ?? 0) +
                 Number(order.points);
             }
-
-            console.log(brandCustomer, 'Updated brandCustomer');
 
             await this.brandService.saveBrandCustomer(brandCustomer);
           } else if (status === 'failed') {
@@ -610,7 +600,7 @@ export class OrderManagementService {
 
             await this.notificationService.createNotification(notification);
           } else {
-            if (order.retries > 3) {
+            if (order.retries > 4) {
               order.status = StatusType.INCOMPLETE;
 
               await this.orderService.saveOrder(order);
@@ -618,6 +608,7 @@ export class OrderManagementService {
               console.log(order.status);
             }
 
+            order.status = StatusType.PROCESSING;
             order.retries = order.retries + 1;
             await this.orderService.saveOrder(order);
           }

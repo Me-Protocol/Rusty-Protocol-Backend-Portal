@@ -9,6 +9,7 @@ export enum StatusType {
   FAILED = 'FAILED',
   ABANDONED = 'ABANDONED',
   INCOMPLETE = 'INCOMPLETE',
+  PENDING = 'PENDING',
 }
 
 export enum TransactionSource {
