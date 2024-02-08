@@ -30,4 +30,31 @@ export class FilterCustomerDto {
   sort: {
     createdAt: FindOptionsOrderValue;
   };
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  search: string;
+}
+
+export class FilterActivePendingCustomerDto {
+  @ApiProperty({
+    type: 'enum',
+    enum: ['active', 'pending'],
+  })
+  @IsOptional()
+  @IsEnum(['active', 'pending'], {
+    message: 'Type is invalid',
+  })
+  type: 'active' | 'pending';
+
+  @ApiProperty()
+  @IsString()
+  page: number;
+
+  @ApiProperty()
+  @IsString()
+  limit: number;
+
+  brandId: string;
 }

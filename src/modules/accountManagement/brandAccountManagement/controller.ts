@@ -25,7 +25,10 @@ import { FilterBrandDto } from './dto/FilterBrandDto.dto';
 import { UpdateMemberDto } from './dto/UpdateMemberDto.dto';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { CreateMemberDto } from './dto/CreateMemberDto.dto';
-import { FilterCustomerDto } from './dto/FilterCustomerDto.dto';
+import {
+  FilterActivePendingCustomerDto,
+  FilterCustomerDto,
+} from './dto/FilterCustomerDto.dto';
 import { OnboardBrandDto } from './dto/OnboardBrandDto.dto';
 import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
@@ -158,6 +161,20 @@ export class BrandManagementController {
     body.brandId = user.brand.id;
 
     return await this.brandAccountManagementService.getCustomers(body);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Get('customers/all/pending-active')
+  async getPaginatedActivePendingBrandCustomers(
+    @Req() req: any,
+    @Query(ValidationPipe) body: FilterActivePendingCustomerDto,
+  ) {
+    const user = req.user as User;
+    body.brandId = user.brand.id;
+
+    return await this.brandAccountManagementService.getPaginatedActivePendingBrandCustomers(
+      body,
+    );
   }
 
   @UseGuards(BrandJwtStrategy)

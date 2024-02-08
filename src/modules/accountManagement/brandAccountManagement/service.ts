@@ -14,7 +14,10 @@ import { BrandMember } from '@src/globalServices/brand/entities/brand_member.ent
 import { MailService } from '@src/globalServices/mail/mail.service';
 import { emailButton } from '@src/utils/helpers/email';
 import { CustomerService } from '@src/globalServices/customer/customer.service';
-import { FilterCustomerDto } from './dto/FilterCustomerDto.dto';
+import {
+  FilterActivePendingCustomerDto,
+  FilterCustomerDto,
+} from './dto/FilterCustomerDto.dto';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { BigNumber, ethers } from 'ethers';
 import {
@@ -71,13 +74,13 @@ export class BrandAccountManagementService {
 
   async getAllFilteredBrands(query: FilterBrandDto) {
     try {
-      const { categoryId, page, limit, order } = query;
+      const { categoryId, page, limit, order, search } = query;
       const brands = await this.brandService.getAllFilteredBrands({
         categoryId,
         page,
         limit,
-
         order,
+        search,
       });
       return brands;
     } catch (error) {
@@ -400,6 +403,23 @@ export class BrandAccountManagementService {
         query.limit,
         query.filterBy,
         query.sort,
+        query.search,
+      );
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
+    }
+  }
+
+  async getPaginatedActivePendingBrandCustomers(
+    query: FilterActivePendingCustomerDto,
+  ) {
+    try {
+      return await this.brandService.getPaginatedActivePendingBrandCustomers(
+        query,
       );
     } catch (error) {
       console.log(error);

@@ -206,11 +206,13 @@ export class BrandService {
     page,
     limit,
     order,
+    search,
   }: {
     categoryId: string;
     page: number;
     limit: number;
     order: string;
+    search: string;
   }) {
     const brandQuery = this.brandRepo
       .createQueryBuilder('brand')
@@ -233,6 +235,12 @@ export class BrandService {
         `brand.${order.split(':')[0]}`,
         order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
       );
+    }
+
+    if (search) {
+      brandQuery.andWhere('brand.name LIKE :search LIKE :search', {
+        search: `%${search}%`,
+      });
     }
 
     brandQuery.skip((page - 1) * limit).take(limit);
@@ -311,6 +319,79 @@ export class BrandService {
     }
 
     return { emailUsers, phoneUsers };
+  }
+
+  async getPaginatedActivePendingBrandCustomers({
+    page,
+    limit,
+    brandId,
+    type,
+  }: {
+    page: number;
+    limit: number;
+    brandId: string;
+    type: 'pending' | 'active';
+  }) {
+    const whereCondition: any = {
+      brandId,
+      identifierType: In([SyncIdentifierType.EMAIL, SyncIdentifierType.PHONE]),
+    };
+
+    const brandCustomers = await this.brandCustomerRepo.find({
+      where: whereCondition,
+      relations: ['brand'],
+      skip: page > 1 ? (page - 1) * limit : 0,
+      take: limit,
+    });
+
+    const allBrandCustomers = await this.brandCustomerRepo.find({
+      where: whereCondition,
+      relations: ['brand'],
+    });
+
+    const identifiersByType: Record<SyncIdentifierType, string[]> = {
+      [SyncIdentifierType.EMAIL]: [],
+      [SyncIdentifierType.PHONE]: [],
+    };
+
+    for (const brandCustomer of brandCustomers) {
+      if (brandCustomer.identifierType && brandCustomer.identifier) {
+        identifiersByType[brandCustomer.identifierType].push(
+          brandCustomer.identifier,
+        );
+      }
+    }
+
+    const activeUsers = [];
+    const pendingUsers = [];
+    let activeTotal = 0;
+    let pendingTotal = 0;
+
+    for (const brandCustomer of brandCustomers) {
+      if (brandCustomer.identifierType && brandCustomer.identifier) {
+        const user = await this.userRepo.findOne({
+          where: {
+            [brandCustomer.identifierType]: brandCustomer.identifier,
+            userType: UserAppType.USER,
+          },
+        });
+
+        if (user) {
+          activeUsers.push(user);
+          activeTotal++;
+        } else {
+          pendingUsers.push(brandCustomer);
+          pendingTotal++;
+        }
+      }
+    }
+
+    return {
+      data: type === 'pending' ? pendingUsers : activeUsers,
+      total: type === 'pending' ? pendingTotal : activeTotal,
+      nextPage: activeUsers.length > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
+    };
   }
 
   async getActiveBrandCustomer(
@@ -439,6 +520,7 @@ export class BrandService {
     sort?: {
       createdAt: FindOptionsOrderValue;
     },
+    search?: string,
   ) {
     const brandCustomerQuery = this.brandCustomerRepo
       .createQueryBuilder('brandCustomer')
@@ -477,6 +559,15 @@ export class BrandService {
       } else if (sort.createdAt === 'DESC') {
         brandCustomerQuery.orderBy('brandCustomer.createdAt', 'DESC');
       }
+    }
+
+    if (search) {
+      brandCustomerQuery.andWhere(
+        'brandCustomer.name LIKE :search OR brandCustomer.email LIKE :search OR brandCustomer.phone LIKE :search',
+        {
+          search: `%${search}%`,
+        },
+      );
     }
 
     brandCustomerQuery.skip((page - 1) * limit).take(limit);
