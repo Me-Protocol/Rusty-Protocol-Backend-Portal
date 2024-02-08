@@ -315,13 +315,33 @@ export class FiatWalletService {
         amount > meCreditsInDollars ? meCreditsInDollars : amount;
       const meCreditsUsed = meCreditsUsedInDollar / meTokenValue;
 
-      wallet.meCredits = wallet.meCredits - meCreditsUsed;
-
-      await this.walletRepo.save(wallet);
-
-      return amountToPay;
+      return {
+        amountToPay,
+        meCreditsUsed,
+      };
     }
 
-    return amount;
+    return {
+      amountToPay: amount,
+      meCreditsUsed: 0,
+    };
+  }
+
+  async debitMeCredits({
+    walletId,
+    amount,
+  }: {
+    walletId: string;
+    amount: number;
+  }) {
+    const wallet = await this.walletRepo.findOne({
+      where: {
+        id: walletId,
+      },
+    });
+
+    wallet.meCredits = Number(wallet.meCredits) - Number(amount);
+
+    return await this.walletRepo.save(wallet);
   }
 }

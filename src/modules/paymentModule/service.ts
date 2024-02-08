@@ -109,7 +109,10 @@ export class PaymentModuleService {
         throw new HttpException('Invoice already paid', 400);
       }
 
-      let amount: number;
+      let amount = {
+        amountToPay: invoice.total,
+        meCreditsUsed: 0,
+      };
 
       const wallet = await this.walletService.getWalletByBrandId(
         invoice.brandId,
@@ -124,7 +127,7 @@ export class PaymentModuleService {
         amount = newAmount;
       }
 
-      if (amount > 0) {
+      if (amount.amountToPay > 0) {
         const paymentMethod =
           await this.paymentService.getPaymentMethodByStripePaymentMethodId(
             paymentMethodId,
@@ -135,7 +138,7 @@ export class PaymentModuleService {
         }
 
         await this.paymentService.chargePaymentMethod({
-          amount,
+          amount: amount.amountToPay,
           paymentMethodId,
           wallet,
           narration: `Payment for invoice ${invoice.invoiceCode}`,
@@ -143,6 +146,13 @@ export class PaymentModuleService {
           paymentMethod: PaymentMethodEnum.STRIPE,
           appliedMeCredit: useMeCredit,
         });
+
+        if (amount.meCreditsUsed > 0) {
+          await this.walletService.debitMeCredits({
+            walletId: wallet.id,
+            amount: amount.meCreditsUsed,
+          });
+        }
 
         invoice.isPaid = true;
         await this.billerService.saveInvoice(invoice);
@@ -152,7 +162,7 @@ export class PaymentModuleService {
         // Dont debit brand account
 
         const transaction = new Transaction();
-        transaction.amount = amount;
+        transaction.amount = amount.amountToPay;
         transaction.balance = wallet.balance;
         transaction.status = StatusType.SUCCEDDED;
         transaction.transactionType = TransactionsType.DEBIT;
@@ -218,19 +228,25 @@ export class PaymentModuleService {
         throw new NotFoundException('Plan not found');
       }
 
-      let totalPaymentAmount = liquidityAmount + plan.monthlyAmount;
-      totalPaymentAmount = +totalPaymentAmount.toFixed(2);
+      let totalPaymentAmount = {
+        amountToPay: liquidityAmount + plan.monthlyAmount,
+        meCreditsUsed: 0,
+      };
+      totalPaymentAmount = {
+        ...totalPaymentAmount,
+        amountToPay: +totalPaymentAmount.amountToPay.toFixed(2),
+      };
 
       if (useMeCredit) {
         const newAmount = await this.walletService.applyMeCredit({
           walletId: wallet.id,
-          amount: totalPaymentAmount,
+          amount: totalPaymentAmount.amountToPay,
         });
 
         totalPaymentAmount = newAmount;
       }
 
-      if (totalPaymentAmount > 0) {
+      if (totalPaymentAmount.amountToPay > 0) {
         const paymentMethod =
           await this.paymentService.getPaymentMethodByStripePaymentMethodId(
             paymentMethodId,
@@ -241,7 +257,7 @@ export class PaymentModuleService {
         }
 
         await this.paymentService.chargePaymentMethod({
-          amount: totalPaymentAmount,
+          amount: totalPaymentAmount.amountToPay,
           paymentMethodId,
           wallet,
           narration: `Payment for ${plan.name} subscription`,
@@ -249,6 +265,13 @@ export class PaymentModuleService {
           paymentMethod: PaymentMethodEnum.STRIPE,
           appliedMeCredit: useMeCredit,
         });
+
+        if (totalPaymentAmount.meCreditsUsed > 0) {
+          await this.walletService.debitMeCredits({
+            walletId: wallet.id,
+            amount: totalPaymentAmount.meCreditsUsed,
+          });
+        }
 
         await this.brandService.subscribeBrandToPlan(brandId, planId);
 
@@ -259,7 +282,7 @@ export class PaymentModuleService {
         await this.brandService.subscribeBrandToPlan(brandId, planId);
 
         const transaction = new Transaction();
-        transaction.amount = liquidityAmount + plan.monthlyAmount;
+        transaction.amount = totalPaymentAmount.amountToPay;
         transaction.balance = wallet.balance;
         transaction.status = StatusType.SUCCEDDED;
         transaction.transactionType = TransactionsType.DEBIT;

@@ -39,6 +39,7 @@ import {
 import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
 import { FiatWalletService } from '../fiatWallet/fiatWallet.service';
 import { Transaction } from '../fiatWallet/entities/transaction.entity';
+import { logger } from '../logger/logger.service';
 
 @Injectable()
 export class BrandService {
@@ -446,7 +447,7 @@ export class BrandService {
 
     if (filterBy === FilterBrandCustomer.MOST_ACTIVE) {
       // where customer redeemed greater than 2
-      brandCustomerQuery.andWhere('brandCustomer.totalRedeemed > 2');
+      // brandCustomerQuery.andWhere('brandCustomer.totalRedeemed > 2');
       brandCustomerQuery.orderBy('brandCustomer.totalRedeemed', 'DESC');
     }
 
@@ -580,73 +581,89 @@ export class BrandService {
     paymentMethodId: string,
     useMeCredit: boolean,
   ) {
-    const brand = await this.getBrandById(brandId);
-    if (!brand) {
-      throw new NotFoundException('Brand not found');
-    }
-
-    const plan = await this.getBrandSubscriptionPlanById(planId);
-    if (!plan) {
-      throw new NotFoundException('Plan not found');
-    }
-
-    const wallet = await this.walletRepo.findOne({
-      where: {
-        brandId,
-      },
-    });
-
-    let amount = plan.monthlyAmount;
-
-    if (useMeCredit) {
-      const newAmount = await this.walletService.applyMeCredit({
-        walletId: wallet.id,
-        amount,
-      });
-
-      amount = newAmount;
-    }
-
-    if (amount > 0) {
-      const paymentMethod =
-        await this.paymentService.getPaymentMethodByStripePaymentMethodId(
-          paymentMethodId,
-        );
-
-      if (!paymentMethod?.stripePaymentMethodId) {
-        throw new HttpException('Please link your card first.', 400, {});
+    try {
+      const brand = await this.getBrandById(brandId);
+      if (!brand) {
+        throw new NotFoundException('Brand not found');
       }
 
-      await this.paymentService.chargePaymentMethod({
-        amount,
-        paymentMethodId,
-        wallet,
-        narration: `Payment for ${plan.name} subscription`,
-        source: TransactionSource.SUBSCRIPTION,
-        paymentMethod: PaymentMethodEnum.STRIPE,
-        appliedMeCredit: useMeCredit,
+      const plan = await this.getBrandSubscriptionPlanById(planId);
+      if (!plan) {
+        throw new NotFoundException('Plan not found');
+      }
+
+      const wallet = await this.walletRepo.findOne({
+        where: {
+          brandId,
+        },
       });
 
-      await this.subscribeBrandToPlan(brandId, planId);
+      let amount = {
+        amountToPay: plan.monthlyAmount,
+        meCreditsUsed: 0,
+      };
 
-      return 'ok';
-    } else {
-      await this.subscribeBrandToPlan(brandId, planId);
+      if (useMeCredit) {
+        const newAmount = await this.walletService.applyMeCredit({
+          walletId: wallet.id,
+          amount: amount.amountToPay,
+        });
 
-      const transaction = new Transaction();
-      transaction.amount = amount;
-      transaction.balance = wallet.balance;
-      transaction.status = StatusType.SUCCEDDED;
-      transaction.transactionType = TransactionsType.DEBIT;
-      transaction.narration = `Payment for ${plan.name} subscription`;
-      transaction.walletId = wallet.id;
-      transaction.paymentMethod = PaymentMethodEnum.ME_CREDIT;
-      transaction.source = TransactionSource.SUBSCRIPTION;
-      transaction.appliedMeCredit = true;
+        amount = newAmount;
+      }
 
-      await this.paymentService.createTransaction(transaction);
+      if (amount.amountToPay > 0) {
+        const paymentMethod =
+          await this.paymentService.getPaymentMethodByStripePaymentMethodId(
+            paymentMethodId,
+          );
 
-      return 'ok';
+        if (!paymentMethod?.stripePaymentMethodId) {
+          throw new HttpException('Please link your card first.', 400, {});
+        }
+
+        await this.paymentService.chargePaymentMethod({
+          amount: amount.amountToPay,
+          paymentMethodId,
+          wallet,
+          narration: `Payment for ${plan.name} subscription`,
+          source: TransactionSource.SUBSCRIPTION,
+          paymentMethod: PaymentMethodEnum.STRIPE,
+          appliedMeCredit: useMeCredit,
+        });
+
+        if (amount.meCreditsUsed > 0) {
+          await this.walletService.debitMeCredits({
+            walletId: wallet.id,
+            amount: amount.meCreditsUsed,
+          });
+        }
+
+        await this.subscribeBrandToPlan(brandId, planId);
+
+        return 'ok';
+      } else {
+        await this.subscribeBrandToPlan(brandId, planId);
+
+        const transaction = new Transaction();
+        transaction.amount = amount.amountToPay;
+        transaction.balance = wallet.balance;
+        transaction.status = StatusType.SUCCEDDED;
+        transaction.transactionType = TransactionsType.DEBIT;
+        transaction.narration = `Payment for ${plan.name} subscription`;
+        transaction.walletId = wallet.id;
+        transaction.paymentMethod = PaymentMethodEnum.ME_CREDIT;
+        transaction.source = TransactionSource.SUBSCRIPTION;
+        transaction.appliedMeCredit = true;
+
+        await this.paymentService.createTransaction(transaction);
+
+        return 'ok';
+      }
+    } catch (error) {
+      console.log('error', error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
     }
   }
 
