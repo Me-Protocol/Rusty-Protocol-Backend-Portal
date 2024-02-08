@@ -40,6 +40,7 @@ import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
 import { FiatWalletService } from '../fiatWallet/fiatWallet.service';
 import { Transaction } from '../fiatWallet/entities/transaction.entity';
 import { logger } from '../logger/logger.service';
+import { Role } from '@src/utils/enums/Role';
 
 @Injectable()
 export class BrandService {
@@ -530,6 +531,18 @@ export class BrandService {
   }
 
   async removeBrandMember(brandMember: BrandMember) {
+    const user = await this.userRepo.findOne({
+      where: {
+        id: brandMember.userId,
+      },
+    });
+
+    if (user) {
+      user.role = Role.CUSTOMER;
+
+      await this.userRepo.save(user);
+    }
+
     return await this.brandMemberRepo.remove(brandMember);
   }
 

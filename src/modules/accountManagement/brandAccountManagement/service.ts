@@ -38,6 +38,7 @@ import { BrandRole } from '@src/utils/enums/BrandRole';
 import { onboard_brand_with_url } from '@developeruche/runtime-sdk';
 import { RUNTIME_URL } from '@src/config/env.config';
 import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
+import { Role } from '@src/utils/enums/Role';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -231,6 +232,9 @@ export class BrandAccountManagementService {
           };
         }
 
+        user.role = Role.BRAND_MEMBER;
+        await this.userService.saveUser(user);
+
         const brandMember = new BrandMember();
         brandMember.brandId = brandId;
         brandMember.name = name;
@@ -265,6 +269,7 @@ export class BrandAccountManagementService {
       newUser.email = email?.toLowerCase();
       newUser.username = email.split('@')[0].toLowerCase();
       newUser.twoFAType = TwoFAType.EMAIL;
+      newUser.role = Role.BRAND_MEMBER;
 
       const password = Math.random().toString(36).slice(-8);
 
