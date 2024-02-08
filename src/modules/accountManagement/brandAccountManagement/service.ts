@@ -39,6 +39,7 @@ import { onboard_brand_with_url } from '@developeruche/runtime-sdk';
 import { RUNTIME_URL } from '@src/config/env.config';
 import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
 import { Role } from '@src/utils/enums/Role';
+import { BrandUploadGateway } from './socket/brand-upload.gateway';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -50,6 +51,7 @@ export class BrandAccountManagementService {
     private readonly settingsService: SettingsService,
     private readonly costModuleManagementService: CostModuleManagementService,
     private eventEmitter: EventEmitter2,
+    private BrandUploadGateway: BrandUploadGateway,
   ) {}
 
   async updateBrand(body: UpdateBrandDto, brandId: string) {
@@ -517,6 +519,26 @@ export class BrandAccountManagementService {
       console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400);
+    }
+  }
+
+  async batchCreateBrandCustomers(body: CreateCustomerDto[]) {
+    const totalUsers = body.length;
+    let usersProcessed = 0;
+    for (const customer of body) {
+      try {
+        const brandCustomer = await this.brandService.createBrandCustomer({
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
+          brandId: customer.brandId,
+        });
+        usersProcessed++;
+        const progress = (usersProcessed / totalUsers) * 100;
+        this.BrandUploadGateway.sendProgress(customer.brandId, progress);
+      } catch (error) {
+        this.BrandUploadGateway.sendFailure(customer.brandId, error.message);
+      }
     }
   }
 
