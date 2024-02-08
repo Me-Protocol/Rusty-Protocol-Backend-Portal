@@ -31,6 +31,15 @@ import { TopupEventBlock } from './entities/topup_event_block.entity';
 import { isEmail } from 'class-validator';
 import { RewardService } from '../reward/reward.service';
 import { VoucherType } from '@src/utils/enums/VoucherType';
+import {
+  StatusType,
+  TransactionSource,
+  TransactionsType,
+} from '@src/utils/enums/Transactions';
+import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
+import { FiatWalletService } from '../fiatWallet/fiatWallet.service';
+import { Transaction } from '../fiatWallet/entities/transaction.entity';
+import { logger } from '../logger/logger.service';
 
 @Injectable()
 export class BrandService {
@@ -51,11 +60,14 @@ export class BrandService {
     private readonly eventEmitter: EventEmitter2,
     private readonly billerService: BillerService,
     private readonly paymentService: PaymentService,
+
     @InjectRepository(FiatWallet)
     private readonly walletRepo: Repository<FiatWallet>,
 
     @Inject(forwardRef(() => RewardService))
     private readonly rewardService: RewardService,
+
+    private readonly walletService: FiatWalletService,
   ) {}
 
   async create({ userId, name }: { userId: string; name: string }) {
@@ -372,6 +384,7 @@ export class BrandService {
     return await this.brandCustomerRepo.findOne({
       where: {
         brandId,
+        email,
       },
       relations: ['brand'],
     });
@@ -382,13 +395,30 @@ export class BrandService {
   }
 
   async getBrandCustomer(brandId: string, userId: string) {
-    return await this.brandCustomerRepo.findOne({
+    const customer = await this.brandCustomerRepo.findOne({
       where: {
         brandId,
         userId,
       },
       relations: ['brand'],
     });
+
+    if (!customer) {
+      const user = await this.userRepo.findOne({
+        where: {
+          id: userId,
+        },
+      });
+
+      return await this.createBrandCustomer({
+        email: user?.email,
+        name: user?.customer?.name,
+        phone: user?.phone,
+        brandId,
+      });
+    }
+
+    return customer;
   }
 
   async getBrandCustomerByUserId(userId: string) {
@@ -417,7 +447,7 @@ export class BrandService {
 
     if (filterBy === FilterBrandCustomer.MOST_ACTIVE) {
       // where customer redeemed greater than 2
-      brandCustomerQuery.andWhere('brandCustomer.totalRedeemed > 2');
+      // brandCustomerQuery.andWhere('brandCustomer.totalRedeemed > 2');
       brandCustomerQuery.orderBy('brandCustomer.totalRedeemed', 'DESC');
     }
 
@@ -528,49 +558,8 @@ export class BrandService {
     return await this.brandSubscriptionPlanRepo.findOne({ where: { id } });
   }
 
-  async subscribeBrandToPlan(
-    brandId: string,
-    planId: string,
-    paymentMethodId: string,
-    voucherCode: string,
-  ) {
+  async subscribeBrandToPlan(brandId: string, planId: string) {
     const brand = await this.getBrandById(brandId);
-    if (!brand) {
-      throw new NotFoundException('Brand not found');
-    }
-
-    const plan = await this.getBrandSubscriptionPlanById(planId);
-    if (!plan) {
-      throw new NotFoundException('Plan not found');
-    }
-
-    let amount: number;
-
-    if (voucherCode) {
-      const voucher = await this.billerService.getVoucherForUse({
-        voucherCode,
-        brandId,
-        planId,
-        type: VoucherType.SUBSCRIPTION,
-      });
-
-      amount = (plan.monthlyAmount - voucher.discount) * 100;
-    }
-
-    amount = plan.monthlyAmount * 100;
-
-    const wallet = await this.walletRepo.findOne({
-      where: {
-        brandId,
-      },
-    });
-
-    await this.paymentService.chargePaymentMethod({
-      amount,
-      paymentMethodId,
-      wallet,
-      narration: `Payment for ${plan.name} subscription`,
-    });
 
     await this.billerService.getActiveInvoiceOrCreate(brandId);
 
@@ -584,6 +573,98 @@ export class BrandService {
     brand.isPlanActive = true;
 
     return await this.brandRepo.save(brand);
+  }
+
+  async subscribePlan(
+    brandId: string,
+    planId: string,
+    paymentMethodId: string,
+    useMeCredit: boolean,
+  ) {
+    try {
+      const brand = await this.getBrandById(brandId);
+      if (!brand) {
+        throw new NotFoundException('Brand not found');
+      }
+
+      const plan = await this.getBrandSubscriptionPlanById(planId);
+      if (!plan) {
+        throw new NotFoundException('Plan not found');
+      }
+
+      const wallet = await this.walletRepo.findOne({
+        where: {
+          brandId,
+        },
+      });
+
+      let amount = {
+        amountToPay: plan.monthlyAmount,
+        meCreditsUsed: 0,
+      };
+
+      if (useMeCredit) {
+        const newAmount = await this.walletService.applyMeCredit({
+          walletId: wallet.id,
+          amount: amount.amountToPay,
+        });
+
+        amount = newAmount;
+      }
+
+      if (amount.amountToPay > 0) {
+        const paymentMethod =
+          await this.paymentService.getPaymentMethodByStripePaymentMethodId(
+            paymentMethodId,
+          );
+
+        if (!paymentMethod?.stripePaymentMethodId) {
+          throw new HttpException('Please link your card first.', 400, {});
+        }
+
+        await this.paymentService.chargePaymentMethod({
+          amount: amount.amountToPay,
+          paymentMethodId,
+          wallet,
+          narration: `Payment for ${plan.name} subscription`,
+          source: TransactionSource.SUBSCRIPTION,
+          paymentMethod: PaymentMethodEnum.STRIPE,
+          appliedMeCredit: useMeCredit,
+        });
+
+        if (amount.meCreditsUsed > 0) {
+          await this.walletService.debitMeCredits({
+            walletId: wallet.id,
+            amount: amount.meCreditsUsed,
+          });
+        }
+
+        await this.subscribeBrandToPlan(brandId, planId);
+
+        return 'ok';
+      } else {
+        await this.subscribeBrandToPlan(brandId, planId);
+
+        const transaction = new Transaction();
+        transaction.amount = amount.amountToPay;
+        transaction.balance = wallet.balance;
+        transaction.status = StatusType.SUCCEDDED;
+        transaction.transactionType = TransactionsType.DEBIT;
+        transaction.narration = `Payment for ${plan.name} subscription`;
+        transaction.walletId = wallet.id;
+        transaction.paymentMethod = PaymentMethodEnum.ME_CREDIT;
+        transaction.source = TransactionSource.SUBSCRIPTION;
+        transaction.appliedMeCredit = true;
+
+        await this.paymentService.createTransaction(transaction);
+
+        return 'ok';
+      }
+    } catch (error) {
+      console.log('error', error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
   }
 
   async getLastTopupEventBlock() {

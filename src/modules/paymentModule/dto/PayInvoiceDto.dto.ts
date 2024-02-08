@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class PayInvoiceDto {
   @ApiProperty()
@@ -10,10 +10,11 @@ export class PayInvoiceDto {
   @IsString()
   invoiceId: string;
 
-  @ApiProperty()
-  @IsOptional()
-  @IsString()
-  voucherCode: string;
+  @ApiProperty({
+    type: 'boolean',
+  })
+  @IsBoolean()
+  useMeCredit: boolean;
 
   brandId: string;
 }

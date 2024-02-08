@@ -1,13 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { BrandService } from './brand.service';
 import { BrandSubServices } from '@src/utils/enums/BrandSubServices';
 import { SettingsService } from '../settings/settings.service';
-import { Brand } from './entities/brand.entity';
 
 @Injectable()
 export class BrandSubscriptionService {
   constructor(
+    @Inject(forwardRef(() => BrandService))
     private readonly brandService: BrandService,
+
     private readonly settingsService: SettingsService,
   ) {}
 

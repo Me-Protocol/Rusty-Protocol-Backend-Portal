@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaymentService } from '@src/globalServices/fiatWallet/payment.service';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { logger } from '@src/globalServices/logger/logger.service';
@@ -18,6 +18,13 @@ import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { BigNumber, ethers } from 'ethers';
 import { VoucherType } from '@src/utils/enums/VoucherType';
 import { calculateDiscount } from '@src/utils/helpers/calculateDiscount';
+import {
+  StatusType,
+  TransactionSource,
+  TransactionsType,
+} from '@src/utils/enums/Transactions';
+import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
+import { Transaction } from '@src/globalServices/fiatWallet/entities/transaction.entity';
 
 @Injectable()
 export class PaymentModuleService {
@@ -42,6 +49,18 @@ export class PaymentModuleService {
       logger.error(error);
       throw new HttpException(error.message, 400);
     }
+  }
+
+  async getMeCredits(brandId: string) {
+    const wallet = await this.walletService.getWalletByBrandId(brandId);
+    const settings = await this.settingsService.getPublicSettings();
+
+    const meCreditsInDollars = wallet.meCredits * settings.meTokenValue;
+
+    return {
+      meCredits: wallet.meCredits,
+      meCreditsInDollars,
+    };
   }
 
   async getPaymentMethods(brandId: string) {
@@ -73,7 +92,7 @@ export class PaymentModuleService {
     invoiceId: string,
     brandId: string,
     paymentMethodId: string,
-    voucherCode: string,
+    useMeCredit: boolean,
   ) {
     try {
       const invoice = await this.billerService.getInvoiceById(invoiceId);
@@ -90,35 +109,76 @@ export class PaymentModuleService {
         throw new HttpException('Invoice already paid', 400);
       }
 
-      let amount: number;
-
-      if (voucherCode) {
-        const voucher = await this.billerService.getVoucherForUse({
-          voucherCode,
-          brandId,
-          type: VoucherType.METOKEN_CREDIT,
-        });
-
-        amount = calculateDiscount(voucher.discount, invoice.total) * 100;
-      }
-
-      amount = invoice.total * 100;
+      let amount = {
+        amountToPay: invoice.total,
+        meCreditsUsed: 0,
+      };
 
       const wallet = await this.walletService.getWalletByBrandId(
         invoice.brandId,
       );
 
-      const payment = await this.paymentService.chargePaymentMethod({
-        amount: amount,
-        paymentMethodId,
-        wallet,
-        narration: `Payment for invoice ${invoice.invoiceCode}`,
-      });
+      if (useMeCredit) {
+        const newAmount = await this.walletService.applyMeCredit({
+          walletId: wallet.id,
+          amount: invoice.total,
+        });
 
-      invoice.isPaid = true;
-      await this.billerService.saveInvoice(invoice);
+        amount = newAmount;
+      }
 
-      return payment;
+      if (amount.amountToPay > 0) {
+        const paymentMethod =
+          await this.paymentService.getPaymentMethodByStripePaymentMethodId(
+            paymentMethodId,
+          );
+
+        if (!paymentMethod?.stripePaymentMethodId) {
+          throw new HttpException('Please link your card first.', 400, {});
+        }
+
+        await this.paymentService.chargePaymentMethod({
+          amount: amount.amountToPay,
+          paymentMethodId,
+          wallet,
+          narration: `Payment for invoice ${invoice.invoiceCode}`,
+          source: TransactionSource.INVOICE,
+          paymentMethod: PaymentMethodEnum.STRIPE,
+          appliedMeCredit: useMeCredit,
+        });
+
+        if (amount.meCreditsUsed > 0) {
+          await this.walletService.debitMeCredits({
+            walletId: wallet.id,
+            amount: amount.meCreditsUsed,
+          });
+        }
+
+        invoice.isPaid = true;
+        await this.billerService.saveInvoice(invoice);
+
+        return 'ok';
+      } else {
+        // Dont debit brand account
+
+        const transaction = new Transaction();
+        transaction.amount = amount.amountToPay;
+        transaction.balance = wallet.balance;
+        transaction.status = StatusType.SUCCEDDED;
+        transaction.transactionType = TransactionsType.DEBIT;
+        transaction.narration = `Payment for invoice ${invoice.invoiceCode}`;
+        transaction.walletId = wallet.id;
+        transaction.paymentMethod = PaymentMethodEnum.ME_CREDIT;
+        transaction.source = TransactionSource.SUBSCRIPTION;
+        transaction.appliedMeCredit = true;
+
+        await this.paymentService.createTransaction(transaction);
+
+        invoice.isPaid = true;
+        await this.billerService.saveInvoice(invoice);
+
+        return 'ok';
+      }
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400);
@@ -137,14 +197,109 @@ export class PaymentModuleService {
     brandId: string,
     planId: string,
     paymentMethodId: string,
-    voucherCode: string,
+    useMeCredit: boolean,
   ) {
-    return await this.brandService.subscribeBrandToPlan(
+    return await this.brandService.subscribePlan(
       brandId,
       planId,
       paymentMethodId,
-      voucherCode,
+      useMeCredit,
     );
+  }
+
+  async brandInitialOnboarding({
+    brandId,
+    liquidityAmount,
+    paymentMethodId,
+    useMeCredit,
+    planId,
+  }: {
+    brandId: string;
+    liquidityAmount: number;
+    paymentMethodId: string;
+    useMeCredit: boolean;
+    planId: string;
+  }) {
+    try {
+      const wallet = await this.walletService.getWalletByBrandId(brandId);
+
+      const plan = await this.brandService.getBrandSubscriptionPlanById(planId);
+      if (!plan) {
+        throw new NotFoundException('Plan not found');
+      }
+
+      let totalPaymentAmount = {
+        amountToPay: liquidityAmount + plan.monthlyAmount,
+        meCreditsUsed: 0,
+      };
+      totalPaymentAmount = {
+        ...totalPaymentAmount,
+        amountToPay: +totalPaymentAmount.amountToPay.toFixed(2),
+      };
+
+      if (useMeCredit) {
+        const newAmount = await this.walletService.applyMeCredit({
+          walletId: wallet.id,
+          amount: totalPaymentAmount.amountToPay,
+        });
+
+        totalPaymentAmount = newAmount;
+      }
+
+      if (totalPaymentAmount.amountToPay > 0) {
+        const paymentMethod =
+          await this.paymentService.getPaymentMethodByStripePaymentMethodId(
+            paymentMethodId,
+          );
+
+        if (!paymentMethod?.stripePaymentMethodId) {
+          throw new HttpException('Please link your card first.', 400, {});
+        }
+
+        await this.paymentService.chargePaymentMethod({
+          amount: totalPaymentAmount.amountToPay,
+          paymentMethodId,
+          wallet,
+          narration: `Payment for ${plan.name} subscription`,
+          source: TransactionSource.SUBSCRIPTION,
+          paymentMethod: PaymentMethodEnum.STRIPE,
+          appliedMeCredit: useMeCredit,
+        });
+
+        if (totalPaymentAmount.meCreditsUsed > 0) {
+          await this.walletService.debitMeCredits({
+            walletId: wallet.id,
+            amount: totalPaymentAmount.meCreditsUsed,
+          });
+        }
+
+        await this.brandService.subscribeBrandToPlan(brandId, planId);
+
+        return 'ok';
+      } else {
+        // Dont debit brand account
+
+        await this.brandService.subscribeBrandToPlan(brandId, planId);
+
+        const transaction = new Transaction();
+        transaction.amount = totalPaymentAmount.amountToPay;
+        transaction.balance = wallet.balance;
+        transaction.status = StatusType.SUCCEDDED;
+        transaction.transactionType = TransactionsType.DEBIT;
+        transaction.narration = `Payment for ${plan.name} subscription`;
+        transaction.walletId = wallet.id;
+        transaction.paymentMethod = PaymentMethodEnum.ME_CREDIT;
+        transaction.source = TransactionSource.SUBSCRIPTION;
+        transaction.appliedMeCredit = true;
+
+        await this.paymentService.createTransaction(transaction);
+
+        return 'ok';
+      }
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400, {});
+    }
   }
 
   async createVouchers(

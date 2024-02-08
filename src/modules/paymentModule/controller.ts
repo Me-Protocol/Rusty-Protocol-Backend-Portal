@@ -25,6 +25,7 @@ import { PayInvoiceDto } from './dto/PayInvoiceDto.dto';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 import { CurrencyService } from '@src/globalServices/currency/currency.service';
 import { CreateVoucherDto } from './dto/CreateVoucherDto.dto';
+import { ManualTopupDto } from '../costModule/dto/ManualTopupDto.dto';
 
 @ApiTags('Payment')
 @Controller('payment')
@@ -94,7 +95,7 @@ export class PaymentModuleController {
       brand.id,
       body.planId,
       body.paymentMethodId,
-      body.voucherCode,
+      body.useMeCredit,
     );
   }
 
@@ -120,7 +121,7 @@ export class PaymentModuleController {
       body.invoiceId,
       brand.id,
       body.paymentMethodId,
-      body.voucherCode,
+      body.useMeCredit,
     );
   }
 
@@ -137,5 +138,25 @@ export class PaymentModuleController {
   @Get('voucher/:code')
   async getVoucherByCode(@Param('code', ValidationPipe) code: string) {
     return await this.paymentService.getVoucherByCode(code);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Post('/brand-initial-onboarding')
+  async manualTopUp(
+    @Req() req: any,
+    @Body(ValidationPipe) body: ManualTopupDto,
+  ) {
+    const brand = req.user.brand as Brand;
+    body.brandId = brand.id;
+
+    return await this.paymentService.brandInitialOnboarding(body);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Get('/me-credit-balance')
+  async me(@Req() req: any) {
+    const brand = req.user.brand as Brand;
+
+    return await this.paymentService.getMeCredits(brand.id);
   }
 }

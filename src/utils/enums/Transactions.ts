@@ -8,6 +8,8 @@ export enum StatusType {
   PROCESSING = 'PROCESSING',
   FAILED = 'FAILED',
   ABANDONED = 'ABANDONED',
+  INCOMPLETE = 'INCOMPLETE',
+  PENDING = 'PENDING',
 }
 
 export enum TransactionSource {
@@ -15,4 +17,6 @@ export enum TransactionSource {
   OFFER_REDEMPTION = 'offer_redemption',
   EARN_REWARD = 'earn_reward',
   AUTO_TOPUP = 'auto_topup',
+  SUBSCRIPTION = 'subscription',
+  INVOICE = 'invoice',
 }

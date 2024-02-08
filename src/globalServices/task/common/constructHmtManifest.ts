@@ -58,7 +58,7 @@ export const constructHmtManifest = ({
       requester_max_repeats: 3,
       requester_min_repeats: 3,
       unsafe_content: false,
-      task_bid_price: '0.3',
+      task_bid_price: '0.38',
       oracle_stake: '0.05',
       taskdata: [
         ...taskResponses.map((taskResponse) => ({

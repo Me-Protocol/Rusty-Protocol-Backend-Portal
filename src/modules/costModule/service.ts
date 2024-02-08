@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { CostModuleService } from '@src/globalServices/costManagement/costModule.service';
 import { PaymentRequestService } from '@src/globalServices/costManagement/paymentRequestProcessors.service';
 import { PaymentRequestDto } from './dto/PaymentRequestDto.dto';
@@ -12,13 +12,19 @@ import retrieveCost from '@src/globalServices/costManagement/relayer-costgetter.
 import { GelatoRelay } from '@gelatonetwork/relay-sdk';
 import axios from 'axios';
 import { PaymentService } from '../../globalServices/fiatWallet/payment.service';
-import { TransactionsType } from '@src/utils/enums/Transactions';
+import {
+  StatusType,
+  TransactionSource,
+  TransactionsType,
+} from '@src/utils/enums/Transactions';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { PaymentOrigin } from '@src/utils/enums/PaymentOrigin';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { CostBatch } from '@src/globalServices/costManagement/entities/costBatch.entity';
 import { logger } from '@src/globalServices/logger/logger.service';
+import { Transaction } from '@src/globalServices/fiatWallet/entities/transaction.entity';
+import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
 
 @Injectable()
 export class CostModuleManagementService {
@@ -26,7 +32,6 @@ export class CostModuleManagementService {
     private readonly costModuleService: CostModuleService,
     private readonly paymentRequestService: PaymentRequestService,
     private readonly brandService: BrandService,
-    private readonly paymentService: PaymentService,
     private readonly walletService: FiatWalletService,
     private readonly settingsService: SettingsService,
   ) {}
@@ -353,31 +358,5 @@ export class CostModuleManagementService {
     }
 
     return true;
-  }
-
-  async manualTopUp(brandId: string, amount: number, paymentMethodId: string) {
-    try {
-      const brand = await this.brandService.getBrandById(brandId);
-      const wallet = await this.walletService.getWalletByBrandId(brandId);
-
-      const paymentMethod =
-        await this.paymentService.getPaymentMethodByStripePaymentMethodId(
-          paymentMethodId,
-        );
-
-      if (!paymentMethod?.stripePaymentMethodId) {
-        throw new HttpException('Please link your card first.', 400, {});
-      }
-
-      return await this.walletService.fundBrandAccountForCostCollection(
-        wallet,
-        brand,
-        amount,
-        paymentMethodId,
-      );
-    } catch (error) {
-      logger.error(error);
-      throw new HttpException(error.message, 400, {});
-    }
   }
 }
