@@ -12,6 +12,7 @@ import {
   IsUUID,
   IsUrl,
 } from 'class-validator';
+import { VariantDto } from '@src/modules/storeManagement/products/dto/CreateProductDto';
 
 export class UpdateProductDto {
   @ApiProperty()
@@ -63,37 +64,10 @@ export class UpdateProductDto {
   @IsUUID()
   subCategoryId: string;
 
-  @ApiProperty({
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        name: {
-          type: 'string',
-        },
-        value: {
-          type: 'string',
-        },
-        price: {
-          type: 'number',
-        },
-        inventory: {
-          type: 'number',
-        },
-      },
-    },
-  })
+  @ApiProperty({ type: [VariantDto] })
+  @IsArray({ message: 'Variants must be an array' })
   @IsOptional()
-  @IsArray({
-    message: 'Variants must be an array of objects',
-    // each: true,
-  })
-  variants: {
-    name: VarientType;
-    value: string;
-    price: number;
-    inventory: number;
-  }[];
+  variants: VariantDto[];
 
   @ApiProperty()
   @IsOptional()
