@@ -189,9 +189,8 @@ export class BrandManagementController {
       };
     });
 
-    return await this.brandAccountManagementService.batchCreateBrandCustomers(
-      updatedBody,
-    );
+    this.brandAccountManagementService.batchCreateBrandCustomers(updatedBody);
+    return { success: true, message: 'Processing' };
   }
 
   @Get('member/verify-email/:code/:brandId')
