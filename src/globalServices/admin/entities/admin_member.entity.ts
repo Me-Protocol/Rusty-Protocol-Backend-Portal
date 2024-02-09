@@ -14,8 +14,9 @@ export class AdminMember extends BaseEntity {
   profilePicture: string;
 
   @Column({
-    type: 'array',
-    array: true,
+    array: false,
+    type: 'json',
+    default: [],
   })
   roles: AdminRole[];
 
