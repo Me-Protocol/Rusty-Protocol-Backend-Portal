@@ -6,7 +6,6 @@ import {
   Req,
   Put,
   Get,
-  Param,
   Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';

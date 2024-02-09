@@ -406,6 +406,7 @@ export class BrandAccountManagementService {
         query.page,
         query.limit,
         query.filterBy,
+        query.order,
         query.sort,
         query.search,
       );

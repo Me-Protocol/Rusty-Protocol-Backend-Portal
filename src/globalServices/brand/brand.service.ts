@@ -326,22 +326,42 @@ export class BrandService {
     limit,
     brandId,
     type,
+    order,
   }: {
     page: number;
     limit: number;
     brandId: string;
     type: 'pending' | 'active';
+    order: string;
   }) {
     const whereCondition: any = {
       brandId,
       identifierType: In([SyncIdentifierType.EMAIL, SyncIdentifierType.PHONE]),
     };
 
+    if (order) {
+      const formatedOrder = order.split(':')[0];
+      const acceptedOrder = [
+        'totalRedeemed',
+        'totalRedemptionAmount',
+        'totalExternalRedeemed',
+        'totalExternalRedemptionAmount',
+        'totalIssued',
+      ];
+
+      if (!acceptedOrder.includes(formatedOrder)) {
+        throw new Error('Invalid order param');
+      }
+    }
+
     const brandCustomers = await this.brandCustomerRepo.find({
       where: whereCondition,
       relations: ['brand'],
       skip: page > 1 ? (page - 1) * limit : 0,
       take: limit,
+      order: {
+        [order.split(':')[0]]: order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+      },
     });
 
     const allBrandCustomers = await this.brandCustomerRepo.find({
@@ -378,10 +398,25 @@ export class BrandService {
 
         if (user) {
           activeUsers.push(user);
-          activeTotal++;
         } else {
           pendingUsers.push(brandCustomer);
-          pendingTotal++;
+        }
+      }
+    }
+
+    for (const brandCustomer of allBrandCustomers) {
+      if (brandCustomer.identifierType && brandCustomer.identifier) {
+        const user = await this.userRepo.findOne({
+          where: {
+            [brandCustomer.identifierType]: brandCustomer.identifier,
+            userType: UserAppType.USER,
+          },
+        });
+
+        if (user) {
+          activeTotal += 1;
+        } else {
+          pendingTotal += 1;
         }
       }
     }
@@ -517,6 +552,7 @@ export class BrandService {
     page: number,
     limit: number,
     filterBy: FilterBrandCustomer,
+    order: string,
     sort?: {
       createdAt: FindOptionsOrderValue;
     },
@@ -567,6 +603,26 @@ export class BrandService {
         {
           search: `%${search}%`,
         },
+      );
+    }
+
+    if (order) {
+      const formatedOrder = order.split(':')[0];
+      const acceptedOrder = [
+        'totalRedeemed',
+        'totalRedemptionAmount',
+        'totalExternalRedeemed',
+        'totalExternalRedemptionAmount',
+        'totalIssued',
+      ];
+
+      if (!acceptedOrder.includes(formatedOrder)) {
+        throw new Error('Invalid order param');
+      }
+
+      brandCustomerQuery.orderBy(
+        `brandCustomer.${order.split(':')[0]}`,
+        order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
       );
     }
 

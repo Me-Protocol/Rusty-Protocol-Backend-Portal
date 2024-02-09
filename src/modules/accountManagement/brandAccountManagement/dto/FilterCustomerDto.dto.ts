@@ -35,6 +35,15 @@ export class FilterCustomerDto {
   @IsOptional()
   @IsString()
   search: string;
+
+  @ApiProperty({
+    description: 'order must be of this format "name:ASC" or "name:DESC"',
+  })
+  @IsOptional()
+  @IsString({
+    message: 'order must be of this format "name:ASC" or "name:DESC"',
+  })
+  order: string;
 }
 
 export class FilterActivePendingCustomerDto {
@@ -55,6 +64,15 @@ export class FilterActivePendingCustomerDto {
   @ApiProperty()
   @IsString()
   limit: number;
+
+  @ApiProperty({
+    description: 'order must be of this format "name:ASC" or "name:DESC"',
+  })
+  @IsOptional()
+  @IsString({
+    message: 'order must be of this format "name:ASC" or "name:DESC"',
+  })
+  order: string;
 
   brandId: string;
 }
