@@ -16,10 +16,20 @@ export class BrandUploadGateway implements OnGatewayConnection {
   }
 
   sendProgress(brandId: string, progress: number) {
+    console.log('Sending progress to brand', brandId);
+    if (!this.server) {
+      console.error('WebSocket server is not initialized.');
+      return;
+    }
     this.server.to(brandId).emit('progress', progress);
   }
 
   sendFailure(brandId: string, errorMessage: string) {
+    console.log('Sending failure to brand', brandId);
+    if (!this.server) {
+      console.error('WebSocket server is not initialized.');
+      return;
+    }
     this.server.to(brandId).emit('failure', errorMessage);
   }
 }
