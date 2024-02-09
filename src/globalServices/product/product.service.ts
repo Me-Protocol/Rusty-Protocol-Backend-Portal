@@ -198,7 +198,6 @@ export class ProductService {
       }),
     );
 
-    console.log(productVariants);
     return await this.variantRepo.save(productVariants);
   }
 
@@ -319,7 +318,13 @@ export class ProductService {
         brandId,
         id: productId,
       },
-      relations: ['category', 'productImages', 'brand', 'variants'],
+      relations: [
+        'category',
+        'productImages',
+        'brand',
+        'variants',
+        'variants.options',
+      ],
     });
   }
 
