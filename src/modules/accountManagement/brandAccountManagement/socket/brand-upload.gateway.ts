@@ -5,7 +5,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
-@WebSocketGateway()
+@WebSocketGateway({ cors: false })
 export class BrandUploadGateway implements OnGatewayConnection {
   @WebSocketServer()
   server: Server;
