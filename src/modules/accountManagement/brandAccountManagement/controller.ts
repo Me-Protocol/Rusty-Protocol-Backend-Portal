@@ -189,6 +189,28 @@ export class BrandManagementController {
     return await this.brandAccountManagementService.createBrandCustomer(body);
   }
 
+  @UseGuards(BrandJwtStrategy)
+  @Post('customers/bulk-create')
+  async bulkCreateBrandCustomers(
+    @Req() req: any,
+    @Body(ValidationPipe) body: { customers: CreateCustomerDto[] },
+  ) {
+    const user = req.user as User;
+
+    const customers = body.customers;
+
+    const updatedBody = customers.map((item) => {
+      return {
+        ...item,
+        brandId: user.brand.id,
+      };
+    });
+
+    return await this.brandAccountManagementService.batchCreateBrandCustomers(
+      updatedBody,
+    );
+  }
+
   @Get('member/verify-email/:code/:brandId')
   async verifyBrandMemberEmail(
     @Param('code') code: number,

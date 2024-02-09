@@ -153,6 +153,7 @@ import { Voucher } from './globalServices/biller/entity/voucher.entity';
 import { CreateSendgridContactHandler } from '@src/globalServices/mail/create-sendgrid-contact.handler';
 import { TopupEventBlock } from './globalServices/brand/entities/topup_event_block.entity';
 import { VariantOption } from '@src/globalServices/product/entities/variantvalue.entity';
+import { BrandUploadGateway } from './modules/accountManagement/brandAccountManagement/socket/brand-upload.gateway';
 
 @Module({
   imports: [
@@ -338,6 +339,7 @@ import { VariantOption } from '@src/globalServices/product/entities/variantvalue
     NotificationHandler,
     CreateSendgridContactHandler,
     CurrencyService,
+    BrandUploadGateway,
   ],
   exports: [JwtStrategy, PassportModule, AuthenticationModule],
 })
