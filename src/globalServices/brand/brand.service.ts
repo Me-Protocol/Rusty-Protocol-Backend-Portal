@@ -238,7 +238,7 @@ export class BrandService {
     }
 
     if (search) {
-      brandQuery.andWhere('brand.name LIKE :search LIKE :search', {
+      brandQuery.andWhere('brand.name LIKE :search', {
         search: `%${search}%`,
       });
     }

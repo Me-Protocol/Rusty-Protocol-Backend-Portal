@@ -88,6 +88,7 @@ export class BrandAccountManagementService {
       });
       return brands;
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400);
     }
