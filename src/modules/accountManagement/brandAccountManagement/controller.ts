@@ -1,7 +1,6 @@
 import {
   Controller,
   Body,
-  UseInterceptors,
   UseGuards,
   ValidationPipe,
   Req,
@@ -15,7 +14,6 @@ import {
   Delete,
   HttpException,
 } from '@nestjs/common';
-import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import { BrandAccountManagementService } from './service';
 import { UpdateBrandDto } from './dto/UpdateBrandDto.dto';

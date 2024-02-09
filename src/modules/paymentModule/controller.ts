@@ -2,7 +2,6 @@ import {
   Controller,
   Post,
   Body,
-  UseInterceptors,
   UseGuards,
   Req,
   ValidationPipe,
@@ -11,7 +10,6 @@ import {
   Param,
   Delete,
 } from '@nestjs/common';
-import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { LinkCardDto } from './dto/LinkCardDto.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
@@ -19,13 +17,16 @@ import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { PaymentModuleService } from './service';
 import { CreatePlanDto } from './dto/CreatePlanDto.dto';
 import { SubscribeDto } from './dto/SubscribeDto.dto';
-import { query } from 'express';
 import { FilterInvoiceDto } from './dto/FilterInvoiceDto.dto';
 import { PayInvoiceDto } from './dto/PayInvoiceDto.dto';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 import { CurrencyService } from '@src/globalServices/currency/currency.service';
 import { CreateVoucherDto } from './dto/CreateVoucherDto.dto';
 import { ManualTopupDto } from '../costModule/dto/ManualTopupDto.dto';
+import { AdminRoles } from '@src/decorators/admin_roles.decorator';
+import { AdminRole } from '@src/utils/enums/AdminRole';
+import { AdminJwtStrategy } from '@src/middlewares/admin-jwt-strategy.middleware';
+import { IssueMeCreditsDto } from './dto/IssueMeCreditDto.dto';
 
 @ApiTags('Payment')
 @Controller('payment')
@@ -158,5 +159,15 @@ export class PaymentModuleController {
     const brand = req.user.brand as Brand;
 
     return await this.paymentService.getMeCredits(brand.id);
+  }
+
+  @AdminRoles([AdminRole.SUPER_ADMIN])
+  @UseGuards(AdminJwtStrategy)
+  @Post('me-credit-balance')
+  async issueMeCredits(
+    @Body(ValidationPipe) body: IssueMeCreditsDto,
+    @Req() req: any,
+  ) {
+    return await this.paymentService.issueMeCredits(body.brandId, body.amount);
   }
 }

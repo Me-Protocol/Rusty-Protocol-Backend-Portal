@@ -604,8 +604,6 @@ export class OrderManagementService {
               order.status = StatusType.INCOMPLETE;
 
               await this.orderService.saveOrder(order);
-
-              console.log(order.status);
             }
 
             order.status = StatusType.PROCESSING;

@@ -43,6 +43,7 @@ import { RUNTIME_URL } from '@src/config/env.config';
 import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
 import { Role } from '@src/utils/enums/Role';
 import { BrandUploadGateway } from './socket/brand-upload.gateway';
+import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -53,6 +54,7 @@ export class BrandAccountManagementService {
     private readonly customerService: CustomerService,
     private readonly settingsService: SettingsService,
     private readonly costModuleManagementService: CostModuleManagementService,
+    private readonly walletService: FiatWalletService,
     private eventEmitter: EventEmitter2,
     private BrandUploadGateway: BrandUploadGateway,
   ) {}
