@@ -39,7 +39,7 @@ async function bootstrap() {
     setupSwagger(app);
   }
 
-  // app.enableCors();
+  app.enableCors();
 
   // app.use(
   //   helmet({
