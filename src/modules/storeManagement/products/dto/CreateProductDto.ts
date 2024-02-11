@@ -11,6 +11,7 @@ import {
   IsString,
   IsUUID,
   IsUrl,
+  Min,
 } from 'class-validator';
 
 export class VariantOptionDto {
@@ -74,6 +75,7 @@ export class CreateProductDto {
 
   @ApiProperty()
   @IsNumber()
+  @Min(1, { message: 'Price must be greater than 0' })
   price: number;
 
   @ApiProperty()
