@@ -68,6 +68,11 @@ export class BrandCustomer extends BaseEntity {
     nullable: true,
   })
   phone: string;
+
+  @Column({
+    default: false,
+  })
+  isOnboarded: boolean;
 }
 
 // await this.createCustomers(user.id, batch.reward.brandId);

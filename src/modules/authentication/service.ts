@@ -492,6 +492,7 @@ export class AuthenticationService {
       if (!is2Fa) {
         await this.handleBrandWalletCreation(user);
         await this.handleUserWalletCreation(user);
+        await this.syncUserToBrandCustomerRecords(user);
       }
 
       const token = await this.registerDevice(user, userAgent, clientIp);
@@ -503,6 +504,17 @@ export class AuthenticationService {
       throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
       });
+    }
+  }
+
+  async syncUserToBrandCustomerRecords(user: User): Promise<void> {
+    const brandCustomers =
+      await this.brandService.getBrandCustomersByEmailAddress(user.email);
+
+    for (const brandCustomer of brandCustomers) {
+      brandCustomer.userId = user.id;
+      brandCustomer.isOnboarded = true;
+      await this.brandService.saveBrandCustomer(brandCustomer);
     }
   }
 

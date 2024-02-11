@@ -408,24 +408,9 @@ export class BrandAccountManagementService {
         query.limit,
         query.filterBy,
         query.order,
+        query.isOnboarded,
         query.sort,
         query.search,
-      );
-    } catch (error) {
-      console.log(error);
-      logger.error(error);
-      throw new HttpException(error.message, 400, {
-        cause: new Error(error.message),
-      });
-    }
-  }
-
-  async getPaginatedActivePendingBrandCustomers(
-    query: FilterActivePendingCustomerDto,
-  ) {
-    try {
-      return await this.brandService.getPaginatedActivePendingBrandCustomers(
-        query,
       );
     } catch (error) {
       console.log(error);

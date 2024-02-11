@@ -321,114 +321,6 @@ export class BrandService {
     return { emailUsers, phoneUsers };
   }
 
-  async getPaginatedActivePendingBrandCustomers({
-    page,
-    limit,
-    brandId,
-    type,
-    order,
-  }: {
-    page: number;
-    limit: number;
-    brandId: string;
-    type: 'pending' | 'active';
-    order: string;
-  }) {
-    const whereCondition: any = {
-      brandId,
-      identifierType: In([SyncIdentifierType.EMAIL, SyncIdentifierType.PHONE]),
-    };
-
-    if (order) {
-      const formatedOrder = order.split(':')[0];
-      const acceptedOrder = [
-        'totalRedeemed',
-        'totalRedemptionAmount',
-        'totalExternalRedeemed',
-        'totalExternalRedemptionAmount',
-        'totalIssued',
-      ];
-
-      if (!acceptedOrder.includes(formatedOrder)) {
-        throw new Error('Invalid order param');
-      }
-    }
-
-    const brandCustomers = await this.brandCustomerRepo.find({
-      where: whereCondition,
-      relations: ['brand'],
-      skip: page > 1 ? (page - 1) * limit : 0,
-      take: limit,
-      order: {
-        [order.split(':')[0]]: order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
-      },
-    });
-
-    const allBrandCustomers = await this.brandCustomerRepo.find({
-      where: whereCondition,
-      relations: ['brand'],
-    });
-
-    const identifiersByType: Record<SyncIdentifierType, string[]> = {
-      [SyncIdentifierType.EMAIL]: [],
-      [SyncIdentifierType.PHONE]: [],
-    };
-
-    for (const brandCustomer of brandCustomers) {
-      if (brandCustomer.identifierType && brandCustomer.identifier) {
-        identifiersByType[brandCustomer.identifierType].push(
-          brandCustomer.identifier,
-        );
-      }
-    }
-
-    const activeUsers = [];
-    const pendingUsers = [];
-    let activeTotal = 0;
-    let pendingTotal = 0;
-
-    for (const brandCustomer of brandCustomers) {
-      if (brandCustomer.identifierType && brandCustomer.identifier) {
-        const user = await this.userRepo.findOne({
-          where: {
-            [brandCustomer.identifierType]: brandCustomer.identifier,
-            userType: UserAppType.USER,
-          },
-        });
-
-        if (user) {
-          activeUsers.push(user);
-        } else {
-          pendingUsers.push(brandCustomer);
-        }
-      }
-    }
-
-    for (const brandCustomer of allBrandCustomers) {
-      if (brandCustomer.identifierType && brandCustomer.identifier) {
-        const user = await this.userRepo.findOne({
-          where: {
-            [brandCustomer.identifierType]: brandCustomer.identifier,
-            userType: UserAppType.USER,
-          },
-        });
-
-        if (user) {
-          activeTotal += 1;
-        } else {
-          pendingTotal += 1;
-        }
-      }
-    }
-
-    return {
-      data: type === 'pending' ? pendingUsers : activeUsers,
-      total: type === 'pending' ? pendingTotal : activeTotal,
-      nextPage: activeUsers.length > page * limit ? Number(page) + 1 : null,
-      previousPage: page > 1 ? Number(page) - 1 : null,
-    };
-  }
-
   async getActiveBrandCustomer(
     brandId: string,
     identifier: string,
@@ -538,6 +430,15 @@ export class BrandService {
     return customer;
   }
 
+  async getBrandCustomersByEmailAddress(email: string) {
+    return await this.brandCustomerRepo.find({
+      where: {
+        email,
+      },
+      relations: ['brand'],
+    });
+  }
+
   async getBrandCustomerByUserId(userId: string) {
     return await this.brandCustomerRepo.findOne({
       where: {
@@ -553,6 +454,7 @@ export class BrandService {
     limit: number,
     filterBy: FilterBrandCustomer,
     order: string,
+    isOnboarded: boolean,
     sort?: {
       createdAt: FindOptionsOrderValue;
     },
@@ -604,6 +506,12 @@ export class BrandService {
           search: `%${search}%`,
         },
       );
+    }
+
+    if (isOnboarded) {
+      brandCustomerQuery.andWhere('brandCustomer.isOnboarded = :isOnboarded', {
+        isOnboarded,
+      });
     }
 
     if (order) {
@@ -857,5 +765,28 @@ export class BrandService {
         id: reward.brandId,
       },
     });
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async syncBrandCustomer() {
+    const brandCustomers = await this.brandCustomerRepo.find();
+
+    for (const brandCustomer of brandCustomers) {
+      const user = await this.userRepo.findOne({
+        where: {
+          [brandCustomer.identifierType]: brandCustomer.identifier,
+        },
+      });
+
+      if (!user) {
+        continue;
+      }
+
+      if (brandCustomer.userId !== user.id) {
+        brandCustomer.userId = user.id;
+        brandCustomer.isOnboarded = true;
+        await this.brandCustomerRepo.save(brandCustomer);
+      }
+    }
   }
 }

@@ -162,20 +162,6 @@ export class BrandManagementController {
   }
 
   @UseGuards(BrandJwtStrategy)
-  @Get('customers/all/pending-active')
-  async getPaginatedActivePendingBrandCustomers(
-    @Req() req: any,
-    @Query(ValidationPipe) body: FilterActivePendingCustomerDto,
-  ) {
-    const user = req.user as User;
-    body.brandId = user.brand.id;
-
-    return await this.brandAccountManagementService.getPaginatedActivePendingBrandCustomers(
-      body,
-    );
-  }
-
-  @UseGuards(BrandJwtStrategy)
   @Post('customers/create')
   async createBrandCustomer(
     @Req() req: any,

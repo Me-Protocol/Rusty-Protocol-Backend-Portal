@@ -1,6 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { FilterBrandCustomer } from '@src/utils/enums/FilterBrandCustomer';
-import { IsEnum, IsObject, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsBooleanString,
+  IsEnum,
+  IsObject,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { FindOptionsOrderValue } from 'typeorm';
 
 export class FilterCustomerDto {
@@ -44,6 +51,11 @@ export class FilterCustomerDto {
     message: 'order must be of this format "name:ASC" or "name:DESC"',
   })
   order: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsBooleanString()
+  isOnboarded: boolean;
 }
 
 export class FilterActivePendingCustomerDto {
