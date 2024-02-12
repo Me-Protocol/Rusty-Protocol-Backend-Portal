@@ -3,24 +3,24 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { ProductImage } from './entities/productImage.entity';
-import { ItemStatus, ProductStatus } from '@src/utils/enums/ItemStatus';
+import { ProductStatus } from '@src/utils/enums/ItemStatus';
 import { Variant } from './entities/variants.entity';
-import { VarientType } from '@src/utils/enums/VarientType';
 import { ProductFilter } from '@src/utils/enums/OfferFiilter';
 import { FilterDto } from '@src/modules/storeManagement/products/dto/FilterDto';
 import { UpdateProductDto } from '@src/modules/storeManagement/products/dto/UpdateProductDto';
+import { VariantOption } from '@src/globalServices/product/entities/variantvalue.entity';
 
 @Injectable()
 export class ProductService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
-
     @InjectRepository(ProductImage)
     private readonly productImageRepo: Repository<ProductImage>,
-
     @InjectRepository(Variant)
     private readonly variantRepo: Repository<Variant>,
+    @InjectRepository(VariantOption)
+    private readonly variantOptionRepo: Repository<VariantOption>,
   ) {}
 
   async getAllProducts() {
@@ -108,14 +108,59 @@ export class ProductService {
     });
   }
 
-  async addVariants(
-    brandId: string,
+  private async createVariant(
     productId: string,
-    variants: {
-      name: VarientType;
+    name: string,
+    isCustom: boolean,
+  ): Promise<Variant> {
+    const variant = this.variantRepo.create({ name, isCustom, productId });
+    return await this.variantRepo.save(variant);
+  }
+
+  private async syncVariantOptions(
+    variant: Variant,
+    optionsData: {
+      name: string;
       value: string;
       price: number;
       inventory: number;
+    }[],
+  ): Promise<VariantOption[]> {
+    const variantOptions = await Promise.all(
+      optionsData.map(async (optionData) => {
+        let option = await this.variantOptionRepo.findOne({
+          where: { variantId: variant.id, name: optionData.name.toLowerCase() },
+        });
+
+        if (!option) {
+          option = this.variantOptionRepo.create({
+            ...optionData,
+            name: optionData.name.toLowerCase(),
+            variantId: variant.id,
+          });
+        } else {
+          option.value = optionData.value;
+          option.price = optionData.price;
+          option.inventory = optionData.inventory;
+        }
+        return option;
+      }),
+    );
+    return await this.variantOptionRepo.save(variantOptions);
+  }
+
+  async addVariants(
+    brandId: string,
+    productId: string,
+    variantsData: {
+      name: string;
+      isCustom: boolean;
+      options: {
+        name: string;
+        value: string;
+        price: number;
+        inventory: number;
+      }[];
     }[],
   ) {
     const product = await this.productRepo.findOne({
@@ -124,18 +169,34 @@ export class ProductService {
         brandId,
       },
     });
+
     if (!product) {
       throw new Error('Product not found');
     }
 
-    const productVariants = variants?.map((variant) =>
-      this.variantRepo.create({
-        ...variant,
-        productId,
+    const existingVariants = await this.variantRepo.find({
+      where: { productId },
+    });
+
+    const productVariants = await Promise.all(
+      variantsData.map(async (variantData) => {
+        let variant = existingVariants.find(
+          (v) => v.name.toLowerCase() === variantData.name.toLowerCase(),
+        );
+        if (!variant) {
+          variant = await this.createVariant(
+            productId,
+            variantData.name.toLowerCase(),
+            variantData.isCustom,
+          );
+        }
+        variant.options = await this.syncVariantOptions(
+          variant,
+          variantData.options,
+        );
+        return variant;
       }),
     );
-
-    console.log(productVariants);
 
     return await this.variantRepo.save(productVariants);
   }
@@ -257,7 +318,13 @@ export class ProductService {
         brandId,
         id: productId,
       },
-      relations: ['category', 'productImages', 'brand', 'variants'],
+      relations: [
+        'category',
+        'productImages',
+        'brand',
+        'variants',
+        'variants.options',
+      ],
     });
   }
 
@@ -319,6 +386,7 @@ export class ProductService {
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.brand', 'brand')
       .leftJoinAndSelect('product.variants', 'variants')
+      .leftJoinAndSelect('variants.options', 'options')
       .leftJoinAndSelect('product.collections', 'collections')
       .leftJoinAndSelect('product.offers', 'offers')
       .where('product.brandId = :brandId', { brandId });

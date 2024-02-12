@@ -1,24 +1,25 @@
 // variant entity
 
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { Product } from '@src/globalServices/product/entities/product.entity';
 import { BaseEntity } from '@src/common/entities/base.entity';
-import { VarientType } from '@src/utils/enums/VarientType';
+import { VariantOption } from '@src/globalServices/product/entities/variantvalue.entity';
 
 @Entity('variant')
 export class Variant extends BaseEntity {
   @Column({
-    type: 'enum',
-    enum: VarientType,
+    nullable: true,
   })
-  name: VarientType;
+  name: string;
+
+  @Column({
+    default: false,
+  })
+  isCustom: boolean;
 
   @Column({
     nullable: true,
   })
-  value: string;
-
-  @Column()
   productId: string;
 
   @ManyToOne(() => Product, (product) => product.variants, {
@@ -29,23 +30,6 @@ export class Variant extends BaseEntity {
   @JoinColumn({ name: 'productId' })
   product: Product;
 
-  @Column({
-    type: 'decimal',
-    precision: 10,
-    scale: 2,
-  })
-  price: number;
-
-  @Column({
-    nullable: true,
-  })
-  inventory: number;
-
-  // @Column({
-  //   default: false,
-  // })
-  // isUnlimited: boolean;
-
-  // @Column()
-  // sku: string;
+  @OneToMany(() => VariantOption, (variantValue) => variantValue.variant)
+  options: VariantOption[];
 }

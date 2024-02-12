@@ -1,7 +1,6 @@
 import {
   Controller,
   Body,
-  UseInterceptors,
   UseGuards,
   ValidationPipe,
   Req,
@@ -15,7 +14,6 @@ import {
   Delete,
   HttpException,
 } from '@nestjs/common';
-import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import { BrandAccountManagementService } from './service';
 import { UpdateBrandDto } from './dto/UpdateBrandDto.dto';
@@ -25,7 +23,10 @@ import { FilterBrandDto } from './dto/FilterBrandDto.dto';
 import { UpdateMemberDto } from './dto/UpdateMemberDto.dto';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { CreateMemberDto } from './dto/CreateMemberDto.dto';
-import { FilterCustomerDto } from './dto/FilterCustomerDto.dto';
+import {
+  FilterActivePendingCustomerDto,
+  FilterCustomerDto,
+} from './dto/FilterCustomerDto.dto';
 import { OnboardBrandDto } from './dto/OnboardBrandDto.dto';
 import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
@@ -170,6 +171,27 @@ export class BrandManagementController {
     body.brandId = user.brand.id;
 
     return await this.brandAccountManagementService.createBrandCustomer(body);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Post('customers/bulk-create')
+  async bulkCreateBrandCustomers(
+    @Req() req: any,
+    @Body(ValidationPipe) body: { customers: CreateCustomerDto[] },
+  ) {
+    const user = req.user as User;
+
+    const customers = body.customers;
+
+    const updatedBody = customers.map((item) => {
+      return {
+        ...item,
+        brandId: user.brand.id,
+      };
+    });
+
+    this.brandAccountManagementService.batchCreateBrandCustomers(updatedBody);
+    return { success: true, message: 'Processing' };
   }
 
   @Get('member/verify-email/:code/:brandId')

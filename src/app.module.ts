@@ -152,6 +152,8 @@ import { Currency } from './globalServices/currency/entities/currency.entity';
 import { Voucher } from './globalServices/biller/entity/voucher.entity';
 import { CreateSendgridContactHandler } from '@src/globalServices/mail/create-sendgrid-contact.handler';
 import { TopupEventBlock } from './globalServices/brand/entities/topup_event_block.entity';
+import { VariantOption } from '@src/globalServices/product/entities/variantvalue.entity';
+import { BrandUploadGateway } from './modules/accountManagement/brandAccountManagement/socket/brand-upload.gateway';
 
 @Module({
   imports: [
@@ -206,6 +208,7 @@ import { TopupEventBlock } from './globalServices/brand/entities/topup_event_blo
       Currency,
       Voucher,
       TopupEventBlock,
+      VariantOption,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
@@ -336,6 +339,7 @@ import { TopupEventBlock } from './globalServices/brand/entities/topup_event_blo
     NotificationHandler,
     CreateSendgridContactHandler,
     CurrencyService,
+    BrandUploadGateway,
   ],
   exports: [JwtStrategy, PassportModule, AuthenticationModule],
 })

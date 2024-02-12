@@ -14,7 +14,10 @@ import { BrandMember } from '@src/globalServices/brand/entities/brand_member.ent
 import { MailService } from '@src/globalServices/mail/mail.service';
 import { emailButton } from '@src/utils/helpers/email';
 import { CustomerService } from '@src/globalServices/customer/customer.service';
-import { FilterCustomerDto } from './dto/FilterCustomerDto.dto';
+import {
+  FilterActivePendingCustomerDto,
+  FilterCustomerDto,
+} from './dto/FilterCustomerDto.dto';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { BigNumber, ethers } from 'ethers';
 import {
@@ -38,6 +41,9 @@ import { BrandRole } from '@src/utils/enums/BrandRole';
 import { onboard_brand_with_url } from '@developeruche/runtime-sdk';
 import { RUNTIME_URL } from '@src/config/env.config';
 import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
+import { Role } from '@src/utils/enums/Role';
+import { BrandUploadGateway } from './socket/brand-upload.gateway';
+import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -48,7 +54,9 @@ export class BrandAccountManagementService {
     private readonly customerService: CustomerService,
     private readonly settingsService: SettingsService,
     private readonly costModuleManagementService: CostModuleManagementService,
+    private readonly walletService: FiatWalletService,
     private eventEmitter: EventEmitter2,
+    private BrandUploadGateway: BrandUploadGateway,
   ) {}
 
   async updateBrand(body: UpdateBrandDto, brandId: string) {
@@ -70,16 +78,17 @@ export class BrandAccountManagementService {
 
   async getAllFilteredBrands(query: FilterBrandDto) {
     try {
-      const { categoryId, page, limit, order } = query;
+      const { categoryId, page, limit, order, search } = query;
       const brands = await this.brandService.getAllFilteredBrands({
         categoryId,
         page,
         limit,
-
         order,
+        search,
       });
       return brands;
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400);
     }
@@ -231,6 +240,9 @@ export class BrandAccountManagementService {
           };
         }
 
+        user.role = Role.BRAND_MEMBER;
+        await this.userService.saveUser(user);
+
         const brandMember = new BrandMember();
         brandMember.brandId = brandId;
         brandMember.name = name;
@@ -265,6 +277,7 @@ export class BrandAccountManagementService {
       newUser.email = email?.toLowerCase();
       newUser.username = email.split('@')[0].toLowerCase();
       newUser.twoFAType = TwoFAType.EMAIL;
+      newUser.role = Role.BRAND_MEMBER;
 
       const password = Math.random().toString(36).slice(-8);
 
@@ -394,7 +407,10 @@ export class BrandAccountManagementService {
         query.page,
         query.limit,
         query.filterBy,
+        query.order,
+        query.isOnboarded,
         query.sort,
+        query.search,
       );
     } catch (error) {
       console.log(error);
@@ -512,6 +528,26 @@ export class BrandAccountManagementService {
       console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400);
+    }
+  }
+
+  async batchCreateBrandCustomers(body: CreateCustomerDto[]) {
+    const totalUsers = body.length;
+    let usersProcessed = 0;
+    for (const customer of body) {
+      try {
+        const brandCustomer = await this.brandService.createBrandCustomer({
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
+          brandId: customer.brandId,
+        });
+        usersProcessed++;
+        const progress = (usersProcessed / totalUsers) * 100;
+        this.BrandUploadGateway.sendProgress(customer.brandId, progress);
+      } catch (error) {
+        this.BrandUploadGateway.sendFailure(customer.brandId, error.message);
+      }
     }
   }
 

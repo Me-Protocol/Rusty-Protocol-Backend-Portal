@@ -40,6 +40,7 @@ import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
 import { FiatWalletService } from '../fiatWallet/fiatWallet.service';
 import { Transaction } from '../fiatWallet/entities/transaction.entity';
 import { logger } from '../logger/logger.service';
+import { Role } from '@src/utils/enums/Role';
 
 @Injectable()
 export class BrandService {
@@ -205,11 +206,13 @@ export class BrandService {
     page,
     limit,
     order,
+    search,
   }: {
     categoryId: string;
     page: number;
     limit: number;
     order: string;
+    search: string;
   }) {
     const brandQuery = this.brandRepo
       .createQueryBuilder('brand')
@@ -232,6 +235,12 @@ export class BrandService {
         `brand.${order.split(':')[0]}`,
         order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
       );
+    }
+
+    if (search) {
+      brandQuery.andWhere('brand.name LIKE :search', {
+        search: `%${search}%`,
+      });
     }
 
     brandQuery.skip((page - 1) * limit).take(limit);
@@ -421,6 +430,15 @@ export class BrandService {
     return customer;
   }
 
+  async getBrandCustomersByEmailAddress(email: string) {
+    return await this.brandCustomerRepo.find({
+      where: {
+        email,
+      },
+      relations: ['brand'],
+    });
+  }
+
   async getBrandCustomerByUserId(userId: string) {
     return await this.brandCustomerRepo.findOne({
       where: {
@@ -435,9 +453,12 @@ export class BrandService {
     page: number,
     limit: number,
     filterBy: FilterBrandCustomer,
+    order: string,
+    isOnboarded: boolean,
     sort?: {
       createdAt: FindOptionsOrderValue;
     },
+    search?: string,
   ) {
     const brandCustomerQuery = this.brandCustomerRepo
       .createQueryBuilder('brandCustomer')
@@ -476,6 +497,41 @@ export class BrandService {
       } else if (sort.createdAt === 'DESC') {
         brandCustomerQuery.orderBy('brandCustomer.createdAt', 'DESC');
       }
+    }
+
+    if (search) {
+      brandCustomerQuery.andWhere(
+        'brandCustomer.name LIKE :search OR brandCustomer.email LIKE :search OR brandCustomer.phone LIKE :search',
+        {
+          search: `%${search}%`,
+        },
+      );
+    }
+
+    if (isOnboarded) {
+      brandCustomerQuery.andWhere('brandCustomer.isOnboarded = :isOnboarded', {
+        isOnboarded,
+      });
+    }
+
+    if (order) {
+      const formatedOrder = order.split(':')[0];
+      const acceptedOrder = [
+        'totalRedeemed',
+        'totalRedemptionAmount',
+        'totalExternalRedeemed',
+        'totalExternalRedemptionAmount',
+        'totalIssued',
+      ];
+
+      if (!acceptedOrder.includes(formatedOrder)) {
+        throw new Error('Invalid order param');
+      }
+
+      brandCustomerQuery.orderBy(
+        `brandCustomer.${order.split(':')[0]}`,
+        order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+      );
     }
 
     brandCustomerQuery.skip((page - 1) * limit).take(limit);
@@ -530,6 +586,18 @@ export class BrandService {
   }
 
   async removeBrandMember(brandMember: BrandMember) {
+    const user = await this.userRepo.findOne({
+      where: {
+        id: brandMember.userId,
+      },
+    });
+
+    if (user) {
+      user.role = Role.CUSTOMER;
+
+      await this.userRepo.save(user);
+    }
+
     return await this.brandMemberRepo.remove(brandMember);
   }
 
@@ -697,5 +765,28 @@ export class BrandService {
         id: reward.brandId,
       },
     });
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async syncBrandCustomer() {
+    const brandCustomers = await this.brandCustomerRepo.find();
+
+    for (const brandCustomer of brandCustomers) {
+      const user = await this.userRepo.findOne({
+        where: {
+          [brandCustomer.identifierType]: brandCustomer.identifier,
+        },
+      });
+
+      if (!user) {
+        continue;
+      }
+
+      if (brandCustomer.userId !== user.id) {
+        brandCustomer.userId = user.id;
+        brandCustomer.isOnboarded = true;
+        await this.brandCustomerRepo.save(brandCustomer);
+      }
+    }
   }
 }

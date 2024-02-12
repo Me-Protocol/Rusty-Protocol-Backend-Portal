@@ -419,4 +419,25 @@ export class PaymentModuleService {
 
   // @Cron(CronExpression.EVERY_30_SECONDS)
   // async handleAutoTop() {}
+
+  async issueMeCredits(brandId: string, amount: number) {
+    try {
+      const brand = await this.brandService.getBrandById(brandId);
+      if (!brand) throw new HttpException('Brand not found', 404);
+
+      const brandWallet = await this.walletService.getWalletByBrandId(brandId);
+
+      brandWallet.meCredits = brandWallet.meCredits + amount;
+
+      await this.walletService.save(brandWallet);
+
+      return {
+        message: 'Me credits issued successfully',
+      };
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
 }

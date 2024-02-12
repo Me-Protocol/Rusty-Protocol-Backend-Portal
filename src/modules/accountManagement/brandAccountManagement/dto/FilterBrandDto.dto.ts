@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsObject, IsOptional, IsString } from 'class-validator';
-import { FindOptionsOrderValue } from 'typeorm';
+import { IsOptional, IsString } from 'class-validator';
 
 export class FilterBrandDto {
   @ApiProperty()
@@ -23,4 +22,9 @@ export class FilterBrandDto {
     message: 'order must be of this format "name:ASC" or "name:DESC"',
   })
   order: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  search: string;
 }
