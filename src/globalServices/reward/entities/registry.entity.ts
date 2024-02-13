@@ -1,9 +1,17 @@
 import { BaseEntity } from '@src/common/entities/base.entity';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  OneToOne,
+} from 'typeorm';
 import { Reward } from './reward.entity';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { RegistryHistory } from './registryHistory.entity';
+import { BrandCustomer } from '@src/globalServices/brand/entities/brand_customer.entity';
 
 @Entity('reward_registry')
 export class RewardRegistry extends BaseEntity {

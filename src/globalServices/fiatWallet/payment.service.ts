@@ -142,8 +142,53 @@ export class PaymentService {
     });
   }
 
-  async deletePaymentMethod(paymentMethodId: string) {
-    return await stripe.paymentMethods.detach(paymentMethodId);
+  async deletePaymentMethod(id: string, walletId: string) {
+    const paymentMethod = await this.paymentRepo.findOne({
+      where: { id, walletId },
+    });
+
+    if (!paymentMethod) {
+      throw new HttpException('Payment method not found', 404);
+    }
+
+    await stripe.paymentMethods.detach(paymentMethod.stripePaymentMethodId);
+
+    await this.paymentRepo.delete(id);
+
+    return 'ok';
+  }
+
+  async getPaymentMethodByStripePaymentMethodId(stripePaymentMethodId: string) {
+    return await this.paymentRepo.findOne({
+      where: {
+        stripePaymentMethodId,
+      },
+    });
+  }
+
+  async getPaymentMethods(walletId: string) {
+    const paymentMethods = await this.paymentRepo.find({
+      where: {
+        walletId,
+      },
+    });
+
+    const paymentMethodsDetails = [];
+
+    await Promise.all(
+      paymentMethods.map(async (paymentMethod) => {
+        const paymentMethodDetail = await stripe.paymentMethods.retrieve(
+          paymentMethod.stripePaymentMethodId,
+        );
+
+        paymentMethodsDetails.push({
+          ...paymentMethod,
+          stripe: paymentMethodDetail,
+        });
+      }),
+    );
+
+    return paymentMethodsDetails;
   }
 
   generateTransactionCode() {
@@ -156,11 +201,17 @@ export class PaymentService {
     paymentMethodId,
     wallet,
     narration,
+    source,
+    paymentMethod,
+    appliedMeCredit,
   }: {
     amount: number;
     paymentMethodId: string;
     wallet: FiatWallet;
     narration: string;
+    source: TransactionSource;
+    paymentMethod: PaymentMethodEnum;
+    appliedMeCredit?: boolean;
   }) {
     const paymentIntent = await this.createAutoCardChargePaymentIntent(
       paymentMethodId,
@@ -182,11 +233,18 @@ export class PaymentService {
     transaction.paymentRef = this.generateTransactionCode();
     transaction.narration = narration;
     transaction.walletId = wallet.id;
-    transaction.paymentMethod = PaymentMethodEnum.STRIPE;
-    transaction.source = TransactionSource.AUTO_TOPUP;
+    transaction.paymentMethod = paymentMethod;
+    transaction.source = source;
+    transaction.appliedMeCredit = appliedMeCredit;
 
     await this.transactionRepo.save(transaction);
 
     return paymentDetail;
+  }
+
+  async createTransaction(transaction: Transaction) {
+    transaction.paymentRef = this.generateTransactionCode();
+
+    await this.transactionRepo.save(transaction);
   }
 }

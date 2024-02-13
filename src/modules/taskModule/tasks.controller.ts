@@ -28,9 +28,11 @@ import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware
 import { AuthGuard } from '@nestjs/passport';
 import { HMTTaskVerifier } from '@src/globalServices/task/common/verifier/outapp/hmt.verifier';
 import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
+import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
 @ApiTags('task')
 @Controller('tasks')
+@ApiBearerAuth()
 export class TasksController {
   constructor(
     private readonly taskDataService: TasksService,

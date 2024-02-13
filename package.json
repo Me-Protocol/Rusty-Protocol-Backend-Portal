@@ -25,8 +25,8 @@
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org me-protocol-c1f3212fa --project node-express ./dist && sentry-cli sourcemaps upload --org me-protocol-c1f3212fa --project node-express ./dist"
   },
   "dependencies": {
-    "@developeruche/protocol-core": "^0.5.0",
-    "@developeruche/runtime-sdk": "0.3.9",
+    "@developeruche/protocol-core": "^0.6.1-production",
+    "@developeruche/runtime-sdk": "0.4.1-production",
     "@elastic/elasticsearch": "^8.6.0",
     "@gelatonetwork/relay-sdk": "^4.0.0",
     "@nestjs-modules/mailer": "^1.8.1",
@@ -35,19 +35,20 @@
     "@nestjs/cache-manager": "^2.1.0",
     "@nestjs/common": "^9.0.0",
     "@nestjs/config": "^2.2.0",
-    "@nestjs/core": "^9.4.3",
+    "@nestjs/core": "^10.0.0",
     "@nestjs/elasticsearch": "^9.0.0",
     "@nestjs/event-emitter": "^2.0.2",
     "@nestjs/jwt": "^10.0.1",
     "@nestjs/mapped-types": "^2.0.0",
     "@nestjs/passport": "^9.0.0",
     "@nestjs/platform-express": "^9.4.3",
-    "@nestjs/platform-socket.io": "9.1.6",
+    "@nestjs/platform-socket.io": "^9.1.6",
     "@nestjs/schedule": "^3.0.1",
     "@nestjs/serve-static": "^4.0.0",
     "@nestjs/swagger": "^7.0.2",
     "@nestjs/typeorm": "^10.0.0",
-    "@nestjs/websockets": "9.1.6",
+    "@nestjs/websockets": "^9.4.3",
+    "@sendgrid/client": "^8.1.0",
     "@sentry/node": "^7.73.0",
     "@sentry/profiling-node": "^1.2.1",
     "@sentry/tracing": "^7.73.0",
@@ -95,12 +96,13 @@
     "pg": "^8.8.0",
     "pino-http": "^8.4.0",
     "point-of-view": "^6.3.0",
+    "rdme": "^8.6.6",
     "redis": "^4.6.9",
     "reflect-metadata": "^0.1.13",
     "request-ip": "^3.3.0",
     "rxjs": "^7.2.0",
     "slugify": "^1.6.6",
-    "socket.io": "^4.6.1",
+    "socket.io": "^4.7.4",
     "stripe": "^12.9.0",
     "twilio": "^3.84.1",
     "twitter-api-sdk": "^1.2.1",
@@ -147,6 +149,9 @@
     "tsconfig-paths": "4.1.1",
     "typescript": "^4.7.4"
   },
+  "resolutions": {
+    "jackspeak": "2.1.1"
+  },
   "jest": {
     "moduleFileExtensions": [
       "js",
@@ -162,6 +167,14 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/$1",
+      "@src/(.*)$": "<rootDir>/$1"
+    },
+    "moduleDirectories": [
+      "<rootDir>/../",
+      "node_modules"
+    ]
   }
 }

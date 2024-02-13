@@ -9,6 +9,12 @@ import {
   IsString,
 } from 'class-validator';
 
+export class UpdateCustomerWalletDto {
+  @ApiProperty()
+  @IsString()
+  walletAddress: string;
+}
+
 export class UpdateCustomerDto {
   @ApiProperty()
   @IsOptional()

@@ -15,9 +15,11 @@ import { ReviewManagementService } from './service';
 import { AuthGuard } from '@nestjs/passport';
 import { ReviewDto } from './dto/ReviewDto.dto';
 import { FilterReviewDto } from './dto/FilterReviewsDto.dto';
+import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
 @ApiTags('Reviews')
 @Controller('review')
+@ApiBearerAuth()
 export class ReviewManagementController {
   constructor(
     private readonly reviewManagementService: ReviewManagementService,

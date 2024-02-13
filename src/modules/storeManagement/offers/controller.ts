@@ -1,7 +1,6 @@
 import {
   Controller,
   Body,
-  UseInterceptors,
   UseGuards,
   ValidationPipe,
   Put,
@@ -11,9 +10,7 @@ import {
   Query,
   Req,
   Delete,
-  HttpException,
 } from '@nestjs/common';
-import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { ApiTags } from '@nestjs/swagger';
 import { OfferManagementService } from './service';
@@ -22,9 +19,11 @@ import { UpdateOfferDto } from './dto/UpdateOfferDto.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { FilterOfferDto, FilterUserOfferDto } from './dto/FilterOfferDto.dto';
 import { GetOfferDto } from './dto/GetOfferDto.dto';
+import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
-ApiTags('Offers');
+@ApiTags('Offers')
 @Controller('store/offer')
+@ApiBearerAuth()
 export class OfferManagementController {
   constructor(
     private readonly offerManagementService: OfferManagementService,

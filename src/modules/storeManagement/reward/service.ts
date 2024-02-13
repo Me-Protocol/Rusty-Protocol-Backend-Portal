@@ -35,6 +35,7 @@ import { UpdateRewardDto } from './dto/updateRewardDto';
 import { NotificationService } from '@src/globalServices/notification/notification.service';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 import { NotificationType } from '@src/utils/enums/notification.enum';
+import { API_KEY_SALT } from '@src/config/env.config';
 
 @Injectable()
 export class RewardManagementService {
@@ -92,6 +93,7 @@ export class RewardManagementService {
       if (body.rewardValueInDollars)
         reward.rewardValueInDollars = body.rewardValueInDollars;
       if (body.treasurySupply) reward.treasurySupply = body.treasurySupply;
+      if (body.contractAddress) reward.contractAddress = body.contractAddress;
 
       if (isDraft) {
         return await this.rewardService.save(reward);
@@ -107,15 +109,6 @@ export class RewardManagementService {
   }
 
   async completeReward(body: UpdateRewardCreationDto) {
-    const checkContractAddress =
-      await this.rewardService.getRewardByContractAddress(body.contractAddress);
-
-    if (checkContractAddress) {
-      throw new HttpException('Contract address already exists', 400, {
-        cause: new Error('Contract address already exists'),
-      });
-    }
-
     const reward = await this.rewardService.getRewardByIdAndBrandId(
       body.rewardId,
       body.brandId,
@@ -165,7 +158,6 @@ export class RewardManagementService {
       bountyKeyIdentifier,
     );
 
-    reward.contractAddress = body.contractAddress;
     reward.status = RewardStatus.PUBLISHED;
     reward.redistributionPublicKey = pubKey;
     reward.bountyPublicKey = bountyPubKey;
@@ -325,18 +317,6 @@ export class RewardManagementService {
   }
 
   // create customer
-  async createCustomers(userId: string, brandId: string) {
-    const checkCustomer = await this.brandService.getBrandCustomer(
-      brandId,
-      userId,
-    );
-
-    if (!checkCustomer) {
-      await this.brandService.createBrandCustomer(userId, brandId);
-    }
-
-    return true;
-  }
 
   async addPointsToRewardRegistry(addableSyncData: any[], rewardId: string) {
     for (const syncData of addableSyncData) {
@@ -344,7 +324,10 @@ export class RewardManagementService {
       const checkRegistry = await this.syncService.getRegistryRecordByIdentifer(
         identifier,
         rewardId,
+        syncData.identifierType,
       );
+
+      const reward = await this.rewardService.findOneById(rewardId);
 
       if (checkRegistry) {
         // create transaction
@@ -362,6 +345,23 @@ export class RewardManagementService {
           rewardId: rewardId,
         });
       }
+
+      const brandCustomer = await this.brandService.createBrandCustomer({
+        name: checkRegistry?.user?.customer?.name ?? identifier,
+        phone:
+          syncData.identifierType === SyncIdentifierType.PHONE
+            ? identifier
+            : null,
+        email:
+          syncData.identifierType === SyncIdentifierType.EMAIL
+            ? identifier
+            : null,
+        brandId: reward.brandId,
+      });
+
+      brandCustomer.totalIssued =
+        Number(brandCustomer.totalIssued) + Number(syncData.amount);
+      await this.brandService.saveBrandCustomer(brandCustomer);
     }
 
     return true;
@@ -527,6 +527,7 @@ export class RewardManagementService {
         batch: savedBatch,
       };
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
@@ -573,17 +574,14 @@ export class RewardManagementService {
           const registry = await this.syncService.getRegistryRecordByIdentifer(
             syncData.identifier,
             rewardId,
+            syncData.identifierType,
           );
 
-          if (registry) {
-            await this.syncService.disbutributeRewardToExistingUsers({
-              registryId: registry.id,
-              amount: syncData.amount,
-              description: `Reward distributed to ${user.customer.walletAddress}`,
-            });
-          }
-
-          await this.createCustomers(user.id, batch.reward.brandId);
+          await this.syncService.disbutributeRewardToExistingUsers({
+            registryId: registry.id,
+            amount: syncData.amount,
+            description: `Reward distributed to ${user.customer.walletAddress}`,
+          });
         } else {
           await this.syncService.moveRewardPointToUndistribted({
             customerIdentiyOnBrandSite: syncData.identifier,
@@ -619,11 +617,12 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
-      const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
+      // TODO: Check if brand can pay cost
+      // const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
 
-      if (!canPayCost) {
-        throw new Error('Brand cannot pay cost');
-      }
+      // if (!canPayCost) {
+      //   throw new Error('Brand cannot pay cost');
+      // }
 
       await this.syncService.pushTransactionToRuntime(body.params);
 
@@ -668,6 +667,9 @@ export class RewardManagementService {
       endDate: query.endDate,
       userId: query.userId,
       transactionsType: query.transactionsType,
+      rewardId: query.rewardId,
+      page: query.page,
+      limit: query.limit,
     });
   }
 
@@ -711,10 +713,11 @@ export class RewardManagementService {
               await this.syncService.getRegistryRecordByIdentifer(
                 syncData.identifier,
                 rewardId,
+                syncData.identifierType,
               );
 
             if (registry) {
-              users.push(user.customer.walletAddress);
+              users.push(user?.customer?.walletAddress);
               amounts.push(ethers.utils.parseEther(syncData.amount.toString()));
             }
           }
@@ -751,18 +754,16 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
-      const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
+      // TODO: Create bill
+      // const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
 
-      if (!canPayCost) {
-        throw new Error('Brand cannot pay cost');
-      }
+      // if (!canPayCost) {
+      //   throw new Error('Brand cannot pay cost');
+      // }
 
       const syncData = batch.syncData;
 
-      const { privKey } = generateWalletWithApiKey(
-        privateKey,
-        process.env.API_KEY_SALT,
-      );
+      const { privKey } = generateWalletWithApiKey(privateKey, API_KEY_SALT);
 
       const wallet = new ethers.Wallet(privKey);
 
@@ -825,11 +826,11 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
-      const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
+      // const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
 
-      if (!canPayCost) {
-        throw new Error('Brand cannot pay cost');
-      }
+      // if (!canPayCost) {
+      //   throw new Error('Brand cannot pay cost');
+      // }
 
       const syncData = batch.syncData;
 
@@ -874,8 +875,16 @@ export class RewardManagementService {
   }
 
   async issueAndDistributeReward(body: UpdateBatchDto, apiKey: ApiKey) {
-    await this.updateBatch(body);
-    return await this.distributeWithApiKey(apiKey, body.rewardId);
+    try {
+      await this.updateBatch(body);
+      return await this.distributeWithApiKey(apiKey, body.rewardId);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
+    }
   }
 
   async completeDistribution({

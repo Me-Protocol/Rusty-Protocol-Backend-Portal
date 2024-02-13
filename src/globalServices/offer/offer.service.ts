@@ -14,6 +14,7 @@ import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { offerIndex } from '@src/modules/search/interface/search.interface';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { BrandCustomer } from '../brand/entities/brand_customer.entity';
+import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class OfferService {
@@ -128,6 +129,12 @@ export class OfferService {
     sessionId: string,
     userId?: string,
   ) {
+    let user: User;
+
+    if (userId) {
+      user = await this.userService.getUserById(userId);
+    }
+
     const offer = await this.offerRepo.findOne({
       where: {
         offerCode,
@@ -635,10 +642,12 @@ export class OfferService {
         where: { userId: userId, brandId: offer.brandId },
       });
 
-      brandCustomer.totalRedeemed += 1;
-      brandCustomer.totalRedemptionAmount = +totalRedemptionAmountParse;
+      if (brandCustomer) {
+        brandCustomer.totalRedeemed += 1;
+        brandCustomer.totalRedemptionAmount = +totalRedemptionAmountParse;
 
-      await this.brandCustomerRepo.save(brandCustomer);
+        await this.brandCustomerRepo.save(brandCustomer);
+      }
 
       await this.offerRepo.save(offer);
 

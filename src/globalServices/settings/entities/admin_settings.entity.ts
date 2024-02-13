@@ -84,4 +84,20 @@ export class AdminSettings extends BaseEntity {
     default: 5,
   })
   maximumOpenRewardSetupFactor: number;
+
+  @Column({
+    default: 2,
+  })
+  rewardAutoTopUpFactor: number;
+
+  @Column({
+    default: 2,
+  })
+  meAutoTopUpFactor: number;
+
+  @Column({
+    type: 'decimal',
+    default: 0.09,
+  })
+  meTokenValue: number;
 }

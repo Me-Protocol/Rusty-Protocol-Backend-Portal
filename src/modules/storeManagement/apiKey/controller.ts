@@ -17,9 +17,11 @@ import { ApiKeyManagementService } from './service';
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
 import { CreateApiDto } from './dto/createApiDto';
+import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
 @ApiTags('API Key')
 @Controller('api_key')
+@ApiBearerAuth()
 export class ApiKeyManagementController {
   constructor(
     private readonly apiKeyManagementService: ApiKeyManagementService,
@@ -59,5 +61,11 @@ export class ApiKeyManagementController {
       magicKey: process.env.MAGIC_KEY,
       rpcPolygonKey: process.env.RPC_POLYGON_KEY,
     };
+  }
+
+  @UseGuards(ApiKeyJwtStrategy)
+  @Get('/brand')
+  async checkApiKey(@Req() req: any) {
+    return req.brand;
   }
 }

@@ -9,6 +9,7 @@ export const constructHmtManifest = ({
   taskId: string;
 }) => {
   const newManifest = {
+    skip_upload_pipeline: true,
     direct: true,
     manifest: {
       batch_result_delivery_webhook: `${SERVER_URL}/task/${taskId}/job-completed`,
@@ -39,7 +40,7 @@ export const constructHmtManifest = ({
         sig_figs: 1,
       },
       requester_question: {
-        en: 'Does this review make sense, Answer 1 for yes and 0 for no?',
+        en: `Does this [review](${taskResponses?.[0]?.responseUrl}) make sense, Answer 1 for yes and 0 for no?`,
       },
       restricted_audience: {
         sitekey: [
@@ -57,7 +58,7 @@ export const constructHmtManifest = ({
       requester_max_repeats: 3,
       requester_min_repeats: 3,
       unsafe_content: false,
-      task_bid_price: '0.3',
+      task_bid_price: '0.38',
       oracle_stake: '0.05',
       taskdata: [
         ...taskResponses.map((taskResponse) => ({

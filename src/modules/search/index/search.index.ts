@@ -112,7 +112,6 @@ export class ElasticIndex {
     entities.forEach((entity) => {
       bulk.push({ index: { _index: index._index, _id: entity.id } });
       bulk.push(entity);
-      console.log(JSON.stringify(bulk));
     });
 
     return {
@@ -179,7 +178,7 @@ export class ElasticIndex {
           },
         });
 
-        existingDocuments.map(async (doc) => {
+        existingDocuments?.map(async (doc) => {
           // Assuming this.searchService.getDocumentById is an asynchronous function
           await existingIds.add(doc._source.id);
         });

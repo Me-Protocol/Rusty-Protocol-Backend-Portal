@@ -116,7 +116,14 @@ export class UserService {
       where: {
         id,
       },
-      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
+      relations: [
+        'customer',
+        'brand',
+        'brandMember',
+        'brandMember.brand',
+        'brand.plan',
+        'adminMember',
+      ],
     });
   }
 

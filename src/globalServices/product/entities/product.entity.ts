@@ -17,6 +17,7 @@ import { ProductStatus } from '@src/utils/enums/ItemStatus';
 import { Offer } from '@src/globalServices/offer/entities/offer.entity';
 import { Variant } from './variants.entity';
 import { Collection } from '@src/globalServices/collections/entities/collection.entity';
+import { Currency } from '@src/globalServices/currency/entities/currency.entity';
 
 @Entity('product')
 export class Product extends BaseEntity {
@@ -41,7 +42,9 @@ export class Product extends BaseEntity {
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   categoryId: string;
 
   @OneToMany(() => ProductImage, (productImage) => productImage.product)
@@ -58,6 +61,7 @@ export class Product extends BaseEntity {
     type: 'decimal',
     precision: 10,
     scale: 2,
+    default: 0,
   })
   price: number;
 
@@ -113,4 +117,23 @@ export class Product extends BaseEntity {
     default: 'N/A',
   })
   productUrl: string;
+
+  @Column({
+    nullable: true,
+  })
+  minAge: number;
+
+  @Column({
+    nullable: true,
+  })
+  currencyId: string;
+
+  @ManyToOne(() => Currency, (currency) => currency.id)
+  @JoinColumn({ name: 'currencyId' })
+  currency: Currency;
+
+  @Column({
+    nullable: true,
+  })
+  coverImage: string;
 }

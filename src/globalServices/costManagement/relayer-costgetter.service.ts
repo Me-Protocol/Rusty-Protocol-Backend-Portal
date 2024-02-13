@@ -67,6 +67,21 @@ const retrieveCostInDollar = async (cost: number, tokenSymbol: string) => {
   return priceInUSD * cost;
 };
 
+export const getMeTokenValueInUSD = async () => {
+  // const response = await axios.get(process.env.PRICE_ORACLE_URL, {
+  //   params: {
+  //     symbol: 'ME',
+  //     convert: 'USD',
+  //   },
+  //   headers: {
+  //     'X-CMC_PRO_API_KEY': process.env.PRICE_ORACLE_API_KEY,
+  //   },
+  // });
+  // const tokenData = response.data.data['ME'];
+  // const priceInUSD = tokenData[0].quote.USD.price;
+  // return priceInUSD;
+};
+
 const getGasCost = async (network: string, transactionHash: string) => {
   switch (network) {
     case 'MUMBAI':

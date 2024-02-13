@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -9,6 +10,7 @@ import { KeyIdentifier } from './entities/keyIdentifier.entity';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { RewardStatus } from '@src/utils/enums/ItemStatus';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class RewardService {
@@ -20,10 +22,18 @@ export class RewardService {
 
     @InjectRepository(KeyIdentifier)
     private readonly keyIdentifierRepo: Repository<KeyIdentifier>,
+
+    private readonly settingsService: SettingsService,
   ) {}
 
   async create(reward: Reward): Promise<Reward> {
-    const createReward = this.rewardsRepo.create(reward);
+    const settings = await this.settingsService.getPublicSettings();
+
+    const createReward = this.rewardsRepo.create({
+      ...reward,
+      meAutoTopUpFactor: settings?.meAutoTopUpFactor,
+      rewardAutoTopUpFactor: settings?.rewardAutoTopUpFactor,
+    });
     const rewardRec = await this.save(createReward);
     this.elasticIndex.insertDocument(rewardRec, rewardIndex);
 

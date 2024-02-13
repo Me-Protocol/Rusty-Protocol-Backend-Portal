@@ -24,11 +24,14 @@ import { GetTreasuryPermitDto } from '@src/modules/storeManagement/reward/dto/Pu
 import { BrandService } from '@src/globalServices/brand/brand.service';
 import {
   distribute_reward_specific_with_url,
+  get_user_reward_balance_with_url,
   mutate_n_format_with_url,
   mutate_with_url,
   transfer_reward_with_url,
 } from '@developeruche/runtime-sdk';
 import { RUNTIME_URL } from '@src/config/env.config';
+import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
+import { User } from '@src/globalServices/user/entities/user.entity';
 
 @Injectable()
 export class SyncRewardService {
@@ -168,7 +171,7 @@ export class SyncRewardService {
 
   // findOne registry by userId
   async findOneRegistryByUserId(userId: string, rewardId: string) {
-    return this.rewardRegistryRepo.findOne({
+    return await this.rewardRegistryRepo.findOne({
       where: {
         userId,
         rewardId,
@@ -444,7 +447,37 @@ export class SyncRewardService {
   }
 
   async saveRegistryHistory(registryHistory: RegistryHistory) {
-    return this.registryHistoryRepo.save(registryHistory);
+    const registry = await this.rewardRegistryRepo.findOne({
+      where: {
+        id: registryHistory.rewardRegistryId,
+      },
+      relations: ['user', 'user.customer', 'reward'],
+    });
+
+    if (registry.userId) {
+      const walletAddress = registry.user.customer.walletAddress;
+
+      const balance = await get_user_reward_balance_with_url(
+        {
+          address: walletAddress,
+          reward_address: registry.reward.contractAddress,
+        },
+        RUNTIME_URL,
+      );
+
+      if (balance.data?.result) {
+        const formattedBalance = ethers.utils.formatEther(balance.data.result);
+        registry.balance = Number(formattedBalance);
+
+        await this.rewardRegistryRepo.save(registry);
+
+        registryHistory.balance = registry.balance;
+      }
+    } else {
+      registry.balance = 0;
+    }
+
+    return await this.registryHistoryRepo.save(registryHistory);
   }
 
   async checkActiveBatch(brandId: string, rewardId: string) {
@@ -497,10 +530,45 @@ export class SyncRewardService {
     return rewardRegistry;
   }
 
-  async getRegistryRecordByIdentifer(identifier: string, rewardId: string) {
-    return this.rewardRegistryRepo.findOneBy({
-      rewardId,
-      customerIdentiyOnBrandSite: identifier,
+  async getRegistryRecordByIdentifer(
+    identifier: string,
+    rewardId: string,
+    identifierType: SyncIdentifierType,
+  ) {
+    const checkReg = await this.rewardRegistryRepo.findOne({
+      where: {
+        rewardId,
+        customerIdentiyOnBrandSite: identifier,
+      },
+      relations: ['user', 'user.customer'],
+    });
+
+    let user: User;
+
+    if (checkReg) {
+      return checkReg;
+    }
+
+    if (identifierType === SyncIdentifierType.EMAIL) {
+      user = await this.userService.getUserByEmail(identifier);
+    } else {
+      user = await this.userService.getUserByPhone(identifier);
+    }
+
+    const registry = new RewardRegistry();
+    registry.rewardId = rewardId;
+    registry.customerIdentiyOnBrandSite = identifier; // TODO Using email for now
+    registry.customerIdentityType = identifierType;
+    registry.balance = 0;
+    registry.userId = user.id;
+
+    const rewardRegistry = await this.addRegistry(registry);
+
+    return await this.rewardRegistryRepo.findOne({
+      where: {
+        id: rewardRegistry.id,
+      },
+      relations: ['user', 'user.customer'],
     });
   }
 
@@ -611,13 +679,14 @@ export class SyncRewardService {
     // 2. We then use the rewardId to get the reward and check if the brand has enough balance to distribute rewards.
     const reward = await this.rewardService.findOneById(rewardId);
 
-    const canPayCost = await this.fiatWalletService.checkCanPayCost(
-      reward.brandId,
-    );
+    // TODO: Check
+    // const canPayCost = await this.fiatWalletService.checkCanPayCost(
+    //   reward.brandId,
+    // );
 
-    if (!canPayCost) {
-      return 'Brand cannot pay cost';
-    }
+    // if (!canPayCost) {
+    //   return 'Brand cannot pay cost';
+    // }
 
     //3. If the brand has enough balance, we use the redistributionKeyIdentifierId to get the private key identifier and decrypt the private key.
     const keyIdentifier = await this.rewardService.getKeyIdentifier(
@@ -639,20 +708,23 @@ export class SyncRewardService {
     );
 
     const user = await this.userService.getUserByEmail(email);
-    if (user) {
-      const checkCustomer = await this.brandService.getBrandCustomer(
-        reward.brandId,
-        user.id,
-      );
+    // if (user) {
+    //   const registry = await this.findOneRegistryByEmailIdentifier(
+    //     email,
+    //     rewardId,
+    //   );
 
-      if (!checkCustomer) {
-        await this.brandService.createBrandCustomer(user.id, reward.brandId);
-      }
-    }
+    //   await this.brandService.createBrandCustomer(
+    //     reward.brandId,
+    //     email,
+    //     SyncIdentifierType.EMAIL,
+    //   );
+    // }
 
     if (distributionData?.data?.error) {
       console.log(distributionData.data);
-      throw new Error("We couldn't distribute reward");
+      // throw new Error("We couldn't distribute reward");
+      return distributionData.data;
     } else {
       const registry = await this.findOneRegistryByEmailIdentifier(
         email,
@@ -681,13 +753,14 @@ export class SyncRewardService {
   }) {
     const reward = await this.rewardService.findOneById(rewardId);
 
-    const canPayCost = await this.fiatWalletService.checkCanPayCost(
-      reward.brandId,
-    );
+    // TODO: Check
+    // const canPayCost = await this.fiatWalletService.checkCanPayCost(
+    //   reward.brandId,
+    // );
 
-    if (!canPayCost) {
-      return 'Brand cannot pay cost';
-    }
+    // if (!canPayCost) {
+    //   return 'Brand cannot pay cost';
+    // }
 
     const keyIdentifier = await this.rewardService.getKeyIdentifier(
       reward.redistributionKeyIdentifierId,
@@ -744,21 +817,57 @@ export class SyncRewardService {
     startDate,
     endDate,
     transactionsType,
+    rewardId,
+    page,
+    limit,
   }: {
     userId: string;
     startDate: Date;
     endDate: Date;
     transactionsType: TransactionsType;
+    rewardId: string;
+    page: number;
+    limit: number;
   }) {
-    return this.registryHistoryRepo.find({
-      where: {
-        rewardRegistry: {
-          userId,
-        },
-        transactionType: transactionsType,
-        createdAt: Between(startDate, endDate),
-      },
-      relations: ['rewardRegistry', 'rewardRegistry.reward'],
-    });
+    const registryHistoryQuery =
+      this.registryHistoryRepo.createQueryBuilder('registryHistory');
+
+    registryHistoryQuery
+      .leftJoinAndSelect('registryHistory.rewardRegistry', 'rewardRegistry')
+      .leftJoinAndSelect('rewardRegistry.reward', 'reward')
+      .leftJoinAndSelect('reward.brand', 'brand')
+      .where('rewardRegistry.userId = :userId', { userId });
+
+    if (rewardId) {
+      registryHistoryQuery.andWhere('rewardRegistry.rewardId = :rewardId', {
+        rewardId,
+      });
+    }
+
+    if (transactionsType) {
+      registryHistoryQuery.andWhere(
+        'registryHistory.transactionType = :transactionsType',
+        { transactionsType },
+      );
+    }
+
+    if (startDate && endDate) {
+      registryHistoryQuery.andWhere(
+        'registryHistory.createdAt BETWEEN :startDate AND :endDate',
+        { startDate, endDate },
+      );
+    }
+
+    registryHistoryQuery.skip((page - 1) * limit).take(limit);
+
+    const registryHistory = await registryHistoryQuery.getMany();
+    const total = await registryHistoryQuery.getCount();
+
+    return {
+      total: total,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
+      registryHistory,
+    };
   }
 }

@@ -11,7 +11,41 @@ import {
   IsString,
   IsUUID,
   IsUrl,
+  Min,
 } from 'class-validator';
+
+export class VariantOptionDto {
+  @ApiProperty()
+  @IsString()
+  name: string;
+
+  @ApiProperty()
+  @IsString()
+  value: string;
+
+  @ApiProperty()
+  @IsNumber()
+  price: number;
+
+  @ApiProperty()
+  @IsNumber()
+  inventory: number;
+}
+
+export class VariantDto {
+  @ApiProperty()
+  @IsString()
+  name: string;
+
+  @ApiProperty()
+  @IsBoolean()
+  isCustom: boolean;
+
+  @ApiProperty({ type: [VariantOptionDto] })
+  @IsArray()
+  @IsNotEmpty({ message: 'Variants must have at least one option' })
+  options: VariantOptionDto[];
+}
 
 export class CreateProductDto {
   @ApiProperty()
@@ -25,8 +59,8 @@ export class CreateProductDto {
   brandId: string;
 
   @ApiProperty()
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty({ message: 'Please provide a category id' })
   categoryId: string;
 
   @ApiProperty()
@@ -41,6 +75,7 @@ export class CreateProductDto {
 
   @ApiProperty()
   @IsNumber()
+  @Min(1, { message: 'Price must be greater than 0' })
   price: number;
 
   @ApiProperty()
@@ -57,36 +92,10 @@ export class CreateProductDto {
   @IsUUID()
   subCategoryId: string;
 
-  @ApiProperty({
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        name: {
-          type: 'string',
-        },
-        value: {
-          type: 'string',
-        },
-        price: {
-          type: 'number',
-        },
-        inventory: {
-          type: 'number',
-        },
-      },
-    },
-  })
-  @IsArray({
-    message: 'Variants must be an array of objects',
-    // each: true,
-  })
-  variants: {
-    name: VarientType;
-    value: string;
-    price: number;
-    inventory: number;
-  }[];
+  @ApiProperty({ type: [VariantDto] })
+  @IsArray({ message: 'Variants must be an array' })
+  @IsOptional()
+  variants: VariantDto[];
 
   @ApiProperty()
   @IsOptional()
@@ -98,4 +107,18 @@ export class CreateProductDto {
   @ApiProperty()
   @IsUrl()
   productUrl: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumber()
+  minAge: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsUUID()
+  currencyId: string;
+
+  @ApiProperty()
+  @IsString()
+  coverImage: string;
 }

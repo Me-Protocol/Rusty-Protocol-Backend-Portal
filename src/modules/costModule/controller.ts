@@ -24,9 +24,11 @@ import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { ManualTopupDto } from './dto/ManualTopupDto.dto';
 import { CostModuleService } from '@src/globalServices/costManagement/costModule.service';
 import { ServerGuard } from '@src/middlewares/server-guard';
+import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 
 @ApiTags('Cost Module')
 @Controller('cost')
+@ApiBearerAuth()
 export class CostManagementController {
   constructor(
     private readonly costModuleManagementService: CostModuleManagementService,
@@ -75,20 +77,6 @@ export class CostManagementController {
     return await this.costModuleManagementService.setAutoTopUpAmount(
       body.amount,
       brand,
-    );
-  }
-
-  @UseGuards(BrandJwtStrategy)
-  @Post('/manual-topup')
-  async manualTopUp(
-    @Req() req: any,
-    @Body(ValidationPipe) body: ManualTopupDto,
-  ) {
-    const brand = req.user.brand as Brand;
-
-    return await this.costModuleManagementService.manualTopUp(
-      brand.id,
-      body.amount,
     );
   }
 }

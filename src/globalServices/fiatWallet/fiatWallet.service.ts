@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Transaction } from './entities/transaction.entity';
@@ -23,7 +23,10 @@ export class FiatWalletService {
     private readonly walletRepo: Repository<FiatWallet>,
 
     private readonly paymentService: PaymentService,
+
+    @Inject(forwardRef(() => BrandService))
     private readonly brandService: BrandService,
+
     private readonly settingsService: SettingsService,
     private readonly brandServiceSubscription: BrandSubscriptionService,
   ) {}
@@ -171,7 +174,7 @@ export class FiatWalletService {
 
     if (!brandServices) return false;
 
-    let triggerTopup: boolean = false;
+    let triggerTopup = false;
 
     for (const service of brandServices) {
       const cost = await this.brandServiceSubscription.getServiceCost(service);
@@ -183,6 +186,8 @@ export class FiatWalletService {
           brand.canPayCost_inApp = canPay;
           await this.brandService.save(brand);
           triggerTopup = !canPay;
+
+          break;
 
         case BrandSubServices.API:
           brand.canPayCost = canPay;
@@ -202,6 +207,7 @@ export class FiatWalletService {
     wallet: FiatWallet,
     brand: Brand,
     amount?: number,
+    paymentMethodId?: string,
   ) {
     const { topupAmountFactor } = await this.settingsService.getCostSettings();
 
@@ -226,11 +232,11 @@ export class FiatWalletService {
       return false;
     }
 
-    if (defaultPaymentMethod?.stripePaymentMethodId) {
+    if (defaultPaymentMethod?.stripePaymentMethodId || paymentMethodId) {
       try {
         const paymentIntent =
           await this.paymentService.createAutoCardChargePaymentIntent(
-            defaultPaymentMethod.stripePaymentMethodId,
+            paymentMethodId ?? defaultPaymentMethod.stripePaymentMethodId,
             autoTopupAmountInDollar,
             wallet.stripeCustomerId,
           );
@@ -280,5 +286,62 @@ export class FiatWalletService {
     transaction.walletId = wallet.id;
 
     return await this.transactionRepo.save(transaction);
+  }
+
+  async applyMeCredit({
+    walletId,
+    amount,
+  }: {
+    walletId: string;
+    amount: number;
+  }) {
+    const wallet = await this.walletRepo.findOne({
+      where: {
+        id: walletId,
+      },
+    });
+
+    // TODO: Use costgetter for this
+
+    const meTokenValue = (await this.settingsService.getPublicSettings())
+      .meTokenValue;
+
+    const meCreditsInDollars = Number(wallet.meCredits) * Number(meTokenValue);
+
+    if (meCreditsInDollars > 0) {
+      const amountToPay =
+        amount > meCreditsInDollars ? amount - meCreditsInDollars : 0;
+      const meCreditsUsedInDollar =
+        amount > meCreditsInDollars ? meCreditsInDollars : amount;
+      const meCreditsUsed = meCreditsUsedInDollar / meTokenValue;
+
+      return {
+        amountToPay,
+        meCreditsUsed,
+      };
+    }
+
+    return {
+      amountToPay: amount,
+      meCreditsUsed: 0,
+    };
+  }
+
+  async debitMeCredits({
+    walletId,
+    amount,
+  }: {
+    walletId: string;
+    amount: number;
+  }) {
+    const wallet = await this.walletRepo.findOne({
+      where: {
+        id: walletId,
+      },
+    });
+
+    wallet.meCredits = Number(wallet.meCredits) - Number(amount);
+
+    return await this.walletRepo.save(wallet);
   }
 }

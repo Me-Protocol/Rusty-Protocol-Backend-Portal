@@ -21,6 +21,18 @@ export class Invoice extends BaseEntity {
   })
   isPaid: boolean;
 
+  @Column({
+    default: false,
+  })
+  isDue: boolean;
+
   @OneToMany(() => Bill, (bill) => bill.invoice)
   bills: Bill[];
+
+  @Column({
+    type: 'decimal',
+    default: 0,
+    nullable: true,
+  })
+  total: number;
 }

@@ -1,9 +1,12 @@
 import {
+  Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
+  Post,
   Query,
   Req,
   Res,
@@ -14,11 +17,15 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags } from '@nestjs/swagger';
 import { NotificationService } from '@src/globalServices/notification/notification.service';
-import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { FilterNotificationDto } from './dto/FilterNotificationDto.dto';
+import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
+import { SendBulkNotificationDto } from '@src/modules/notification/dto/SendBulkNotification.dto';
+import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
+import { SendNotificationDto } from '@src/modules/notification/dto/SendNotification.dto';
 
 @ApiTags('Notification')
 @Controller('notification')
+@ApiBearerAuth()
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
@@ -33,6 +40,27 @@ export class NotificationController {
     return await this.notificationService.getAllNotifications(query);
   }
 
+  @Post('send-bulk')
+  @UseGuards(BrandJwtStrategy)
+  async sendBulkNotification(
+    @Req() req: any,
+    @Body(ValidationPipe) body: SendBulkNotificationDto,
+  ) {
+    const brandId = req.user.brand.id;
+
+    return await this.notificationService.sendBulkNotification(brandId, body);
+  }
+
+  @Post('send')
+  @UseGuards(BrandJwtStrategy)
+  async sendNotification(
+    @Req() req: any,
+    @Body(ValidationPipe) body: SendNotificationDto,
+  ) {
+    const brandId = req.user.brand.id;
+    return await this.notificationService.sendNotificationToUser(brandId, body);
+  }
+
   @UseGuards(AuthGuard())
   @Get(':id')
   async getNotificationById(
@@ -40,5 +68,20 @@ export class NotificationController {
     @Req() req: any,
   ) {
     return await this.notificationService.getNotificationById(id, req.user.id);
+  }
+
+  @UseGuards(AuthGuard())
+  @Delete(':id')
+  async deleteNotificationById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: any,
+  ) {
+    return await this.notificationService.deleteNotification(id, req.user.id);
+  }
+
+  @UseGuards(AuthGuard())
+  @Delete('clear/all')
+  async clearNotification(@Req() req: any) {
+    return await this.notificationService.clearAllNotifications(req.user.id);
   }
 }

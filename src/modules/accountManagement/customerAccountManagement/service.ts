@@ -1,10 +1,12 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { CustomerService } from '@src/globalServices/customer/customer.service';
-import { UpdateCustomerDto } from '../customerAccountManagement/dto/UpdateCustomerDto';
+import { UpdateCustomerDto } from './dto/UpdateCustomerDto.dto';
 import { logger } from '@src/globalServices/logger/logger.service';
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
 import { UserService } from '@src/globalServices/user/user.service';
+import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
+import { User } from '@src/globalServices/user/entities/user.entity';
 
 @Injectable()
 export class CustomerAccountManagementService {
@@ -99,6 +101,8 @@ export class CustomerAccountManagementService {
       const undistributedRewards =
         await this.syncService.getUndistributedReward(userId);
 
+      console.log('undistributedRewards', undistributedRewards);
+
       if (undistributedRewards.length > 0) {
         // 9. We iterate through the undistributed points and distribute them to the new walletAddress.
         for (const point of undistributedRewards) {
@@ -115,8 +119,30 @@ export class CustomerAccountManagementService {
         message: 'Wallet address updated successfully',
       };
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400);
+    }
+  }
+
+  async checkIfCustomerExist(
+    identifier: string,
+    identifierType: SyncIdentifierType,
+  ) {
+    let user: User;
+
+    if (identifierType === SyncIdentifierType.EMAIL) {
+      user = await this.userService.getUserByEmail(identifier);
+    } else if (identifierType === SyncIdentifierType.PHONE) {
+      user = await this.userService.getUserByPhone(identifier);
+    } else {
+      user = null;
+    }
+
+    if (user) {
+      return true;
+    } else {
+      return false;
     }
   }
 }

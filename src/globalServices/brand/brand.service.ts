@@ -1,7 +1,13 @@
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  HttpException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
-import { FindOptionsOrderValue, Repository } from 'typeorm';
+import { FindOptionsOrderValue, In, Repository } from 'typeorm';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { brandIndex } from '@src/modules/search/interface/search.interface';
 import { UpdateBrandDto } from '@src/modules/accountManagement/brandAccountManagement/dto/UpdateBrandDto.dto';
@@ -14,22 +20,55 @@ import { generateBrandIdBytes10 } from '@developeruche/protocol-core';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ProcessBrandColorEvent } from './events/process-brand-color.event';
+import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
+import { BrandSubscriptionPlan } from './entities/brand_subscription_plan.entity';
+import { BillerService } from '../biller/biller.service';
+import { PaymentService } from '../fiatWallet/payment.service';
+import { FiatWallet } from '../fiatWallet/entities/fiatWallet.entity';
+import { UserAppType } from '@src/utils/enums/UserAppType';
+import { User } from '@src/globalServices/user/entities/user.entity';
+import { TopupEventBlock } from './entities/topup_event_block.entity';
+import { isEmail } from 'class-validator';
+import { RewardService } from '../reward/reward.service';
+import { VoucherType } from '@src/utils/enums/VoucherType';
+import {
+  StatusType,
+  TransactionSource,
+  TransactionsType,
+} from '@src/utils/enums/Transactions';
+import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
+import { FiatWalletService } from '../fiatWallet/fiatWallet.service';
+import { Transaction } from '../fiatWallet/entities/transaction.entity';
+import { logger } from '../logger/logger.service';
+import { Role } from '@src/utils/enums/Role';
 
 @Injectable()
 export class BrandService {
   constructor(
     @InjectRepository(Brand)
     private readonly brandRepo: Repository<Brand>,
-
     @InjectRepository(BrandMember)
     private readonly brandMemberRepo: Repository<BrandMember>,
-
     @InjectRepository(BrandCustomer)
     private readonly brandCustomerRepo: Repository<BrandCustomer>,
-
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+    @InjectRepository(TopupEventBlock)
+    private readonly topupEventBlock: Repository<TopupEventBlock>,
+    @InjectRepository(BrandSubscriptionPlan)
+    private readonly brandSubscriptionPlanRepo: Repository<BrandSubscriptionPlan>,
     private readonly elasticIndex: ElasticIndex,
-
     private readonly eventEmitter: EventEmitter2,
+    private readonly billerService: BillerService,
+    private readonly paymentService: PaymentService,
+
+    @InjectRepository(FiatWallet)
+    private readonly walletRepo: Repository<FiatWallet>,
+
+    @Inject(forwardRef(() => RewardService))
+    private readonly rewardService: RewardService,
+
+    private readonly walletService: FiatWalletService,
   ) {}
 
   async create({ userId, name }: { userId: string; name: string }) {
@@ -55,6 +94,16 @@ export class BrandService {
     saveBrand.brandProtocolId = brandId.toString();
 
     return await this.brandRepo.save(saveBrand);
+  }
+
+  async getBrandOwner(brandId: string) {
+    return await this.brandMemberRepo.findOne({
+      where: {
+        brandId,
+        role: BrandRole.OWNER,
+      },
+      relations: ['user'],
+    });
   }
 
   save(brand: Brand) {
@@ -109,6 +158,7 @@ export class BrandService {
       brand.city = dto.city;
       brand.postalCode = dto.postalCode;
       brand.firstTimeLogin = dto.firstTimeLogin === 'true' ? true : false;
+      brand.brandStore = dto.brandStore;
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);
@@ -143,14 +193,26 @@ export class BrandService {
     return this.brandRepo.find();
   }
 
+  async getSubscribedBrands() {
+    return this.brandRepo.find({
+      where: {
+        isPlanActive: true,
+      },
+    });
+  }
+
   async getAllFilteredBrands({
     categoryId,
     page,
     limit,
+    order,
+    search,
   }: {
     categoryId: string;
     page: number;
     limit: number;
+    order: string;
+    search: string;
   }) {
     const brandQuery = this.brandRepo
       .createQueryBuilder('brand')
@@ -159,6 +221,26 @@ export class BrandService {
 
     if (categoryId) {
       brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
+    }
+
+    if (order) {
+      const formatedOrder = order.split(':')[0];
+      const acceptedOrder = ['name', 'createdAt', 'updatedAt'];
+
+      if (!acceptedOrder.includes(formatedOrder)) {
+        throw new Error('Invalid order param');
+      }
+
+      brandQuery.orderBy(
+        `brand.${order.split(':')[0]}`,
+        order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+      );
+    }
+
+    if (search) {
+      brandQuery.andWhere('brand.name LIKE :search', {
+        search: `%${search}%`,
+      });
     }
 
     brandQuery.skip((page - 1) * limit).take(limit);
@@ -190,11 +272,106 @@ export class BrandService {
     });
   }
 
-  async createBrandCustomer(userId: string, brandId: string) {
+  async getActiveBrandCustomers(
+    brandId: string,
+  ): Promise<{ emailUsers: User[]; phoneUsers: User[] }> {
+    const whereCondition: any = {
+      brandId,
+      identifierType: In([SyncIdentifierType.EMAIL, SyncIdentifierType.PHONE]),
+    };
+
+    const brandCustomers = await this.brandCustomerRepo.find({
+      where: whereCondition,
+      relations: ['brand'],
+    });
+
+    const identifiersByType: Record<SyncIdentifierType, string[]> = {
+      [SyncIdentifierType.EMAIL]: [],
+      [SyncIdentifierType.PHONE]: [],
+    };
+
+    for (const brandCustomer of brandCustomers) {
+      if (brandCustomer.identifierType && brandCustomer.identifier) {
+        identifiersByType[brandCustomer.identifierType].push(
+          brandCustomer.identifier,
+        );
+      }
+    }
+
+    const emailUsers: User[] = [];
+    const phoneUsers: User[] = [];
+
+    for (const identifierType in identifiersByType) {
+      if (identifiersByType[identifierType].length > 0) {
+        const usersOfType = await this.userRepo.find({
+          where: {
+            [identifierType]: In(identifiersByType[identifierType]),
+            userType: UserAppType.USER,
+          },
+        });
+
+        if (identifierType === SyncIdentifierType.EMAIL) {
+          emailUsers.push(...usersOfType);
+        } else if (identifierType === SyncIdentifierType.PHONE) {
+          phoneUsers.push(...usersOfType);
+        }
+      }
+    }
+
+    return { emailUsers, phoneUsers };
+  }
+
+  async getActiveBrandCustomer(
+    brandId: string,
+    identifier: string,
+    identifierType: SyncIdentifierType,
+  ): Promise<User | null> {
+    const whereCondition: any = {
+      brandId,
+      identifierType,
+      identifier,
+    };
+
+    const brandCustomer = await this.brandCustomerRepo.findOne({
+      where: whereCondition,
+      relations: ['brand'],
+    });
+
+    if (!brandCustomer) {
+      return null;
+    }
+
+    const user = await this.userRepo.findOne({
+      where: {
+        [identifierType]: identifier,
+        userType: UserAppType.USER,
+      },
+    });
+
+    return user || null;
+  }
+
+  async createBrandCustomer({
+    email,
+    name,
+    phone,
+    brandId,
+  }: {
+    brandId: string;
+    name?: string;
+    email: string;
+    phone?: string;
+  }) {
+    const identifier = isEmail(email) ? email : phone;
+    const identifierType = isEmail(email)
+      ? SyncIdentifierType.EMAIL
+      : SyncIdentifierType.PHONE;
+
     const checkCustomer = await this.brandCustomerRepo.findOne({
       where: {
-        userId,
         brandId,
+        identifier,
+        identifierType,
       },
       relations: ['brand', 'user', 'user.customer'],
     });
@@ -205,26 +382,69 @@ export class BrandService {
 
     const brandCustomer = new BrandCustomer();
     brandCustomer.brandId = brandId;
-    brandCustomer.userId = userId;
+    brandCustomer.identifier = identifier;
+    brandCustomer.identifierType = identifierType;
+    brandCustomer.phone = phone;
+    brandCustomer.email = email;
+    brandCustomer.name = name;
 
     await this.brandCustomerRepo.save(brandCustomer);
 
     return await this.brandCustomerRepo.findOne({
       where: {
-        userId,
         brandId,
+        email,
       },
-      relations: ['brand', 'user', 'user.customer'],
+      relations: ['brand'],
     });
   }
 
+  async saveBrandCustomer(brandCustomer: BrandCustomer) {
+    return await this.brandCustomerRepo.save(brandCustomer);
+  }
+
   async getBrandCustomer(brandId: string, userId: string) {
-    return await this.brandCustomerRepo.findOne({
+    const customer = await this.brandCustomerRepo.findOne({
       where: {
         brandId,
         userId,
       },
-      relations: ['brand', 'user', 'user.customer'],
+      relations: ['brand'],
+    });
+
+    if (!customer) {
+      const user = await this.userRepo.findOne({
+        where: {
+          id: userId,
+        },
+      });
+
+      return await this.createBrandCustomer({
+        email: user?.email,
+        name: user?.customer?.name,
+        phone: user?.phone,
+        brandId,
+      });
+    }
+
+    return customer;
+  }
+
+  async getBrandCustomersByEmailAddress(email: string) {
+    return await this.brandCustomerRepo.find({
+      where: {
+        email,
+      },
+      relations: ['brand'],
+    });
+  }
+
+  async getBrandCustomerByUserId(userId: string) {
+    return await this.brandCustomerRepo.findOne({
+      where: {
+        userId,
+      },
+      relations: ['brand'],
     });
   }
 
@@ -233,22 +453,23 @@ export class BrandService {
     page: number,
     limit: number,
     filterBy: FilterBrandCustomer,
+    order: string,
+    isOnboarded: boolean,
     sort?: {
       createdAt: FindOptionsOrderValue;
     },
+    search?: string,
   ) {
     const brandCustomerQuery = this.brandCustomerRepo
       .createQueryBuilder('brandCustomer')
-      .leftJoinAndSelect('brandCustomer.brand', 'brand')
-      .leftJoinAndSelect('brandCustomer.user', 'user')
-      .leftJoinAndSelect('user.customer', 'customer');
+      .leftJoinAndSelect('brandCustomer.brand', 'brand');
 
     brandCustomerQuery.where('brandCustomer.brandId = :brandId', { brandId });
 
     if (filterBy === FilterBrandCustomer.MOST_ACTIVE) {
       // where customer redeemed greater than 2
-      brandCustomerQuery.andWhere('customer.totalRedeemed > 2');
-      brandCustomerQuery.orderBy('customer.totalRedeemed', 'DESC');
+      // brandCustomerQuery.andWhere('brandCustomer.totalRedeemed > 2');
+      brandCustomerQuery.orderBy('brandCustomer.totalRedeemed', 'DESC');
     }
 
     if (filterBy === FilterBrandCustomer.MOST_RECENT) {
@@ -276,6 +497,41 @@ export class BrandService {
       } else if (sort.createdAt === 'DESC') {
         brandCustomerQuery.orderBy('brandCustomer.createdAt', 'DESC');
       }
+    }
+
+    if (search) {
+      brandCustomerQuery.andWhere(
+        'brandCustomer.name LIKE :search OR brandCustomer.email LIKE :search OR brandCustomer.phone LIKE :search',
+        {
+          search: `%${search}%`,
+        },
+      );
+    }
+
+    if (isOnboarded) {
+      brandCustomerQuery.andWhere('brandCustomer.isOnboarded = :isOnboarded', {
+        isOnboarded,
+      });
+    }
+
+    if (order) {
+      const formatedOrder = order.split(':')[0];
+      const acceptedOrder = [
+        'totalRedeemed',
+        'totalRedemptionAmount',
+        'totalExternalRedeemed',
+        'totalExternalRedemptionAmount',
+        'totalIssued',
+      ];
+
+      if (!acceptedOrder.includes(formatedOrder)) {
+        throw new Error('Invalid order param');
+      }
+
+      brandCustomerQuery.orderBy(
+        `brandCustomer.${order.split(':')[0]}`,
+        order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+      );
     }
 
     brandCustomerQuery.skip((page - 1) * limit).take(limit);
@@ -330,6 +586,207 @@ export class BrandService {
   }
 
   async removeBrandMember(brandMember: BrandMember) {
+    const user = await this.userRepo.findOne({
+      where: {
+        id: brandMember.userId,
+      },
+    });
+
+    if (user) {
+      user.role = Role.CUSTOMER;
+
+      await this.userRepo.save(user);
+    }
+
     return await this.brandMemberRepo.remove(brandMember);
+  }
+
+  async createBrandSubscriptionPlan({
+    name,
+    amount,
+    description,
+  }: {
+    name: string;
+    amount: number;
+    description: string;
+  }) {
+    const plan = new BrandSubscriptionPlan();
+    plan.name = name;
+    plan.description = description;
+    plan.monthlyAmount = amount;
+
+    return await this.brandSubscriptionPlanRepo.save(plan);
+  }
+
+  async getBrandSubscriptionPlans() {
+    return await this.brandSubscriptionPlanRepo.find();
+  }
+
+  async getBrandSubscriptionPlanById(id: string) {
+    return await this.brandSubscriptionPlanRepo.findOne({ where: { id } });
+  }
+
+  async subscribeBrandToPlan(brandId: string, planId: string) {
+    const brand = await this.getBrandById(brandId);
+
+    await this.billerService.getActiveInvoiceOrCreate(brandId);
+
+    brand.planId = planId;
+    brand.lastPlanRenewalDate = new Date();
+    brand.nextPlanRenewalDate = new Date(
+      brand.lastPlanRenewalDate.setMonth(
+        brand.lastPlanRenewalDate.getMonth() + 1,
+      ),
+    );
+    brand.isPlanActive = true;
+
+    return await this.brandRepo.save(brand);
+  }
+
+  async subscribePlan(
+    brandId: string,
+    planId: string,
+    paymentMethodId: string,
+    useMeCredit: boolean,
+  ) {
+    try {
+      const brand = await this.getBrandById(brandId);
+      if (!brand) {
+        throw new NotFoundException('Brand not found');
+      }
+
+      const plan = await this.getBrandSubscriptionPlanById(planId);
+      if (!plan) {
+        throw new NotFoundException('Plan not found');
+      }
+
+      const wallet = await this.walletRepo.findOne({
+        where: {
+          brandId,
+        },
+      });
+
+      let amount = {
+        amountToPay: plan.monthlyAmount,
+        meCreditsUsed: 0,
+      };
+
+      if (useMeCredit) {
+        const newAmount = await this.walletService.applyMeCredit({
+          walletId: wallet.id,
+          amount: amount.amountToPay,
+        });
+
+        amount = newAmount;
+      }
+
+      if (amount.amountToPay > 0) {
+        const paymentMethod =
+          await this.paymentService.getPaymentMethodByStripePaymentMethodId(
+            paymentMethodId,
+          );
+
+        if (!paymentMethod?.stripePaymentMethodId) {
+          throw new HttpException('Please link your card first.', 400, {});
+        }
+
+        await this.paymentService.chargePaymentMethod({
+          amount: amount.amountToPay,
+          paymentMethodId,
+          wallet,
+          narration: `Payment for ${plan.name} subscription`,
+          source: TransactionSource.SUBSCRIPTION,
+          paymentMethod: PaymentMethodEnum.STRIPE,
+          appliedMeCredit: useMeCredit,
+        });
+
+        if (amount.meCreditsUsed > 0) {
+          await this.walletService.debitMeCredits({
+            walletId: wallet.id,
+            amount: amount.meCreditsUsed,
+          });
+        }
+
+        await this.subscribeBrandToPlan(brandId, planId);
+
+        return 'ok';
+      } else {
+        await this.subscribeBrandToPlan(brandId, planId);
+
+        const transaction = new Transaction();
+        transaction.amount = amount.amountToPay;
+        transaction.balance = wallet.balance;
+        transaction.status = StatusType.SUCCEDDED;
+        transaction.transactionType = TransactionsType.DEBIT;
+        transaction.narration = `Payment for ${plan.name} subscription`;
+        transaction.walletId = wallet.id;
+        transaction.paymentMethod = PaymentMethodEnum.ME_CREDIT;
+        transaction.source = TransactionSource.SUBSCRIPTION;
+        transaction.appliedMeCredit = true;
+
+        await this.paymentService.createTransaction(transaction);
+
+        return 'ok';
+      }
+    } catch (error) {
+      console.log('error', error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async getLastTopupEventBlock() {
+    return await this.topupEventBlock.find({
+      order: {
+        lastBlock: 'DESC',
+      },
+      take: 1,
+    })[0];
+  }
+
+  async saveTopupEventBlock(blockNumber) {
+    const topupEventBlock = new TopupEventBlock();
+    topupEventBlock.lastBlock = blockNumber;
+
+    return await this.topupEventBlock.save(topupEventBlock);
+  }
+
+  async getBrandByMeTokenAddress(meTokenAddress: string) {
+    const reward = await this.rewardService.getRewardByContractAddress(
+      meTokenAddress,
+    );
+
+    if (!reward) {
+      return null;
+    }
+
+    return await this.brandRepo.findOne({
+      where: {
+        id: reward.brandId,
+      },
+    });
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async syncBrandCustomer() {
+    const brandCustomers = await this.brandCustomerRepo.find();
+
+    for (const brandCustomer of brandCustomers) {
+      const user = await this.userRepo.findOne({
+        where: {
+          [brandCustomer.identifierType]: brandCustomer.identifier,
+        },
+      });
+
+      if (!user) {
+        continue;
+      }
+
+      if (brandCustomer.userId !== user.id) {
+        brandCustomer.userId = user.id;
+        brandCustomer.isOnboarded = true;
+        await this.brandCustomerRepo.save(brandCustomer);
+      }
+    }
   }
 }

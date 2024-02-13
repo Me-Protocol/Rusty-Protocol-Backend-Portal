@@ -32,6 +32,14 @@ import { Enable2FADto } from './dto/Enable2FADto.dto';
 import { UpdatePreferenceDto } from './dto/UpdatePreferenceDto.dto';
 import fetch from 'node-fetch';
 import { emailCode } from '@src/utils/helpers/email';
+import { CustomerAccountManagementService } from '../accountManagement/customerAccountManagement/service';
+import { CollectionService } from '@src/globalServices/collections/collections.service';
+import { ItemStatus } from '@src/utils/enums/ItemStatus';
+import { EventEmitter2 } from '@node_modules/@nestjs/event-emitter';
+import {
+  CREATE_SENDGRID_CONTACT,
+  CreateSendgridContactEvent,
+} from '@src/globalServices/mail/create-sendgrid-contact.event';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -51,6 +59,9 @@ export class AuthenticationService {
     private brandService: BrandService,
     private walletService: FiatWalletService,
     private syncService: SyncRewardService,
+    private customerAccountManagementService: CustomerAccountManagementService,
+    private collectionService: CollectionService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   // Signs a token
@@ -178,7 +189,7 @@ export class AuthenticationService {
     }
   }
 
-  private async getUserAndThrowErrorIfNotFound(email: string): Promise<User> {
+  async getUserAndThrowErrorIfNotFound(email: string): Promise<User> {
     const user = await this.userService.getUserByEmail(email);
     if (!user) {
       throw new HttpException('User not found', 404);
@@ -186,7 +197,7 @@ export class AuthenticationService {
     return user;
   }
 
-  private async generateVerificationCode(user: User): Promise<number> {
+  async generateVerificationCode(user: User): Promise<number> {
     const verificationCode = Math.floor(1000 + Math.random() * 9000);
     user.accountVerificationCode = verificationCode;
     await this.userService.saveUser(user);
@@ -214,7 +225,7 @@ export class AuthenticationService {
     return phoneNumber.replace(/\D/g, '');
   }
 
-  private async getUserByPhoneNumberAndThrowErrorIfNotFound(
+  async getUserByPhoneNumberAndThrowErrorIfNotFound(
     phone: string,
   ): Promise<User> {
     const user = await this.userService.getUserByPhone(phone);
@@ -224,7 +235,7 @@ export class AuthenticationService {
     return user;
   }
 
-  private async sendVerificationSms(
+  async sendVerificationSms(
     phone: string,
     verificationCode: number,
   ): Promise<void> {
@@ -253,14 +264,14 @@ export class AuthenticationService {
     }
   }
 
-  private async checkIfUserExists(email: string): Promise<void> {
+  async checkIfUserExists(email: string): Promise<void> {
     const user = await this.userService.getUserByEmail(email);
     if (user) {
       throw new Error('Email already exists');
     }
   }
 
-  private async checkDuplicateBrandName(
+  async checkDuplicateBrandName(
     userType: UserAppType,
     name: string,
   ): Promise<void> {
@@ -272,7 +283,7 @@ export class AuthenticationService {
     }
   }
 
-  private async createAndSaveUser(
+  async createAndSaveUser(
     email: string,
     password: string,
     confirmPassword: string,
@@ -296,7 +307,7 @@ export class AuthenticationService {
     }
   }
 
-  private async handleUserTypeRoles(
+  async handleUserTypeRoles(
     userType: UserAppType,
     newUser: User,
     name: string,
@@ -317,7 +328,7 @@ export class AuthenticationService {
     await this.userService.saveUser(newUser);
   }
 
-  private async generateAndSignToken(newUser: User): Promise<string> {
+  async generateAndSignToken(newUser: User): Promise<string> {
     return await this.signToken({
       email: newUser.email,
       id: newUser.id,
@@ -333,8 +344,18 @@ export class AuthenticationService {
     confirmPassword,
     name,
     userType,
-  }: EmailSignupDto): Promise<string> {
+    userAgent,
+    ip,
+    walletAddress,
+  }: EmailSignupDto & {
+    userAgent: string;
+    ip: string;
+  }): Promise<string> {
     try {
+      if (userType === UserAppType.USER && !walletAddress) {
+        throw new Error('Wallet address is required');
+      }
+
       const lowerCasedEmail = email.toLowerCase();
       await this.checkIfUserExists(lowerCasedEmail);
       await this.checkDuplicateBrandName(userType, name);
@@ -345,8 +366,45 @@ export class AuthenticationService {
         userType,
       );
       await this.handleUserTypeRoles(userType, newUser, name);
+      if (userType === UserAppType.BRAND) {
+        await this.sendEmailVerificationCode(newUser.email, newUser.username);
+      } else {
+        await this.generateVerificationCode(newUser);
+        await this.verifyEmail(
+          newUser,
+          newUser.accountVerificationCode,
+          userAgent,
+          ip,
+        );
+        await this.customerAccountManagementService.setWalletAddress(
+          walletAddress,
+          newUser.id,
+        );
+        await this.collectionService.create({
+          name: 'Favorites',
+          description: 'Favorites collection',
+          image: '',
+          status: ItemStatus.ACTIVE,
+          userId: newUser.id,
+          isDefault: true,
+        });
+      }
+
       const token = await this.generateAndSignToken(newUser);
-      await this.sendEmailVerificationCode(lowerCasedEmail, name);
+
+      const nameParts = name.split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ');
+      this.eventEmitter.emit(
+        CREATE_SENDGRID_CONTACT,
+        new CreateSendgridContactEvent(
+          newUser.email,
+          firstName,
+          lastName,
+          userType,
+        ),
+      );
+
       return token;
     } catch (error) {
       logger.error(error);
@@ -372,7 +430,7 @@ export class AuthenticationService {
     }
   }
 
-  private async updateUserVerificationStatus(
+  async updateUserVerificationStatus(
     user: User,
     is2Fa?: boolean,
   ): Promise<void> {
@@ -381,10 +439,7 @@ export class AuthenticationService {
     await this.userService.saveUser(user);
   }
 
-  private async handleRewardRegistry(
-    user: User,
-    is2Fa?: boolean,
-  ): Promise<void> {
+  async handleRewardRegistry(user: User, is2Fa?: boolean): Promise<void> {
     if (!is2Fa) {
       const rewardRegistry =
         await this.syncService.getAllRegistryRecordsByIdentifer(user.email);
@@ -398,18 +453,18 @@ export class AuthenticationService {
     }
   }
 
-  private async handleBrandWalletCreation(user: User): Promise<void> {
+  async handleBrandWalletCreation(user: User): Promise<void> {
     if (user.userType === UserAppType.BRAND) {
       const brand = await this.brandService.getBrandByUserId(user.id);
       await this.walletService.createWallet({ brand });
     }
   }
 
-  private async handleUserWalletCreation(user: User): Promise<void> {
+  async handleUserWalletCreation(user: User): Promise<void> {
     await this.walletService.createWallet({ user });
   }
 
-  private async sendWelcomeEmail(user: User): Promise<void> {
+  async sendWelcomeEmail(user: User): Promise<void> {
     if (user.email) {
       await this.mailService.sendMail({
         to: user.email,
@@ -437,6 +492,7 @@ export class AuthenticationService {
       if (!is2Fa) {
         await this.handleBrandWalletCreation(user);
         await this.handleUserWalletCreation(user);
+        await this.syncUserToBrandCustomerRecords(user);
       }
 
       const token = await this.registerDevice(user, userAgent, clientIp);
@@ -451,14 +507,25 @@ export class AuthenticationService {
     }
   }
 
-  private async checkIfPhoneExists(phone: string): Promise<void> {
+  async syncUserToBrandCustomerRecords(user: User): Promise<void> {
+    const brandCustomers =
+      await this.brandService.getBrandCustomersByEmailAddress(user.email);
+
+    for (const brandCustomer of brandCustomers) {
+      brandCustomer.userId = user.id;
+      brandCustomer.isOnboarded = true;
+      await this.brandService.saveBrandCustomer(brandCustomer);
+    }
+  }
+
+  async checkIfPhoneExists(phone: string): Promise<void> {
     const user = await this.userService.getUserByPhone(phone);
     if (user) {
       throw new Error('Phone already exists');
     }
   }
 
-  private async createAndSaveUserWithPhoneNumber(
+  async createAndSaveUserWithPhoneNumber(
     phone: string,
     countryCode: string,
     countryAbbr: string,
@@ -515,7 +582,7 @@ export class AuthenticationService {
     }
   }
 
-  private async handleWalletCreation(user: User): Promise<void> {
+  async handleWalletCreation(user: User): Promise<void> {
     if (user.userType === UserAppType.BRAND) {
       const brand = await this.brandService.getBrandByUserId(user.id);
       await this.walletService.createWallet({ brand });
@@ -551,10 +618,7 @@ export class AuthenticationService {
     return await bcrypt.compare(password, user.password);
   }
 
-  private async getUserForLogin(
-    identifier: string,
-    password: string,
-  ): Promise<User> {
+  async getUserForLogin(identifier: string, password: string): Promise<User> {
     let user: User;
 
     if (identifier.includes('@')) {
@@ -580,16 +644,13 @@ export class AuthenticationService {
     }
   }
 
-  private async validatePasswordForLogin(
-    password: string,
-    user: User,
-  ): Promise<void> {
+  async validatePasswordForLogin(password: string, user: User): Promise<void> {
     if (!(await this.isPasswordValid(password, user))) {
       throw new Error('Invalid login details');
     }
   }
 
-  private async validateVerificationForLogin(user: User) {
+  async validateVerificationForLogin(user: User) {
     if (user.email && !user.emailVerified) {
       await this.sendEmailVerificationCode(user.email, user.username);
 
@@ -606,7 +667,7 @@ export class AuthenticationService {
     }
   }
 
-  private async handleTwoFA(user: User): Promise<void> {
+  async handleTwoFA(user: User): Promise<void> {
     if (user.twoFAType === TwoFAType.EMAIL) {
       await this.sendEmailVerificationCode(user.email, user.username);
     } else if (user.twoFAType === TwoFAType.SMS) {
@@ -726,7 +787,7 @@ export class AuthenticationService {
     }
   }
 
-  private async validateCurrentPassword(
+  async validateCurrentPassword(
     currentPassword: string,
     userPassword: string,
   ): Promise<void> {
@@ -736,7 +797,7 @@ export class AuthenticationService {
     }
   }
 
-  private async hashNewPassword(
+  async hashNewPassword(
     password: string,
   ): Promise<{ salt: string; hashedPassword: string }> {
     const salt = await bcrypt.genSalt();
@@ -753,7 +814,7 @@ export class AuthenticationService {
     user.salt = salt;
   }
 
-  private async saveUserAfterPasswordChange(user: User): Promise<void> {
+  async saveUserAfterPasswordChange(user: User): Promise<void> {
     await this.userService.saveUser(user);
   }
 
@@ -783,7 +844,7 @@ export class AuthenticationService {
     }
   }
 
-  private async validateNewEmail(user: User, newEmail: string): Promise<void> {
+  async validateNewEmail(user: User, newEmail: string): Promise<void> {
     const existingUser = await this.userService.getUserByEmail(newEmail);
     if (existingUser && existingUser.id !== user.id) {
       throw new Error('Email already exists');
@@ -947,7 +1008,7 @@ export class AuthenticationService {
     }
   }
 
-  private async sendWelcomeEmailSocial(email: string): Promise<void> {
+  async sendWelcomeEmailSocial(email: string): Promise<void> {
     await this.mailService.sendMail({
       to: email,
       subject: `Welcome to ${process.env.APP_NAME}`,
@@ -956,7 +1017,7 @@ export class AuthenticationService {
     });
   }
 
-  private async handleExistingUser(
+  async handleExistingUser(
     user: User,
     provider: LoginType,
     accessToken: string,
@@ -994,7 +1055,7 @@ export class AuthenticationService {
     }
   }
 
-  private async updateUserSocialAuth(
+  async updateUserSocialAuth(
     user: User,
     provider: LoginType,
     accessToken: string,
@@ -1024,7 +1085,7 @@ export class AuthenticationService {
     await this.userService.saveUser(user);
   }
 
-  private async handleNewUser(
+  async handleNewUser(
     email: string,
     userType: UserAppType,
     accessToken: string,
@@ -1090,7 +1151,7 @@ export class AuthenticationService {
     }
   }
 
-  private async getUserForPasswordReset(identifier: string): Promise<User> {
+  async getUserForPasswordReset(identifier: string): Promise<User> {
     identifier = identifier.trim().toLowerCase();
 
     if (identifier.includes('@')) {
@@ -1114,9 +1175,7 @@ export class AuthenticationService {
     }
   }
 
-  private async sendVerificationCodeForPasswordReset(
-    user: User,
-  ): Promise<void> {
+  async sendVerificationCodeForPasswordReset(user: User): Promise<void> {
     if (user.phone) {
       await this.sendPhoneVerificationCode(user.phone, user);
     } else if (user.email) {
@@ -1148,7 +1207,7 @@ export class AuthenticationService {
     }
   }
 
-  private async getUserForPasswordResetWithCode(
+  async getUserForPasswordResetWithCode(
     userId: string,
     code: number,
   ): Promise<User> {
@@ -1179,10 +1238,7 @@ export class AuthenticationService {
     }
   }
 
-  private async updateResetUserPassword(
-    user: User,
-    password: string,
-  ): Promise<void> {
+  async updateResetUserPassword(user: User, password: string): Promise<void> {
     const salt = await bcrypt.genSalt();
     user.password = await bcrypt.hash(password, salt);
     user.salt = salt;
