@@ -148,23 +148,31 @@ export class Reward extends BaseEntity {
   })
   status: RewardStatus;
 
-  @Column('bigint', {
+  @Column({
     nullable: true,
+    type: 'decimal',
+    default: 0.0,
   })
   poolTotalSupply: string;
 
-  @Column('bigint', {
+  @Column({
     nullable: true,
+    type: 'decimal',
+    default: 0.0,
   })
   rewardDollarPrice: string;
 
-  @Column('bigint', {
+  @Column({
     nullable: true,
+    type: 'decimal',
+    default: 0.0,
   })
   rOptimal: string;
 
-  @Column('bigint', {
+  @Column({
     nullable: true,
+    type: 'decimal',
+    default: 0.0,
   })
   treasurySupply: string;
 
