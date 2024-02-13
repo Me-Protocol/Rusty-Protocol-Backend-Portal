@@ -19,6 +19,16 @@ export class CategoryManagementService {
         throw new Error('Category already exists');
       }
 
+      if (createCategoryDto.parentId) {
+        const checkParentCategory = await this.categoryService.findOne(
+          createCategoryDto.parentId,
+        );
+
+        if (!checkParentCategory) {
+          throw new Error('Parent category does not exist');
+        }
+      }
+
       createCategoryDto.slug = getSlug(createCategoryDto.name);
 
       return await this.categoryService.create(createCategoryDto);
@@ -74,5 +84,22 @@ export class CategoryManagementService {
 
   async findAllCategory(query: FilterCategoryDto) {
     return await this.categoryService.findAll(query);
+  }
+
+  async deleteCategory(id: string) {
+    try {
+      const categoryExist = await this.categoryService.findOne(id);
+
+      if (!categoryExist) {
+        throw new Error('Category does not exist');
+      }
+
+      return await this.categoryService.remove(id);
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
+    }
   }
 }
