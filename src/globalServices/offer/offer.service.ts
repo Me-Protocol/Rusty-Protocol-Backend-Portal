@@ -681,24 +681,24 @@ export class OfferService {
     // await this.offerRepo.save(offer);
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
-  async syncElasticSearchIndex() {
-    //const currentDate = new Date();
+  // @Cron(CronExpression.EVERY_5_MINUTES)
+  // async syncElasticSearchIndex() {
+  //   //const currentDate = new Date();
 
-    const offersQuery = this.offerRepo
-      .createQueryBuilder('offer')
-      //.where('offer.endDate < :currentDate', { currentDate })
-      .where('offer.status = :status', { status: ProductStatus.PUBLISHED })
-      .leftJoinAndSelect('offer.product', 'product')
-      .leftJoinAndSelect('product.category', 'category')
-      .leftJoinAndSelect('product.subCategory', 'subCategory')
-      .leftJoinAndSelect('offer.offerImages', 'offerImages')
-      .leftJoinAndSelect('offer.brand', 'brand')
-      .leftJoinAndSelect('offer.reward', 'reward');
+  //   const offersQuery = this.offerRepo
+  //     .createQueryBuilder('offer')
+  //     //.where('offer.endDate < :currentDate', { currentDate })
+  //     .where('offer.status = :status', { status: ProductStatus.PUBLISHED })
+  //     .leftJoinAndSelect('offer.product', 'product')
+  //     .leftJoinAndSelect('product.category', 'category')
+  //     .leftJoinAndSelect('product.subCategory', 'subCategory')
+  //     .leftJoinAndSelect('offer.offerImages', 'offerImages')
+  //     .leftJoinAndSelect('offer.brand', 'brand')
+  //     .leftJoinAndSelect('offer.reward', 'reward');
 
-    const allOffers = await offersQuery.getMany();
-    this.elasticIndex.batchCreateIndex(allOffers, offerIndex);
-  }
+  //   const allOffers = await offersQuery.getMany();
+  //   this.elasticIndex.batchCreateIndex(allOffers, offerIndex);
+  // }
 
   // get offers where the end date has passed and the status is expired
   // TODO: We might need to change the cron expression to run every 5 minutes
