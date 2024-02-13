@@ -16,6 +16,8 @@ export class VariantOption extends BaseEntity {
     type: 'decimal',
     precision: 10,
     scale: 2,
+    nullable: true,
+    default: 0,
   })
   price: number;
 
