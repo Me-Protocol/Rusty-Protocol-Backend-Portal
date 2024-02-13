@@ -108,6 +108,8 @@ export class RewardManagementService {
     }
   }
 
+  // No Change
+
   async completeReward(body: UpdateRewardCreationDto) {
     const reward = await this.rewardService.getRewardByIdAndBrandId(
       body.rewardId,
