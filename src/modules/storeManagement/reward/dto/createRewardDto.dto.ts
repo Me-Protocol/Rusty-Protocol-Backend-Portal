@@ -79,13 +79,14 @@ export class CreateRewardDto {
   @IsOptional()
   @IsString()
   treasurySupply: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  contractAddress: string;
 }
 
 export class UpdateRewardCreationDto {
-  @ApiProperty()
-  @IsString()
-  contractAddress: string;
-
   @ApiProperty()
   @IsUUID()
   rewardId: string;

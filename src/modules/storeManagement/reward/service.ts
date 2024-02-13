@@ -93,6 +93,7 @@ export class RewardManagementService {
       if (body.rewardValueInDollars)
         reward.rewardValueInDollars = body.rewardValueInDollars;
       if (body.treasurySupply) reward.treasurySupply = body.treasurySupply;
+      if (body.contractAddress) reward.contractAddress = body.contractAddress;
 
       if (isDraft) {
         return await this.rewardService.save(reward);
@@ -108,15 +109,6 @@ export class RewardManagementService {
   }
 
   async completeReward(body: UpdateRewardCreationDto) {
-    const checkContractAddress =
-      await this.rewardService.getRewardByContractAddress(body.contractAddress);
-
-    if (checkContractAddress) {
-      throw new HttpException('Contract address already exists', 400, {
-        cause: new Error('Contract address already exists'),
-      });
-    }
-
     const reward = await this.rewardService.getRewardByIdAndBrandId(
       body.rewardId,
       body.brandId,
@@ -166,7 +158,6 @@ export class RewardManagementService {
       bountyKeyIdentifier,
     );
 
-    reward.contractAddress = body.contractAddress;
     reward.status = RewardStatus.PUBLISHED;
     reward.redistributionPublicKey = pubKey;
     reward.bountyPublicKey = bountyPubKey;
