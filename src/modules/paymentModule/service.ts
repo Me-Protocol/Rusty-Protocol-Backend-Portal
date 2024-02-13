@@ -8,16 +8,11 @@ import { CreatePlanDto } from './dto/CreatePlanDto.dto';
 import { MailService } from '@src/globalServices/mail/mail.service';
 import { emailCode } from '@src/utils/helpers/email';
 import {
-  getCurrentPoolState,
   getLatestBlock,
   getPoolMeTokenDueForTopUp,
-  meTokenToDollar,
 } from '@developeruche/protocol-core';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
-import { BigNumber, ethers } from 'ethers';
 import { VoucherType } from '@src/utils/enums/VoucherType';
-import { calculateDiscount } from '@src/utils/helpers/calculateDiscount';
 import {
   StatusType,
   TransactionSource,
@@ -399,9 +394,9 @@ export class PaymentModuleService {
           }
 
           const amount = item.meNotifyLimit.mul(settings?.meAutoTopUpFactor);
-          const amountInDollars = await meTokenToDollar(amount);
+          // const amountInDollars = await meTokenToDollar(amount);
 
-          console.log('Amount in dollars', amountInDollars.toString());
+          // console.log('Amount in dollars', amountInDollars.toString());
 
           // await this.billerService.createBill({
           //   amount: amount,
