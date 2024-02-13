@@ -9,6 +9,7 @@ import {
   Param,
   Get,
   Query,
+  Delete,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
@@ -52,5 +53,10 @@ export class CategoryManagementController {
   @Get('')
   async getAllCategories(@Query(ValidationPipe) query: FilterCategoryDto) {
     return await this.categoryManagementService.findAllCategory(query);
+  }
+
+  @Delete(':categoryId')
+  async deleteCategory(@Param('categoryId') categoryId: string) {
+    return await this.categoryManagementService.deleteCategory(categoryId);
   }
 }
