@@ -536,15 +536,18 @@ export class BrandAccountManagementService {
     let usersProcessed = 0;
     for (const customer of body) {
       try {
-        const brandCustomer = await this.brandService.createBrandCustomer({
-          name: customer.name,
-          email: customer.email,
-          phone: customer.phone,
-          brandId: customer.brandId,
-        });
-        usersProcessed++;
-        const progress = (usersProcessed / totalUsers) * 100;
-        this.BrandUploadGateway.sendProgress(customer.brandId, progress);
+        return await this.brandService
+          .createBrandCustomer({
+            name: customer.name,
+            email: customer.email,
+            phone: customer.phone,
+            brandId: customer.brandId,
+          })
+          .then(() => {
+            usersProcessed++;
+            const progress = (usersProcessed / totalUsers) * 100;
+            this.BrandUploadGateway.sendProgress(customer.brandId, progress);
+          });
       } catch (error) {
         this.BrandUploadGateway.sendFailure(customer.brandId, error.message);
       }
