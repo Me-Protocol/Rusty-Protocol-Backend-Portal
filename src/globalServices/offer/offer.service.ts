@@ -717,4 +717,21 @@ export class OfferService {
       await this.offerRepo.save(offer);
     }
   }
+
+  async deleteOffersByProductId(productId: string) {
+    return await this.offerRepo.softDelete({
+      productId,
+    });
+  }
+
+  async achieveOffersByProductId(productId: string) {
+    return await this.offerRepo.update(
+      {
+        productId,
+      },
+      {
+        status: ProductStatus.ARCHIVED,
+      },
+    );
+  }
 }
