@@ -61,6 +61,16 @@ export class BrandManagementController {
     return await this.brandAccountManagementService.getAllFilteredBrands(query);
   }
 
+  // @AdminRoles([AdminRole.SUPER_ADMIN])
+  @UseGuards(AdminJwtStrategy)
+  @Get('/all-brands')
+  async issueMeCredits(
+    @Query(ValidationPipe) query: FilterBrandDto,
+    @Req() req: any,
+  ) {
+    return await this.brandAccountManagementService.getAllBrandsForAdmin(query);
+  }
+
   @UseGuards(AuthGuard())
   @Get(':id')
   async getBrandById(@Param('id', ParseUUIDPipe) id: string) {
@@ -241,15 +251,5 @@ export class BrandManagementController {
     body.brandId = brandId;
 
     return await this.brandAccountManagementService.onboardBrand(body);
-  }
-
-  // @AdminRoles([AdminRole.SUPER_ADMIN])
-  @UseGuards(AdminJwtStrategy)
-  @Get('/all-brands')
-  async issueMeCredits(
-    @Query(ValidationPipe) query: FilterBrandDto,
-    @Req() req: any,
-  ) {
-    return await this.brandAccountManagementService.getAllBrandsForAdmin(query);
   }
 }
