@@ -30,6 +30,9 @@ import {
 import { OnboardBrandDto } from './dto/OnboardBrandDto.dto';
 import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
+import { AdminRoles } from '@src/decorators/admin_roles.decorator';
+import { AdminRole } from '@src/utils/enums/AdminRole';
+import { AdminJwtStrategy } from '@src/middlewares/admin-jwt-strategy.middleware';
 
 @ApiTags('Brand')
 @Controller('brand')
@@ -238,5 +241,15 @@ export class BrandManagementController {
     body.brandId = brandId;
 
     return await this.brandAccountManagementService.onboardBrand(body);
+  }
+
+  // @AdminRoles([AdminRole.SUPER_ADMIN])
+  @UseGuards(AdminJwtStrategy)
+  @Get('/all-brands')
+  async issueMeCredits(
+    @Query(ValidationPipe) query: FilterBrandDto,
+    @Req() req: any,
+  ) {
+    return await this.brandAccountManagementService.getAllBrandsForAdmin(query);
   }
 }

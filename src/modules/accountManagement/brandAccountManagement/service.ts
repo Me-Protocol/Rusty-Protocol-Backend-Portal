@@ -562,4 +562,16 @@ export class BrandAccountManagementService {
       brandId: body.brandId,
     });
   }
+
+  async getAllBrandsForAdmin(query: FilterBrandDto) {
+    try {
+      return await this.brandService.getAllBrandsForAdmin(query);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
+    }
+  }
 }

@@ -767,6 +767,26 @@ export class BrandService {
     });
   }
 
+  async getAllBrandsForAdmin({ page, limit }: { page: number; limit: number }) {
+    const [brands, total] = await this.brandRepo.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      relations: ['fiatWallet'],
+      select: {
+        fiatWallet: {
+          meCredits: true,
+        },
+      },
+    });
+
+    return {
+      data: brands,
+      total,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
+    };
+  }
+
   @Cron(CronExpression.EVERY_5_MINUTES)
   async syncBrandCustomer() {
     const brandCustomers = await this.brandCustomerRepo.find();
