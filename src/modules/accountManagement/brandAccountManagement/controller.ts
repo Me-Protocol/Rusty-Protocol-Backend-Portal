@@ -63,7 +63,7 @@ export class BrandManagementController {
 
   // @AdminRoles([AdminRole.SUPER_ADMIN])
   @UseGuards(AdminJwtStrategy)
-  @Get('/all-brands')
+  @Get('/admin/brands')
   async issueMeCredits(
     @Query(ValidationPipe) query: FilterBrandDto,
     @Req() req: any,

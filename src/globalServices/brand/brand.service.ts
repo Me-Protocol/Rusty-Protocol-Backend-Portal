@@ -776,12 +776,6 @@ export class BrandService {
     const [brands, total] = await this.brandRepo.findAndCount({
       skip: (page - 1) * limit,
       take: limit,
-      relations: ['fiatWallet'],
-      select: {
-        fiatWallet: {
-          meCredits: true,
-        },
-      },
     });
 
     return {

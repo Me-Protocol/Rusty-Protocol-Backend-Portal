@@ -155,15 +155,21 @@ export class PaymentModuleController {
 
   @UseGuards(BrandJwtStrategy)
   @Get('/me-credit-balance')
-  async me(@Req() req: any) {
+  async getMeCredits(@Req() req: any) {
     const brand = req.user.brand as Brand;
 
     return await this.paymentService.getMeCredits(brand.id);
   }
 
+  @UseGuards(AdminJwtStrategy)
+  @Get('/admin/me-credit-balance/:brandId')
+  async getMeCreditsAdmin(@Param('brandId', ValidationPipe) brandId: string) {
+    return await this.paymentService.getMeCredits(brandId);
+  }
+
   @AdminRoles([AdminRole.SUPER_ADMIN])
   @UseGuards(AdminJwtStrategy)
-  @Post('me-credit-balance')
+  @Post('/admin/me-credit-balance')
   async issueMeCredits(
     @Body(ValidationPipe) body: IssueMeCreditsDto,
     @Req() req: any,
