@@ -725,13 +725,17 @@ export class OfferService {
   }
 
   async achieveOffersByProductId(productId: string) {
-    return await this.offerRepo.update(
-      {
+    const offers = await this.offerRepo.find({
+      where: {
         productId,
       },
-      {
-        status: ProductStatus.ARCHIVED,
-      },
-    );
+    });
+
+    for (const offer of offers) {
+      offer.status = ProductStatus.ARCHIVED;
+      await this.offerRepo.save(offer);
+    }
+
+    return 'done';
   }
 }
