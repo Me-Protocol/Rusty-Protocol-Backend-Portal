@@ -515,21 +515,26 @@ export class BrandService {
     }
 
     if (order) {
-      const formatedOrder = order.split(':')[0];
+      let formatedOrder = order.split(':')[0];
       const acceptedOrder = [
         'totalRedeemed',
         'totalRedemptionAmount',
         'totalExternalRedeemed',
         'totalExternalRedemptionAmount',
         'totalIssued',
+        'status',
       ];
 
       if (!acceptedOrder.includes(formatedOrder)) {
         throw new Error('Invalid order param');
       }
 
+      if (formatedOrder === 'status') {
+        formatedOrder = 'isOnboarded';
+      }
+
       brandCustomerQuery.orderBy(
-        `brandCustomer.${order.split(':')[0]}`,
+        `brandCustomer.${formatedOrder}`,
         order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
       );
     }
