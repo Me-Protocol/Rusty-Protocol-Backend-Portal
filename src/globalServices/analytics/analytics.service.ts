@@ -416,18 +416,15 @@ export class AnalyticsService {
       where: {
         createdAt: Between(start, end),
         brandId: brandId,
-        offer: {
-          rewardId: In(rewardIds),
-        },
+        redeemRewardId: In(rewardIds),
       },
     });
 
     const total = await this.orderRepo.count({
       where: {
         createdAt: Between(start, end),
-        offer: {
-          rewardId: In(rewardIds),
-        },
+        brandId,
+        redeemRewardId: In(rewardIds),
       },
     });
 
@@ -470,21 +467,27 @@ export class AnalyticsService {
 
     const rewardIds = rewards.map((reward) => reward.id);
 
+    // const brandOffers = await this.offerRepo.find({
+    //   where: {
+    //     brandId,
+    //   },
+    // });
+
+    // const brandOfferIds = brandOffers.map((offer) => offer.id);
+
     const orders = await this.orderRepo.find({
       where: {
         createdAt: Between(start, end),
-        offer: {
-          rewardId: In(rewardIds),
-        },
+        brandId: Not(brandId),
+        redeemRewardId: In(rewardIds),
       },
     });
 
     const total = await this.orderRepo.count({
       where: {
         createdAt: Between(start, end),
-        offer: {
-          rewardId: In(rewardIds),
-        },
+        brandId: Not(brandId),
+        redeemRewardId: In(rewardIds),
       },
     });
 
