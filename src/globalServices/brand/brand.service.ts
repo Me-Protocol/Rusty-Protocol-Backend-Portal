@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
-import { FindOptionsOrderValue, In, Repository } from 'typeorm';
+import { FindOptionsOrderValue, In, Like, Repository } from 'typeorm';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { brandIndex } from '@src/modules/search/interface/search.interface';
 import { UpdateBrandDto } from '@src/modules/accountManagement/brandAccountManagement/dto/UpdateBrandDto.dto';
@@ -772,10 +772,24 @@ export class BrandService {
     });
   }
 
-  async getAllBrandsForAdmin({ page, limit }: { page: number; limit: number }) {
+  async getAllBrandsForAdmin({
+    page,
+    limit,
+    search,
+  }: {
+    page: number;
+    limit: number;
+    search: string;
+  }) {
     const [brands, total] = await this.brandRepo.findAndCount({
       skip: (page - 1) * limit,
       take: limit,
+      where: search
+        ? {
+            name: Like(`%${search}%`),
+            slug: Like(`%${search}%`),
+          }
+        : {},
     });
 
     const brandList = [];

@@ -91,10 +91,10 @@ export class FiatWalletService {
     const wallet = await this.getWalletByBrandId(brandId);
     const settings = await this.settingsService.getPublicSettings();
 
-    const meCreditsInDollars = wallet.meCredits * settings.meTokenValue;
+    const meCreditsInDollars = (wallet?.meCredits ?? 0) * settings.meTokenValue;
 
     return {
-      meCredits: wallet.meCredits,
+      meCredits: wallet?.meCredits ?? 0,
       meCreditsInDollars,
     };
   }
