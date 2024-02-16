@@ -323,18 +323,14 @@ export class AnalyticsService {
     const orders = await this.orderRepo.find({
       where: {
         createdAt: Between(start, end),
-        offer: {
-          rewardId: In(rewardIds),
-        },
+        redeemRewardId: In(rewardIds),
       },
     });
 
     const total = await this.orderRepo.count({
       where: {
         createdAt: Between(start, end),
-        offer: {
-          rewardId: In(rewardIds),
-        },
+        redeemRewardId: In(rewardIds),
       },
     });
 
