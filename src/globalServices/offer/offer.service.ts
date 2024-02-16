@@ -92,6 +92,7 @@ export class OfferService {
         'product',
         'product.category',
         'product.subCategory',
+        'product.variants',
         'offerImages',
         'reward',
       ],
@@ -145,6 +146,7 @@ export class OfferService {
         'product',
         'product.category',
         'product.subCategory',
+        'product.variants',
         'offerImages',
         'reward',
       ],
@@ -234,6 +236,7 @@ export class OfferService {
       .createQueryBuilder('offer')
       .leftJoinAndSelect('offer.product', 'product')
       .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.variants', 'variants')
       .leftJoinAndSelect('product.subCategory', 'subCategory')
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
@@ -355,6 +358,7 @@ export class OfferService {
           'product',
           'product.category',
           'product.subCategory',
+          'product.variants',
           'offerImages',
           'reward',
         ],
@@ -398,6 +402,7 @@ export class OfferService {
           'product',
           'product.category',
           'product.subCategory',
+          'product.variants',
           'offerImages',
           'reward',
         ],
@@ -444,6 +449,7 @@ export class OfferService {
       .leftJoinAndSelect('offer.product', 'product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.subCategory', 'subCategory')
+      .leftJoinAndSelect('product.variants', 'variants')
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
       .leftJoinAndSelect('offer.reward', 'reward')
