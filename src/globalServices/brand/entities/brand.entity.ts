@@ -184,7 +184,10 @@ export class Brand extends BaseEntity {
   @OneToMany(() => CostCollection, (costCollection) => costCollection.brand)
   costCollections: CostCollection[];
 
-  @OneToOne(() => FiatWallet, (wallet) => wallet.brand)
+  @OneToOne(() => FiatWallet, (wallet) => wallet.brand, {
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
   fiatWallet: FiatWallet;
 
   @Column({

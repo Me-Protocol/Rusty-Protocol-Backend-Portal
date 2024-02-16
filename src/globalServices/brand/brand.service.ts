@@ -778,8 +778,19 @@ export class BrandService {
       take: limit,
     });
 
+    const brandList = [];
+
+    for (const brand of brands) {
+      const meCredits = await this.walletService.getMeCredits(brand.id);
+
+      brandList.push({
+        ...brand,
+        meCredits,
+      });
+    }
+
     return {
-      data: brands,
+      data: brandList,
       total,
       nextPage: total > page * limit ? Number(page) + 1 : null,
       previousPage: page > 1 ? Number(page) - 1 : null,
