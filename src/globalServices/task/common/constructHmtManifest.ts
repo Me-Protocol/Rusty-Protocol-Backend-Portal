@@ -63,7 +63,7 @@ export const constructHmtManifest = ({
       taskdata: [
         ...taskResponses.map((taskResponse) => ({
           task_key: taskResponse.id,
-          datapoint_uri: taskResponse.responseUrl,
+          datapoint_uri: null,
           datapoint_hash: 'magic-hash',
           datapoint_text: {
             en: taskResponse.response,
