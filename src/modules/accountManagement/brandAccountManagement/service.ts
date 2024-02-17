@@ -14,10 +14,7 @@ import { BrandMember } from '@src/globalServices/brand/entities/brand_member.ent
 import { MailService } from '@src/globalServices/mail/mail.service';
 import { emailButton } from '@src/utils/helpers/email';
 import { CustomerService } from '@src/globalServices/customer/customer.service';
-import {
-  FilterActivePendingCustomerDto,
-  FilterCustomerDto,
-} from './dto/FilterCustomerDto.dto';
+import { FilterCustomerDto } from './dto/FilterCustomerDto.dto';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { BigNumber, ethers } from 'ethers';
 import {
@@ -44,6 +41,7 @@ import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
 import { Role } from '@src/utils/enums/Role';
 import { BrandUploadGateway } from './socket/brand-upload.gateway';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
+import { CurrencyService } from '@src/globalServices/currency/currency.service';
 
 @Injectable()
 export class BrandAccountManagementService {

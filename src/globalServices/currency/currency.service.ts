@@ -4,12 +4,16 @@ import { Repository } from 'typeorm';
 import { Currency } from './entities/currency.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import axios from 'axios';
+import { Region } from './entities/region.entity';
 
 @Injectable()
 export class CurrencyService {
   constructor(
     @InjectRepository(Currency)
     private readonly currencyRepo: Repository<Currency>,
+
+    @InjectRepository(Region)
+    private readonly regionRepo: Repository<Region>,
   ) {}
 
   async getCurrency() {
@@ -58,6 +62,49 @@ export class CurrencyService {
     });
 
     return currencyRecord;
+  }
+
+  async createRegion({
+    name,
+    code,
+    currencyId,
+  }: {
+    name: string;
+    code: string;
+    currencyId: string;
+  }) {
+    const region = new Region();
+    region.name = name;
+    region.code = code;
+    region.currencyId = currencyId;
+
+    return await this.regionRepo.save(region);
+  }
+
+  async getRegions() {
+    const regions = await this.regionRepo.find();
+
+    return regions;
+  }
+
+  async getRegionById(id: string) {
+    const region = await this.regionRepo.findOne({
+      where: {
+        id,
+      },
+    });
+
+    return region;
+  }
+
+  async getRegionByCode(code: string) {
+    const region = await this.regionRepo.findOne({
+      where: {
+        code,
+      },
+    });
+
+    return region;
   }
 
   @Cron(CronExpression.EVERY_4_HOURS)

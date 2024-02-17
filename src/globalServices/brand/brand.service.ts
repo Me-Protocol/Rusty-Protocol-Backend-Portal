@@ -41,6 +41,7 @@ import { FiatWalletService } from '../fiatWallet/fiatWallet.service';
 import { Transaction } from '../fiatWallet/entities/transaction.entity';
 import { logger } from '../logger/logger.service';
 import { Role } from '@src/utils/enums/Role';
+import { CurrencyService } from '../currency/currency.service';
 
 @Injectable()
 export class BrandService {
@@ -61,6 +62,7 @@ export class BrandService {
     private readonly eventEmitter: EventEmitter2,
     private readonly billerService: BillerService,
     private readonly paymentService: PaymentService,
+    private readonly currencyService: CurrencyService,
 
     @InjectRepository(FiatWallet)
     private readonly walletRepo: Repository<FiatWallet>,
@@ -125,6 +127,19 @@ export class BrandService {
 
       if (!brand) {
         throw new NotFoundException('Brand not found');
+      }
+
+      if (dto.regions && dto.regions.length > 0) {
+        const regions = [];
+
+        for (const region of dto.regions) {
+          const checkRegion = await this.currencyService.getRegionById(region);
+          if (checkRegion) {
+            regions.push(checkRegion);
+          }
+        }
+
+        brand.regions = regions;
       }
 
       // if (dto.name) brand.name = dto.name;

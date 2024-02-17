@@ -6,6 +6,7 @@ import {
   Column,
   Entity,
   JoinColumn,
+  JoinTable,
   ManyToMany,
   ManyToOne,
   OneToMany,
@@ -28,6 +29,7 @@ import { Review } from '@src/globalServices/review/entities/review.entity';
 import { Bill } from '@src/globalServices/biller/entity/bill.entity';
 import { BrandSubscriptionPlan } from './brand_subscription_plan.entity';
 import { BrandStore } from '@src/globalServices/brand-store/brand-store.dto';
+import { Region } from '@src/globalServices/currency/entities/region.entity';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -338,4 +340,18 @@ export class Brand extends BaseEntity {
     default: false,
   })
   isPlanExpiringEmailSent: boolean;
+
+  @ManyToMany(() => Region, (region) => region.brands)
+  @JoinTable({
+    name: 'brand_regions',
+    joinColumn: {
+      name: 'brandId',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'regionId',
+      referencedColumnName: 'id',
+    },
+  })
+  regions: Region[];
 }

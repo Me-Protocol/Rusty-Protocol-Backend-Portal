@@ -27,6 +27,7 @@ import { AdminRoles } from '@src/decorators/admin_roles.decorator';
 import { AdminRole } from '@src/utils/enums/AdminRole';
 import { AdminJwtStrategy } from '@src/middlewares/admin-jwt-strategy.middleware';
 import { IssueMeCreditsDto } from './dto/IssueMeCreditDto.dto';
+import { CreateRegionDto } from './dto/CreateRegionDto.dto';
 
 @ApiTags('Payment')
 @Controller('payment')
@@ -129,6 +130,16 @@ export class PaymentModuleController {
   @Get('currencies')
   async getCurrency() {
     return await this.currencyService.getCurrency();
+  }
+
+  @Post('region')
+  async createRegion(@Body(ValidationPipe) body: CreateRegionDto) {
+    return await this.currencyService.createRegion(body);
+  }
+
+  @Get('region')
+  async getRegions() {
+    return await this.currencyService.getRegions();
   }
 
   @Post('voucher')

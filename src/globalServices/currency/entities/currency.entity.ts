@@ -1,5 +1,6 @@
 import { BaseEntity } from '@src/common/entities/base.entity';
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, OneToMany } from 'typeorm';
+import { Region } from './region.entity';
 
 @Entity('currency')
 export class Currency extends BaseEntity {
@@ -16,4 +17,7 @@ export class Currency extends BaseEntity {
 
   @Column()
   code: string;
+
+  @OneToMany(() => Region, (region) => region.currency)
+  regions: Region[];
 }
