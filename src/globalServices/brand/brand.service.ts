@@ -796,16 +796,19 @@ export class BrandService {
     limit: number;
     search: string;
   }) {
-    const [brands, total] = await this.brandRepo.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
-      where: search
-        ? {
-            name: Like(`%${search}%`),
-            slug: Like(`%${search}%`),
-          }
-        : {},
-    });
+    const brandQuery = this.brandRepo.createQueryBuilder('brand');
+
+    if (search) {
+      brandQuery.andWhere('brand.name LIKE :search', {
+        search: `%${search}%`,
+      });
+      brandQuery.orWhere('brand.slug LIKE :search', {
+        search: `%${search}%`,
+      });
+    }
+
+    brandQuery.skip((page - 1) * limit).take(limit);
+    const [brands, total] = await brandQuery.getManyAndCount();
 
     const brandList = [];
 
