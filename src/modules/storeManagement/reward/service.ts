@@ -243,7 +243,7 @@ export class RewardManagementService {
   getAddableSyncData(syncData: any[], reward: Reward) {
     const addableSyncData = syncData.filter((syncData) => {
       if (
-        (syncData.id,
+        (syncData?.id,
         syncData.identifier,
         syncData.identifierType,
         syncData.amount)
@@ -252,7 +252,7 @@ export class RewardManagementService {
           reward.acceptedCustomerIdentitytypes.includes(syncData.identifierType)
         ) {
           return {
-            id: syncData.id,
+            id: syncData?.id,
             identifier: syncData.identifier,
             identifierType: syncData.identifierType,
             amount: syncData.amount,
@@ -264,7 +264,7 @@ export class RewardManagementService {
     const descripancies = syncData.filter((syncData) => {
       if (!syncData.id || !syncData.identifier || !syncData.identifierType) {
         return {
-          id: syncData.id,
+          id: syncData?.id,
           identifier: syncData.identifier,
           identifierType: syncData.identifierType,
           reason: `Missing required fields: id, identifier, identifierType or unaccepted identity type`,
@@ -443,7 +443,7 @@ export class RewardManagementService {
         // Update circulating supply
         const circulatingSupply = new RewardCirculation();
         circulatingSupply.brandId = checkReward.brandId;
-        circulatingSupply.rewardId = checkReward.id;
+        circulatingSupply.rewardId = checkReward?.id;
         circulatingSupply.circulatingSupply =
           Number(checkReward.totalDistributedSupply) -
           Number(checkReward.totalRedeemedSupply);

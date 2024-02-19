@@ -222,16 +222,19 @@ export class BrandService {
     limit,
     order,
     search,
+    regionId,
   }: {
     categoryId: string;
     page: number;
     limit: number;
     order: string;
     search: string;
+    regionId: string;
   }) {
     const brandQuery = this.brandRepo
       .createQueryBuilder('brand')
       .leftJoinAndSelect('brand.category', 'category')
+      .leftJoinAndSelect('brand.regions', 'regions')
       .where('brand.listOnStore = :listOnStore', { listOnStore: true });
 
     if (categoryId) {
@@ -256,6 +259,12 @@ export class BrandService {
       brandQuery.andWhere('brand.name LIKE :search', {
         search: `%${search}%`,
       });
+    }
+
+    if (regionId) {
+      // where offer product regions contains regionId or offer product regions is empty
+      brandQuery.andWhere('regions.id = :regionId', { regionId });
+      brandQuery.orWhere('regions.id IS NULL');
     }
 
     brandQuery.skip((page - 1) * limit).take(limit);
