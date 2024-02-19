@@ -87,6 +87,18 @@ export class FiatWalletService {
     return this.walletRepo.findOneBy({ brandId });
   }
 
+  async getMeCredits(brandId: string) {
+    const wallet = await this.getWalletByBrandId(brandId);
+    const settings = await this.settingsService.getPublicSettings();
+
+    const meCreditsInDollars = (wallet?.meCredits ?? 0) * settings.meTokenValue;
+
+    return {
+      meCredits: wallet?.meCredits ?? 0,
+      meCreditsInDollars,
+    };
+  }
+
   async addBrandBalance({
     amount,
     transactionType,

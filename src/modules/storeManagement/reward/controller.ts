@@ -165,7 +165,7 @@ export class RewardManagementController {
     @Body(ValidationPipe) body: UpdateBatchDto,
     @Req() req: any,
   ) {
-    const brandId = req.user.brand.id;
+    const brandId = req?.user?.brand?.id;
     body.brandId = brandId;
 
     return await this.rewardManagementService.updateBatch(body);

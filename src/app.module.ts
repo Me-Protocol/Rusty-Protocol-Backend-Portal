@@ -154,6 +154,7 @@ import { CreateSendgridContactHandler } from '@src/globalServices/mail/create-se
 import { TopupEventBlock } from './globalServices/brand/entities/topup_event_block.entity';
 import { VariantOption } from '@src/globalServices/product/entities/variantvalue.entity';
 import { BrandUploadGateway } from './modules/accountManagement/brandAccountManagement/socket/brand-upload.gateway';
+import { Region } from './globalServices/currency/entities/region.entity';
 
 @Module({
   imports: [
@@ -209,6 +210,7 @@ import { BrandUploadGateway } from './modules/accountManagement/brandAccountMana
       Voucher,
       TopupEventBlock,
       VariantOption,
+      Region,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),

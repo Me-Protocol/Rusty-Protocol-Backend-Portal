@@ -195,4 +195,9 @@ export class UpdateBrandDto {
   @IsOptional()
   @IsObject()
   brandStore: BrandStore;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsArray()
+  regions: string[];
 }
