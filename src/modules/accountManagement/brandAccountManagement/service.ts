@@ -14,10 +14,7 @@ import { BrandMember } from '@src/globalServices/brand/entities/brand_member.ent
 import { MailService } from '@src/globalServices/mail/mail.service';
 import { emailButton } from '@src/utils/helpers/email';
 import { CustomerService } from '@src/globalServices/customer/customer.service';
-import {
-  FilterActivePendingCustomerDto,
-  FilterCustomerDto,
-} from './dto/FilterCustomerDto.dto';
+import { FilterCustomerDto } from './dto/FilterCustomerDto.dto';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { BigNumber, ethers } from 'ethers';
 import {
@@ -44,6 +41,7 @@ import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
 import { Role } from '@src/utils/enums/Role';
 import { BrandUploadGateway } from './socket/brand-upload.gateway';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
+import { CurrencyService } from '@src/globalServices/currency/currency.service';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -78,13 +76,14 @@ export class BrandAccountManagementService {
 
   async getAllFilteredBrands(query: FilterBrandDto) {
     try {
-      const { categoryId, page, limit, order, search } = query;
+      const { categoryId, page, limit, order, search, regionId } = query;
       const brands = await this.brandService.getAllFilteredBrands({
         categoryId,
         page,
         limit,
         order,
         search,
+        regionId,
       });
       return brands;
     } catch (error) {
@@ -561,5 +560,17 @@ export class BrandAccountManagementService {
       phone: body.phone,
       brandId: body.brandId,
     });
+  }
+
+  async getAllBrandsForAdmin(query: FilterBrandDto) {
+    try {
+      return await this.brandService.getAllBrandsForAdmin(query);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
+    }
   }
 }

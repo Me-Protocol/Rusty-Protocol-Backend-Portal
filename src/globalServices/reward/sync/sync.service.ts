@@ -560,7 +560,7 @@ export class SyncRewardService {
     registry.customerIdentiyOnBrandSite = identifier; // TODO Using email for now
     registry.customerIdentityType = identifierType;
     registry.balance = 0;
-    registry.userId = user.id;
+    registry.userId = user?.id;
 
     const rewardRegistry = await this.addRegistry(registry);
 

@@ -422,7 +422,7 @@ export class PaymentModuleService {
 
       const brandWallet = await this.walletService.getWalletByBrandId(brandId);
 
-      brandWallet.meCredits = brandWallet.meCredits + amount;
+      brandWallet.meCredits = Number(brandWallet.meCredits) + Number(amount);
 
       await this.walletService.save(brandWallet);
 

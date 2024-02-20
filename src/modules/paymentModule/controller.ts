@@ -27,6 +27,7 @@ import { AdminRoles } from '@src/decorators/admin_roles.decorator';
 import { AdminRole } from '@src/utils/enums/AdminRole';
 import { AdminJwtStrategy } from '@src/middlewares/admin-jwt-strategy.middleware';
 import { IssueMeCreditsDto } from './dto/IssueMeCreditDto.dto';
+import { CreateRegionDto } from './dto/CreateRegionDto.dto';
 
 @ApiTags('Payment')
 @Controller('payment')
@@ -131,6 +132,16 @@ export class PaymentModuleController {
     return await this.currencyService.getCurrency();
   }
 
+  @Post('region')
+  async createRegion(@Body(ValidationPipe) body: CreateRegionDto) {
+    return await this.currencyService.createRegion(body);
+  }
+
+  @Get('region')
+  async getRegions() {
+    return await this.currencyService.getRegions();
+  }
+
   @Post('voucher')
   async createVoucher(@Body(ValidationPipe) body: CreateVoucherDto) {
     return await this.paymentService.createVouchers(body.vouchers);
@@ -155,15 +166,21 @@ export class PaymentModuleController {
 
   @UseGuards(BrandJwtStrategy)
   @Get('/me-credit-balance')
-  async me(@Req() req: any) {
+  async getMeCredits(@Req() req: any) {
     const brand = req.user.brand as Brand;
 
     return await this.paymentService.getMeCredits(brand.id);
   }
 
+  @UseGuards(AdminJwtStrategy)
+  @Get('/admin/me-credit-balance/:brandId')
+  async getMeCreditsAdmin(@Param('brandId', ValidationPipe) brandId: string) {
+    return await this.paymentService.getMeCredits(brandId);
+  }
+
   @AdminRoles([AdminRole.SUPER_ADMIN])
   @UseGuards(AdminJwtStrategy)
-  @Post('me-credit-balance')
+  @Post('/admin/me-credit-balance')
   async issueMeCredits(
     @Body(ValidationPipe) body: IssueMeCreditsDto,
     @Req() req: any,

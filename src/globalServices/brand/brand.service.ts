@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
-import { FindOptionsOrderValue, In, Repository } from 'typeorm';
+import { FindOptionsOrderValue, In, Like, Repository } from 'typeorm';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { brandIndex } from '@src/modules/search/interface/search.interface';
 import { UpdateBrandDto } from '@src/modules/accountManagement/brandAccountManagement/dto/UpdateBrandDto.dto';
@@ -41,6 +41,7 @@ import { FiatWalletService } from '../fiatWallet/fiatWallet.service';
 import { Transaction } from '../fiatWallet/entities/transaction.entity';
 import { logger } from '../logger/logger.service';
 import { Role } from '@src/utils/enums/Role';
+import { CurrencyService } from '../currency/currency.service';
 
 @Injectable()
 export class BrandService {
@@ -61,6 +62,7 @@ export class BrandService {
     private readonly eventEmitter: EventEmitter2,
     private readonly billerService: BillerService,
     private readonly paymentService: PaymentService,
+    private readonly currencyService: CurrencyService,
 
     @InjectRepository(FiatWallet)
     private readonly walletRepo: Repository<FiatWallet>,
@@ -125,6 +127,19 @@ export class BrandService {
 
       if (!brand) {
         throw new NotFoundException('Brand not found');
+      }
+
+      if (dto.regions && dto.regions.length > 0) {
+        const regions = [];
+
+        for (const region of dto.regions) {
+          const checkRegion = await this.currencyService.getRegionById(region);
+          if (checkRegion) {
+            regions.push(checkRegion);
+          }
+        }
+
+        brand.regions = regions;
       }
 
       // if (dto.name) brand.name = dto.name;
@@ -207,16 +222,19 @@ export class BrandService {
     limit,
     order,
     search,
+    regionId,
   }: {
     categoryId: string;
     page: number;
     limit: number;
     order: string;
     search: string;
+    regionId: string;
   }) {
     const brandQuery = this.brandRepo
       .createQueryBuilder('brand')
       .leftJoinAndSelect('brand.category', 'category')
+      .leftJoinAndSelect('brand.regions', 'regions')
       .where('brand.listOnStore = :listOnStore', { listOnStore: true });
 
     if (categoryId) {
@@ -241,6 +259,12 @@ export class BrandService {
       brandQuery.andWhere('brand.name LIKE :search', {
         search: `%${search}%`,
       });
+    }
+
+    if (regionId) {
+      // where offer product regions contains regionId or offer product regions is empty
+      brandQuery.andWhere('regions.id = :regionId', { regionId });
+      brandQuery.orWhere('regions.id IS NULL');
     }
 
     brandQuery.skip((page - 1) * limit).take(limit);
@@ -770,6 +794,48 @@ export class BrandService {
         id: reward.brandId,
       },
     });
+  }
+
+  async getAllBrandsForAdmin({
+    page,
+    limit,
+    search,
+  }: {
+    page: number;
+    limit: number;
+    search: string;
+  }) {
+    const brandQuery = this.brandRepo.createQueryBuilder('brand');
+
+    if (search) {
+      brandQuery.andWhere('brand.name LIKE :search', {
+        search: `%${search}%`,
+      });
+      brandQuery.orWhere('brand.slug LIKE :search', {
+        search: `%${search}%`,
+      });
+    }
+
+    brandQuery.skip((page - 1) * limit).take(limit);
+    const [brands, total] = await brandQuery.getManyAndCount();
+
+    const brandList = [];
+
+    for (const brand of brands) {
+      const meCredits = await this.walletService.getMeCredits(brand.id);
+
+      brandList.push({
+        ...brand,
+        meCredits,
+      });
+    }
+
+    return {
+      data: brandList,
+      total,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
+    };
   }
 
   @Cron(CronExpression.EVERY_5_MINUTES)

@@ -91,6 +91,11 @@ export class FilterOfferDto {
   @IsOptional()
   @IsDateString()
   endDate: Date;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsUUID()
+  regionId: string;
 }
 
 export class FilterUserOfferDto {

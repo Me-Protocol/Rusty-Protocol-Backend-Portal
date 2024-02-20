@@ -94,6 +94,19 @@ export class ProductManagementService {
 
       product.collections = productCollections;
 
+      if (body.regions && body.regions.length > 0) {
+        const regions = [];
+
+        for (const region of body.regions) {
+          const checkRegion = await this.currencyService.getRegionById(region);
+          if (checkRegion) {
+            regions.push(checkRegion);
+          }
+        }
+
+        product.regions = regions;
+      }
+
       const newProduct = await this.productService.createProduct(product);
 
       // upload images
@@ -225,6 +238,27 @@ export class ProductManagementService {
         }
 
         product.collections = productCollections;
+
+        await this.productService.saveProduct(product);
+      }
+
+      if (body.regions && body.regions.length > 0) {
+        const regions = [];
+
+        for (const region of body.regions) {
+          const checkRegion = await this.currencyService.getRegionById(region);
+          if (checkRegion) {
+            const checkIfRegionExists = product?.regions?.find(
+              (region) => region.id === checkRegion.id,
+            );
+
+            if (!checkIfRegionExists) {
+              regions.push(checkRegion);
+            }
+          }
+        }
+
+        product.regions = regions;
 
         await this.productService.saveProduct(product);
       }
