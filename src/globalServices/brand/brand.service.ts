@@ -469,7 +469,7 @@ export class BrandService {
     if (filterBy === FilterBrandCustomer.MOST_ACTIVE) {
       // where customer redeemed greater than 2
       // brandCustomerQuery.andWhere('brandCustomer.totalRedeemed > 2');
-      brandCustomerQuery.orderBy('brandCustomer.totalRedeemed', 'DESC');
+      brandCustomerQuery.andWhere('brandCustomer.totalRedeemed > 2');
     }
 
     if (filterBy === FilterBrandCustomer.MOST_RECENT) {
