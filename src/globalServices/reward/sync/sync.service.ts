@@ -858,6 +858,8 @@ export class SyncRewardService {
       );
     }
 
+    registryHistoryQuery.orderBy('rewardRegistry.createdAt', 'DESC');
+
     registryHistoryQuery.skip((page - 1) * limit).take(limit);
 
     const registryHistory = await registryHistoryQuery.getMany();
