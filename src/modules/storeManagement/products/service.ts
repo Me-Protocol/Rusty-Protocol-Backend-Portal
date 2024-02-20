@@ -11,7 +11,6 @@ import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { productIndex } from '@src/modules/search/interface/search.interface';
 import { ProductStatus } from '@src/utils/enums/ItemStatus';
 import { CurrencyService } from '@src/globalServices/currency/currency.service';
-import { OfferService } from '@src/globalServices/offer/offer.service';
 
 @Injectable()
 export class ProductManagementService {
@@ -21,7 +20,6 @@ export class ProductManagementService {
     private readonly collectionService: CollectionService,
     private readonly elasticIndex: ElasticIndex,
     private readonly currencyService: CurrencyService,
-    private readonly offerService: OfferService,
   ) {}
 
   async getProductImages(brandId: string, page: number, limit: number) {
@@ -294,7 +292,6 @@ export class ProductManagementService {
     }
 
     await this.productService.deleteProduct(product.id, brandId);
-    await this.offerService.achieveOffersByProductId(product.id);
 
     return {
       message: 'Product deleted successfully',
