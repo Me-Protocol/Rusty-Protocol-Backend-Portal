@@ -34,13 +34,14 @@ export class VariantOption extends BaseEntity {
   // @Column()
   // sku: string;
 
-  @Column()
+  @Column({ nullable: true })
   variantId: string;
 
   @ManyToOne(() => Variant, (variant) => variant.options, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
     cascade: true,
+    nullable: true,
   })
   @JoinColumn({ name: 'variantId' })
   variant: Variant;
