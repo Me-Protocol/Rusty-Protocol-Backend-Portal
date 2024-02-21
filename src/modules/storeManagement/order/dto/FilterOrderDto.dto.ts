@@ -27,31 +27,31 @@ export class FilterOrderDto {
   @IsEnum(OrderFilter, {
     message: 'Please provide a valid status',
   })
-  filterBy: OrderFilter;
+  filterBy?: OrderFilter;
 
   @ApiProperty({
     type: 'date',
   })
   @IsOptional()
   @IsDateString()
-  startDate: Date;
+  startDate?: Date;
 
   @ApiProperty({
     type: 'date',
   })
   @IsOptional()
   @IsDateString()
-  endDate: Date;
+  endDate?: Date;
 
   @ApiProperty()
   @IsOptional()
   @IsUUID()
-  productId: string;
+  productId?: string;
 
   @ApiProperty()
   @IsOptional()
   @IsUUID()
-  offerId: string;
+  offerId?: string;
 
   userId: string;
 
