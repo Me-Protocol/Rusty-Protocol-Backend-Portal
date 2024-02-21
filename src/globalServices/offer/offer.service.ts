@@ -21,13 +21,10 @@ export class OfferService {
   constructor(
     @InjectRepository(Offer)
     private readonly offerRepo: Repository<Offer>,
-
     @InjectRepository(ProductImage)
     private readonly productImageRepo: Repository<ProductImage>,
-
     @InjectRepository(BrandCustomer)
     private readonly brandCustomerRepo: Repository<BrandCustomer>,
-
     private readonly userService: UserService,
     private readonly viewService: ViewsService,
     private readonly customerService: CustomerService,
@@ -145,6 +142,8 @@ export class OfferService {
         'brand',
         'product',
         'product.category',
+        'product.variants',
+        'product.variants.options',
         'product.subCategory',
         'product.variants',
         'offerImages',
