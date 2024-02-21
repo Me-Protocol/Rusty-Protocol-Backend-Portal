@@ -491,18 +491,21 @@ export class BrandService {
       console.log('inside for loop', customer);
       // Check if each customer has order in the last 30 days
       if (user) {
-        const { totalRedeemedAmount } = await this.ordersService.getOrders({
-          userId: user.id,
-          page: 1,
-          limit: 100000000000000,
-          brandId: brandId,
-          //@ts-ignore
-          startDate: new Date(
-            Date.now() - 24 * 60 * 60 * 1000 * 30,
-          ).toISOString(),
-          //@ts-ignore
-          endDate: new Date().toISOString(),
-        });
+        const { totalRedeemedAmount, orders } =
+          await this.ordersService.getOrders({
+            userId: user.id,
+            page: 1,
+            limit: 100000000000000,
+            brandId: brandId,
+            //@ts-ignore
+            startDate: new Date(
+              Date.now() - 24 * 60 * 60 * 1000 * 30,
+            ).toISOString(),
+            //@ts-ignore
+            endDate: new Date().toISOString(),
+          });
+
+        console.log(`orders for ${customer.name}`, orders);
 
         if (totalRedeemedAmount > 0) {
           console.log('inside for loop if statement', customer);
