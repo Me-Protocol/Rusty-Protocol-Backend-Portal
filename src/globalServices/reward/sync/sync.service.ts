@@ -590,6 +590,10 @@ export class SyncRewardService {
         spend = await mutate_with_url(params, RUNTIME_URL);
       }
 
+      if (spend?.data?.error) {
+        throw new Error(spend.data.error.message);
+      }
+
       return spend?.data ?? spend;
     } catch (error) {
       logger.error(error);
