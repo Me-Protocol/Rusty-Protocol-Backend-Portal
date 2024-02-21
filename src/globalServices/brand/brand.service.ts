@@ -506,6 +506,8 @@ export class BrandService {
           });
 
         console.log(`orders for ${customer.name}`, orders);
+        console.log(`totalRedemptionAmount for ${customer.name}`, totalRedeemedAmount);
+
 
         if (totalRedeemedAmount > 0) {
           console.log('inside for loop if statement', customer);
