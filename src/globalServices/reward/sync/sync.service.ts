@@ -591,7 +591,7 @@ export class SyncRewardService {
       }
 
       if (spend?.data?.error) {
-        throw new Error(spend.data.error.message);
+        throw new Error(spend?.data?.error?.message ?? 'Error pushing rsv');
       }
 
       return spend?.data ?? spend;
