@@ -535,7 +535,7 @@ export class BrandAccountManagementService {
     let usersProcessed = 0;
     for (const customer of body) {
       try {
-        return await this.brandService
+        await this.brandService
           .createBrandCustomer({
             name: customer.name,
             email: customer.email,
