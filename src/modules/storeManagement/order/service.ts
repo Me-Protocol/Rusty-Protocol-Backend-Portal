@@ -505,8 +505,7 @@ export class OrderManagementService {
 
             if (isExternalOffer) {
               const totalCustomerExternalRedeemed =
-                Number(customer?.totalExternalRedeemed ?? 0) +
-                Number(order.points);
+                Number(customer?.totalExternalRedeemed ?? 0) + 1;
 
               customer.totalExternalRedeemed = Number(
                 totalCustomerExternalRedeemed.toFixed(0),
@@ -516,10 +515,9 @@ export class OrderManagementService {
                 Number(order.points);
             } else {
               const totalCustomerRedeemed =
-                Number(customer?.totalRedeemed ?? 0) + Number(order.points);
+                Number(customer?.totalRedeemed ?? 0) + 1;
 
               customer.totalRedeemed = Number(totalCustomerRedeemed.toFixed(0));
-              Number(customer.totalRedeemed ?? 0) + Number(order.points);
 
               customer.totalRedemptionAmount =
                 Number(customer?.totalRedemptionAmount ?? 0) +
