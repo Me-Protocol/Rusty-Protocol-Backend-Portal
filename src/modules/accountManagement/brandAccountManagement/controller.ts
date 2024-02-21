@@ -175,6 +175,20 @@ export class BrandManagementController {
   }
 
   @UseGuards(BrandJwtStrategy)
+  @Get('customers/active')
+  async getActivelySpendingCustomers(
+    @Req() req: any,
+    @Query(ValidationPipe) body: { brandId: string },
+  ) {
+    const user = req.user as User;
+    body.brandId = user.brand.id;
+
+    return await this.brandAccountManagementService.getActivelySpendingBrandCustomers(
+      body.brandId,
+    );
+  }
+
+  @UseGuards(BrandJwtStrategy)
   @Post('customers/create')
   async createBrandCustomer(
     @Req() req: any,

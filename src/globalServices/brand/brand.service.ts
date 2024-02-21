@@ -42,6 +42,8 @@ import { Transaction } from '../fiatWallet/entities/transaction.entity';
 import { logger } from '../logger/logger.service';
 import { Role } from '@src/utils/enums/Role';
 import { CurrencyService } from '../currency/currency.service';
+import { Order } from '../order/entities/order.entity';
+import { OrderService } from '../order/order.service';
 
 @Injectable()
 export class BrandService {
@@ -63,6 +65,7 @@ export class BrandService {
     private readonly billerService: BillerService,
     private readonly paymentService: PaymentService,
     private readonly currencyService: CurrencyService,
+    private readonly ordersService: OrderService,
 
     @InjectRepository(FiatWallet)
     private readonly walletRepo: Repository<FiatWallet>,
@@ -498,6 +501,53 @@ export class BrandService {
       },
       relations: ['brand'],
     });
+  }
+
+  async getActivelySpendingBrandCustomers(brandId: string) {
+    const activeCustomers: Array<BrandCustomer> = [];
+    // Get all brandCustomers that have redemption greater than 0
+    const brandCustomersQuery = await this.brandCustomerRepo
+      .createQueryBuilder('brandCustomer')
+      .leftJoinAndSelect('brandCustomer.brand', 'brand')
+      .leftJoinAndSelect('brandCustomer.user', 'user')
+      .where('brandCustomer.brandId = :brandId', { brandId });
+
+    const eligibleBrandCustomers = await brandCustomersQuery.getMany();
+
+    for (const customer of eligibleBrandCustomers) {
+      const user = customer.user;
+      let totalRedemptionAmount: number;
+      console.log('inside for loop', customer);
+      // Check if each customer has order in the last 30 days
+      if (user) {
+        const { orders } = await this.ordersService.getOrders({
+          userId: user.id,
+          page: 1,
+          limit: 100000000000000,
+          brandId: brandId,
+          //@ts-ignore
+          startDate: new Date(
+            Date.now() - 24 * 60 * 60 * 1000 * 30,
+          ).toISOString(),
+          //@ts-ignore
+          endDate: new Date().toISOString(),
+        });
+
+        orders.forEach((order) => {
+          totalRedemptionAmount += Number(order.points);
+        });
+
+        if (totalRedemptionAmount > 0) {
+          console.log('inside for loop if statement', customer);
+          activeCustomers.push(customer);
+        }
+      }
+    }
+
+    let sortedActiveCustomers = activeCustomers.sort((a, b) => {
+      return b.totalRedemptionAmount - a.totalRedemptionAmount;
+    });
+    return sortedActiveCustomers;
   }
 
   async getBrandCustomers(
