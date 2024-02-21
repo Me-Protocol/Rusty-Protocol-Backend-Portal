@@ -482,13 +482,13 @@ export class BrandService {
       .createQueryBuilder('brandCustomer')
       .leftJoinAndSelect('brandCustomer.brand', 'brand')
       .leftJoinAndSelect('brandCustomer.user', 'user')
-      .where('brandCustomer.brandId = :brandId', { brandId })
-      .andWhere('brandCustomer.totalRedeemed > 0');
+      .where('brandCustomer.brandId = :brandId', { brandId });
 
     const eligibleBrandCustomers = await brandCustomersQuery.getMany();
 
     for (const customer of eligibleBrandCustomers) {
       const user = customer.user;
+      console.log('inside for loop', customer);
       // Check if each customer has order in the last 30 days
       if (user) {
         const { totalRedeemedAmount } = await this.ordersService.getOrders({
@@ -505,6 +505,7 @@ export class BrandService {
         });
 
         if (totalRedeemedAmount > 0) {
+          console.log('inside for loop if statement', customer);
           activeCustomers.push(customer);
         }
       }
