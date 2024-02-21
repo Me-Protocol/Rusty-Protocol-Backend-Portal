@@ -43,6 +43,12 @@ export class BrandCustomer extends BaseEntity {
   totalIssued: number;
 
   @Column({
+    type: 'decimal',
+    default: 0,
+  })
+  totalDistributed: number;
+
+  @Column({
     nullable: true,
   })
   email: string;

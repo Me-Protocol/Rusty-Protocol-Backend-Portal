@@ -94,6 +94,7 @@ export class RewardManagementService {
         reward.rewardValueInDollars = body.rewardValueInDollars;
       if (body.treasurySupply) reward.treasurySupply = body.treasurySupply;
       if (body.contractAddress) reward.contractAddress = body.contractAddress;
+      if (body.addedLiquidity) reward.addedLiquidity = body.addedLiquidity;
 
       if (isDraft) {
         return await this.rewardService.save(reward);
@@ -127,6 +128,9 @@ export class RewardManagementService {
         cause: new Error('Reward already published'),
       });
     }
+
+    // onboard
+    await this.syncService.pushTransactionToRuntime(body.rsvParams);
 
     // TODO generate private key and public key
 
@@ -560,6 +564,18 @@ export class RewardManagementService {
     return await Promise.all(
       batch.syncData.map(async (syncDataJSON) => {
         const syncData = JSON.parse(syncDataJSON as any) as typeof syncDataJSON;
+        const reward = await this.rewardService.findOneById(rewardId);
+
+        const brandCustomer =
+          await this.brandService.getBrandCustomerByIdentifier({
+            identifier: syncData.identifier,
+            brandId: reward.brandId,
+            identifierType: syncData.identifierType,
+          });
+
+        brandCustomer.totalDistributed =
+          Number(brandCustomer.totalDistributed) + Number(syncData.amount);
+        await this.brandService.saveBrandCustomer(brandCustomer);
 
         let user: User;
 

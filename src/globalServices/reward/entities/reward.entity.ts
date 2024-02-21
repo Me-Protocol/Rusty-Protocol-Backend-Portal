@@ -203,4 +203,9 @@ export class Reward extends BaseEntity {
     default: 2,
   })
   meAutoTopUpFactor: number;
+
+  @Column({
+    default: false,
+  })
+  addedLiquidity: boolean;
 }

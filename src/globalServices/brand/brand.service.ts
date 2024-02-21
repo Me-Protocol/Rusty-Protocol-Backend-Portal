@@ -463,6 +463,34 @@ export class BrandService {
     });
   }
 
+  async getBrandCustomerByEmailAddress(email: string, brandId: string) {
+    return await this.brandCustomerRepo.findOne({
+      where: {
+        email,
+        brandId,
+      },
+      relations: ['brand'],
+    });
+  }
+
+  async getBrandCustomerByIdentifier({
+    identifier,
+    identifierType,
+    brandId,
+  }: {
+    identifier: string;
+    brandId: string;
+    identifierType: SyncIdentifierType;
+  }) {
+    return await this.brandCustomerRepo.findOne({
+      where: {
+        brandId,
+        identifier,
+        identifierType,
+      },
+    });
+  }
+
   async getBrandCustomerByUserId(userId: string) {
     return await this.brandCustomerRepo.findOne({
       where: {
