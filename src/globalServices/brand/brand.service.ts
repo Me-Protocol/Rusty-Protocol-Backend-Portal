@@ -496,8 +496,12 @@ export class BrandService {
           page: 1,
           limit: 100000000000000,
           brandId: brandId,
-          startDate: new Date(Date.now() - 24 * 60 * 60 * 1000 * 30),
-          endDate: new Date(),
+          //@ts-ignore
+          startDate: new Date(
+            Date.now() - 24 * 60 * 60 * 1000 * 30,
+          ).toISOString(),
+          //@ts-ignore
+          endDate: new Date().toISOString(),
         });
 
         if (totalRedeemedAmount > 0) {

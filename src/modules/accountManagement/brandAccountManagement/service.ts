@@ -399,6 +399,18 @@ export class BrandAccountManagementService {
     }
   }
 
+  async getActivelySpendingBrandCustomers(brandId: string) {
+    try {
+      return await this.brandService.getActivelySpendingBrandCustomers(brandId);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
+    }
+  }
+
   async getCustomers(query: FilterCustomerDto) {
     try {
       return await this.brandService.getBrandCustomers(
