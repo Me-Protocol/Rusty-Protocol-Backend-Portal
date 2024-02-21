@@ -106,6 +106,8 @@ export class OfferService {
         'brand',
         'product',
         'product.category',
+        'product.variants',
+        'product.variants.options',
         'product.subCategory',
         'offerImages',
         'reward',
@@ -195,6 +197,8 @@ export class OfferService {
       .createQueryBuilder('offer')
       .leftJoinAndSelect('offer.product', 'product')
       .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.variants', 'variants')
+      .leftJoinAndSelect('variants.options', 'options')
       .leftJoinAndSelect('product.subCategory', 'subCategory')
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
@@ -238,6 +242,7 @@ export class OfferService {
       .leftJoinAndSelect('offer.product', 'product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.variants', 'variants')
+      .leftJoinAndSelect('variants.options', 'options')
       .leftJoinAndSelect('product.regions', 'regions')
       .leftJoinAndSelect('product.subCategory', 'subCategory')
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
@@ -365,6 +370,8 @@ export class OfferService {
           'brand',
           'product',
           'product.category',
+          'product.variants',
+          'product.variants.options',
           'product.subCategory',
           'product.variants',
           'offerImages',
@@ -409,6 +416,8 @@ export class OfferService {
           'brand',
           'product',
           'product.category',
+          'product.variants',
+          'product.variants.options',
           'product.subCategory',
           'product.variants',
           'offerImages',
@@ -458,6 +467,7 @@ export class OfferService {
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.subCategory', 'subCategory')
       .leftJoinAndSelect('product.variants', 'variants')
+      .leftJoinAndSelect('variants.options', 'options')
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
       .leftJoinAndSelect('offer.reward', 'reward')
