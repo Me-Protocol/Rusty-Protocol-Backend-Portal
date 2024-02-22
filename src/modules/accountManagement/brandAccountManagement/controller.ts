@@ -178,13 +178,15 @@ export class BrandManagementController {
   @Get('customers/active')
   async getActivelySpendingCustomers(
     @Req() req: any,
-    @Query(ValidationPipe) body: { brandId: string },
+    @Query(ValidationPipe)
+    body: { page: number; limit: number },
   ) {
     const user = req.user as User;
-    body.brandId = user.brand.id;
 
     return await this.brandAccountManagementService.getActivelySpendingBrandCustomers(
-      body.brandId,
+      user.brand.id,
+      body.page,
+      body.limit,
     );
   }
 

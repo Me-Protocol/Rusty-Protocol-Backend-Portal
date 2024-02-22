@@ -503,7 +503,11 @@ export class BrandService {
     });
   }
 
-  async getActivelySpendingBrandCustomers(brandId: string) {
+  async getActivelySpendingBrandCustomers(
+    brandId: string,
+    page: number,
+    limit: number,
+  ) {
     const activeCustomers: Array<BrandCustomer> = [];
     // Get all brandCustomers that have redemption greater than 0
     const brandCustomersQuery = await this.brandCustomerRepo
@@ -521,8 +525,8 @@ export class BrandService {
       if (user) {
         const { orders } = await this.ordersService.getOrders({
           userId: user.id,
-          page: 1,
-          limit: 100000000000000,
+          page: page,
+          limit: limit,
           brandId: brandId,
           //@ts-ignore
           startDate: new Date(
@@ -547,10 +551,21 @@ export class BrandService {
       }
     }
 
-    let sortedActiveCustomers = activeCustomers.sort((a, b) => {
-      return b.totalRedemptionAmount - a.totalRedemptionAmount;
-    });
-    return sortedActiveCustomers;
+    activeCustomers.sort(
+      (a, b) => b.totalRedemptionAmount - a.totalRedemptionAmount,
+    );
+
+    // Calculate pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedData = activeCustomers.slice(startIndex, endIndex);
+
+    return {
+      data: paginatedData,
+      total: activeCustomers.length,
+      nextPage: endIndex < activeCustomers.length ? page + 1 : null,
+      previousPage: page > 1 ? page - 1 : null,
+    };
   }
 
   async getBrandCustomers(

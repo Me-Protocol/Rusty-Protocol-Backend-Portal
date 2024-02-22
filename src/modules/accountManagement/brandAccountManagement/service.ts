@@ -399,9 +399,17 @@ export class BrandAccountManagementService {
     }
   }
 
-  async getActivelySpendingBrandCustomers(brandId: string) {
+  async getActivelySpendingBrandCustomers(
+    brandId: string,
+    page: number,
+    limit: number,
+  ) {
     try {
-      return await this.brandService.getActivelySpendingBrandCustomers(brandId);
+      return await this.brandService.getActivelySpendingBrandCustomers(
+        brandId,
+        page,
+        limit,
+      );
     } catch (error) {
       console.log(error);
       logger.error(error);
