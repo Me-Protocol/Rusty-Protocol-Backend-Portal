@@ -556,15 +556,15 @@ export class BrandService {
     );
 
     // Calculate pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
+    const startIndex = (Number(page) - 1) * Number(limit);
+    const endIndex = startIndex + Number(limit);
     const paginatedData = activeCustomers.slice(startIndex, endIndex);
 
     return {
       data: paginatedData,
       total: activeCustomers.length,
-      nextPage: endIndex < activeCustomers.length ? page + 1 : null,
-      previousPage: page > 1 ? page - 1 : null,
+      nextPage: endIndex < activeCustomers.length ? Number(page) + 1 : null,
+      previousPage: Number(page) > 1 ? Number(page) - 1 : null,
     };
   }
 
