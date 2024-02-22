@@ -527,7 +527,6 @@ export class BrandService {
           userId: user.id,
           page: page,
           limit: limit,
-          brandId: brandId,
           //@ts-ignore
           startDate: new Date(
             Date.now() - 24 * 60 * 60 * 1000 * 30,
@@ -537,7 +536,8 @@ export class BrandService {
         });
 
         orders.forEach((order) => {
-          totalRedemptionAmount += Number(order.points);
+          if (order.status === StatusType.SUCCEDDED)
+            totalRedemptionAmount += Number(order.points);
         });
 
         console.log(
