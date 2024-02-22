@@ -516,7 +516,7 @@ export class BrandService {
 
     for (const customer of eligibleBrandCustomers) {
       const user = customer.user;
-      let totalRedemptionAmount: number;
+      let totalRedemptionAmount: number = 0;
       // Check if each customer has order in the last 30 days
       if (user) {
         const { orders } = await this.ordersService.getOrders({
