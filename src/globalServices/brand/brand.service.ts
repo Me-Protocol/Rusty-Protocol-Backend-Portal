@@ -489,7 +489,6 @@ export class BrandService {
     for (const customer of eligibleBrandCustomers) {
       const user = customer.user;
       let totalRedemptionAmount: number;
-      console.log('inside for loop', customer);
       // Check if each customer has order in the last 30 days
       if (user) {
         const { orders } = await this.ordersService.getOrders({
@@ -509,8 +508,12 @@ export class BrandService {
           totalRedemptionAmount += Number(order.points);
         });
 
+        console.log(
+          `totalRedemptionAmount for ${customer.name}:`,
+          totalRedemptionAmount,
+        );
+
         if (totalRedemptionAmount > 0) {
-          console.log('inside for loop if statement', customer);
           activeCustomers.push(customer);
         }
       }
