@@ -585,7 +585,7 @@ export class BrandService {
       .leftJoinAndSelect('brandCustomer.brand', 'brand');
 
     brandCustomerQuery.where('brandCustomer.brandId = :brandId', { brandId });
-    brandCustomerQuery.orderBy('brandCustomer.identifier', 'DESC');
+    brandCustomerQuery.orderBy('brandCustomer.identifier', 'ASC');
 
     if (filterBy === FilterBrandCustomer.MOST_ACTIVE) {
       // where customer redeemed greater than 2
