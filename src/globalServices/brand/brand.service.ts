@@ -602,13 +602,7 @@ export class BrandService {
 
       // where createdAt is between now to date ago
 
-      brandCustomerQuery.andWhere(
-        'brandCustomer.createdAt BETWEEN :startDate AND :endDate',
-        {
-          startDate,
-          endDate,
-        },
-      );
+      brandCustomerQuery.orderBy('brandCustomer.createdAt', 'DESC');
     }
 
     if (sort) {
