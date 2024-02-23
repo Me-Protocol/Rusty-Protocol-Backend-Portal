@@ -33,6 +33,7 @@ import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
 import { AdminRoles } from '@src/decorators/admin_roles.decorator';
 import { AdminRole } from '@src/utils/enums/AdminRole';
 import { AdminJwtStrategy } from '@src/middlewares/admin-jwt-strategy.middleware';
+import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
 
 @ApiTags('Brand')
 @Controller('brand')
@@ -216,6 +217,36 @@ export class BrandManagementController {
       return {
         ...item,
         brandId: user.brand.id,
+      };
+    });
+
+    this.brandAccountManagementService.batchCreateBrandCustomers(updatedBody);
+    return { success: true, message: 'Processing' };
+  }
+
+  @UseGuards(ApiKeyJwtStrategy)
+  @Post('customers/api_key/create')
+  async createBrandCustomerWithApiKey(
+    @Req() req: any,
+    @Body(ValidationPipe) body: CreateCustomerDto,
+  ) {
+    body.brandId = req.brand.id;
+
+    return await this.brandAccountManagementService.createBrandCustomer(body);
+  }
+
+  @UseGuards(ApiKeyJwtStrategy)
+  @Post('customers/api_key/bulk-create')
+  async bulkCreateBrandCustomersWithApiKey(
+    @Req() req: any,
+    @Body(ValidationPipe) body: { customers: CreateCustomerDto[] },
+  ) {
+    const customers = body.customers;
+
+    const updatedBody = customers.map((item) => {
+      return {
+        ...item,
+        brandId: req.brand.id,
       };
     });
 
