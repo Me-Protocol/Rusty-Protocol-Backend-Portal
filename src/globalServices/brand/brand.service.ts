@@ -585,6 +585,7 @@ export class BrandService {
       .leftJoinAndSelect('brandCustomer.brand', 'brand');
 
     brandCustomerQuery.where('brandCustomer.brandId = :brandId', { brandId });
+    brandCustomerQuery.orderBy('brandCustomer.identifier', 'ASC');
 
     if (filterBy === FilterBrandCustomer.MOST_ACTIVE) {
       // where customer redeemed greater than 2
@@ -593,22 +594,7 @@ export class BrandService {
     }
 
     if (filterBy === FilterBrandCustomer.MOST_RECENT) {
-      // brand customer createdAt now to 1 month ago
-
-      const startDate = new Date();
-      startDate.setMonth(startDate.getMonth() - 1);
-
-      const endDate = new Date();
-
-      // where createdAt is between now to date ago
-
-      brandCustomerQuery.andWhere(
-        'brandCustomer.createdAt BETWEEN :startDate AND :endDate',
-        {
-          startDate,
-          endDate,
-        },
-      );
+      brandCustomerQuery.orderBy('brandCustomer.createdAt', 'DESC');
     }
 
     if (sort) {
