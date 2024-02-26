@@ -607,7 +607,7 @@ export class BrandService {
 
     if (search) {
       brandCustomerQuery.andWhere(
-        '(brandCustomer.name ILIKE :search OR brandCustomer.email ILIKE :search OR brandCustomer.phone ILIKE :search)',
+        '(brandCustomer.name ILIKE :search AND brandCustomer.brandId = :brandId) OR (brandCustomer.email ILIKE :search AND brandCustomer.brandId = :brandId) OR (brandCustomer.phone ILIKE :search brandCustomer.brandId = :brandId)',
         {
           search: `%${search}%`,
         },
