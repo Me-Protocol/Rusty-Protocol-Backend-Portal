@@ -584,32 +584,34 @@ export class BrandService {
       .createQueryBuilder('brandCustomer')
       .leftJoinAndSelect('brandCustomer.brand', 'brand');
 
+    // Enforce brandId condition
     brandCustomerQuery.where('brandCustomer.brandId = :brandId', { brandId });
-    brandCustomerQuery.orderBy('brandCustomer.identifier', 'ASC');
 
     if (filterBy === FilterBrandCustomer.MOST_ACTIVE) {
-      // where customer redeemed greater than 2
-      // brandCustomerQuery.andWhere('brandCustomer.totalRedeemed > 2');
       brandCustomerQuery.andWhere('brandCustomer.totalRedeemed > 2');
     }
 
     if (filterBy === FilterBrandCustomer.MOST_RECENT) {
+      // Ensure the most recent records are ordered first
       brandCustomerQuery.orderBy('brandCustomer.createdAt', 'DESC');
     }
 
     if (sort) {
+      // Apply sorting based on createdAt if specified
       if (sort.createdAt === 'ASC') {
-        brandCustomerQuery.orderBy('brandCustomer.createdAt', 'ASC');
+        brandCustomerQuery.addOrderBy('brandCustomer.createdAt', 'ASC');
       } else if (sort.createdAt === 'DESC') {
-        brandCustomerQuery.orderBy('brandCustomer.createdAt', 'DESC');
+        brandCustomerQuery.addOrderBy('brandCustomer.createdAt', 'DESC');
       }
     }
 
     if (search) {
+      // Ensure search is scoped to the current brandId
       brandCustomerQuery.andWhere(
-        'brandCustomer.name LIKE :search OR brandCustomer.email LIKE :search OR brandCustomer.phone LIKE :search',
+        '(brandCustomer.name LIKE :search OR brandCustomer.email LIKE :search OR brandCustomer.phone LIKE :search) AND brandCustomer.brandId = :brandId',
         {
           search: `%${search}%`,
+          brandId,
         },
       );
     }
@@ -621,6 +623,7 @@ export class BrandService {
     }
 
     if (order) {
+      // Sanitize and apply custom ordering
       let formatedOrder = order.split(':')[0];
       const acceptedOrder = [
         'totalRedeemed',
@@ -639,15 +642,14 @@ export class BrandService {
         formatedOrder = 'isOnboarded';
       }
 
-      brandCustomerQuery.orderBy(
+      brandCustomerQuery.addOrderBy(
         `brandCustomer.${formatedOrder}`,
         order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
       );
     }
 
     brandCustomerQuery.skip((page - 1) * limit).take(limit);
-    const brandCustomers = await brandCustomerQuery.getMany();
-    const total = await brandCustomerQuery.getCount();
+    const [brandCustomers, total] = await brandCustomerQuery.getManyAndCount();
 
     return {
       data: brandCustomers,
