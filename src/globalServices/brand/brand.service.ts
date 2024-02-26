@@ -610,6 +610,7 @@ export class BrandService {
         '(brandCustomer.name ILIKE :search AND brandCustomer.brandId = :brandId) OR (brandCustomer.email ILIKE :search AND brandCustomer.brandId = :brandId) OR (brandCustomer.phone ILIKE :search AND brandCustomer.brandId = :brandId)',
         {
           search: `%${search}%`,
+          brandId,
         },
       );
     }
