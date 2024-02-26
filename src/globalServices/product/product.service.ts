@@ -418,7 +418,7 @@ export class ProductService {
     }
 
     if (search) {
-      products.andWhere('product.name LIKE :search', {
+      products.andWhere('product.name ILIKE :search', {
         search: `%${search}%`,
       });
     }

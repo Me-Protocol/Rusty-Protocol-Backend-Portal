@@ -508,7 +508,7 @@ export class OfferService {
     }
 
     if (search) {
-      offersQuery.andWhere('offer.name LIKE :search', {
+      offersQuery.andWhere('offer.name ILIKE :search', {
         search: `%${search}%`,
       });
     }

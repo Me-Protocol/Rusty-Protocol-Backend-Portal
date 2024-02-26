@@ -259,7 +259,7 @@ export class BrandService {
     }
 
     if (search) {
-      brandQuery.andWhere('brand.name LIKE :search', {
+      brandQuery.andWhere('brand.name ILIKE :search', {
         search: `%${search}%`,
       });
     }
@@ -607,10 +607,9 @@ export class BrandService {
 
     if (search) {
       brandCustomerQuery.andWhere(
-        '(brandCustomer.name ILIKE :search AND brandCustomer.brandId = :brandId) OR (brandCustomer.email ILIKE :search AND brandCustomer.brandId = :brandId) OR (brandCustomer.phone ILIKE :search AND brandCustomer.brandId = :brandId)',
+        '(brandCustomer.name ILIKE :search OR brandCustomer.email ILIKE :search OR brandCustomer.phone ILIKE :search)',
         {
           search: `%${search}%`,
-          brandId,
         },
       );
     }
@@ -891,10 +890,10 @@ export class BrandService {
     const brandQuery = this.brandRepo.createQueryBuilder('brand');
 
     if (search) {
-      brandQuery.andWhere('brand.name LIKE :search', {
+      brandQuery.andWhere('brand.name ILIKE :search', {
         search: `%${search}%`,
       });
-      brandQuery.orWhere('brand.slug LIKE :search', {
+      brandQuery.orWhere('brand.slug ILIKE :search', {
         search: `%${search}%`,
       });
     }
