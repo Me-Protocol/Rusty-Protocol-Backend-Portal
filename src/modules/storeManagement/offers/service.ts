@@ -59,7 +59,6 @@ export class OfferManagementService {
     offer.description = body.description;
     offer.startDate = body.startDate;
     offer.endDate = body.endDate;
-    offer.idOnBrandsite = body.idOnBrandsite;
     offer.rewardId = body.rewardId;
     offer.inventory = body.inventory;
     offer.coverImage = body.coverImage;
@@ -133,7 +132,6 @@ export class OfferManagementService {
       if (body.description) offer.description = body.description;
       if (body.startDate) offer.startDate = body.startDate;
       if (body.endDate) offer.endDate = body.endDate;
-      if (body.idOnBrandsite) offer.idOnBrandsite = body.idOnBrandsite;
       if (body.inventory) offer.inventory = body.inventory;
       if (body.coverImage) offer.coverImage = body.coverImage;
 

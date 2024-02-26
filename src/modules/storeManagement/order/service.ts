@@ -268,6 +268,12 @@ export class OrderManagementService {
         );
       }
 
+      if (!offer.product.productIdOnBrandSite) {
+        throw new Error(
+          "We couldn't determine the product id on brand site for this offer",
+        );
+      }
+
       // Validate online store setup
       await checkBrandOnlineStore({ brand });
 
