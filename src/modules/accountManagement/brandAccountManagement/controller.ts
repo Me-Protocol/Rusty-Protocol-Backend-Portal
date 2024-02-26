@@ -241,17 +241,23 @@ export class BrandManagementController {
     @Req() req: any,
     @Body(ValidationPipe) body: { customers: CreateCustomerDto[] },
   ) {
-    const customers = body.customers;
+    try {
+      const customers = body.customers;
 
-    const updatedBody = customers.map((item) => {
-      return {
-        ...item,
-        brandId: req.brand.id,
-      };
-    });
+      const updatedBody = customers.map((item) => {
+        return {
+          ...item,
+          brandId: req.brand.id,
+        };
+      });
 
-    this.brandAccountManagementService.batchCreateBrandCustomers(updatedBody);
-    return { success: true, message: 'Processing' };
+      this.brandAccountManagementService.batchCreateBrandCustomers(updatedBody);
+      return { success: true, message: 'Processing' };
+    } catch (error) {
+      throw new HttpException(error?.message, 400, {
+        cause: new Error('bulkCreateBrandCustomersWithApiKey'),
+      });
+    }
   }
 
   @Get('member/verify-email/:code/:brandId')
