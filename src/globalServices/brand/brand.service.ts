@@ -606,17 +606,12 @@ export class BrandService {
     }
 
     if (search) {
-      brandCustomerQuery.andWhere('brandCustomer.email ILIKE :search', {
-        search: `%${search}%`,
-      });
-
-      // brandCustomerQuery.orWhere('brandCustomer.email ILIKE :search ', {
-      //   search: `%${search}%`,
-      // });
-
-      // brandCustomerQuery.orWhere('brandCustomer.phone ILIKE :search', {
-      //   search: `%${search}%`,
-      // });
+      brandCustomerQuery.andWhere(
+        'brandCustomer.name ILIKE :search OR brandCustomer.email ILIKE :search OR brandCustomer.phone ILIKE :search',
+        {
+          search: `%${search}%`,
+        },
+      );
     }
 
     if (isOnboarded) {
@@ -648,6 +643,19 @@ export class BrandService {
         `brandCustomer.${formatedOrder}`,
         order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
       );
+    }
+
+    if (search) {
+      brandCustomerQuery.andWhere(
+        'brandCustomer.name ILIKE :search OR brandCustomer.email ILIKE :search OR brandCustomer.phone ILIKE :search',
+        {
+          search: `%${search}%`,
+        },
+      );
+
+      brandCustomerQuery.andWhere('brandCustomer.brandId = :brandId', {
+        brandId,
+      });
     }
 
     brandCustomerQuery.skip((page - 1) * limit).take(limit);
