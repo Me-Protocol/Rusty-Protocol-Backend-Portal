@@ -33,7 +33,7 @@ export const createCoupon = async ({
           discount_type: 'fixed_product',
           individual_use: true,
           exclude_sale_items: true,
-          // product_ids: [productId],
+          product_ids: [productId],
         })
         .then((response) => {
           return response.data;

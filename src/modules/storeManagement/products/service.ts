@@ -75,6 +75,7 @@ export class ProductManagementService {
       if (body.currencyId) product.currencyId = body.currencyId;
       if (body.coverImage) product.coverImage = body.coverImage;
       product.productCode = productCode;
+      product.productIdOnBrandSite = body.productIdOnBrandSite;
 
       const productCollections = [];
 

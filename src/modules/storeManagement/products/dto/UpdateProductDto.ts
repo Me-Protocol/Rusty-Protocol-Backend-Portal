@@ -98,6 +98,11 @@ export class UpdateProductDto {
 
   @ApiProperty()
   @IsOptional()
+  @IsString()
+  productIdOnBrandSite: string;
+
+  @ApiProperty()
+  @IsOptional()
   @IsArray()
   regions: string[];
 }

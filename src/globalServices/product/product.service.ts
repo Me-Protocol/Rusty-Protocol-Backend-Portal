@@ -227,6 +227,8 @@ export class ProductService {
         minAge: body.minAge ?? product.minAge,
         currencyId: body.currencyId ?? product.currencyId,
         coverImage: body.coverImage ?? product.coverImage,
+        productIdOnBrandSite:
+          body.productIdOnBrandSite ?? product.productIdOnBrandSite,
       },
     );
   }
