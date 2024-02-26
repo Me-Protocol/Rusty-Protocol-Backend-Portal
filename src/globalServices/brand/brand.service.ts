@@ -607,7 +607,7 @@ export class BrandService {
 
     if (search) {
       brandCustomerQuery.andWhere(
-        'brandCustomer.name ILIKE :search OR brandCustomer.email ILIKE :search OR brandCustomer.phone ILIKE :search',
+        '(brandCustomer.name ILIKE :search OR brandCustomer.email ILIKE :search OR brandCustomer.phone ILIKE :search)',
         {
           search: `%${search}%`,
         },
@@ -643,19 +643,6 @@ export class BrandService {
         `brandCustomer.${formatedOrder}`,
         order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
       );
-    }
-
-    if (search) {
-      brandCustomerQuery.andWhere(
-        'brandCustomer.name ILIKE :search OR brandCustomer.email ILIKE :search OR brandCustomer.phone ILIKE :search',
-        {
-          search: `%${search}%`,
-        },
-      );
-
-      brandCustomerQuery.andWhere('brandCustomer.brandId = :brandId', {
-        brandId,
-      });
     }
 
     brandCustomerQuery.skip((page - 1) * limit).take(limit);
