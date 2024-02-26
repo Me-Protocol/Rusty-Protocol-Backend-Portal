@@ -41,7 +41,6 @@ import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
 import { Role } from '@src/utils/enums/Role';
 import { BrandUploadGateway } from './socket/brand-upload.gateway';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
-import { CurrencyService } from '@src/globalServices/currency/currency.service';
 
 @Injectable()
 export class BrandAccountManagementService {

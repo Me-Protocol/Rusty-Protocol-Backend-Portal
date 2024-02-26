@@ -43,6 +43,9 @@ import { RUNTIME_URL } from '@src/config/env.config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BillerService } from '@src/globalServices/biller/biller.service';
 import { ethers } from 'ethers';
+import { createCoupon } from '@src/globalServices/online-store-handler/create-coupon';
+import { WooCommerceHandler } from '@src/globalServices/online-store-handler/woocommerce';
+import { checkBrandOnlineStore } from '@src/globalServices/online-store-handler/check-store';
 
 @Injectable()
 export class OrderManagementService {
@@ -239,12 +242,16 @@ export class OrderManagementService {
         throw new Error('Quantity must be greater than 0');
       }
 
-      if (offer.product.inventory < quantity) {
+      const brand = await this.brandService.getBrandWithOnlineCreds(
+        offer.brandId,
+      );
+
+      if ((offer.product.inventory ?? 0) < quantity) {
         throw new Error('Offer is out of stock');
       }
 
       // Check that after removing the quantity, the inventory is still greater than 0
-      if (offer.product.inventory - quantity < 0) {
+      if ((offer.product.inventory ?? 0) - quantity < 0) {
         throw new Error(
           `You cannot redeem more than ${offer.product.inventory} at the moment`,
         );
@@ -254,6 +261,15 @@ export class OrderManagementService {
       if (offer.endDate < new Date()) {
         throw new Error('Offer has expired');
       }
+
+      if (!brand.onlineStoreType) {
+        throw new Error(
+          'You cannot redeem this offer at the moment. Try again later',
+        );
+      }
+
+      // Validate online store setup
+      await checkBrandOnlineStore({ brand });
 
       // TODO: uncomment this
       // const canPayCost = await this.fiatWalletService.checkCanPayCost(
@@ -366,6 +382,13 @@ export class OrderManagementService {
               orderId: order.id,
             },
           });
+          const brand = await this.brandService.getBrandWithOnlineCreds(
+            order.brandId,
+          );
+
+          if (!brand?.onlineStoreType) {
+            return;
+          }
 
           if (status === 'success') {
             await this.offerService.increaseOfferSales({
@@ -383,6 +406,17 @@ export class OrderManagementService {
             order.status = StatusType.SUCCEDDED;
 
             await this.orderService.saveOrder(order);
+
+            // create online store coupon
+            const onlineCoupon = await createCoupon({
+              brand,
+              data: {
+                code: coupon.code,
+                amount: order.points.toString(),
+                minimum_amount: order.points.toString(),
+              },
+              productId: offer.productId,
+            });
 
             if (transaction) {
               transaction.status = StatusType.SUCCEDDED;

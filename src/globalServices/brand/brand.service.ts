@@ -177,6 +177,10 @@ export class BrandService {
       brand.postalCode = dto.postalCode;
       brand.firstTimeLogin = dto.firstTimeLogin === 'true' ? true : false;
       brand.brandStore = dto.brandStore;
+      brand.onlineStoreType = dto.onlineStoreType;
+      brand.woocommerceConsumerKey = dto.woocommerceConsumerKey;
+      brand.woocommerceConsumerSecret = dto.woocommerceConsumerSecret;
+      brand.woocommerceStoreUrl = dto.woocommerceStoreUrl;
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);
@@ -941,5 +945,20 @@ export class BrandService {
         await this.brandCustomerRepo.save(brandCustomer);
       }
     }
+  }
+
+  async getBrandWithOnlineCreds(brandId: string) {
+    return this.brandRepo.findOne({
+      where: {
+        id: brandId,
+      },
+      select: {
+        woocommerceConsumerKey: true,
+        woocommerceConsumerSecret: true,
+        woocommerceStoreUrl: true,
+        onlineStoreType: true,
+        id: true,
+      },
+    });
   }
 }
