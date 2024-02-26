@@ -72,7 +72,6 @@ export class ReviewService {
 
     const [reviews, total] = await reviewQuery.getManyAndCount();
 
-    // average rating
     const ratings = await this.reviewsRepository.find({
       where: {
         offerId: offerId,
@@ -81,20 +80,17 @@ export class ReviewService {
     });
 
     const averageRating =
-      ratings.reduce((acc, curr) => {
-        return acc + curr.rating;
-      }, 0) / ratings.length;
-
+      ratings.reduce((acc, curr) => acc + curr.rating, 0) / ratings.length;
     const averageRatingRounded = Math.round(averageRating * 10) / 10;
 
-    const rates = [1, 2, 3, 4, 5];
-
-    // percentage of each rates to the averageRatingRounded
-
-    const percentageOfEachRates = rates.map((rate) => {
-      const percentage = (rate / averageRatingRounded) * 100;
-      return Math.round(percentage * 10) / 10;
-    });
+    const percentageOfEachRates = {};
+    for (let rate = 1; rate <= 5; rate++) {
+      const countOfRating = ratings.filter(
+        (review) => review.rating === rate,
+      ).length;
+      const percentage = (countOfRating / ratings.length) * 100;
+      percentageOfEachRates[rate] = Math.round(percentage * 10) / 10;
+    }
 
     return {
       reviews,

@@ -606,12 +606,17 @@ export class BrandService {
     }
 
     if (search) {
-      brandCustomerQuery.andWhere(
-        'brandCustomer.name LIKE :search OR brandCustomer.email LIKE :search OR brandCustomer.phone LIKE :search',
-        {
-          search: `%${search}%`,
-        },
-      );
+      brandCustomerQuery.andWhere('brandCustomer.email ILIKE :search', {
+        search: `%${search}%`,
+      });
+
+      // brandCustomerQuery.orWhere('brandCustomer.email ILIKE :search ', {
+      //   search: `%${search}%`,
+      // });
+
+      // brandCustomerQuery.orWhere('brandCustomer.phone ILIKE :search', {
+      //   search: `%${search}%`,
+      // });
     }
 
     if (isOnboarded) {
