@@ -177,10 +177,10 @@ export class BrandService {
       brand.postalCode = dto.postalCode;
       brand.firstTimeLogin = dto.firstTimeLogin === 'true' ? true : false;
       brand.brandStore = dto.brandStore;
-      brand.onlineStoreType = dto.onlineStoreType;
-      brand.woocommerceConsumerKey = dto.woocommerceConsumerKey;
-      brand.woocommerceConsumerSecret = dto.woocommerceConsumerSecret;
-      brand.woocommerceStoreUrl = dto.woocommerceStoreUrl;
+      brand.online_store_type = dto.onlineStoreType;
+      brand.woocommerce_consumer_key = dto.woocommerceConsumerKey;
+      brand.woocommerce_consumer_secret = dto.woocommerceConsumerSecret;
+      brand.woocommerce_store_url = dto.woocommerceStoreUrl;
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);
@@ -524,17 +524,19 @@ export class BrandService {
 
     for (const customer of eligibleBrandCustomers) {
       const user = customer.user;
-      let totalRedemptionAmount: number = 0;
+      let totalRedemptionAmount = 0;
       // Check if each customer has order in the last 30 days
       if (user) {
         const { orders } = await this.ordersService.getOrders({
           userId: user.id,
           page: page,
           limit: limit,
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           //@ts-ignore
           startDate: new Date(
             Date.now() - 24 * 60 * 60 * 1000 * 30,
           ).toISOString(),
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           //@ts-ignore
           endDate: new Date().toISOString(),
         });
@@ -953,10 +955,10 @@ export class BrandService {
         id: brandId,
       },
       select: {
-        woocommerceConsumerKey: true,
-        woocommerceConsumerSecret: true,
-        woocommerceStoreUrl: true,
-        onlineStoreType: true,
+        woocommerce_consumer_key: true,
+        woocommerce_consumer_secret: true,
+        woocommerce_store_url: true,
+        online_store_type: true,
         id: true,
       },
     });

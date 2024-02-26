@@ -361,22 +361,22 @@ export class Brand extends BaseEntity {
     type: 'enum',
     enum: OnlineStoreType,
   })
-  onlineStoreType: OnlineStoreType;
+  online_store_type: OnlineStoreType;
 
   @Column({
     nullable: true,
     select: false,
   })
-  woocommerceConsumerKey: string;
+  woocommerce_consumer_key: string;
 
   @Column({
     nullable: true,
     select: false,
   })
-  woocommerceConsumerSecret: string;
+  woocommerce_consumer_secret: string;
 
   @Column({
     nullable: true,
   })
-  woocommerceStoreUrl: string;
+  woocommerce_store_url: string;
 }

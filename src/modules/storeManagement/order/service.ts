@@ -262,7 +262,7 @@ export class OrderManagementService {
         throw new Error('Offer has expired');
       }
 
-      if (!brand.onlineStoreType) {
+      if (!brand.online_store_type) {
         throw new Error(
           'You cannot redeem this offer at the moment. Try again later',
         );
@@ -386,7 +386,7 @@ export class OrderManagementService {
             order.brandId,
           );
 
-          if (!brand?.onlineStoreType) {
+          if (!brand?.online_store_type) {
             return;
           }
 

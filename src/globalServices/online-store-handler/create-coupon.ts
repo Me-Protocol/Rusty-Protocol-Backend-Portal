@@ -18,13 +18,13 @@ export const createCoupon = async ({
   let woocommerceHandler: WooCommerceHandler;
   let woocommerce;
 
-  switch (brand?.onlineStoreType) {
+  switch (brand?.online_store_type) {
     case OnlineStoreType.WOOCOMMERCE:
       woocommerceHandler = new WooCommerceHandler();
       woocommerce = woocommerceHandler.createInstance(
-        brand.woocommerceConsumerKey,
-        brand.woocommerceConsumerSecret,
-        brand.woocommerceStoreUrl,
+        brand.woocommerce_consumer_key,
+        brand.woocommerce_consumer_secret,
+        brand.woocommerce_store_url,
       );
 
       await woocommerce
