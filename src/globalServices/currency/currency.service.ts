@@ -68,21 +68,32 @@ export class CurrencyService {
     name,
     code,
     currencyId,
+    flag,
   }: {
     name: string;
     code: string;
     currencyId: string;
+    flag: string;
   }) {
+    const currency = await this.currencyRepo.findOne({
+      where: { id: currencyId },
+    });
+
+    if (!currency) throw new Error('Currency not found');
+
     const region = new Region();
     region.name = name;
     region.code = code;
     region.currencyId = currencyId;
+    region.flag = flag;
 
     return await this.regionRepo.save(region);
   }
 
   async getRegions() {
-    const regions = await this.regionRepo.find();
+    const regions = await this.regionRepo.find({
+      relations: ['currency'],
+    });
 
     return regions;
   }
@@ -92,6 +103,7 @@ export class CurrencyService {
       where: {
         id,
       },
+      relations: ['currency'],
     });
 
     return region;
@@ -102,6 +114,7 @@ export class CurrencyService {
       where: {
         code,
       },
+      relations: ['currency'],
     });
 
     return region;

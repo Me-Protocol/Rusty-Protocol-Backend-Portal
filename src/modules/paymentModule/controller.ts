@@ -9,6 +9,7 @@ import {
   Query,
   Param,
   Delete,
+  HttpException,
 } from '@nestjs/common';
 import { LinkCardDto } from './dto/LinkCardDto.dto';
 import { ApiTags } from '@nestjs/swagger';
@@ -134,7 +135,13 @@ export class PaymentModuleController {
 
   @Post('region')
   async createRegion(@Body(ValidationPipe) body: CreateRegionDto) {
-    return await this.currencyService.createRegion(body);
+    try {
+      return await this.currencyService.createRegion(body);
+    } catch (error) {
+      throw new HttpException(error.message, 400, {
+        cause: new Error('createRegion'),
+      });
+    }
   }
 
   @Get('region')
