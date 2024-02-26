@@ -12,6 +12,11 @@ export class Region extends BaseEntity {
   @Column()
   code: string;
 
+  @Column({
+    default: 'currencyFlag',
+  })
+  flag: string;
+
   @Column()
   currencyId: string;
 

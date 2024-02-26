@@ -13,4 +13,8 @@ export class CreateRegionDto {
   @ApiProperty()
   @IsUUID()
   currencyId: string;
+
+  @ApiProperty()
+  @IsString()
+  flag: string;
 }
