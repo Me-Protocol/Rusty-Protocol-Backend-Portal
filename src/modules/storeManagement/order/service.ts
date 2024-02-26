@@ -369,7 +369,7 @@ export class OrderManagementService {
     }
   }
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  // @Cron(CronExpression.EVERY_SECOND)
   async checkOrderStatus() {
     try {
       const pendingOrders = await this.orderService.getPendingOrders();
