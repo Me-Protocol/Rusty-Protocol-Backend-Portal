@@ -289,15 +289,10 @@ export class OrderManagementService {
 
       const user = await this.userService.getUserById(userId);
 
-      const discount = (offer.tokens * offer.discountPercentage) / 100;
-      const amount = offer.tokens - discount;
-
-      const totalAmount = amount * quantity;
-
       const orderRecord = new Order();
       orderRecord.userId = user.id;
       orderRecord.offerId = offerId;
-      orderRecord.points = totalAmount;
+      orderRecord.points = offer.tokens;
       orderRecord.quantity = quantity;
       orderRecord.brandId = offer.brandId;
       orderRecord.redeemRewardId = rewardId;
@@ -373,7 +368,6 @@ export class OrderManagementService {
   async checkOrderStatus() {
     try {
       const pendingOrders = await this.orderService.getPendingOrders();
-      console.log(pendingOrders.length);
 
       if (pendingOrders.length > 0) {
         for (const order of pendingOrders) {
@@ -414,12 +408,18 @@ export class OrderManagementService {
 
             await this.orderService.saveOrder(order);
 
+            const discount =
+              (offer.product.price * offer.discountPercentage) / 100;
+            const amount = offer.product.price - discount;
+
+            const totalAmount = amount * order.quantity;
+
             // create online store coupon
             const onlineCoupon = await createCoupon({
               brand,
               data: {
                 code: coupon.code,
-                amount: order.points.toString(),
+                amount: totalAmount.toString(),
               },
               productId: offer.product.productIdOnBrandSite,
             });
