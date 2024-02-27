@@ -122,6 +122,7 @@ export class UserService {
         'brandMember',
         'brandMember.brand',
         'brand.plan',
+        'brand.regions',
         'adminMember',
       ],
     });
