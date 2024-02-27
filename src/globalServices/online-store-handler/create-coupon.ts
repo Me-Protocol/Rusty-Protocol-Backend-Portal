@@ -29,11 +29,7 @@ export const createCoupon = async ({
   switch (brand?.online_store_type) {
     case OnlineStoreType.WOOCOMMERCE:
       woocommerceHandler = new WooCommerceHandler();
-      woocommerce = woocommerceHandler.createInstance(
-        brand.woocommerce_consumer_key,
-        brand.woocommerce_consumer_secret,
-        brand.woocommerce_store_url,
-      );
+      woocommerce = woocommerceHandler.createInstance(brand);
 
       await woocommerce
         .post('coupons', body)

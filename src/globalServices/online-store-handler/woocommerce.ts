@@ -1,23 +1,12 @@
 import WooCommerceRestApi from '@woocommerce/woocommerce-rest-api';
+import { Brand } from '../brand/entities/brand.entity';
 
 export class WooCommerceHandler {
-  // private url: string;
-  // private version: string;
-
-  // constructor({ url, version }: { url: string; version: string }) {
-  //   this.url = url;
-  //   this.version = version;
-  // }
-
-  public createInstance(
-    consumerKey: string,
-    consumerSecret: string,
-    url: string,
-  ): WooCommerceRestApi {
+  public createInstance(brand: Brand): WooCommerceRestApi {
     const woocommerce = new WooCommerceRestApi({
-      url: url,
-      consumerKey: consumerKey,
-      consumerSecret: consumerSecret,
+      url: brand.online_store_url,
+      consumerKey: brand.woocommerce_consumer_key,
+      consumerSecret: brand.woocommerce_consumer_secret,
       version: 'wc/v3',
       queryStringAuth: true,
     });
