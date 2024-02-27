@@ -369,10 +369,11 @@ export class OrderManagementService {
     }
   }
 
-  // @Cron(CronExpression.EVERY_SECOND)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async checkOrderStatus() {
     try {
       const pendingOrders = await this.orderService.getPendingOrders();
+      console.log(pendingOrders.length);
 
       if (pendingOrders.length > 0) {
         for (const order of pendingOrders) {
@@ -419,9 +420,8 @@ export class OrderManagementService {
               data: {
                 code: coupon.code,
                 amount: order.points.toString(),
-                minimum_amount: order.points.toString(),
               },
-              productId: offer.productId,
+              productId: offer.product.productIdOnBrandSite,
             });
 
             if (transaction) {
@@ -638,10 +638,12 @@ export class OrderManagementService {
 
             await this.notificationService.createNotification(notification);
           } else {
-            if (order.retries > 4) {
+            if (order.retries > 30) {
               order.status = StatusType.INCOMPLETE;
 
               await this.orderService.saveOrder(order);
+
+              return;
             }
 
             order.status = StatusType.PROCESSING;

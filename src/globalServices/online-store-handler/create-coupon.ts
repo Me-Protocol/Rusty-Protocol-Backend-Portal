@@ -10,13 +10,21 @@ export const createCoupon = async ({
   data: {
     code: string;
     amount: string;
-    minimum_amount: string;
   };
   brand: Brand;
   productId: string;
 }) => {
   let woocommerceHandler: WooCommerceHandler;
   let woocommerce;
+
+  const body = {
+    ...data,
+    discount_type: 'fixed_product',
+    product_ids: [productId],
+    individual_use: true,
+    exclude_sale_items: false,
+    usage_limit: 1,
+  };
 
   switch (brand?.online_store_type) {
     case OnlineStoreType.WOOCOMMERCE:
@@ -28,17 +36,12 @@ export const createCoupon = async ({
       );
 
       await woocommerce
-        .post('coupons', {
-          ...data,
-          discount_type: 'fixed_product',
-          individual_use: true,
-          exclude_sale_items: true,
-          product_ids: [productId],
-        })
+        .post('coupons', body)
         .then((response) => {
           return response.data;
         })
         .catch((error) => {
+          console.log(error);
           throw new Error(error);
         });
 
