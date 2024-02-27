@@ -180,7 +180,7 @@ export class BrandService {
       brand.online_store_type = dto.onlineStoreType;
       brand.woocommerce_consumer_key = dto.woocommerceConsumerKey;
       brand.woocommerce_consumer_secret = dto.woocommerceConsumerSecret;
-      brand.woocommerce_store_url = dto.woocommerceStoreUrl;
+      brand.online_store_url = dto.online_store_url;
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);
@@ -957,7 +957,7 @@ export class BrandService {
       select: {
         woocommerce_consumer_key: true,
         woocommerce_consumer_secret: true,
-        woocommerce_store_url: true,
+        online_store_url: true,
         online_store_type: true,
         id: true,
       },

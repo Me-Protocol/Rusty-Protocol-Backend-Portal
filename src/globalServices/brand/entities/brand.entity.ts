@@ -365,6 +365,11 @@ export class Brand extends BaseEntity {
 
   @Column({
     nullable: true,
+  })
+  online_store_url: string;
+
+  @Column({
+    nullable: true,
     select: false,
   })
   woocommerce_consumer_key: string;
@@ -377,6 +382,13 @@ export class Brand extends BaseEntity {
 
   @Column({
     nullable: true,
+    select: false,
   })
-  woocommerce_store_url: string;
+  shopify_consumer_key: string;
+
+  @Column({
+    nullable: true,
+    select: false,
+  })
+  shopify_consumer_secret: string;
 }

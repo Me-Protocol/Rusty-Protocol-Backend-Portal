@@ -222,5 +222,5 @@ export class UpdateBrandDto {
   @ApiProperty()
   @IsOptional()
   @IsString()
-  woocommerceStoreUrl: string;
+  online_store_url: string;
 }
