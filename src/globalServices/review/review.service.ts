@@ -22,12 +22,16 @@ export class ReviewService {
     userId,
     brandId,
     offerId,
+    startDate,
+    endDate,
   }: {
     page: number;
     limit: number;
     userId?: string;
     brandId?: string;
     offerId?: string;
+    startDate?: Date;
+    endDate?: Date;
   }) {
     const reviewQuery = this.reviewsRepository
       .createQueryBuilder('review')
@@ -63,6 +67,13 @@ export class ReviewService {
 
     if (offerId) {
       reviewQuery.andWhere('review.offerId = :offerId', { offerId });
+    }
+
+    if (startDate && endDate) {
+      reviewQuery.andWhere('review.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
     }
 
     reviewQuery.orderBy('review.createdAt', 'DESC');
