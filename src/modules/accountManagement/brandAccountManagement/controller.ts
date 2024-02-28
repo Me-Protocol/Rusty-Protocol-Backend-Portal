@@ -192,6 +192,17 @@ export class BrandManagementController {
   }
 
   @UseGuards(BrandJwtStrategy)
+  @Delete('customers/:id')
+  async deleteBrandCustomer(@Req() req: any, @Param('id') customerId: string) {
+    const user = req.user as User;
+
+    return await this.brandAccountManagementService.deleteBrandCustomer(
+      user.brand.id,
+      customerId,
+    );
+  }
+
+  @UseGuards(BrandJwtStrategy)
   @Post('customers/create')
   async createBrandCustomer(
     @Req() req: any,

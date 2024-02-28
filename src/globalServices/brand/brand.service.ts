@@ -1,5 +1,6 @@
 import {
   HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   NotFoundException,
@@ -442,6 +443,30 @@ export class BrandService {
 
   async saveBrandCustomer(brandCustomer: BrandCustomer) {
     return await this.brandCustomerRepo.save(brandCustomer);
+  }
+
+  async deleteBrandCustomer(brandId: string, brandCustomerId: string) {
+    try {
+      const customer = await this.brandCustomerRepo.findOne({
+        where: {
+          id: brandCustomerId,
+          brandId: brandId,
+        },
+      });
+
+      if (customer) {
+        await this.brandCustomerRepo.remove(customer);
+        return { deleted: true };
+      } else {
+        throw new HttpException(
+          `Customer does not exist on brand`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
   }
 
   async getBrandCustomer(brandId: string, userId: string) {

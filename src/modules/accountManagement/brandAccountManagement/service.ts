@@ -439,6 +439,13 @@ export class BrandAccountManagementService {
     }
   }
 
+  async deleteBrandCustomer(brandId: string, brandCustomerId: string) {
+    return await this.brandService.deleteBrandCustomer(
+      brandId,
+      brandCustomerId,
+    );
+  }
+
   async onboardBrand({ brandId, walletAddress, website }: OnboardBrandDto) {
     try {
       const brand = await this.brandService.getBrandById(brandId);
