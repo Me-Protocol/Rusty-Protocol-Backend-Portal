@@ -146,43 +146,51 @@ export class BrandService {
       }
 
       // if (dto.name) brand.name = dto.name;
-      brand.website = dto.website;
-      brand.location = dto.location;
-      brand.categoryId = dto.categoryId;
-      brand.revenueRange = dto.revenueRange;
-      brand.vatTaxId = dto.vatTaxId;
+      if (dto.website) brand.website = dto.website;
+      if (dto.location) brand.location = dto.location;
+      if (dto.categoryId) brand.categoryId = dto.categoryId;
+      if (dto.revenueRange) brand.revenueRange = dto.revenueRange;
+      if (dto.vatTaxId) brand.vatTaxId = dto.vatTaxId;
 
-      brand.ecommercePlatform = dto.ecommercePlatform;
-      brand.loyaltyProgram = dto.loyaltyProgram;
-      brand.slogan = dto.slogan;
-      brand.socialMediaLinks = dto.socialMediaLinks;
-      brand.logo_icon = dto.logo_icon;
-      brand.description = dto.description;
-      brand.logo_white = dto.logo_white;
-      brand.logo_white_icon = dto.logo_white_icon;
-      brand.logo = dto.logo;
-      brand.banners = dto.banners;
+      if (dto.ecommercePlatform)
+        brand.ecommercePlatform = dto.ecommercePlatform;
+      if (dto.loyaltyProgram) brand.loyaltyProgram = dto.loyaltyProgram;
+      if (dto.slogan) brand.slogan = dto.slogan;
+      if (dto.socialMediaLinks) brand.socialMediaLinks = dto.socialMediaLinks;
+      if (dto.logo_icon) brand.logo_icon = dto.logo_icon;
+      if (dto.description) brand.description = dto.description;
+      if (dto.logo_white) brand.logo_white = dto.logo_white;
+      if (dto.logo_white_icon) brand.logo_white_icon = dto.logo_white_icon;
+      if (dto.logo) brand.logo = dto.logo;
+      if (dto.banners) brand.banners = dto.banners;
 
-      brand.supportPhoneNumber = dto.supportPhoneNumber;
-      brand.listOnStore = dto.listOnStore;
-      brand.vaultPercentage = dto.vaultPercentage;
-      brand.noOfCustomers = dto.noOfCustomers;
+      if (dto.supportPhoneNumber)
+        brand.supportPhoneNumber = dto.supportPhoneNumber;
+      if (dto.listOnStore) brand.listOnStore = dto.listOnStore;
+      if (dto.vaultPercentage) brand.vaultPercentage = dto.vaultPercentage;
+      if (dto.noOfCustomers) brand.noOfCustomers = dto.noOfCustomers;
 
-      brand.currency = dto.currency;
-      brand.countryCode = dto.countryCode;
-      brand.country = dto.country;
-      brand.region = dto.region;
-      brand.additionalAddress = dto.additionalAddress;
-      brand.city = dto.city;
-      brand.postalCode = dto.postalCode;
-      brand.firstTimeLogin = dto.firstTimeLogin === 'true' ? true : false;
-      brand.brandStore = dto.brandStore;
-      brand.online_store_type = dto.onlineStoreType;
-      brand.woocommerce_consumer_key = dto.woocommerceConsumerKey;
-      brand.woocommerce_consumer_secret = dto.woocommerceConsumerSecret;
-      brand.online_store_url = dto.online_store_url;
-      brand.shopify_consumer_key = dto.shopify_consumer_key;
-      brand.shopify_consumer_secret = dto.shopify_consumer_secret;
+      if (dto.currency) brand.currency = dto.currency;
+      if (dto.countryCode) brand.countryCode = dto.countryCode;
+      if (dto.country) brand.country = dto.country;
+      if (dto.region) brand.region = dto.region;
+      if (dto.additionalAddress)
+        brand.additionalAddress = dto.additionalAddress;
+      if (dto.city) brand.city = dto.city;
+      if (dto.postalCode) brand.postalCode = dto.postalCode;
+      if (dto.firstTimeLogin)
+        brand.firstTimeLogin = dto.firstTimeLogin === 'true' ? true : false;
+      if (dto.brandStore) brand.brandStore = dto.brandStore;
+      if (dto.onlineStoreType) brand.online_store_type = dto.onlineStoreType;
+      if (dto.woocommerceConsumerKey)
+        brand.woocommerce_consumer_key = dto.woocommerceConsumerKey;
+      if (dto.woocommerceConsumerSecret)
+        brand.woocommerce_consumer_secret = dto.woocommerceConsumerSecret;
+      if (dto.online_store_url) brand.online_store_url = dto.online_store_url;
+      if (dto.shopify_consumer_key)
+        brand.shopify_consumer_key = dto.shopify_consumer_key;
+      if (dto.shopify_consumer_secret)
+        brand.shopify_consumer_secret = dto.shopify_consumer_secret;
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);
