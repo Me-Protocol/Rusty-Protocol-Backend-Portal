@@ -181,6 +181,8 @@ export class BrandService {
       brand.woocommerce_consumer_key = dto.woocommerceConsumerKey;
       brand.woocommerce_consumer_secret = dto.woocommerceConsumerSecret;
       brand.online_store_url = dto.online_store_url;
+      brand.shopify_consumer_key = dto.shopify_consumer_key;
+      brand.shopify_consumer_secret = dto.shopify_consumer_secret;
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);

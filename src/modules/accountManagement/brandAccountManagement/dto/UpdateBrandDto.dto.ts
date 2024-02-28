@@ -223,4 +223,14 @@ export class UpdateBrandDto {
   @IsOptional()
   @IsString()
   online_store_url: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  shopify_consumer_key: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  shopify_consumer_secret: string;
 }
