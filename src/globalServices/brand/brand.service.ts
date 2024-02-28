@@ -437,7 +437,6 @@ export class BrandService {
 
   async deleteBrandCustomer(brandId: string, brandCustomerId: string) {
     try {
-      // Find the BrandCustomer entity
       const customer = await this.brandCustomerRepo.findOne({
         where: {
           id: brandCustomerId,
@@ -446,7 +445,6 @@ export class BrandService {
       });
 
       if (customer) {
-        // Delete the BrandCustomer entity
         await this.brandCustomerRepo.remove(customer);
         return { deleted: true };
       } else {
