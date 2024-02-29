@@ -350,10 +350,11 @@ export class BrandAccountManagementService {
 
       await this.userService.saveUser(user);
 
-      const brandMember = await this.brandService.getBrandMember(
+      const brandMember = await this.brandService.getBrandMemberByUserEmail(
+        user.email,
         brandId,
-        user.brandMember.id,
       );
+
       brandMember.userId = user.id;
 
       await this.brandService.saveBrandMember(brandMember);
