@@ -283,9 +283,7 @@ export class BrandManagementController {
       brandId,
     );
 
-    return res
-      .status(302)
-      .redirect(`${process.env.BUSINESS_APP_URL}/create-password`);
+    return res.status(302).redirect(`${process.env.BUSINESS_APP_URL}/login`);
   }
 
   @Get('member/join/:email/:brandId')
@@ -300,9 +298,7 @@ export class BrandManagementController {
       brandId,
     );
 
-    return res
-      .status(302)
-      .redirect(`${process.env.BUSINESS_APP_URL}/create-password`);
+    return res.status(302).redirect(`${process.env.BUSINESS_APP_URL}/login`);
   }
 
   @UseGuards(BrandJwtStrategy)
