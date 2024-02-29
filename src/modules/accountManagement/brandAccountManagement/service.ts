@@ -282,10 +282,12 @@ export class BrandAccountManagementService {
       const salt = await bcrypt.genSalt();
       const hashedPassword = await bcrypt.hash(password, salt);
 
+      const code = Math.floor(1000 + Math.random() * 9000);
+
       newUser.password = hashedPassword;
       newUser.salt = salt;
       newUser.userType = UserAppType.BRAND_MEMBER;
-      newUser.accountVerificationCode = Math.floor(1000 + Math.random() * 9000);
+      newUser.accountVerificationCode = code;
 
       const saveUser = await this.userService.saveUser(newUser);
 
@@ -318,7 +320,7 @@ export class BrandAccountManagementService {
         </p>
         ${emailButton({
           text: 'Verify Email',
-          url: `${process.env.SERVER_URL}/brand/member/verify-email/${user?.accountVerificationCode}/${brandId}`,
+          url: `${process.env.SERVER_URL}/brand/member/verify-email/${code}/${brandId}`,
         })}
         `,
       });
