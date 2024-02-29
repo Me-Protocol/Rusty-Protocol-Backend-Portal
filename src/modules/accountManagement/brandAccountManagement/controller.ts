@@ -45,11 +45,25 @@ export class BrandManagementController {
 
   @UseGuards(BrandJwtStrategy)
   @Put()
-  async updateCustomer(
+  async updateBrand(
     @Body(ValidationPipe) updateBrandDto: UpdateBrandDto,
     @Req() req: any,
   ) {
     const brandId = req.user.brand.id;
+
+    return await this.brandAccountManagementService.updateBrand(
+      updateBrandDto,
+      brandId,
+    );
+  }
+
+  @UseGuards(ApiKeyJwtStrategy)
+  @Put('/update')
+  async updateBrandViaApiKey(
+    @Body(ValidationPipe) updateBrandDto: UpdateBrandDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.brand.id;
 
     return await this.brandAccountManagementService.updateBrand(
       updateBrandDto,
