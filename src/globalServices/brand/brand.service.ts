@@ -133,7 +133,7 @@ export class BrandService {
         throw new NotFoundException('Brand not found');
       }
 
-      if (dto.regions && dto.regions.length > 0) {
+      if (dto.regions) {
         const regions = [];
 
         for (const region of dto.regions) {
