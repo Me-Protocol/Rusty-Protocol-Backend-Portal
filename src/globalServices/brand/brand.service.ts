@@ -167,7 +167,8 @@ export class BrandService {
 
       if (dto.supportPhoneNumber)
         brand.supportPhoneNumber = dto.supportPhoneNumber;
-      if (dto.listOnStore) brand.listOnStore = dto.listOnStore;
+      if (dto.listOnStore !== null || dto.listOnStore !== undefined)
+        brand.listOnStore = dto.listOnStore;
       if (dto.vaultPercentage) brand.vaultPercentage = dto.vaultPercentage;
       if (dto.noOfCustomers) brand.noOfCustomers = dto.noOfCustomers;
 
