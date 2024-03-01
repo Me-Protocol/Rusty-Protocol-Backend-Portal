@@ -577,14 +577,18 @@ export class BrandService {
         });
 
         orders.forEach((order) => {
-          if (order.status === StatusType.SUCCEDDED)
+          const isUsingBrandReward = !!customer.brand.rewards.find(
+            (i) => i.id === order?.reward?.id,
+          );
+          console.log('brandRewardUsed', order?.reward);
+          if (order.status === StatusType.SUCCEDDED && isUsingBrandReward)
             totalRedemptionAmount += Number(order.points);
         });
 
-        console.log(
-          `totalRedemptionAmount for ${customer.name}:`,
-          totalRedemptionAmount,
-        );
+        // console.log(
+        //   `totalRedemptionAmount for ${customer.name}:`,
+        //   totalRedemptionAmount,
+        // );
 
         if (totalRedemptionAmount > 0) {
           activeCustomers.push(customer);
