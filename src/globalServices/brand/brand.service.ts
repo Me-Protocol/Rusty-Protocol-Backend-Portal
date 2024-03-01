@@ -553,6 +553,7 @@ export class BrandService {
       .createQueryBuilder('brandCustomer')
       .leftJoinAndSelect('brandCustomer.brand', 'brand')
       .leftJoinAndSelect('brandCustomer.user', 'user')
+      .leftJoinAndSelect('brand.rewards', 'rewards')
       .where('brandCustomer.brandId = :brandId', { brandId });
 
     const eligibleBrandCustomers = await brandCustomersQuery.getMany();
