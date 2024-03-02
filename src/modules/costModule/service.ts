@@ -339,24 +339,24 @@ export class CostModuleManagementService {
     }
   }
 
-  @Cron('0 0 1 */30 *')
-  async brandBalanceAutoTopup() {
-    const brands = await this.brandService.getAllBrands();
+  // @Cron('0 0 1 */30 *')
+  // async brandBalanceAutoTopup() {
+  //   const brands = await this.brandService.getAllBrands();
 
-    for (let index = 0; index < brands.length; index++) {
-      const brand = brands[index];
-      const wallet = await this.walletService.getWalletByBrandId(brand.id);
+  //   for (let index = 0; index < brands.length; index++) {
+  //     const brand = brands[index];
+  //     const wallet = await this.walletService.getWalletByBrandId(brand.id);
 
-      try {
-        await this.walletService.fundBrandAccountForCostCollection(
-          wallet,
-          brand,
-        );
-      } catch (error) {
-        logger.error(error);
-      }
-    }
+  //     try {
+  //       await this.walletService.fundBrandAccountForCostCollection(
+  //         wallet,
+  //         brand,
+  //       );
+  //     } catch (error) {
+  //       logger.error(error);
+  //     }
+  //   }
 
-    return true;
-  }
+  //   return true;
+  // }
 }

@@ -20,6 +20,7 @@ import {
 } from '@src/utils/enums/Transactions';
 import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
 import { Transaction } from '@src/globalServices/fiatWallet/entities/transaction.entity';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class PaymentModuleService {
@@ -394,6 +395,7 @@ export class PaymentModuleService {
           }
 
           const amount = item.meNotifyLimit.mul(settings?.meAutoTopUpFactor);
+          console.log(item.currentDepositNonce);
           // const amountInDollars = await meTokenToDollar(amount);
 
           // console.log('Amount in dollars', amountInDollars.toString());

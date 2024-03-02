@@ -34,6 +34,8 @@ import { AdminRoles } from '@src/decorators/admin_roles.decorator';
 import { AdminRole } from '@src/utils/enums/AdminRole';
 import { AdminJwtStrategy } from '@src/middlewares/admin-jwt-strategy.middleware';
 import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
+import { BrandRoles } from '@src/decorators/brand_roles.decorator';
+import { BrandRole } from '@src/utils/enums/BrandRole';
 
 @ApiTags('Brand')
 @Controller('brand')
@@ -43,6 +45,7 @@ export class BrandManagementController {
     private readonly brandAccountManagementService: BrandAccountManagementService,
   ) {}
 
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
   @UseGuards(BrandJwtStrategy)
   @Put()
   async updateBrand(
@@ -76,7 +79,7 @@ export class BrandManagementController {
     return await this.brandAccountManagementService.getAllFilteredBrands(query);
   }
 
-  // @AdminRoles([AdminRole.SUPER_ADMIN])
+  @AdminRoles([AdminRole.SUPER_ADMIN])
   @UseGuards(AdminJwtStrategy)
   @Get('/admin/brands')
   async issueMeCredits(
@@ -106,6 +109,7 @@ export class BrandManagementController {
     return await this.brandAccountManagementService.getBrandMembers(brandId);
   }
 
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
   @UseGuards(BrandJwtStrategy)
   @Put('member/:id/role')
   async updateBrandMemberRole(
@@ -118,6 +122,7 @@ export class BrandManagementController {
     return await this.brandAccountManagementService.updateBrandMemberRole(body);
   }
 
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
   @UseGuards(BrandJwtStrategy)
   @Put('member/:id')
   async updateBrandMember(
@@ -154,6 +159,7 @@ export class BrandManagementController {
     return await this.brandAccountManagementService.updateBrandMember(body);
   }
 
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
   @UseGuards(BrandJwtStrategy)
   @Post('member')
   async createBrandMember(
@@ -166,6 +172,7 @@ export class BrandManagementController {
     return await this.brandAccountManagementService.createBrandMember(body);
   }
 
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
   @UseGuards(BrandJwtStrategy)
   @Delete('member/:id')
   async removeBrandMember(@Req() req: any, @Param('id') id: string) {
@@ -315,6 +322,7 @@ export class BrandManagementController {
     return res.status(302).redirect(`${process.env.BUSINESS_APP_URL}/login`);
   }
 
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
   @UseGuards(BrandJwtStrategy)
   @Post('onboard')
   async onboardBrand(
