@@ -795,7 +795,7 @@ export class AnalyticsService {
           brandId,
         },
       },
-
+      order: { createdAt: 'DESC' },
       skip: (+page - 1) * limit,
       take: limit,
     });
