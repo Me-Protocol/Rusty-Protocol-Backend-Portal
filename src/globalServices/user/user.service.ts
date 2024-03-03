@@ -34,7 +34,7 @@ export class UserService {
           walletAddress,
         },
       },
-      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
+      relations: ['customer', 'brand', 'brandMembers', 'brandMembers.brand'],
     });
   }
 
@@ -119,8 +119,8 @@ export class UserService {
       relations: [
         'customer',
         'brand',
-        'brandMember',
-        'brandMember.brand',
+        'brandMembers',
+        'brandMembers.brand',
         'brand.plan',
         'brand.regions',
         'adminMember',
