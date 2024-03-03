@@ -142,7 +142,7 @@ export class UserService {
       where: {
         email,
       },
-      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
+      relations: ['customer', 'brand', 'brandMembers', 'brandMembers.brand'],
     });
   }
 
@@ -211,7 +211,7 @@ export class UserService {
       where: {
         accountVerificationCode: code,
       },
-      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
+      relations: ['customer', 'brand', 'brandMembers', 'brandMembers.brand'],
     });
   }
 
@@ -220,7 +220,7 @@ export class UserService {
       where: {
         id: In(ids),
       },
-      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
+      relations: ['customer', 'brand', 'brandMembers', 'brandMembers.brand'],
     });
   }
 }
