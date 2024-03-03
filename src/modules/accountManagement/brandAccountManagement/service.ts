@@ -143,9 +143,14 @@ export class BrandAccountManagementService {
       }
 
       const brandOwner = await this.getBrandOwner(body.brandId);
+      const brandOwnerMember =
+        await this.brandService.getBrandMemberByUserIdAndBrandId(
+          brandOwner.id,
+          body.brandId,
+        );
       const ownerMemberRecord = await this.brandService.getBrandMember(
         body.brandId,
-        brandOwner.brandMember.id,
+        brandOwnerMember.id,
       );
 
       if (body.role === BrandRole.OWNER && body.userId !== brandOwner.id) {
@@ -198,16 +203,6 @@ export class BrandAccountManagementService {
       }
 
       if (user) {
-        const checkBrandMemberForOtherBrand =
-          await this.brandService.getBrandMemberByUserId(user.id);
-
-        if (
-          checkBrandMemberForOtherBrand &&
-          checkBrandMemberForOtherBrand.brandId !== brandId
-        ) {
-          throw new HttpException('This user belongs to another brand', 400);
-        }
-
         const checkBrandMember =
           await this.brandService.getBrandMemberByUserEmail(email, brandId);
 
@@ -356,6 +351,7 @@ export class BrandAccountManagementService {
       );
 
       brandMember.userId = user.id;
+      brandMember.isAccepted = true;
 
       await this.brandService.saveBrandMember(brandMember);
 
@@ -390,6 +386,7 @@ export class BrandAccountManagementService {
       }
 
       brandMember.userId = user.id;
+      brandMember.isAccepted = true;
 
       await this.brandService.saveBrandMember(brandMember);
 

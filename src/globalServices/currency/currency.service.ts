@@ -109,6 +109,29 @@ export class CurrencyService {
     return region;
   }
 
+  async getDefaultRegion() {
+    const region = await this.regionRepo.findOne({
+      where: {
+        isDefault: true,
+      },
+      relations: ['currency'],
+    });
+
+    if (!region) {
+      const newRegion = new Region();
+      newRegion.name = 'Default Region';
+      newRegion.code = 'DR';
+      newRegion.flag = 'dr';
+      newRegion.isDefault = true;
+
+      await this.regionRepo.save(newRegion);
+
+      return await this.getDefaultRegion();
+    }
+
+    return region;
+  }
+
   async getRegionByCode(code: string) {
     const region = await this.regionRepo.findOne({
       where: {

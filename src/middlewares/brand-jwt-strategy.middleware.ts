@@ -23,6 +23,14 @@ export class BrandJwtStrategy implements CanActivate {
       const request = context.switchToHttp().getRequest();
       const headers = context.switchToHttp().getRequest().headers;
       const access_token = headers?.authorization?.split(' ')[1];
+      const queries = context.switchToHttp().getRequest().query;
+      const brandId = queries?.brandId;
+
+      if (!brandId) {
+        throw new UnauthorizedException(
+          'Unauthorized. Please no brand specified. Please login',
+        );
+      }
 
       if (!access_token)
         throw new UnauthorizedException('Unauthorized. Please login');
@@ -69,11 +77,25 @@ export class BrandJwtStrategy implements CanActivate {
         throw new UnauthorizedException('Unauthorized. Please login');
       }
 
+      const brand = await this.brandService.getBrandById(brandId);
+      const brandMember =
+        await this.brandService.getBrandMemberByUserIdAndBrandId(
+          user.id,
+          brand.id,
+        );
+
+      if (!brandMember) {
+        throw new UnauthorizedException(
+          'Unauthorized. You are not a member of this brand.',
+        );
+      }
+
       delete deviceToken.token;
 
       request.user = {
         ...user,
-        brand: user?.brandMember?.brand ?? user.brand,
+        brand,
+        brandMember,
       };
 
       return true;

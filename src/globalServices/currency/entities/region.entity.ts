@@ -17,7 +17,9 @@ export class Region extends BaseEntity {
   })
   flag: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   currencyId: string;
 
   @ManyToOne(() => Currency, (currency) => currency.regions)
@@ -28,4 +30,9 @@ export class Region extends BaseEntity {
 
   @ManyToMany(() => Product, (product) => product.regions)
   products: Product[];
+
+  @Column({
+    default: false,
+  })
+  isDefault: boolean;
 }

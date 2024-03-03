@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
-import { FindOptionsOrderValue, In, Like, Repository } from 'typeorm';
+import { FindOptionsOrderValue, In, Repository } from 'typeorm';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { brandIndex } from '@src/modules/search/interface/search.interface';
 import { UpdateBrandDto } from '@src/modules/accountManagement/brandAccountManagement/dto/UpdateBrandDto.dto';
@@ -31,7 +31,6 @@ import { User } from '@src/globalServices/user/entities/user.entity';
 import { TopupEventBlock } from './entities/topup_event_block.entity';
 import { isEmail } from 'class-validator';
 import { RewardService } from '../reward/reward.service';
-import { VoucherType } from '@src/utils/enums/VoucherType';
 import {
   StatusType,
   TransactionSource,
@@ -43,7 +42,6 @@ import { Transaction } from '../fiatWallet/entities/transaction.entity';
 import { logger } from '../logger/logger.service';
 import { Role } from '@src/utils/enums/Role';
 import { CurrencyService } from '../currency/currency.service';
-import { Order } from '../order/entities/order.entity';
 import { OrderService } from '../order/order.service';
 
 @Injectable()
@@ -733,6 +731,15 @@ export class BrandService {
     return await this.brandMemberRepo.findOne({
       where: {
         userId,
+      },
+    });
+  }
+
+  async getBrandMemberByUserIdAndBrandId(userId: string, brandId: string) {
+    return await this.brandMemberRepo.findOne({
+      where: {
+        userId,
+        brandId,
       },
     });
   }
