@@ -15,6 +15,7 @@ import { offerIndex } from '@src/modules/search/interface/search.interface';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { BrandCustomer } from '../brand/entities/brand_customer.entity';
 import { User } from '../user/entities/user.entity';
+import { CurrencyService } from '../currency/currency.service';
 
 @Injectable()
 export class OfferService {
@@ -30,6 +31,7 @@ export class OfferService {
     private readonly customerService: CustomerService,
     private readonly productService: ProductService,
     private readonly elasticIndex: ElasticIndex,
+    private readonly currencyService: CurrencyService,
   ) {}
 
   async saveOffer(offer: Offer) {
@@ -303,10 +305,21 @@ export class OfferService {
     }
 
     if (regionId) {
+      const checkRegion = await this.currencyService.getRegionById(regionId);
+
+      if (!checkRegion) {
+        throw new Error('Region not found');
+      }
+
       // where offer product regions contains regionId or offer product regions is empty
       offersQuery.andWhere('regions.id = :regionId', { regionId });
-      offersQuery.orWhere('regions.id IS NULL');
     }
+
+    const defaultRegion = await this.currencyService.getDefaultRegion();
+
+    offersQuery.andWhere('regions.id = :regionId', {
+      regionId: defaultRegion.id,
+    });
 
     offersQuery.skip((page - 1) * limit);
     offersQuery.take(limit);
