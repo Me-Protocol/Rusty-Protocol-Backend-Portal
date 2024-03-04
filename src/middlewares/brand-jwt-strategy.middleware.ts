@@ -62,10 +62,6 @@ export class BrandJwtStrategy implements CanActivate {
         );
       }
 
-      if (user.userType !== UserAppType.BRAND) {
-        throw new UnauthorizedException('Unauthorized. Please login');
-      }
-
       if (user.banned) {
         throw new UnauthorizedException(
           'You account has been banned. Please contact support',
