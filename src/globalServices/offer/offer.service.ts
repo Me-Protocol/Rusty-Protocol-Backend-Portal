@@ -318,7 +318,7 @@ export class OfferService {
 
     const defaultRegion = await this.currencyService.getDefaultRegion();
 
-    offersQuery.andWhere('regions.id = :regionId', {
+    offersQuery.orWhere('regions.id = :regionId', {
       regionId: defaultRegion.id,
     });
 
