@@ -30,6 +30,8 @@ export class BrandJwtStrategy implements CanActivate {
         queries?.brandID ||
         queries.currentBrandId;
 
+      console.log('brandId', brandId);
+
       if (!brandId) {
         console.log('No brand specified');
         throw new UnauthorizedException(
@@ -83,6 +85,11 @@ export class BrandJwtStrategy implements CanActivate {
       }
 
       const brand = await this.brandService.getBrandById(brandId);
+
+      if (!brand) {
+        throw new UnauthorizedException('Unauthorized. Brand not found');
+      }
+
       const brandMember =
         await this.brandService.getBrandMemberByUserIdAndBrandId(
           user.id,
@@ -105,6 +112,7 @@ export class BrandJwtStrategy implements CanActivate {
 
       return true;
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new UnauthorizedException(
         error.message || 'Unauthorized. Please login',
