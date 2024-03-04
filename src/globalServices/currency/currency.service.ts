@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Currency } from './entities/currency.entity';
@@ -90,6 +90,47 @@ export class CurrencyService {
     return await this.regionRepo.save(region);
   }
 
+  async updateRegion({
+    name,
+    code,
+    currencyId,
+    flag,
+    id,
+  }: {
+    name: string;
+    code: string;
+    currencyId: string;
+    flag: string;
+    id: string;
+  }) {
+    try {
+      const currency = await this.currencyRepo.findOne({
+        where: { id: currencyId },
+      });
+
+      if (!currency) throw new Error('Currency not found');
+
+      const region = await this.regionRepo.findOne({
+        where: { id },
+      });
+
+      if (!region) throw new Error('Region not found');
+
+      if (name) region.name = name;
+      if (code) region.code = code;
+      if (currencyId) region.currencyId = currencyId;
+      if (flag) region.flag = flag;
+
+      return await this.regionRepo.save(region);
+    } catch (error) {
+      console.log(error);
+
+      throw new HttpException(error.message, 400, {
+        cause: new Error('updateRegion'),
+      });
+    }
+  }
+
   async getRegions() {
     const regions = await this.regionRepo.find({
       relations: ['currency'],
@@ -130,6 +171,12 @@ export class CurrencyService {
     }
 
     return region;
+  }
+
+  async saveRegion(region: Region) {
+    const regionRecord = await this.regionRepo.save(region);
+
+    return regionRecord;
   }
 
   async getRegionByCode(code: string) {

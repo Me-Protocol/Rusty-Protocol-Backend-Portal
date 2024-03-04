@@ -313,6 +313,7 @@ export class OfferService {
 
       // where offer product regions contains regionId or offer product regions is empty
       offersQuery.andWhere('regions.id = :regionId', { regionId });
+    } else {
       offersQuery.orWhere('regions.id IS NULL');
     }
 
