@@ -24,7 +24,11 @@ export class BrandJwtStrategy implements CanActivate {
       const headers = context.switchToHttp().getRequest().headers;
       const access_token = headers?.authorization?.split(' ')[1];
       const queries = context.switchToHttp().getRequest().query;
-      const brandId = queries?.brandId;
+      const brandId =
+        queries?.brandId ||
+        queries?.brand_id ||
+        queries?.brandID ||
+        queries.currentBrandId;
 
       if (!brandId) {
         console.log('No brand specified');
