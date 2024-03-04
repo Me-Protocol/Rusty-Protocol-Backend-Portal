@@ -27,6 +27,7 @@ export class BrandJwtStrategy implements CanActivate {
       const brandId = queries?.brandId;
 
       if (!brandId) {
+        console.log('No brand specified');
         throw new UnauthorizedException(
           'Unauthorized. Please no brand specified. Please login',
         );
@@ -101,7 +102,9 @@ export class BrandJwtStrategy implements CanActivate {
       return true;
     } catch (error) {
       logger.error(error);
-      throw new UnauthorizedException('Unauthorized. Please login');
+      throw new UnauthorizedException(
+        error.message || 'Unauthorized. Please login',
+      );
     }
   }
 }
