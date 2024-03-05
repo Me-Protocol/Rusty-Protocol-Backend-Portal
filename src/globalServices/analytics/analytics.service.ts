@@ -852,23 +852,75 @@ export class AnalyticsService {
     };
   }
 
-  async getAdminDashboard({ start, end }: { start: Date; end: Date }) {
+  async getAdminDashboard({
+    start,
+    end,
+    type,
+  }: {
+    start: Date;
+    end: Date;
+    type: 'day' | 'week' | 'month' | 'year';
+  }) {
     const where = start && end ? { createdAt: Between(start, end) } : {};
+
+    let diffStart;
+    let diffEnd;
+
+    if (type === 'day') {
+      diffStart = moment(start).startOf('day').toDate();
+      diffEnd = moment(end).endOf('day').toDate();
+    } else if (type === 'week') {
+      diffStart = moment(start).startOf('week').toDate();
+      diffEnd = moment(end).endOf('week').toDate();
+    } else if (type === 'month') {
+      diffStart = moment(start).startOf('month').toDate();
+      diffEnd = moment(end).endOf('month').toDate();
+    } else if (type === 'year') {
+      diffStart = moment(start).startOf('year').toDate();
+      diffEnd = moment(end).endOf('year').toDate();
+    } else {
+      diffStart = moment(start).startOf('day').toDate();
+      diffEnd = moment(end).endOf('day').toDate();
+    }
 
     const totalOffers = await this.offerRepo.count({
       where,
+    });
+
+    const totalOffersDiff = await this.offerRepo.count({
+      where: {
+        createdAt: Between(diffStart, diffEnd),
+      },
     });
 
     const totalOrders = await this.orderRepo.count({
       where,
     });
 
+    const totalOrdersDiff = await this.orderRepo.count({
+      where: {
+        createdAt: Between(diffStart, diffEnd),
+      },
+    });
+
     const totalViews = await this.viewRepo.count({
       where,
     });
 
+    const totalViewsDiff = await this.viewRepo.count({
+      where: {
+        createdAt: Between(diffStart, diffEnd),
+      },
+    });
+
     const totalRewards = await this.rewardRepo.count({
       where,
+    });
+
+    const totalRewardsDiff = await this.rewardRepo.count({
+      where: {
+        createdAt: Between(diffStart, diffEnd),
+      },
     });
 
     const totalActiveTasks = await this.taskRepo.count({
@@ -878,13 +930,33 @@ export class AnalyticsService {
       },
     });
 
+    const totalActiveTasksDiff = await this.taskRepo.count({
+      where: {
+        createdAt: Between(diffStart, diffEnd),
+        status: TaskStatus.ACTIVE,
+      },
+    });
+
     const totalUsers = await this.userRepo.find({
       where,
+    });
+
+    const totalUsersDiff = await this.userRepo.find({
+      where: {
+        createdAt: Between(diffStart, diffEnd),
+      },
     });
 
     const totalCustomers = await this.userRepo.find({
       where: {
         ...where,
+        userType: UserAppType.USER,
+      },
+    });
+
+    const totalCustomersDiff = await this.userRepo.find({
+      where: {
+        createdAt: Between(diffStart, diffEnd),
         userType: UserAppType.USER,
       },
     });
@@ -896,15 +968,54 @@ export class AnalyticsService {
       },
     });
 
+    const totalBrandsDiff = await this.userRepo.find({
+      where: {
+        createdAt: Between(diffStart, diffEnd),
+        userType: UserAppType.BRAND,
+      },
+    });
+
     return {
-      totalOffers,
-      totalOrders,
-      totalViews,
-      totalRewards,
-      totalActiveTasks,
-      totalCustomers,
-      totalBrands,
-      totalUsers,
+      totalOffers: {
+        total: totalOffers,
+        diff: totalOffersDiff,
+        percentageDiff: totalOffersDiff / totalOffers,
+      },
+      totalOrders: {
+        total: totalOrders,
+        diff: totalOrdersDiff,
+        percentage: totalOrdersDiff / totalOrders,
+      },
+      totalViews: {
+        total: totalViews,
+        diff: totalViewsDiff,
+        percentage: totalViewsDiff / totalViews,
+      },
+      totalRewards: {
+        total: totalRewards,
+        diff: totalRewardsDiff,
+        percentage: totalRewardsDiff / totalRewards,
+      },
+      totalActiveTasks: {
+        total: totalActiveTasks,
+        diff: totalActiveTasksDiff,
+        percentage: totalActiveTasksDiff / totalActiveTasks,
+      },
+      totalCustomers: {
+        total: totalCustomers.length,
+        diff: totalCustomersDiff.length,
+        percentage: totalCustomersDiff.length / totalCustomers.length,
+      },
+      totalBrands: {
+        total: totalBrands.length,
+        diff: totalBrandsDiff.length,
+        percentage: totalBrandsDiff.length / totalBrands.length,
+      },
+      totalUsers: {
+        total: totalUsers.length,
+        diff: totalUsersDiff.length,
+        percentage: totalUsersDiff.length / totalUsers.length,
+      },
     };
   }
 }

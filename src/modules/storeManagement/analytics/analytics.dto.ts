@@ -20,6 +20,14 @@ export class AnalyticsDto {
   @IsOptional()
   end: Date;
 
+  @ApiProperty({
+    type: 'enum',
+    enum: ['day', 'week', 'month', 'year'],
+  })
+  @IsEnum(['day', 'week', 'month', 'year'])
+  @IsOptional()
+  type: 'day' | 'week' | 'month' | 'year';
+
   brandId: string;
 }
 

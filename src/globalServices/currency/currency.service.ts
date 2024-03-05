@@ -193,10 +193,11 @@ export class CurrencyService {
   @Cron(CronExpression.EVERY_4_HOURS)
   async syncCurrencyValue() {
     try {
-      const apiKey = 'sgiPfh4j3aXFR3l2CnjWqdKQzxpqGn9pX5b3CUsz';
+      const apiKey = 'cur_live_lqegEL92Bp2kwN37R2F8gBMTOrFtwDenyaLRh0cA';
+      const apiKey2 = 'sgiPfh4j3aXFR3l2CnjWqdKQzxpqGn9pX5b3CUsz';
 
       const countriesData = await axios.get(
-        `https://api.freecurrencyapi.com/v1/currencies?apikey=${apiKey}`,
+        `https://api.freecurrencyapi.com/v1/currencies?apikey=${apiKey2}`,
       );
 
       const countries = Object.keys(countriesData?.data?.data).map(
@@ -204,11 +205,11 @@ export class CurrencyService {
       );
 
       const currenciesData = await axios.get(
-        `https://api.freecurrencyapi.com/v1/latest?apikey=${apiKey}`,
+        `https://api.currencyapi.com/v3/latest?apikey=${apiKey}`,
       );
 
       const currencies = Object.keys(currenciesData?.data?.data).map((key) => ({
-        value: currenciesData?.data?.data[key],
+        value: currenciesData?.data?.data[key]?.value,
         currency: key,
       }));
 
@@ -226,16 +227,16 @@ export class CurrencyService {
               (country) => country.code === currency.currency,
             );
 
+            console.log(country);
+
             const newCurrency = new Currency();
-            newCurrency.code = country.code;
+            newCurrency.code = currency?.currency;
             newCurrency.value = currency.value;
-            newCurrency.name = country.code;
-            newCurrency.symbol = country.symbol;
+            newCurrency.name = country?.code || currency.currency;
+            newCurrency.symbol = currency.currency;
 
             await this.createCurrency(newCurrency);
           }
-
-          console.log(currencies);
         }),
       );
     } catch (error) {
