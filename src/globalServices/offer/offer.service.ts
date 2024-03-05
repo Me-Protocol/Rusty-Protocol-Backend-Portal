@@ -314,12 +314,14 @@ export class OfferService {
       // where offer product regions contains regionId or offer product regions is empty
       offersQuery.andWhere('regions.id = :regionId', { regionId });
     } else {
-      offersQuery.orWhere('regions.id IS NULL');
+      offersQuery
+        .orWhere('regions.id IS NULL')
+        .andWhere('offer.status = :status', { status: ItemStatus.PUBLISHED });
     }
 
     const defaultRegion = await this.currencyService.getDefaultRegion();
 
-    offersQuery.orWhere('regions.id = :regionId', {
+    offersQuery.andWhere('regions.id = :regionId', {
       regionId: defaultRegion.id,
     });
 
