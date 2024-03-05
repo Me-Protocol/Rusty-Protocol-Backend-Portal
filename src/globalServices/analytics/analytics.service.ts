@@ -19,6 +19,7 @@ import { User } from '@src/globalServices/user/entities/user.entity';
 import { Not } from '@node_modules/typeorm';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { UserAppType } from '@src/utils/enums/UserAppType';
+import { TaskStatus } from '@src/utils/enums/TasksTypes';
 
 /**
  *
@@ -848,6 +849,62 @@ export class AnalyticsService {
     return {
       holders: registries,
       total,
+    };
+  }
+
+  async getAdminDashboard({ start, end }: { start: Date; end: Date }) {
+    const where = start && end ? { createdAt: Between(start, end) } : {};
+
+    const totalOffers = await this.offerRepo.count({
+      where,
+    });
+
+    const totalOrders = await this.orderRepo.count({
+      where,
+    });
+
+    const totalViews = await this.viewRepo.count({
+      where,
+    });
+
+    const totalRewards = await this.rewardRepo.count({
+      where,
+    });
+
+    const totalActiveTasks = await this.taskRepo.count({
+      where: {
+        ...where,
+        status: TaskStatus.ACTIVE,
+      },
+    });
+
+    const totalUsers = await this.userRepo.find({
+      where,
+    });
+
+    const totalCustomers = await this.userRepo.find({
+      where: {
+        ...where,
+        userType: UserAppType.USER,
+      },
+    });
+
+    const totalBrands = await this.userRepo.find({
+      where: {
+        ...where,
+        userType: UserAppType.BRAND,
+      },
+    });
+
+    return {
+      totalOffers,
+      totalOrders,
+      totalViews,
+      totalRewards,
+      totalActiveTasks,
+      totalCustomers,
+      totalBrands,
+      totalUsers,
     };
   }
 }
