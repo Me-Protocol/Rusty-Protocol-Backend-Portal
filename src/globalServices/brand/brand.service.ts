@@ -255,7 +255,9 @@ export class BrandService {
       .where('brand.listOnStore = :listOnStore', { listOnStore: true });
 
     if (categoryId) {
-      brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
+      brandQuery
+        .andWhere('brand.categoryId = :categoryId', { categoryId })
+        .andWhere('brand.listOnStore = :listOnStore', { listOnStore: true });
     }
 
     if (order) {
@@ -280,9 +282,26 @@ export class BrandService {
 
     if (regionId) {
       // where offer product regions contains regionId or offer product regions is empty
-      brandQuery.andWhere('regions.id = :regionId', { regionId });
-      brandQuery.orWhere('regions.id IS NULL');
+      brandQuery
+        .andWhere('regions.id = :regionId', { regionId })
+        .andWhere('brand.listOnStore = :listOnStore', { listOnStore: true });
+    } else {
+      brandQuery
+        .orWhere('regions.id IS NULL')
+        .andWhere('brand.listOnStore = :listOnStore', { listOnStore: true });
     }
+
+    const defaultRegion = await this.currencyService.getDefaultRegion();
+
+    brandQuery
+      .andWhere('regions.id = :regionId', {
+        regionId: defaultRegion.id,
+      })
+      .where('brand.listOnStore = :listOnStore', { listOnStore: true });
+
+    brandQuery.andWhere('brand.listOnStore = :listOnStore', {
+      listOnStore: true,
+    });
 
     brandQuery.skip((page - 1) * limit).take(limit);
     const brands = await brandQuery.getMany();
