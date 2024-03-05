@@ -11,11 +11,13 @@ import {
 
 export class AnalyticsDto {
   @ApiProperty()
+  @IsOptional()
   @IsDateString()
   start: Date;
 
   @ApiProperty()
   @IsDateString()
+  @IsOptional()
   end: Date;
 
   brandId: string;
