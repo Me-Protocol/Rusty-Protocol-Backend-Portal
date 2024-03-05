@@ -255,25 +255,33 @@ export class OfferService {
       .andWhere('brand.listOnStore = :listOnStore', { listOnStore: true });
 
     if (category) {
-      offersQuery.andWhere('product.categoryId = :categoryId', {
-        categoryId: category,
-      });
+      offersQuery
+        .andWhere('product.categoryId = :categoryId', {
+          categoryId: category,
+        })
+        .andWhere('offer.status = :status', { status: ItemStatus.PUBLISHED });
     }
 
     if (subCategory) {
-      offersQuery.andWhere('product.subCategoryId = :subCategoryId', {
-        subCategoryId: subCategory,
-      });
+      offersQuery
+        .andWhere('product.subCategoryId = :subCategoryId', {
+          subCategoryId: subCategory,
+        })
+        .andWhere('offer.status = :status', { status: ItemStatus.PUBLISHED });
     }
 
     if (brandId) {
-      offersQuery.andWhere('offer.brandId = :brandId', { brandId });
+      offersQuery
+        .andWhere('offer.brandId = :brandId', { brandId })
+        .andWhere('offer.status = :status', { status: ItemStatus.PUBLISHED });
     }
 
     if (sort === OfferSort.TRENDING) {
-      offersQuery.andWhere('offer.viewCount > :viewCount', {
-        viewCount: 3, // TODO: Change this to 100,
-      });
+      offersQuery
+        .andWhere('offer.viewCount > :viewCount', {
+          viewCount: 3, // TODO: Change this to 100,
+        })
+        .andWhere('offer.status = :status', { status: ItemStatus.PUBLISHED });
       // offersQuery.andWhere('offer.likeCount > :likeCount', {
       //   likeCount: 2, // TODO: Change this to 100,
       // });
@@ -298,9 +306,11 @@ export class OfferService {
     }
 
     if (sort === OfferSort.EXPIRING) {
-      offersQuery.andWhere('offer.endDate > :endDate', {
-        endDate: new Date(),
-      });
+      offersQuery
+        .andWhere('offer.endDate > :endDate', {
+          endDate: new Date(),
+        })
+        .andWhere('offer.status = :status', { status: ItemStatus.PUBLISHED });
       offersQuery.orderBy('offer.endDate', 'ASC');
     }
 
@@ -312,7 +322,9 @@ export class OfferService {
       }
 
       // where offer product regions contains regionId or offer product regions is empty
-      offersQuery.andWhere('regions.id = :regionId', { regionId });
+      offersQuery
+        .andWhere('regions.id = :regionId', { regionId })
+        .andWhere('offer.status = :status', { status: ItemStatus.PUBLISHED });
     } else {
       offersQuery
         .orWhere('regions.id IS NULL')
@@ -321,9 +333,11 @@ export class OfferService {
 
     const defaultRegion = await this.currencyService.getDefaultRegion();
 
-    offersQuery.andWhere('regions.id = :regionId', {
-      regionId: defaultRegion.id,
-    });
+    offersQuery
+      .andWhere('regions.id = :regionId', {
+        regionId: defaultRegion.id,
+      })
+      .andWhere('offer.status = :status', { status: ItemStatus.PUBLISHED });
 
     offersQuery.skip((page - 1) * limit);
     offersQuery.take(limit);
