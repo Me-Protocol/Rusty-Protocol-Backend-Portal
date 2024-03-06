@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsDateString, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class FilterReviewDto {
   @ApiProperty()
@@ -16,6 +16,16 @@ export class FilterReviewDto {
   @IsOptional()
   @IsUUID()
   offerId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsDateString()
+  startDate?: Date;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsDateString()
+  endDate?: Date;
 
   brandId: string;
 

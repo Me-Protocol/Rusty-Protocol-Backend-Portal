@@ -159,7 +159,7 @@ export class OrderService {
       });
 
       totalRedeemedAmount = redeemedAmount.reduce((acc, curr) => {
-        return acc + curr.points;
+        return acc + Number(curr.points);
       }, 0);
 
       orders.forEach((follower) => {
@@ -215,7 +215,7 @@ export class OrderService {
         status: StatusType.PROCESSING,
         // taskId: Not(IsNull()),
       },
-      relations: ['coupon', 'user'],
+      relations: ['coupon', 'user', 'brand'],
     });
   }
 

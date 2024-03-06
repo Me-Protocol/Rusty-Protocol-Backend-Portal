@@ -25,7 +25,7 @@ export class ProductService {
 
   async getAllProducts() {
     return await this.productRepo.find({
-      relations: ['brand', 'productImages', 'variants', 'category'],
+      relations: ['brand', 'productImages', 'variants', 'category', 'regions'],
     });
   }
 
@@ -227,6 +227,8 @@ export class ProductService {
         minAge: body.minAge ?? product.minAge,
         currencyId: body.currencyId ?? product.currencyId,
         coverImage: body.coverImage ?? product.coverImage,
+        productIdOnBrandSite:
+          body.productIdOnBrandSite ?? product.productIdOnBrandSite,
       },
     );
   }
@@ -263,6 +265,7 @@ export class ProductService {
       },
       skip: (page - 1) * limit,
       take: limit,
+      relations: ['brand', 'productImages', 'variants', 'category', 'regions'],
     });
 
     const total = await this.productRepo.count({
@@ -285,6 +288,7 @@ export class ProductService {
         id: productId,
         brandId,
       },
+      relations: ['brand', 'productImages', 'variants', 'category', 'regions'],
     });
   }
 
@@ -324,6 +328,7 @@ export class ProductService {
         'brand',
         'variants',
         'variants.options',
+        'regions',
       ],
     });
   }
@@ -333,6 +338,14 @@ export class ProductService {
       where: {
         id: productId,
       },
+      relations: [
+        'category',
+        'productImages',
+        'brand',
+        'variants',
+        'variants.options',
+        'regions',
+      ],
     });
   }
 
@@ -389,6 +402,7 @@ export class ProductService {
       .leftJoinAndSelect('variants.options', 'options')
       .leftJoinAndSelect('product.collections', 'collections')
       .leftJoinAndSelect('product.offers', 'offers')
+      .leftJoinAndSelect('product.regions', 'regions')
       .where('product.brandId = :brandId', { brandId });
 
     if (status) {
@@ -418,7 +432,7 @@ export class ProductService {
     }
 
     if (search) {
-      products.andWhere('product.name LIKE :search', {
+      products.andWhere('product.name ILIKE :search', {
         search: `%${search}%`,
       });
     }

@@ -135,6 +135,16 @@ export class RewardManagementController {
     return await this.rewardManagementService.getRewards(query);
   }
 
+  @UseGuards(ApiKeyJwtStrategy)
+  @Get('/brand-rewards')
+  async checkApiKey(@Req() req: any) {
+    return await this.rewardManagementService.getRewards({
+      page: 1,
+      limit: 10,
+      brandId: req?.brand?.id,
+    });
+  }
+
   @UseGuards(AuthGuard())
   @Get('name-symbol/lookup')
   async checkUniqueRewardNameAndSymbol(

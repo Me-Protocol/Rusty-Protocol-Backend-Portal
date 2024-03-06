@@ -41,7 +41,6 @@ import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
 import { Role } from '@src/utils/enums/Role';
 import { BrandUploadGateway } from './socket/brand-upload.gateway';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
-import { CurrencyService } from '@src/globalServices/currency/currency.service';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -144,9 +143,14 @@ export class BrandAccountManagementService {
       }
 
       const brandOwner = await this.getBrandOwner(body.brandId);
+      const brandOwnerMember =
+        await this.brandService.getBrandMemberByUserIdAndBrandId(
+          brandOwner.id,
+          body.brandId,
+        );
       const ownerMemberRecord = await this.brandService.getBrandMember(
         body.brandId,
-        brandOwner.brandMember.id,
+        brandOwnerMember.id,
       );
 
       if (body.role === BrandRole.OWNER && body.userId !== brandOwner.id) {
@@ -199,16 +203,6 @@ export class BrandAccountManagementService {
       }
 
       if (user) {
-        const checkBrandMemberForOtherBrand =
-          await this.brandService.getBrandMemberByUserId(user.id);
-
-        if (
-          checkBrandMemberForOtherBrand &&
-          checkBrandMemberForOtherBrand.brandId !== brandId
-        ) {
-          throw new HttpException('This user belongs to another brand', 400);
-        }
-
         const checkBrandMember =
           await this.brandService.getBrandMemberByUserEmail(email, brandId);
 
@@ -283,10 +277,12 @@ export class BrandAccountManagementService {
       const salt = await bcrypt.genSalt();
       const hashedPassword = await bcrypt.hash(password, salt);
 
+      const code = Math.floor(1000 + Math.random() * 9000);
+
       newUser.password = hashedPassword;
       newUser.salt = salt;
       newUser.userType = UserAppType.BRAND_MEMBER;
-      newUser.accountVerificationCode = Math.floor(1000 + Math.random() * 9000);
+      newUser.accountVerificationCode = code;
 
       const saveUser = await this.userService.saveUser(newUser);
 
@@ -319,7 +315,7 @@ export class BrandAccountManagementService {
         </p>
         ${emailButton({
           text: 'Verify Email',
-          url: `${process.env.SERVER_URL}/brand/member/verify-email/${user?.accountVerificationCode}/${brandId}`,
+          url: `${process.env.SERVER_URL}/brand/member/verify-email/${code}/${brandId}`,
         })}
         `,
       });
@@ -349,11 +345,13 @@ export class BrandAccountManagementService {
 
       await this.userService.saveUser(user);
 
-      const brandMember = await this.brandService.getBrandMember(
+      const brandMember = await this.brandService.getBrandMemberByUserEmail(
+        user.email,
         brandId,
-        user.brandMember.id,
       );
+
       brandMember.userId = user.id;
+      brandMember.isAccepted = true;
 
       await this.brandService.saveBrandMember(brandMember);
 
@@ -388,6 +386,7 @@ export class BrandAccountManagementService {
       }
 
       brandMember.userId = user.id;
+      brandMember.isAccepted = true;
 
       await this.brandService.saveBrandMember(brandMember);
 
@@ -396,6 +395,26 @@ export class BrandAccountManagementService {
       console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400);
+    }
+  }
+
+  async getActivelySpendingBrandCustomers(
+    brandId: string,
+    page: number,
+    limit: number,
+  ) {
+    try {
+      return await this.brandService.getActivelySpendingBrandCustomers(
+        brandId,
+        page,
+        limit,
+      );
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400, {
+        cause: new Error(error.message),
+      });
     }
   }
 
@@ -418,6 +437,13 @@ export class BrandAccountManagementService {
         cause: new Error(error.message),
       });
     }
+  }
+
+  async deleteBrandCustomer(brandId: string, brandCustomerId: string) {
+    return await this.brandService.deleteBrandCustomer(
+      brandId,
+      brandCustomerId,
+    );
   }
 
   async onboardBrand({ brandId, walletAddress, website }: OnboardBrandDto) {
@@ -535,7 +561,7 @@ export class BrandAccountManagementService {
     let usersProcessed = 0;
     for (const customer of body) {
       try {
-        return await this.brandService
+        await this.brandService
           .createBrandCustomer({
             name: customer.name,
             email: customer.email,

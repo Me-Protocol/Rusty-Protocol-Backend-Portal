@@ -22,12 +22,16 @@ export class ReviewService {
     userId,
     brandId,
     offerId,
+    startDate,
+    endDate,
   }: {
     page: number;
     limit: number;
     userId?: string;
     brandId?: string;
     offerId?: string;
+    startDate?: Date;
+    endDate?: Date;
   }) {
     const reviewQuery = this.reviewsRepository
       .createQueryBuilder('review')
@@ -65,6 +69,13 @@ export class ReviewService {
       reviewQuery.andWhere('review.offerId = :offerId', { offerId });
     }
 
+    if (startDate && endDate) {
+      reviewQuery.andWhere('review.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+    }
+
     reviewQuery.orderBy('review.createdAt', 'DESC');
 
     reviewQuery.skip((page - 1) * limit);
@@ -72,7 +83,6 @@ export class ReviewService {
 
     const [reviews, total] = await reviewQuery.getManyAndCount();
 
-    // average rating
     const ratings = await this.reviewsRepository.find({
       where: {
         offerId: offerId,
@@ -81,20 +91,17 @@ export class ReviewService {
     });
 
     const averageRating =
-      ratings.reduce((acc, curr) => {
-        return acc + curr.rating;
-      }, 0) / ratings.length;
-
+      ratings.reduce((acc, curr) => acc + curr.rating, 0) / ratings.length;
     const averageRatingRounded = Math.round(averageRating * 10) / 10;
 
-    const rates = [1, 2, 3, 4, 5];
-
-    // percentage of each rates to the averageRatingRounded
-
-    const percentageOfEachRates = rates.map((rate) => {
-      const percentage = (rate / averageRatingRounded) * 100;
-      return Math.round(percentage * 10) / 10;
-    });
+    const percentageOfEachRates = {};
+    for (let rate = 1; rate <= 5; rate++) {
+      const countOfRating = ratings.filter(
+        (review) => review.rating === rate,
+      ).length;
+      const percentage = (countOfRating / ratings.length) * 100;
+      percentageOfEachRates[rate] = Math.round(percentage * 10) / 10;
+    }
 
     return {
       reviews,

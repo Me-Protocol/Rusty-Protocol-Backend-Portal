@@ -9,6 +9,9 @@ import {
   Query,
   Param,
   Delete,
+  HttpException,
+  Put,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { LinkCardDto } from './dto/LinkCardDto.dto';
 import { ApiTags } from '@nestjs/swagger';
@@ -28,6 +31,7 @@ import { AdminRole } from '@src/utils/enums/AdminRole';
 import { AdminJwtStrategy } from '@src/middlewares/admin-jwt-strategy.middleware';
 import { IssueMeCreditsDto } from './dto/IssueMeCreditDto.dto';
 import { CreateRegionDto } from './dto/CreateRegionDto.dto';
+import { UpdateRegionDto } from './dto/UpdateRegionDto.dto';
 
 @ApiTags('Payment')
 @Controller('payment')
@@ -134,12 +138,28 @@ export class PaymentModuleController {
 
   @Post('region')
   async createRegion(@Body(ValidationPipe) body: CreateRegionDto) {
-    return await this.currencyService.createRegion(body);
+    try {
+      return await this.currencyService.createRegion(body);
+    } catch (error) {
+      throw new HttpException(error.message, 400, {
+        cause: new Error('createRegion'),
+      });
+    }
   }
 
   @Get('region')
   async getRegions() {
     return await this.currencyService.getRegions();
+  }
+
+  @Put('region/:id')
+  async updateRegion(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(ValidationPipe) body: UpdateRegionDto,
+  ) {
+    body.id = id;
+
+    return await this.currencyService.updateRegion(body);
   }
 
   @Post('voucher')

@@ -12,7 +12,6 @@ import {
   ParseUUIDPipe,
   Delete,
 } from '@nestjs/common';
-import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { ApiTags } from '@nestjs/swagger';
 import { UpdateMemberDto } from './dto/UpdateMemberDto.dto';
 import { CreateMemberDto } from './dto/CreateMemberDto.dto';
@@ -50,7 +49,7 @@ export class BrandManagementController {
   }
 
   @AdminRoles([AdminRole.SUPER_ADMIN])
-  @UseGuards(BrandJwtStrategy)
+  @UseGuards(AdminJwtStrategy)
   @Put('member')
   async updateBrandMemberDetail(
     @Req() req: any,
@@ -61,7 +60,7 @@ export class BrandManagementController {
   }
 
   @AdminRoles([AdminRole.SUPER_ADMIN])
-  @UseGuards(BrandJwtStrategy)
+  @UseGuards(AdminJwtStrategy)
   @Post('member')
   async createBrandMember(
     @Req() req: any,
@@ -71,7 +70,7 @@ export class BrandManagementController {
   }
 
   @AdminRoles([AdminRole.SUPER_ADMIN])
-  @UseGuards(BrandJwtStrategy)
+  @UseGuards(AdminJwtStrategy)
   @Delete('member/:id')
   async removeBrandMember(@Req() req: any, @Param('id') id: string) {
     return await this.adminAccountManagementService.removeBrandMember(id);

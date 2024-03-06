@@ -30,6 +30,7 @@ import { Bill } from '@src/globalServices/biller/entity/bill.entity';
 import { BrandSubscriptionPlan } from './brand_subscription_plan.entity';
 import { BrandStore } from '@src/globalServices/brand-store/brand-store.dto';
 import { Region } from '@src/globalServices/currency/entities/region.entity';
+import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -354,4 +355,40 @@ export class Brand extends BaseEntity {
     },
   })
   regions: Region[];
+
+  @Column({
+    nullable: true,
+    type: 'enum',
+    enum: OnlineStoreType,
+  })
+  online_store_type: OnlineStoreType;
+
+  @Column({
+    nullable: true,
+  })
+  online_store_url: string;
+
+  @Column({
+    nullable: true,
+    select: false,
+  })
+  woocommerce_consumer_key: string;
+
+  @Column({
+    nullable: true,
+    select: false,
+  })
+  woocommerce_consumer_secret: string;
+
+  @Column({
+    nullable: true,
+    select: false,
+  })
+  shopify_consumer_key: string;
+
+  @Column({
+    nullable: true,
+    select: false,
+  })
+  shopify_consumer_secret: string;
 }

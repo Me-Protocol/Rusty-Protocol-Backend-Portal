@@ -590,6 +590,10 @@ export class SyncRewardService {
         spend = await mutate_with_url(params, RUNTIME_URL);
       }
 
+      if (spend?.data?.error) {
+        throw new Error(spend?.data?.error?.message ?? 'Error pushing rsv');
+      }
+
       return spend?.data ?? spend;
     } catch (error) {
       logger.error(error);
@@ -857,6 +861,8 @@ export class SyncRewardService {
         { startDate, endDate },
       );
     }
+
+    registryHistoryQuery.orderBy('rewardRegistry.createdAt', 'DESC');
 
     registryHistoryQuery.skip((page - 1) * limit).take(limit);
 

@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  HttpException,
   Query,
   Req,
   UseGuards,
@@ -18,6 +19,7 @@ import {
   TotalOfferViewDto,
 } from './analytics.dto';
 import { AnalyticsService } from '@src/globalServices/analytics/analytics.service';
+import { AdminJwtStrategy } from '@src/middlewares/admin-jwt-strategy.middleware';
 
 @ApiTags('Analytics')
 @Controller('store/analytics')
@@ -34,10 +36,17 @@ export class AnalyticsManagementController {
     @Query(ValidationPipe) query: AnalyticsDto,
     @Req() req: any,
   ) {
-    const brandId = req.user.brand.id;
-    query.brandId = brandId;
+    try {
+      const brandId = req.user.brand.id;
+      query.brandId = brandId;
 
-    return await this.analyticsManagementService.getAllBrandAnalytics(query);
+      console.log('query', query);
+
+      return await this.analyticsManagementService.getAllBrandAnalytics(query);
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, 400);
+    }
   }
 
   @UseGuards(BrandJwtStrategy)
@@ -126,5 +135,19 @@ export class AnalyticsManagementController {
     const brandId = req.user.brand.id;
     query.brandId = brandId;
     return this.analyticsService.getRewardHolders(query);
+  }
+
+  @UseGuards(AdminJwtStrategy)
+  @Get('admin/dashboard')
+  async getAdminDashboard(
+    @Query(ValidationPipe) query: AnalyticsDto,
+    @Req() req: any,
+  ) {
+    try {
+      return await this.analyticsService.getAdminDashboard(query);
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, 400);
+    }
   }
 }

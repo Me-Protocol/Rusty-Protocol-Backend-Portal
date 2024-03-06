@@ -138,6 +138,11 @@ export class Product extends BaseEntity {
   })
   coverImage: string;
 
+  @Column({
+    nullable: true,
+  })
+  productIdOnBrandSite: string;
+
   @ManyToMany(() => Region, (region) => region.products)
   @JoinTable({
     name: 'product_regions',

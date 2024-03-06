@@ -3,6 +3,7 @@ import { IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class FilterBrandDto {
   @ApiProperty()
+  @IsUUID()
   @IsOptional()
   categoryId: string;
 

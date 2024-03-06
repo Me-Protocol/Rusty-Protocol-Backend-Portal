@@ -126,4 +126,8 @@ export class CreateProductDto {
   @IsOptional()
   @IsArray()
   regions: string[];
+
+  @ApiProperty()
+  @IsString()
+  productIdOnBrandSite: string;
 }

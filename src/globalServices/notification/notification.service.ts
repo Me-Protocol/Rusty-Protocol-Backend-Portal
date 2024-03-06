@@ -91,7 +91,6 @@ export class NotificationService {
     notification: ISendBulkNotification | ISendNotification,
     emailUsers: User[],
   ): Partial<Notification>[] {
-    let count = 0;
     return emailUsers.map((user) => {
       const createdNotification = this.createNotificationObject(
         notification,
@@ -103,10 +102,9 @@ export class NotificationService {
         new CreateEmailNotificationEvent(
           createdNotification.title,
           createdNotification.emailMessage,
-          count === 0 ? 'tholuzi@gmail.com' : user.email,
+          user.email,
         ),
       );
-      count++;
       console.log(`Sending email notification to ${user.email}`);
       console.log(`Notification: ${JSON.stringify(createdNotification)}`);
       return createdNotification;

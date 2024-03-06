@@ -77,6 +77,7 @@ export class ProductManagementService {
       if (body.currencyId) product.currencyId = body.currencyId;
       if (body.coverImage) product.coverImage = body.coverImage;
       product.productCode = productCode;
+      product.productIdOnBrandSite = body.productIdOnBrandSite;
 
       const productCollections = [];
 
@@ -244,19 +245,13 @@ export class ProductManagementService {
         await this.productService.saveProduct(product);
       }
 
-      if (body.regions && body.regions.length > 0) {
+      if (body.regions) {
         const regions = [];
 
         for (const region of body.regions) {
           const checkRegion = await this.currencyService.getRegionById(region);
           if (checkRegion) {
-            const checkIfRegionExists = product?.regions?.find(
-              (region) => region.id === checkRegion.id,
-            );
-
-            if (!checkIfRegionExists) {
-              regions.push(checkRegion);
-            }
+            regions.push(checkRegion);
           }
         }
 
