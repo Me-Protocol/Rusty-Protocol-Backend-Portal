@@ -255,9 +255,7 @@ export class BrandService {
       .where('brand.listOnStore = :listOnStore', { listOnStore: true });
 
     if (categoryId) {
-      brandQuery
-        .andWhere('brand.categoryId = :categoryId', { categoryId })
-        .andWhere('brand.listOnStore = :listOnStore', { listOnStore: true });
+      brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
     }
 
     if (order) {
@@ -282,13 +280,9 @@ export class BrandService {
 
     if (regionId) {
       // where offer product regions contains regionId or offer product regions is empty
-      brandQuery
-        .andWhere('regions.id = :regionId', { regionId })
-        .andWhere('brand.listOnStore = :listOnStore', { listOnStore: true });
+      brandQuery.andWhere('regions.id = :regionId', { regionId });
     } else {
-      brandQuery
-        .orWhere('regions.id IS NULL')
-        .andWhere('brand.listOnStore = :listOnStore', { listOnStore: true });
+      brandQuery.orWhere('regions.id IS NULL');
     }
 
     const defaultRegion = await this.currencyService.getDefaultRegion();
