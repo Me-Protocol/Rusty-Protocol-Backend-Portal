@@ -353,7 +353,12 @@ export class OfferService {
     };
   }
 
-  async getTopOffersForUser(page: number, limit: number, userId: string) {
+  async getTopOffersForUser(
+    page: number,
+    limit: number,
+    userId: string,
+    regionId: string,
+  ) {
     // Get user interests
     const interests = await this.userService.getUserCategoryInterests(userId);
 
@@ -368,6 +373,19 @@ export class OfferService {
           brand: {
             listOnStore: true,
           },
+          //  if regionId is present, get offers for that region
+          //  else get offers for default region
+          product: regionId
+            ? {
+                regions: {
+                  id: regionId,
+                },
+              }
+            : {
+                regions: {
+                  isDefault: true,
+                },
+              },
         },
         take: 10,
         order: {
@@ -390,10 +408,21 @@ export class OfferService {
       const offers = await this.offerRepo.find({
         where: {
           status: ProductStatus.PUBLISHED,
-          product: {
-            categoryId: In(categories),
-            subCategoryId: In(subCategories),
-          },
+          product: regionId
+            ? {
+                regions: {
+                  id: regionId,
+                },
+                categoryId: In(categories),
+                subCategoryId: In(subCategories),
+              }
+            : {
+                regions: {
+                  isDefault: true,
+                },
+                categoryId: In(categories),
+                subCategoryId: In(subCategories),
+              },
         },
         skip: (page - 1) * limit,
         take: limit,
@@ -432,11 +461,23 @@ export class OfferService {
       const offers = await this.offerRepo.find({
         where: {
           status: ProductStatus.PUBLISHED,
-          product: {
-            category: {
-              id: In(interests),
-            },
-          },
+          product: regionId
+            ? {
+                regions: {
+                  id: regionId,
+                },
+                category: {
+                  id: In(interests),
+                },
+              }
+            : {
+                regions: {
+                  isDefault: true,
+                },
+                category: {
+                  id: In(interests),
+                },
+              },
           brand: {
             listOnStore: true,
           },

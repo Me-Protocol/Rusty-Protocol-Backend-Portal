@@ -190,6 +190,7 @@ export class OfferManagementService {
       query.page,
       query.limit,
       query.userId,
+      query.regionId,
     );
   }
 

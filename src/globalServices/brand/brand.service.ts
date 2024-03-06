@@ -251,51 +251,82 @@ export class BrandService {
     const brandQuery = this.brandRepo
       .createQueryBuilder('brand')
       .leftJoinAndSelect('brand.category', 'category')
-      .leftJoinAndSelect('brand.regions', 'regions')
-      .where('brand.listOnStore = :listOnStore', { listOnStore: true });
-
-    if (categoryId) {
-      brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
-    }
-
-    if (order) {
-      const formatedOrder = order.split(':')[0];
-      const acceptedOrder = ['name', 'createdAt', 'updatedAt'];
-
-      if (!acceptedOrder.includes(formatedOrder)) {
-        throw new Error('Invalid order param');
-      }
-
-      brandQuery.orderBy(
-        `brand.${order.split(':')[0]}`,
-        order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
-      );
-    }
-
-    if (search) {
-      brandQuery.andWhere('brand.name ILIKE :search', {
-        search: `%${search}%`,
-      });
-    }
-
-    if (regionId) {
-      // where offer product regions contains regionId or offer product regions is empty
-      brandQuery.andWhere('regions.id = :regionId', { regionId });
-    } else {
-      brandQuery.orWhere('regions.id IS NULL');
-    }
+      .leftJoinAndSelect('brand.regions', 'regions');
 
     const defaultRegion = await this.currencyService.getDefaultRegion();
 
-    brandQuery
-      .andWhere('regions.id = :regionId', {
-        regionId: defaultRegion.id,
-      })
-      .where('brand.listOnStore = :listOnStore', { listOnStore: true });
+    if (regionId) {
+      // where offer product regions contains regionId or offer product regions is empty
+      brandQuery.where('regions.id = :regionId', { regionId });
 
-    brandQuery.andWhere('brand.listOnStore = :listOnStore', {
-      listOnStore: true,
-    });
+      if (order) {
+        const formatedOrder = order.split(':')[0];
+        const acceptedOrder = ['name', 'createdAt', 'updatedAt'];
+
+        if (!acceptedOrder.includes(formatedOrder)) {
+          throw new Error('Invalid order param');
+        }
+
+        brandQuery.orderBy(
+          `brand.${order.split(':')[0]}`,
+          order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+        );
+      }
+
+      if (search) {
+        brandQuery.andWhere('brand.name ILIKE :search', {
+          search: `%${search}%`,
+        });
+      }
+
+      brandQuery.andWhere('regions.id = :regionId', {
+        regionId: defaultRegion.id,
+      });
+
+      if (categoryId) {
+        brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
+      }
+
+      brandQuery.andWhere('brand.listOnStore = :listOnStore', {
+        listOnStore: true,
+      });
+    } else {
+      console.log('here');
+      // regions is empty
+      // brandQuery.where('regions.id IS NULL');
+
+      if (order) {
+        const formatedOrder = order.split(':')[0];
+        const acceptedOrder = ['name', 'createdAt', 'updatedAt'];
+
+        if (!acceptedOrder.includes(formatedOrder)) {
+          throw new Error('Invalid order param');
+        }
+
+        brandQuery.orderBy(
+          `brand.${order.split(':')[0]}`,
+          order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+        );
+      }
+
+      if (search) {
+        brandQuery.andWhere('brand.name ILIKE :search', {
+          search: `%${search}%`,
+        });
+      }
+
+      if (categoryId) {
+        brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
+      }
+
+      brandQuery.andWhere('brand.listOnStore = :listOnStore', {
+        listOnStore: true,
+      });
+
+      brandQuery.orWhere('regions.id = :regionId', {
+        regionId: defaultRegion.id,
+      });
+    }
 
     brandQuery.skip((page - 1) * limit).take(limit);
     const brands = await brandQuery.getMany();
