@@ -17,7 +17,9 @@ import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import {
+  DOLLAR_PRECISION,
   getTreasuryPermitSignature,
+  meTokenToDollarInPrecision,
   treasuryContract,
 } from '@developeruche/protocol-core';
 import { GetTreasuryPermitDto } from '@src/modules/storeManagement/reward/dto/PushTransactionDto.dto';
@@ -32,6 +34,8 @@ import {
 import { RUNTIME_URL } from '@src/config/env.config';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { User } from '@src/globalServices/user/entities/user.entity';
+import { BillerService } from '@src/globalServices/biller/biller.service';
+import { BillType } from '@src/utils/enums/BillType';
 
 @Injectable()
 export class SyncRewardService {
@@ -51,6 +55,7 @@ export class SyncRewardService {
     private readonly fiatWalletService: FiatWalletService,
     private readonly settingsService: SettingsService,
     private readonly brandService: BrandService,
+    private readonly billerService: BillerService,
   ) {}
 
   async createBatch(batch: SyncBatch) {
@@ -621,6 +626,20 @@ export class SyncRewardService {
       );
 
       if (result) {
+        if (body.createBill) {
+          const valueToDollar = await meTokenToDollarInPrecision(
+            BigNumber.from(body.value),
+          );
+          const amountInDollar =
+            Number(valueToDollar.toString()) / DOLLAR_PRECISION;
+
+          await this.billerService.createBill({
+            amount: amountInDollar,
+            brandId: body.brandId,
+            type: BillType.INITIAL_METOKEN_PURCHASE,
+          });
+        }
+
         return {
           v: result.v,
           r: result.r,

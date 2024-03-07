@@ -46,6 +46,8 @@ import { ethers } from 'ethers';
 import { createCoupon } from '@src/globalServices/online-store-handler/create-coupon';
 import { WooCommerceHandler } from '@src/globalServices/online-store-handler/woocommerce';
 import { checkBrandOnlineStore } from '@src/globalServices/online-store-handler/check-store';
+import { BillType } from '@src/utils/enums/BillType';
+import { checkOrderStatusGelatoOrRuntime } from '@src/globalServices/costManagement/taskId-verifier.service';
 
 @Injectable()
 export class OrderManagementService {
@@ -351,7 +353,7 @@ export class OrderManagementService {
       const offer = await this.offerService.getOfferById(order.offerId);
 
       await this.billerService.createBill({
-        type: 'redeem-offer',
+        type: BillType.REDEEM_OFFER,
         amount: 1.5,
         brandId: offer.brandId,
       });
@@ -364,14 +366,16 @@ export class OrderManagementService {
     }
   }
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron(CronExpression.EVERY_SECOND)
   async checkOrderStatus() {
     try {
       const pendingOrders = await this.orderService.getPendingOrders();
 
+      console.log(pendingOrders.length);
+
       if (pendingOrders.length > 0) {
         for (const order of pendingOrders) {
-          const status = await this.checkOrderStatusGelatoOrRuntime(
+          const status = await checkOrderStatusGelatoOrRuntime(
             order.taskId,
             order.verifier,
           );
@@ -440,6 +444,8 @@ export class OrderManagementService {
               },
               RUNTIME_URL,
             );
+
+            console.log(balance);
 
             if (balance.data?.result) {
               const registry = await this.syncService.findOneRegistryByUserId(
@@ -655,46 +661,6 @@ export class OrderManagementService {
     } catch (error) {
       console.log(error);
       logger.error(error);
-    }
-  }
-
-  async checkOrderStatusGelatoOrRuntime(
-    taskId: string,
-    verifier: OrderVerifier,
-  ): Promise<'success' | 'failed' | 'pending'> {
-    try {
-      if (verifier === OrderVerifier.GELATO) {
-        const status =
-          await this.costModuleService.checkTransactionStatusWithRetry({
-            taskId,
-          });
-
-        if (status === 'ExecSuccess') {
-          return 'success';
-        } else if (status === 'ExecFailed') {
-          return 'failed';
-        } else {
-          return 'pending';
-        }
-      } else {
-        const runtimeStatus = await get_transaction_by_hash_with_url(
-          {
-            hash: taskId,
-          },
-          RUNTIME_URL,
-        );
-
-        if (
-          runtimeStatus.data.result.hash !==
-          '0x0000000000000000000000000000000000000000000000000000000000000000'
-        ) {
-          return 'success';
-        } else {
-          return 'failed';
-        }
-      }
-    } catch (error) {
-      return 'pending';
     }
   }
 }

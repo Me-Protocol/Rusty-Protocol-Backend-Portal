@@ -155,6 +155,7 @@ import { TopupEventBlock } from './globalServices/brand/entities/topup_event_blo
 import { VariantOption } from '@src/globalServices/product/entities/variantvalue.entity';
 import { BrandUploadGateway } from './modules/accountManagement/brandAccountManagement/socket/brand-upload.gateway';
 import { Region } from './globalServices/currency/entities/region.entity';
+import { AutoTopupRequest } from './globalServices/biller/entity/auto-topup-request.entity';
 
 @Module({
   imports: [
@@ -211,6 +212,7 @@ import { Region } from './globalServices/currency/entities/region.entity';
       TopupEventBlock,
       VariantOption,
       Region,
+      AutoTopupRequest,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),

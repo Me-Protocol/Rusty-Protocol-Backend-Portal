@@ -51,6 +51,11 @@ export class AdminSettings extends BaseEntity {
   onboardWallet: string;
 
   @Column({
+    nullable: true,
+  })
+  autoTopupWallet: string;
+
+  @Column({
     default: 200,
   })
   maximumRLimit: number;

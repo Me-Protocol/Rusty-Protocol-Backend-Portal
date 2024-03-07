@@ -18,6 +18,8 @@ import { FilterCustomerDto } from './dto/FilterCustomerDto.dto';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { BigNumber, ethers } from 'ethers';
 import {
+  CHAIN_ID,
+  JSON_RPC_URL,
   OPEN_REWARD_DIAMOND,
   adminService,
   getBrandIdHex,
@@ -455,10 +457,9 @@ export class BrandAccountManagementService {
 
       const { onboardWallet } = await this.settingsService.settingsInit();
 
-      const provider = new ethers.providers.JsonRpcProvider(
-        process.env.JSON_RPC_URL,
-      );
+      const provider = new ethers.providers.JsonRpcProvider(JSON_RPC_URL);
       const wallet = new ethers.Wallet(onboardWallet, provider);
+
       const ts2 = await adminService.registerBrand(
         brand.name,
         website,
@@ -475,7 +476,7 @@ export class BrandAccountManagementService {
       };
 
       const request: CallWithERC2771Request = {
-        chainId: 80001,
+        chainId: CHAIN_ID,
         target: OPEN_REWARD_DIAMOND,
         data: input.data,
         user: input.from,
@@ -497,11 +498,11 @@ export class BrandAccountManagementService {
 
       const data = {
         data: struct,
-        tnxType: PaymentRequestTnxType.RELAYER,
         narration: '1',
-        network: supportedNetworks.MUMBAI,
         signature,
         brandId: brandId,
+        tnxType: PaymentRequestTnxType.RELAYER,
+        network: supportedNetworks.MUMBAI,
       };
 
       const paymentRequest =
