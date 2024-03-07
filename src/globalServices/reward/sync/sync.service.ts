@@ -711,12 +711,10 @@ export class SyncRewardService {
     // }
 
     //3. If the brand has enough balance, we use the redistributionKeyIdentifierId to get the private key identifier and decrypt the private key.
-    const keyIdentifier = await this.rewardService.getKeyIdentifier(
+
+    const decryptedPrivateKey = await this.keyManagementService.getEncryptedKey(
       reward.redistributionKeyIdentifierId,
       KeyIdentifierType.REDISTRIBUTION,
-    );
-    const decryptedPrivateKey = await this.keyManagementService.decryptKey(
-      keyIdentifier.identifier,
     );
     // 4. We then use the private key to sign the transaction and distribute the rewards to the wallet address.
     const signer = new Wallet(decryptedPrivateKey);
@@ -784,12 +782,9 @@ export class SyncRewardService {
     //   return 'Brand cannot pay cost';
     // }
 
-    const keyIdentifier = await this.rewardService.getKeyIdentifier(
+    const decryptedPrivateKey = await this.keyManagementService.getEncryptedKey(
       reward.redistributionKeyIdentifierId,
       KeyIdentifierType.REDISTRIBUTION,
-    );
-    const decryptedPrivateKey = await this.keyManagementService.decryptKey(
-      keyIdentifier.identifier,
     );
     const signer = new Wallet(decryptedPrivateKey);
 

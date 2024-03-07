@@ -21,7 +21,7 @@ import {
   generateWalletRandom,
   generateWalletWithApiKey,
 } from '@developeruche/protocol-core';
-import { KeyIdentifier } from '@src/globalServices/reward/entities/keyIdentifier.entity';
+import { KeyIdentifier } from '@src/globalServices/key-management/entities/keyIdentifier.entity';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
 import { ethers } from 'ethers';
@@ -154,15 +154,16 @@ export class RewardManagementService {
       KeyIdentifierType.REDISTRIBUTION;
 
     const newRedistributionKeyIdentifier =
-      await this.rewardService.createKeyIdentifer(redistributionKeyIdentifier);
+      await this.keyManagementService.createKeyIdentifer(
+        redistributionKeyIdentifier,
+      );
 
     const bountyKeyIdentifier = new KeyIdentifier();
     bountyKeyIdentifier.identifier = bountyEncryptedKey;
     bountyKeyIdentifier.identifierType = KeyIdentifierType.BOUNTY;
 
-    const newBountyKeyIdentifier = await this.rewardService.createKeyIdentifer(
-      bountyKeyIdentifier,
-    );
+    const newBountyKeyIdentifier =
+      await this.keyManagementService.createKeyIdentifer(bountyKeyIdentifier);
 
     reward.status = RewardStatus.PUBLISHED;
     reward.redistributionPublicKey = pubKey;
