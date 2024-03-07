@@ -18,6 +18,7 @@ import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.ser
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import {
   DOLLAR_PRECISION,
+  JSON_RPC_URL,
   getTreasuryPermitSignature,
   meTokenToDollarInPrecision,
   treasuryContract,
@@ -612,9 +613,7 @@ export class SyncRewardService {
     try {
       const { onboardWallet } = await this.settingsService.settingsInit();
 
-      const provider = new ethers.providers.JsonRpcProvider(
-        process.env.JSON_RPC_URL,
-      );
+      const provider = new ethers.providers.JsonRpcProvider(JSON_RPC_URL);
       const wallet = new ethers.Wallet(onboardWallet, provider);
 
       const result = await getTreasuryPermitSignature(

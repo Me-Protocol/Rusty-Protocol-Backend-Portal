@@ -9,6 +9,7 @@ import { MailService } from '@src/globalServices/mail/mail.service';
 import { emailCode } from '@src/utils/helpers/email';
 import {
   DOLLAR_PRECISION,
+  JSON_RPC_URL,
   OPEN_REWARD_DIAMOND,
   getLatestBlock,
   getPoolMeTokenDueForTopUp,
@@ -453,7 +454,7 @@ export class PaymentModuleService {
                 await this.settingsService.settingsInit();
 
               const provider = new ethers.providers.JsonRpcProvider(
-                process.env.JSON_RPC_URL,
+                JSON_RPC_URL,
               );
               const wallet = new ethers.Wallet(autoTopupWallet, provider);
 
