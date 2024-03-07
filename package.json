@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@developeruche/protocol-core": "^0.7.5-production",
-    "@developeruche/runtime-sdk": "0.4.3-production",
+    "@developeruche/runtime-sdk": "0.4.5-production",
     "@elastic/elasticsearch": "^8.6.0",
     "@gelatonetwork/relay-sdk": "^4.0.0",
     "@nestjs-modules/mailer": "^1.8.1",
