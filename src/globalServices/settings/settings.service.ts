@@ -92,14 +92,12 @@ export class SettingsService {
       meDispenser,
       onboardWallet,
       autoTopupWallet,
+      ...adminSettings,
     };
   }
 
   async getPublicSettings() {
-    const settings = await this.adminSettingsRepo.findOne({
-      where: { isDefault: true },
-    });
-
+    const settings = await this.settingsInit();
     const {
       minimumBalanceApi,
       minimumBalanceInApp,

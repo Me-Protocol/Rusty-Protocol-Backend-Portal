@@ -17,7 +17,7 @@ export class KeyManagementService {
     private readonly keyIdentifierRepo: Repository<KeyIdentifier>,
   ) {
     this.kms = new KMS({
-      accessKeyId: AWS_ACCESS_KEY_ID,
+      accessKeyId: 'AKIAT2ZH47NPLUBE2L73',
       secretAccessKey: AWS_SECRET_ACCESS_KEY,
       region: AWS_REGION,
     });
