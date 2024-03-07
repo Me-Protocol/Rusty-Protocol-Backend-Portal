@@ -5,7 +5,7 @@ import { ApiKey } from './entities/api_key.entity';
 import { generateWalletWithApiKey } from '@developeruche/protocol-core';
 import { KeyManagementService } from '../key-management/key-management.service';
 import { RewardService } from '../reward/reward.service';
-import { KeyIdentifier } from '../reward/entities/keyIdentifier.entity';
+import { KeyIdentifier } from '../key-management/entities/keyIdentifier.entity';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { SyncRewardService } from '../reward/sync/sync.service';
 

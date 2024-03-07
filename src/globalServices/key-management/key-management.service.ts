@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { KMS } from 'aws-sdk';
-import { KeyIdentifier } from '../reward/entities/keyIdentifier.entity';
+import { KeyIdentifier } from './entities/keyIdentifier.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
@@ -17,7 +17,7 @@ export class KeyManagementService {
     private readonly keyIdentifierRepo: Repository<KeyIdentifier>,
   ) {
     this.kms = new KMS({
-      accessKeyId: 'AKIAT2ZH47NPLUBE2L73',
+      accessKeyId: AWS_ACCESS_KEY_ID,
       secretAccessKey: AWS_SECRET_ACCESS_KEY,
       region: AWS_REGION,
     });
@@ -39,26 +39,42 @@ export class KeyManagementService {
   }
 
   async getEncryptedKey(id: string, type: KeyIdentifierType) {
-    const keyIdentifier = await this.getKeyIdentifier(id, type);
-    return await this.decryptKey(keyIdentifier.identifier);
+    try {
+      const keyIdentifier = await this.getKeyIdentifier(id, type);
+      return await this.decryptKey(keyIdentifier.identifier);
+    } catch (error) {
+      console.log(error);
+      throw new Error(error.message);
+    }
   }
 
   async encryptKey(privateKey: string): Promise<string> {
-    const params = {
-      KeyId: AWS_KMS_KEY_ID,
-      Plaintext: privateKey,
-    };
+    try {
+      const params = {
+        KeyId: 'mrk-9a19daa3db02435195457c71c327d992',
+        Plaintext: privateKey,
+      };
 
-    const result = await this.kms.encrypt(params).promise();
-    return result.CiphertextBlob.toString('base64');
+      const result = await this.kms.encrypt(params).promise();
+      return result.CiphertextBlob.toString('base64');
+    } catch (error) {
+      console.log(error);
+      throw new Error(error.message);
+    }
   }
 
   async decryptKey(encryptedKey: string): Promise<string> {
-    const params = {
-      CiphertextBlob: Buffer.from(encryptedKey, 'base64'),
-    };
+    try {
+      const params = {
+        CiphertextBlob: Buffer.from(encryptedKey, 'base64'),
+        KeyId: AWS_KMS_KEY_ID,
+      };
 
-    const result = await this.kms.decrypt(params).promise();
-    return result.Plaintext.toString('utf-8');
+      const result = await this.kms.decrypt(params).promise();
+      return result.Plaintext.toString('utf-8');
+    } catch (error) {
+      console.log(error);
+      throw new Error(error.message);
+    }
   }
 }

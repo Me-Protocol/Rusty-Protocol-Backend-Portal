@@ -35,7 +35,6 @@ import { generateTransactionCode } from '@src/utils/helpers/generateRandomCode';
 import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
 import { SpendData } from '@src/utils/types/spendData';
 import {
-  get_transaction_by_hash_with_url,
   get_user_reward_balance_with_url,
   redistributed_failed_tx_with_url,
 } from '@developeruche/runtime-sdk';
@@ -44,7 +43,6 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BillerService } from '@src/globalServices/biller/biller.service';
 import { ethers } from 'ethers';
 import { createCoupon } from '@src/globalServices/online-store-handler/create-coupon';
-import { WooCommerceHandler } from '@src/globalServices/online-store-handler/woocommerce';
 import { checkBrandOnlineStore } from '@src/globalServices/online-store-handler/check-store';
 import { BillType } from '@src/utils/enums/BillType';
 import { checkOrderStatusGelatoOrRuntime } from '@src/globalServices/costManagement/taskId-verifier.service';
