@@ -121,7 +121,6 @@ export class CostModuleManagementService {
         // Query the relayer processor
 
         const relay = new GelatoRelay();
-
         const struct = body.data;
 
         const relayResponse = await relay.sponsoredCallERC2771WithSignature(
