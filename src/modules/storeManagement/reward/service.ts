@@ -154,15 +154,16 @@ export class RewardManagementService {
       KeyIdentifierType.REDISTRIBUTION;
 
     const newRedistributionKeyIdentifier =
-      await this.rewardService.createKeyIdentifer(redistributionKeyIdentifier);
+      await this.keyManagementService.createKeyIdentifer(
+        redistributionKeyIdentifier,
+      );
 
     const bountyKeyIdentifier = new KeyIdentifier();
     bountyKeyIdentifier.identifier = bountyEncryptedKey;
     bountyKeyIdentifier.identifierType = KeyIdentifierType.BOUNTY;
 
-    const newBountyKeyIdentifier = await this.rewardService.createKeyIdentifer(
-      bountyKeyIdentifier,
-    );
+    const newBountyKeyIdentifier =
+      await this.keyManagementService.createKeyIdentifer(bountyKeyIdentifier);
 
     reward.status = RewardStatus.PUBLISHED;
     reward.redistributionPublicKey = pubKey;

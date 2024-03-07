@@ -18,6 +18,7 @@ import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.ser
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import {
   DOLLAR_PRECISION,
+  JSON_RPC_URL,
   getTreasuryPermitSignature,
   meTokenToDollarInPrecision,
   treasuryContract,
@@ -612,9 +613,7 @@ export class SyncRewardService {
     try {
       const { onboardWallet } = await this.settingsService.settingsInit();
 
-      const provider = new ethers.providers.JsonRpcProvider(
-        process.env.JSON_RPC_URL,
-      );
+      const provider = new ethers.providers.JsonRpcProvider(JSON_RPC_URL);
       const wallet = new ethers.Wallet(onboardWallet, provider);
 
       const result = await getTreasuryPermitSignature(
@@ -712,12 +711,10 @@ export class SyncRewardService {
     // }
 
     //3. If the brand has enough balance, we use the redistributionKeyIdentifierId to get the private key identifier and decrypt the private key.
-    const keyIdentifier = await this.rewardService.getKeyIdentifier(
+
+    const decryptedPrivateKey = await this.keyManagementService.getEncryptedKey(
       reward.redistributionKeyIdentifierId,
       KeyIdentifierType.REDISTRIBUTION,
-    );
-    const decryptedPrivateKey = await this.keyManagementService.decryptKey(
-      keyIdentifier.identifier,
     );
     // 4. We then use the private key to sign the transaction and distribute the rewards to the wallet address.
     const signer = new Wallet(decryptedPrivateKey);
@@ -785,12 +782,9 @@ export class SyncRewardService {
     //   return 'Brand cannot pay cost';
     // }
 
-    const keyIdentifier = await this.rewardService.getKeyIdentifier(
+    const decryptedPrivateKey = await this.keyManagementService.getEncryptedKey(
       reward.redistributionKeyIdentifierId,
       KeyIdentifierType.REDISTRIBUTION,
-    );
-    const decryptedPrivateKey = await this.keyManagementService.decryptKey(
-      keyIdentifier.identifier,
     );
     const signer = new Wallet(decryptedPrivateKey);
 

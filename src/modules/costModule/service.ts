@@ -1,4 +1,4 @@
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { CostModuleService } from '@src/globalServices/costManagement/costModule.service';
 import { PaymentRequestService } from '@src/globalServices/costManagement/paymentRequestProcessors.service';
 import { PaymentRequestDto } from './dto/PaymentRequestDto.dto';
@@ -11,24 +11,14 @@ import { supportedNetworks } from '@src/globalServices/costManagement/symbol-fin
 import retrieveCost from '@src/globalServices/costManagement/relayer-costgetter.service';
 import { GelatoRelay } from '@gelatonetwork/relay-sdk';
 import axios from 'axios';
-import { PaymentService } from '../../globalServices/fiatWallet/payment.service';
-import {
-  StatusType,
-  TransactionSource,
-  TransactionsType,
-} from '@src/utils/enums/Transactions';
+import { TransactionsType } from '@src/utils/enums/Transactions';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { PaymentOrigin } from '@src/utils/enums/PaymentOrigin';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { CostBatch } from '@src/globalServices/costManagement/entities/costBatch.entity';
 import { logger } from '@src/globalServices/logger/logger.service';
-import { Transaction } from '@src/globalServices/fiatWallet/entities/transaction.entity';
-import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
-import {
-  GELATO_API_KEY,
-  GELATO_RELAYER_STATUS_URL,
-} from '@src/config/env.config';
+import { GELATO_RELAYER_STATUS_URL } from '@src/config/env.config';
 
 @Injectable()
 export class CostModuleManagementService {
