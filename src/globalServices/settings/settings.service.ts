@@ -93,11 +93,11 @@ export class SettingsService {
       );
 
       return {
+        ...adminSettings,
         adminSettings,
         meDispenser,
         onboardWallet,
         autoTopupWallet,
-        ...adminSettings,
       };
     } catch (error) {
       console.log('Error in settingsInit', error);
@@ -122,8 +122,6 @@ export class SettingsService {
       ...rest
     } = settings;
 
-    return {
-      ...rest,
-    };
+    return rest;
   }
 }
