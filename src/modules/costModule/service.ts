@@ -127,7 +127,7 @@ export class CostModuleManagementService {
         const relayResponse = await relay.sponsoredCallERC2771WithSignature(
           struct,
           body.signature,
-          'h9vIPcfsgv6FCH5HmzCjvgAYb2f_PdfDz8_peCAK3DU_',
+          'MJYP1xZCxyhLQVdqj9_i0YoNybdToa5T7c_X40a1hto_',
         );
 
         // check task id for status
