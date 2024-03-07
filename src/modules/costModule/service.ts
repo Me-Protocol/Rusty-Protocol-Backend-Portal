@@ -25,6 +25,10 @@ import { CostBatch } from '@src/globalServices/costManagement/entities/costBatch
 import { logger } from '@src/globalServices/logger/logger.service';
 import { Transaction } from '@src/globalServices/fiatWallet/entities/transaction.entity';
 import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
+import {
+  GELATO_API_KEY,
+  GELATO_RELAYER_STATUS_URL,
+} from '@src/config/env.config';
 
 @Injectable()
 export class CostModuleManagementService {
@@ -123,13 +127,12 @@ export class CostModuleManagementService {
         const relayResponse = await relay.sponsoredCallERC2771WithSignature(
           struct,
           body.signature,
-          process.env.GELATO_API_KEY,
+          'h9vIPcfsgv6FCH5HmzCjvgAYb2f_PdfDz8_peCAK3DU_',
         );
 
         // check task id for status
 
-        const url =
-          process.env.GELATO_RELAYER_STATUS_URL + relayResponse.taskId;
+        const url = GELATO_RELAYER_STATUS_URL + relayResponse.taskId;
         const gelatoResponse = await axios.get(url);
         const transactionHash = gelatoResponse.data;
 
