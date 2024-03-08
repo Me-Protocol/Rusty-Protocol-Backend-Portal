@@ -18,7 +18,10 @@ import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { CostBatch } from '@src/globalServices/costManagement/entities/costBatch.entity';
 import { logger } from '@src/globalServices/logger/logger.service';
-import { GELATO_RELAYER_STATUS_URL } from '@src/config/env.config';
+import {
+  GELATO_API_KEY,
+  GELATO_RELAYER_STATUS_URL,
+} from '@src/config/env.config';
 
 @Injectable()
 export class CostModuleManagementService {
@@ -116,7 +119,7 @@ export class CostModuleManagementService {
         const relayResponse = await relay.sponsoredCallERC2771WithSignature(
           struct,
           body.signature,
-          'MJYP1xZCxyhLQVdqj9_i0YoNybdToa5T7c_X40a1hto_',
+          GELATO_API_KEY,
         );
 
         // check task id for status
