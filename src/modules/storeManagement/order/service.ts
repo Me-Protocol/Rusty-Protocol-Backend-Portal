@@ -368,7 +368,6 @@ export class OrderManagementService {
   async checkOrderStatus() {
     try {
       const pendingOrders = await this.orderService.getPendingOrders();
-      console.log(pendingOrders.length);
 
       if (pendingOrders.length > 0) {
         for (const order of pendingOrders) {

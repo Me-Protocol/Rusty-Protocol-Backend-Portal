@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { KeyManagementService } from '../key-management/key-management.service';
 import { KeyIdentifier } from '../key-management/entities/keyIdentifier.entity';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
+import { generateWalletRandom } from '@developeruche/protocol-core';
 
 @Injectable()
 export class SettingsService {
@@ -40,15 +41,21 @@ export class SettingsService {
         !settings.onboardWallet ||
         !settings.autoTopupWallet
       ) {
+        const encryptedKeyMeDispenserWallet = generateWalletRandom();
+        const encryptedKeyOnboardWalletWallet = generateWalletRandom();
+        const encryptedKeyAutoTopupWalletWallet = generateWalletRandom();
+
         const encryptedKeyMeDispenser =
-          await this.keyManagementService.encryptKey(process.env.ME_DISPENSER);
+          await this.keyManagementService.encryptKey(
+            encryptedKeyMeDispenserWallet.privKey,
+          );
         const encryptedKeyOnboardWallet =
           await this.keyManagementService.encryptKey(
-            process.env.ONBOARD_WALLET,
+            encryptedKeyOnboardWalletWallet.privKey,
           );
         const encryptedKeyAutoTopupWallet =
           await this.keyManagementService.encryptKey(
-            process.env.AUTO_TOPUP_WALLET,
+            encryptedKeyAutoTopupWalletWallet.privKey,
           );
 
         const keys = this.keyIdentifierRepo.create([
@@ -71,6 +78,11 @@ export class SettingsService {
         settings.meDispenser = keysIds[0].id;
         settings.onboardWallet = keysIds[1].id;
         settings.autoTopupWallet = keysIds[2].id;
+        settings.meDispenserPublicKey = encryptedKeyMeDispenserWallet.pubKey;
+        settings.onboardWalletPublicKey =
+          encryptedKeyOnboardWalletWallet.pubKey;
+        settings.autoTopupWalletPublicKey =
+          encryptedKeyAutoTopupWalletWallet.pubKey;
       }
 
       await this.adminSettingsRepo.save(settings);
@@ -119,6 +131,9 @@ export class SettingsService {
       meDispenser,
       onboardWallet,
       autoTopupWallet,
+      meDispenserPublicKey,
+      onboardWalletPublicKey,
+      autoTopupWalletPublicKey,
       ...rest
     } = settings;
 

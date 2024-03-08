@@ -450,13 +450,12 @@ export class PaymentModuleService {
                   rsvPermit.s,
                 );
 
-              const { autoTopupWallet } =
-                await this.settingsService.settingsInit();
+              const { meDispenser } = await this.settingsService.settingsInit();
 
               const provider = new ethers.providers.JsonRpcProvider(
                 JSON_RPC_URL,
               );
-              const wallet = new ethers.Wallet(autoTopupWallet, provider);
+              const wallet = new ethers.Wallet(meDispenser, provider);
 
               const input = {
                 data: autoTopup?.data,
