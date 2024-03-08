@@ -364,7 +364,7 @@ export class OrderManagementService {
     }
   }
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  // @Cron(CronExpression.EVERY_30_SECONDS)
   async checkOrderStatus() {
     try {
       const pendingOrders = await this.orderService.getPendingOrders();
@@ -531,11 +531,11 @@ export class OrderManagementService {
             circulatingSupply.brandId = reward.brandId;
             circulatingSupply.rewardId = reward.id;
             circulatingSupply.circulatingSupply =
-              +reward.totalDistributedSupply - +reward.totalRedeemedSupply;
+              +reward.totalDistributed - +reward.totalRedeemedSupply;
             circulatingSupply.totalRedeemedAtCirculation =
               reward.totalRedeemedSupply;
             circulatingSupply.totalDistributedSupplyAtCirculation =
-              reward.totalDistributedSupply;
+              reward.totalDistributed;
 
             await this.analyticsRecorder.createRewardCirculation(
               circulatingSupply,

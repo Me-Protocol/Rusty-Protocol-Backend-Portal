@@ -125,7 +125,8 @@ export class RewardService {
       select: {
         syncData: true,
         id: true,
-        totalDistributedSupply: true,
+        totalDistributed: true,
+        totalIssued: true,
         brandId: true,
         totalRedeemedSupply: true,
         acceptedCustomerIdentitytypes: true,
