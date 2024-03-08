@@ -132,8 +132,7 @@ export class RewardManagementService {
     // onboard
     await this.syncService.pushTransactionToRuntime(body.rsvParams);
 
-    // TODO generate private key and public key
-
+    //  Create reward signers
     const createBountyKey = generateWalletRandom();
     const createRedistributionKey = generateWalletRandom();
 

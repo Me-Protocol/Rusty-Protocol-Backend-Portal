@@ -516,13 +516,21 @@ export class BrandAccountManagementService {
         BigNumber.from(brand.brandProtocolId),
       );
 
-      await onboard_brand_with_url(
-        BigNumber.from(brandProtocolId),
-        walletAddress,
-        ethers.constants.AddressZero,
-        wallet,
-        RUNTIME_URL,
-      );
+      try {
+        const onboardBrand = await onboard_brand_with_url(
+          BigNumber.from(brandProtocolId),
+          walletAddress,
+          ethers.constants.AddressZero,
+          wallet,
+          RUNTIME_URL,
+        );
+
+        if (onboardBrand.data.error) {
+          throw new Error(onboardBrand.data.error);
+        }
+      } catch (error) {
+        throw new Error(error?.message ?? 'Error onboarding brand');
+      }
 
       return paymentRequest;
     } catch (error) {
