@@ -364,10 +364,11 @@ export class OrderManagementService {
     }
   }
 
-  // @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async checkOrderStatus() {
     try {
       const pendingOrders = await this.orderService.getPendingOrders();
+      console.log(pendingOrders.length);
 
       if (pendingOrders.length > 0) {
         for (const order of pendingOrders) {
@@ -440,8 +441,6 @@ export class OrderManagementService {
               },
               RUNTIME_URL,
             );
-
-            console.log(balance);
 
             if (balance.data?.result) {
               const registry = await this.syncService.findOneRegistryByUserId(
@@ -596,6 +595,8 @@ export class OrderManagementService {
             }
 
             await this.brandService.saveBrandCustomer(brandCustomer);
+
+            console.log('Done');
           } else if (status === 'failed') {
             console.log('Order failed');
 
@@ -657,6 +658,27 @@ export class OrderManagementService {
     } catch (error) {
       console.log(error);
       logger.error(error);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async markOrderAsIncomplete() {
+    const pendingOrders = await this.orderService.getOrderWithoutTaskId();
+
+    if (pendingOrders.length > 0) {
+      for (const order of pendingOrders) {
+        if (order.retries > 30) {
+          order.status = StatusType.INCOMPLETE;
+
+          await this.orderService.saveOrder(order);
+
+          return;
+        }
+
+        order.status = StatusType.PROCESSING;
+        order.retries = order.retries + 1;
+        await this.orderService.saveOrder(order);
+      }
     }
   }
 }

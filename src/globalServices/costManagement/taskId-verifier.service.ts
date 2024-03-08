@@ -14,6 +14,8 @@ export async function checkOrderStatusGelatoOrRuntime(
       const response = await axios.get(apiUrl);
       const status = response.data.task.taskState;
 
+      console.log(status);
+
       if (status === 'ExecSuccess') {
         return 'success';
       } else if (status === 'ExecFailed') {
@@ -28,6 +30,8 @@ export async function checkOrderStatusGelatoOrRuntime(
         },
         RUNTIME_URL,
       );
+
+      console.log(runtimeStatus.data.result.hash);
 
       if (
         runtimeStatus.data.result.hash !==

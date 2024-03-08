@@ -213,7 +213,7 @@ export class OrderService {
     return await this.orderRepo.find({
       where: {
         status: StatusType.PROCESSING,
-        // taskId: Not(IsNull()),
+        taskId: Not(IsNull()),
       },
       relations: ['coupon', 'user', 'brand'],
     });
