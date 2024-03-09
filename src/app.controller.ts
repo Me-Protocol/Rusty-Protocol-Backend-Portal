@@ -35,7 +35,7 @@ export class AppController {
     return 'ok';
   }
 
-  @UseGuards(AuthGuard())
+  // @UseGuards(AuthGuard())
   @Get('public-settings')
   async getPublicSettings() {
     return await this.settingsService.getPublicSettings();

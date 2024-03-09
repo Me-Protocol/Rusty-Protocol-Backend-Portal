@@ -35,7 +35,6 @@ import { generateTransactionCode } from '@src/utils/helpers/generateRandomCode';
 import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
 import { SpendData } from '@src/utils/types/spendData';
 import {
-  get_transaction_by_hash_with_url,
   get_user_reward_balance_with_url,
   redistributed_failed_tx_with_url,
 } from '@developeruche/runtime-sdk';
@@ -44,8 +43,9 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BillerService } from '@src/globalServices/biller/biller.service';
 import { ethers } from 'ethers';
 import { createCoupon } from '@src/globalServices/online-store-handler/create-coupon';
-import { WooCommerceHandler } from '@src/globalServices/online-store-handler/woocommerce';
 import { checkBrandOnlineStore } from '@src/globalServices/online-store-handler/check-store';
+import { BillType } from '@src/utils/enums/BillType';
+import { checkOrderStatusGelatoOrRuntime } from '@src/globalServices/costManagement/taskId-verifier.service';
 
 @Injectable()
 export class OrderManagementService {
@@ -351,7 +351,7 @@ export class OrderManagementService {
       const offer = await this.offerService.getOfferById(order.offerId);
 
       await this.billerService.createBill({
-        type: 'redeem-offer',
+        type: BillType.REDEEM_OFFER,
         amount: 1.5,
         brandId: offer.brandId,
       });
@@ -371,7 +371,7 @@ export class OrderManagementService {
 
       if (pendingOrders.length > 0) {
         for (const order of pendingOrders) {
-          const status = await this.checkOrderStatusGelatoOrRuntime(
+          const status = await checkOrderStatusGelatoOrRuntime(
             order.taskId,
             order.verifier,
           );
@@ -529,11 +529,11 @@ export class OrderManagementService {
             circulatingSupply.brandId = reward.brandId;
             circulatingSupply.rewardId = reward.id;
             circulatingSupply.circulatingSupply =
-              +reward.totalDistributedSupply - +reward.totalRedeemedSupply;
+              +reward.totalDistributed - +reward.totalRedeemedSupply;
             circulatingSupply.totalRedeemedAtCirculation =
               reward.totalRedeemedSupply;
             circulatingSupply.totalDistributedSupplyAtCirculation =
-              reward.totalDistributedSupply;
+              reward.totalDistributed;
 
             await this.analyticsRecorder.createRewardCirculation(
               circulatingSupply,
@@ -594,6 +594,8 @@ export class OrderManagementService {
             }
 
             await this.brandService.saveBrandCustomer(brandCustomer);
+
+            console.log('Done');
           } else if (status === 'failed') {
             console.log('Order failed');
 
@@ -658,43 +660,24 @@ export class OrderManagementService {
     }
   }
 
-  async checkOrderStatusGelatoOrRuntime(
-    taskId: string,
-    verifier: OrderVerifier,
-  ): Promise<'success' | 'failed' | 'pending'> {
-    try {
-      if (verifier === OrderVerifier.GELATO) {
-        const status =
-          await this.costModuleService.checkTransactionStatusWithRetry({
-            taskId,
-          });
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async markOrderAsIncomplete() {
+    const pendingOrders = await this.orderService.getOrderWithoutTaskId();
 
-        if (status === 'ExecSuccess') {
-          return 'success';
-        } else if (status === 'ExecFailed') {
-          return 'failed';
-        } else {
-          return 'pending';
-        }
-      } else {
-        const runtimeStatus = await get_transaction_by_hash_with_url(
-          {
-            hash: taskId,
-          },
-          RUNTIME_URL,
-        );
+    if (pendingOrders.length > 0) {
+      for (const order of pendingOrders) {
+        if (order.retries > 30) {
+          order.status = StatusType.INCOMPLETE;
 
-        if (
-          runtimeStatus.data.result.hash !==
-          '0x0000000000000000000000000000000000000000000000000000000000000000'
-        ) {
-          return 'success';
-        } else {
-          return 'failed';
+          await this.orderService.saveOrder(order);
+
+          return;
         }
+
+        order.status = StatusType.PROCESSING;
+        order.retries = order.retries + 1;
+        await this.orderService.saveOrder(order);
       }
-    } catch (error) {
-      return 'pending';
     }
   }
 }

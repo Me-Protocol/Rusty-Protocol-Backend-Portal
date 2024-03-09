@@ -1,6 +1,8 @@
+import { BillType } from '@src/utils/enums/BillType';
+
 export class ProcessBillerEvent {
   brandId: string;
-  type: 'view-offer' | 'redeem-offer' | 'subscription-renewal' | 'auto-topup';
+  type: BillType;
   offerId?: string;
   amount: number;
 }

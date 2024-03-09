@@ -5,7 +5,7 @@ import { ApiKey } from './entities/api_key.entity';
 import { generateWalletWithApiKey } from '@developeruche/protocol-core';
 import { KeyManagementService } from '../key-management/key-management.service';
 import { RewardService } from '../reward/reward.service';
-import { KeyIdentifier } from '../reward/entities/keyIdentifier.entity';
+import { KeyIdentifier } from '../key-management/entities/keyIdentifier.entity';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { SyncRewardService } from '../reward/sync/sync.service';
 
@@ -16,8 +16,6 @@ export class ApiKeyService {
     private readonly apiKeyRepository: Repository<ApiKey>,
 
     private readonly keyManagementService: KeyManagementService,
-    private readonly rewardService: RewardService,
-    private readonly syncService: SyncRewardService,
   ) {}
 
   private generateHash(): string {
@@ -41,12 +39,11 @@ export class ApiKeyService {
     keyIdentifier.identifier = encryptedKey;
     keyIdentifier.identifierType = KeyIdentifierType.API_KEY;
 
-    const newKeyIdentifier = await this.rewardService.createKeyIdentifer(
+    const newKeyIdentifier = await this.keyManagementService.createKeyIdentifer(
       keyIdentifier,
     );
 
     const apiKey = new ApiKey();
-
     apiKey.brandId = brandId;
     apiKey.publicKey = this.generateHash();
     apiKey.privateKey = privateKeyHash;

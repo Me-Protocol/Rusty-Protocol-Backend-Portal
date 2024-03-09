@@ -33,7 +33,7 @@ import { View } from '@src/globalServices/views/entities/view.entity';
 import { PaymentMethod } from '@src/globalServices/fiatWallet/entities/paymentMethod';
 import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.entity';
 import { BrandMember } from '@src/globalServices/brand/entities/brand_member.entity';
-import { KeyIdentifier } from '@src/globalServices/reward/entities/keyIdentifier.entity';
+import { KeyIdentifier } from '@src/globalServices/key-management/entities/keyIdentifier.entity';
 import { BrandCustomer } from '@src/globalServices/brand/entities/brand_customer.entity';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 import { RedisOptions } from 'ioredis';

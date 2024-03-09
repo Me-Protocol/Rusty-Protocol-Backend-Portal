@@ -8,8 +8,14 @@ import { CreatePlanDto } from './dto/CreatePlanDto.dto';
 import { MailService } from '@src/globalServices/mail/mail.service';
 import { emailCode } from '@src/utils/helpers/email';
 import {
+  DOLLAR_PRECISION,
+  JSON_RPC_URL,
+  OPEN_REWARD_DIAMOND,
   getLatestBlock,
   getPoolMeTokenDueForTopUp,
+  meTokenToDollarInPrecision,
+  brandService as protocolBrandService,
+  relay,
 } from '@developeruche/protocol-core';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { VoucherType } from '@src/utils/enums/VoucherType';
@@ -21,6 +27,17 @@ import {
 import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
 import { Transaction } from '@src/globalServices/fiatWallet/entities/transaction.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
+import { BillType } from '@src/utils/enums/BillType';
+import { BigNumber, ethers } from 'ethers';
+import {
+  GELATO_API_KEY,
+  IN_APP_API_KEY,
+  SERVER_URL,
+} from '@src/config/env.config';
+import { checkOrderStatusGelatoOrRuntime } from '@src/globalServices/costManagement/taskId-verifier.service';
+import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
+import { AutoTopupStatus } from '@src/utils/enums/AutoTopStatus';
 
 @Injectable()
 export class PaymentModuleService {
@@ -31,6 +48,7 @@ export class PaymentModuleService {
     private readonly brandService: BrandService,
     private readonly mailService: MailService,
     private readonly settingsService: SettingsService,
+    private readonly syncRewardService: SyncRewardService,
   ) {}
 
   async savePaymentMethodBrand(paymentMethodId: string, brandId: string) {
@@ -394,18 +412,88 @@ export class PaymentModuleService {
             return;
           }
 
-          const amount = item.meNotifyLimit.mul(settings?.meAutoTopUpFactor);
-          console.log(item.currentDepositNonce);
-          // const amountInDollars = await meTokenToDollar(amount);
+          const nounce = item.currentDepositNonce;
 
-          // console.log('Amount in dollars', amountInDollars.toString());
+          const checkNounce =
+            await this.billerService.getAutoTopupRequestByNounce(nounce);
 
-          // await this.billerService.createBill({
-          //   amount: amount,
-          //   brandId: brand.id,
-          //   type:"auto-topup"
+          if (!checkNounce || checkNounce.status === AutoTopupStatus.FAILED) {
+            const amount = item.meNotifyLimit.mul(settings?.meAutoTopUpFactor);
+            console.log(amount.toString(), 'INITIAL AMOUNT');
+            const valueToDollar = await meTokenToDollarInPrecision(
+              BigNumber.from(
+                Math.ceil(Number(ethers.utils.formatEther(amount))),
+              ),
+            );
+            const amountInDollar = Number(valueToDollar.toString());
 
-          // })
+            console.log(amount, 'amount');
+            console.log(valueToDollar.toString(), 'valueToDollar');
+            console.log(amountInDollar, 'amountInDollar');
+
+            const rsvPermit =
+              await this.syncRewardService.getTreasuryPermitAsync({
+                brandId: brand.id,
+                value: amount.toString(),
+                spender: OPEN_REWARD_DIAMOND,
+                createBill: false,
+              });
+
+            if (rsvPermit) {
+              const autoTopup =
+                await protocolBrandService.addLiquidityForOpenRewardsWithTreasuryAndMeDispenser_autoTopup(
+                  item.meTokenAddress,
+                  BigNumber.from(0),
+                  amount,
+                  rsvPermit.v,
+                  rsvPermit.r,
+                  rsvPermit.s,
+                );
+
+              const { meDispenser } = await this.settingsService.settingsInit();
+
+              const provider = new ethers.providers.JsonRpcProvider(
+                JSON_RPC_URL,
+              );
+              const wallet = new ethers.Wallet(meDispenser, provider);
+
+              const input = {
+                data: autoTopup?.data,
+                from: wallet.address,
+                to: OPEN_REWARD_DIAMOND,
+              };
+
+              try {
+                const relayResponse = await relay(
+                  input,
+                  wallet,
+                  IN_APP_API_KEY,
+                  SERVER_URL,
+                  GELATO_API_KEY,
+                  brand.id,
+                );
+                console.log(relayResponse, 'TASK ID');
+              } catch (error) {
+                console.log('Error', error);
+              }
+
+              // if (relayResponse.taskId) {
+              //   if (checkNounce) {
+              //     checkNounce.taskId = taskId.taskId;
+              //     checkNounce.status = AutoTopupStatus.PENDING;
+              //     checkNounce.retry = 0;
+              //     await this.billerService.saveAutoTopupRequest(checkNounce);
+              //   } else {
+              //     await this.billerService.createAutoTopupRequest({
+              //       amount: amountInDollar,
+              //       brandId: brand.id,
+              //       nounce,
+              //       taskId: taskId.taskId,
+              //     });
+              //   }
+              // }
+            }
+          }
         }),
       );
     } catch (error) {
@@ -415,7 +503,39 @@ export class PaymentModuleService {
   }
 
   // @Cron(CronExpression.EVERY_30_SECONDS)
-  // async handleAutoTop() {}
+  async handleCompleteAutoTop() {
+    const requests = await this.billerService.getPendingAutoTopupRequests();
+
+    for (const request of requests) {
+      const { taskId, brandId, amount } = request;
+
+      const status = await checkOrderStatusGelatoOrRuntime(
+        taskId,
+        OrderVerifier.GELATO,
+      );
+
+      console.log(status);
+
+      if (status === 'success') {
+        await this.billerService.createBill({
+          amount,
+          brandId,
+          type: BillType.AUTO_TOPUP,
+        });
+      } else if (status === 'failed') {
+        request.status = AutoTopupStatus.FAILED;
+        await this.billerService.saveAutoTopupRequest(request);
+      } else {
+        if (request.retry > 30) {
+          request.status = AutoTopupStatus.FAILED;
+          await this.billerService.saveAutoTopupRequest(request);
+        } else {
+          request.retry += 1;
+          await this.billerService.saveAutoTopupRequest(request);
+        }
+      }
+    }
+  }
 
   async issueMeCredits(brandId: string, amount: number) {
     try {
