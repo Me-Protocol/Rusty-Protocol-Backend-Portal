@@ -152,7 +152,7 @@ export class PaymentModuleService {
         }
 
         await this.paymentService.chargePaymentMethod({
-          amount: amount.amountToPay,
+          amount: amount.amountToPay * 100,
           paymentMethodId,
           wallet,
           narration: `Payment for invoice ${invoice.invoiceCode}`,
@@ -260,7 +260,10 @@ export class PaymentModuleService {
         totalPaymentAmount = newAmount;
       }
 
-      if (totalPaymentAmount.amountToPay > 0) {
+      console.log(totalPaymentAmount, 'TOTAL PAYMENT AMOUNT');
+
+      if (totalPaymentAmount.amountToPay > 0.5) {
+        console.log('PAYMENT METHOD ID', paymentMethodId);
         const paymentMethod =
           await this.paymentService.getPaymentMethodByStripePaymentMethodId(
             paymentMethodId,
@@ -271,7 +274,7 @@ export class PaymentModuleService {
         }
 
         await this.paymentService.chargePaymentMethod({
-          amount: totalPaymentAmount.amountToPay,
+          amount: totalPaymentAmount.amountToPay * 100,
           paymentMethodId,
           wallet,
           narration: `Payment for ${plan.name} subscription`,
@@ -311,6 +314,7 @@ export class PaymentModuleService {
         return 'ok';
       }
     } catch (error) {
+      console.log(error, 'ERROR');
       logger.error(error);
       throw new HttpException(error.message, 400, {});
     }
