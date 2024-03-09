@@ -13,12 +13,15 @@ export async function checkOrderStatusGelatoOrRuntime(
 
       const response = await axios.get(apiUrl);
       const status = response.data.task.taskState;
+      console.log(taskId);
 
-      console.log(status);
+      console.log(status, 'Check');
 
       if (status === 'ExecSuccess') {
         return 'success';
       } else if (status === 'ExecFailed') {
+        return 'failed';
+      } else if (status === 'Cancelled') {
         return 'failed';
       } else {
         return 'pending';

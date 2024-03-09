@@ -1,11 +1,13 @@
 import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 import { WooCommerceHandler } from './woocommerce';
 import { Brand } from '../brand/entities/brand.entity';
+import axios from 'axios';
 
 export const createCoupon = async ({
   data,
   brand,
   productId,
+  email,
 }: {
   data: {
     code: string;
@@ -13,6 +15,7 @@ export const createCoupon = async ({
   };
   brand: Brand;
   productId: string;
+  email: string;
 }) => {
   let woocommerceHandler: WooCommerceHandler;
   let woocommerce;
@@ -37,20 +40,29 @@ export const createCoupon = async ({
           return response.data;
         })
         .catch((error) => {
-          console.log(error);
+          console.log(error.response.data);
           throw new Error(error);
         });
 
       break;
     case OnlineStoreType.SHOPIFY:
-      // const shopifyHandler = new ShopifyHandler();
-      // const shopify = shopifyHandler.createInstance(
-      //   data.apiKey,
-      //   data.password,
-      //   data.url,
-      // );
-      // return await shopify.post('coupons', data);
-      break;
+      try {
+        const coupon = await axios.post(
+          'https://shopify.memarketplace.io/api/coupon/create',
+          {
+            shop: brand.online_store_url,
+            email,
+            product_id: productId,
+            discount_type: 'FIXED_AMOUNT',
+            discount_value: data.amount,
+            starts_at: new Date().toISOString(),
+          },
+        );
+
+        return coupon.data;
+      } catch (error) {
+        throw new Error(error);
+      }
     case OnlineStoreType.BIG_COMMERCE:
       // const bigCommerceHandler = new BigCommerceHandler();
       // const bigCommerce = bigCommerceHandler.createInstance(

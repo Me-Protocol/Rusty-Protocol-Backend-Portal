@@ -82,6 +82,11 @@ export class Order extends BaseEntity {
   status: StatusType;
 
   @Column({
+    default: false,
+  })
+  isRefunded: boolean;
+
+  @Column({
     type: 'enum',
     enum: OrderPaymentType,
     default: OrderPaymentType.TOKEN,
