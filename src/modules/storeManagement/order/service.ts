@@ -602,6 +602,7 @@ export class OrderManagementService {
               console.log('Order failed');
 
               order.status = StatusType.FAILED;
+              order.failedReason = `${order.verifier} task verifier failed`;
               await this.orderService.saveOrder(order);
 
               await redistributed_failed_tx_with_url(
@@ -647,6 +648,7 @@ export class OrderManagementService {
             } else {
               console.log(order.retries, 'Retries');
               if (order.retries > 30) {
+                order.failedReason = 'No response after retries';
                 order.status = StatusType.INCOMPLETE;
 
                 await this.orderService.saveOrder(order);
@@ -656,6 +658,9 @@ export class OrderManagementService {
                 await this.orderService.saveOrder(order);
               }
             }
+          } else {
+            order.status = StatusType.INCOMPLETE;
+            await this.orderService.saveOrder(order);
           }
         }
       }
@@ -672,8 +677,8 @@ export class OrderManagementService {
     if (pendingOrders.length > 0) {
       for (const order of pendingOrders) {
         if (order.retries > 30) {
+          order.failedReason = 'No task id after retries';
           order.status = StatusType.INCOMPLETE;
-
           await this.orderService.saveOrder(order);
         } else {
           order.status = StatusType.PROCESSING;
