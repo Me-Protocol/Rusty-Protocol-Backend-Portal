@@ -451,7 +451,13 @@ export class BrandAccountManagementService {
   async onboardBrand({ brandId, walletAddress, website }: OnboardBrandDto) {
     try {
       const brand = await this.brandService.getBrandById(brandId);
+
+      if (brand.isOnboarded) {
+        throw new HttpException('Brand already onboarded', 400);
+      }
+
       brand.walletAddress = walletAddress;
+      brand.isOnboarded = true;
 
       await this.brandService.save(brand);
 
