@@ -103,7 +103,7 @@ import { SettingsService } from './globalServices/settings/settings.service';
 import { BrandSubscriptionService } from './globalServices/brand/brandSeviceSubscription.service';
 import { BrandMember } from './globalServices/brand/entities/brand_member.entity';
 import { KeyManagementService } from './globalServices/key-management/key-management.service';
-import { KeyIdentifier } from './globalServices/reward/entities/keyIdentifier.entity';
+import { KeyIdentifier } from './globalServices/key-management/entities/keyIdentifier.entity';
 import { BrandCustomer } from './globalServices/brand/entities/brand_customer.entity';
 import { Notification } from './globalServices/notification/entities/notification.entity';
 import { NotificationController } from './modules/notification/controller';
@@ -154,6 +154,8 @@ import { CreateSendgridContactHandler } from '@src/globalServices/mail/create-se
 import { TopupEventBlock } from './globalServices/brand/entities/topup_event_block.entity';
 import { VariantOption } from '@src/globalServices/product/entities/variantvalue.entity';
 import { BrandUploadGateway } from './modules/accountManagement/brandAccountManagement/socket/brand-upload.gateway';
+import { Region } from './globalServices/currency/entities/region.entity';
+import { AutoTopupRequest } from './globalServices/biller/entity/auto-topup-request.entity';
 
 @Module({
   imports: [
@@ -209,6 +211,8 @@ import { BrandUploadGateway } from './modules/accountManagement/brandAccountMana
       Voucher,
       TopupEventBlock,
       VariantOption,
+      Region,
+      AutoTopupRequest,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),

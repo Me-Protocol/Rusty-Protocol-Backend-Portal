@@ -107,10 +107,6 @@ export class CouponService {
       throw new HttpException('Coupon code expired', 400);
     }
 
-    if (coupon.offer.idOnBrandsite !== idOnBrandSite) {
-      throw new HttpException('Invalid coupon code', 400);
-    }
-
     coupon.isUsed = true;
 
     await this.couponRepository.save(coupon);

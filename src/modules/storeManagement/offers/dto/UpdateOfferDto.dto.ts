@@ -66,11 +66,6 @@ export class UpdateOfferDto {
 
   @ApiProperty()
   @IsOptional()
-  @IsString()
-  idOnBrandsite: string;
-
-  @ApiProperty()
-  @IsOptional()
   @IsUUID()
   rewardId: string;
 

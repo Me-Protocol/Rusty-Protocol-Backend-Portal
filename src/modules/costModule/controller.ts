@@ -1,7 +1,6 @@
 import {
   Controller,
   Body,
-  UseInterceptors,
   UseGuards,
   ValidationPipe,
   Post,
@@ -9,7 +8,6 @@ import {
   Get,
   Param,
 } from '@nestjs/common';
-import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
 import { CostModuleManagementService } from './service';
@@ -21,7 +19,6 @@ import { InAppApiKeyJwtStrategy } from '@src/middlewares/inapp-api-jwt-strategy.
 import { BrandJwtStrategy } from '@src/middlewares/brand-jwt-strategy.middleware';
 import { SetAutoTopupAmountDto } from './dto/SetAutoTopupAmountDto.dto';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
-import { ManualTopupDto } from './dto/ManualTopupDto.dto';
 import { CostModuleService } from '@src/globalServices/costManagement/costModule.service';
 import { ServerGuard } from '@src/middlewares/server-guard';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';

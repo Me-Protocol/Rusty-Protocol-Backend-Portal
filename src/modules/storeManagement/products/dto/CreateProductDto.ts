@@ -121,4 +121,13 @@ export class CreateProductDto {
   @ApiProperty()
   @IsString()
   coverImage: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsArray()
+  regions: string[];
+
+  @ApiProperty()
+  @IsString()
+  productIdOnBrandSite: string;
 }

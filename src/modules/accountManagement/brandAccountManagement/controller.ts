@@ -30,6 +30,12 @@ import {
 import { OnboardBrandDto } from './dto/OnboardBrandDto.dto';
 import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
+import { AdminRoles } from '@src/decorators/admin_roles.decorator';
+import { AdminRole } from '@src/utils/enums/AdminRole';
+import { AdminJwtStrategy } from '@src/middlewares/admin-jwt-strategy.middleware';
+import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
+import { BrandRoles } from '@src/decorators/brand_roles.decorator';
+import { BrandRole } from '@src/utils/enums/BrandRole';
 
 @ApiTags('Brand')
 @Controller('brand')
@@ -39,9 +45,10 @@ export class BrandManagementController {
     private readonly brandAccountManagementService: BrandAccountManagementService,
   ) {}
 
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
   @UseGuards(BrandJwtStrategy)
   @Put()
-  async updateCustomer(
+  async updateBrand(
     @Body(ValidationPipe) updateBrandDto: UpdateBrandDto,
     @Req() req: any,
   ) {
@@ -53,9 +60,33 @@ export class BrandManagementController {
     );
   }
 
+  @UseGuards(ApiKeyJwtStrategy)
+  @Put('/update')
+  async updateBrandViaApiKey(
+    @Body(ValidationPipe) updateBrandDto: UpdateBrandDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.brand.id;
+
+    return await this.brandAccountManagementService.updateBrand(
+      updateBrandDto,
+      brandId,
+    );
+  }
+
   @Get()
   async getAllFilteredBrands(@Query(ValidationPipe) query: FilterBrandDto) {
     return await this.brandAccountManagementService.getAllFilteredBrands(query);
+  }
+
+  @AdminRoles([AdminRole.SUPER_ADMIN])
+  @UseGuards(AdminJwtStrategy)
+  @Get('/admin/brands')
+  async issueMeCredits(
+    @Query(ValidationPipe) query: FilterBrandDto,
+    @Req() req: any,
+  ) {
+    return await this.brandAccountManagementService.getAllBrandsForAdmin(query);
   }
 
   @UseGuards(AuthGuard())
@@ -78,6 +109,7 @@ export class BrandManagementController {
     return await this.brandAccountManagementService.getBrandMembers(brandId);
   }
 
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
   @UseGuards(BrandJwtStrategy)
   @Put('member/:id/role')
   async updateBrandMemberRole(
@@ -90,6 +122,7 @@ export class BrandManagementController {
     return await this.brandAccountManagementService.updateBrandMemberRole(body);
   }
 
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
   @UseGuards(BrandJwtStrategy)
   @Put('member/:id')
   async updateBrandMember(
@@ -126,6 +159,7 @@ export class BrandManagementController {
     return await this.brandAccountManagementService.updateBrandMember(body);
   }
 
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
   @UseGuards(BrandJwtStrategy)
   @Post('member')
   async createBrandMember(
@@ -138,6 +172,7 @@ export class BrandManagementController {
     return await this.brandAccountManagementService.createBrandMember(body);
   }
 
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
   @UseGuards(BrandJwtStrategy)
   @Delete('member/:id')
   async removeBrandMember(@Req() req: any, @Param('id') id: string) {
@@ -159,6 +194,33 @@ export class BrandManagementController {
     body.brandId = user.brand.id;
 
     return await this.brandAccountManagementService.getCustomers(body);
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Get('customers/active')
+  async getActivelySpendingCustomers(
+    @Req() req: any,
+    @Query(ValidationPipe)
+    body: { page: number; limit: number },
+  ) {
+    const user = req.user as User;
+
+    return await this.brandAccountManagementService.getActivelySpendingBrandCustomers(
+      user.brand.id,
+      body.page,
+      body.limit,
+    );
+  }
+
+  @UseGuards(BrandJwtStrategy)
+  @Delete('customers/:id')
+  async deleteBrandCustomer(@Req() req: any, @Param('id') customerId: string) {
+    const user = req.user as User;
+
+    return await this.brandAccountManagementService.deleteBrandCustomer(
+      user.brand.id,
+      customerId,
+    );
   }
 
   @UseGuards(BrandJwtStrategy)
@@ -194,6 +256,42 @@ export class BrandManagementController {
     return { success: true, message: 'Processing' };
   }
 
+  @UseGuards(ApiKeyJwtStrategy)
+  @Post('customers/api_key/create')
+  async createBrandCustomerWithApiKey(
+    @Req() req: any,
+    @Body(ValidationPipe) body: CreateCustomerDto,
+  ) {
+    body.brandId = req.brand.id;
+
+    return await this.brandAccountManagementService.createBrandCustomer(body);
+  }
+
+  @UseGuards(ApiKeyJwtStrategy)
+  @Post('customers/api_key/bulk-create')
+  async bulkCreateBrandCustomersWithApiKey(
+    @Req() req: any,
+    @Body(ValidationPipe) body: { customers: CreateCustomerDto[] },
+  ) {
+    try {
+      const customers = body.customers;
+
+      const updatedBody = customers.map((item) => {
+        return {
+          ...item,
+          brandId: req.brand.id,
+        };
+      });
+
+      this.brandAccountManagementService.batchCreateBrandCustomers(updatedBody);
+      return { success: true, message: 'Processing' };
+    } catch (error) {
+      throw new HttpException(error?.message, 400, {
+        cause: new Error('bulkCreateBrandCustomersWithApiKey'),
+      });
+    }
+  }
+
   @Get('member/verify-email/:code/:brandId')
   async verifyBrandMemberEmail(
     @Param('code') code: number,
@@ -206,9 +304,7 @@ export class BrandManagementController {
       brandId,
     );
 
-    return res
-      .status(302)
-      .redirect(`${process.env.BUSINESS_APP_URL}/create-password`);
+    return res.status(302).redirect(`${process.env.BUSINESS_APP_URL}/login`);
   }
 
   @Get('member/join/:email/:brandId')
@@ -223,11 +319,10 @@ export class BrandManagementController {
       brandId,
     );
 
-    return res
-      .status(302)
-      .redirect(`${process.env.BUSINESS_APP_URL}/create-password`);
+    return res.status(302).redirect(`${process.env.BUSINESS_APP_URL}/login`);
   }
 
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
   @UseGuards(BrandJwtStrategy)
   @Post('onboard')
   async onboardBrand(

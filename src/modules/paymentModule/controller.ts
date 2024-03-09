@@ -9,6 +9,9 @@ import {
   Query,
   Param,
   Delete,
+  HttpException,
+  Put,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { LinkCardDto } from './dto/LinkCardDto.dto';
 import { ApiTags } from '@nestjs/swagger';
@@ -27,6 +30,8 @@ import { AdminRoles } from '@src/decorators/admin_roles.decorator';
 import { AdminRole } from '@src/utils/enums/AdminRole';
 import { AdminJwtStrategy } from '@src/middlewares/admin-jwt-strategy.middleware';
 import { IssueMeCreditsDto } from './dto/IssueMeCreditDto.dto';
+import { CreateRegionDto } from './dto/CreateRegionDto.dto';
+import { UpdateRegionDto } from './dto/UpdateRegionDto.dto';
 
 @ApiTags('Payment')
 @Controller('payment')
@@ -131,6 +136,32 @@ export class PaymentModuleController {
     return await this.currencyService.getCurrency();
   }
 
+  @Post('region')
+  async createRegion(@Body(ValidationPipe) body: CreateRegionDto) {
+    try {
+      return await this.currencyService.createRegion(body);
+    } catch (error) {
+      throw new HttpException(error.message, 400, {
+        cause: new Error('createRegion'),
+      });
+    }
+  }
+
+  @Get('region')
+  async getRegions() {
+    return await this.currencyService.getRegions();
+  }
+
+  @Put('region/:id')
+  async updateRegion(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(ValidationPipe) body: UpdateRegionDto,
+  ) {
+    body.id = id;
+
+    return await this.currencyService.updateRegion(body);
+  }
+
   @Post('voucher')
   async createVoucher(@Body(ValidationPipe) body: CreateVoucherDto) {
     return await this.paymentService.createVouchers(body.vouchers);
@@ -155,15 +186,21 @@ export class PaymentModuleController {
 
   @UseGuards(BrandJwtStrategy)
   @Get('/me-credit-balance')
-  async me(@Req() req: any) {
+  async getMeCredits(@Req() req: any) {
     const brand = req.user.brand as Brand;
 
     return await this.paymentService.getMeCredits(brand.id);
   }
 
+  @UseGuards(AdminJwtStrategy)
+  @Get('/admin/me-credit-balance/:brandId')
+  async getMeCreditsAdmin(@Param('brandId', ValidationPipe) brandId: string) {
+    return await this.paymentService.getMeCredits(brandId);
+  }
+
   @AdminRoles([AdminRole.SUPER_ADMIN])
   @UseGuards(AdminJwtStrategy)
-  @Post('me-credit-balance')
+  @Post('/admin/me-credit-balance')
   async issueMeCredits(
     @Body(ValidationPipe) body: IssueMeCreditsDto,
     @Req() req: any,

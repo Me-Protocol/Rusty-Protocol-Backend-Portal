@@ -21,7 +21,7 @@ import {
   generateWalletRandom,
   generateWalletWithApiKey,
 } from '@developeruche/protocol-core';
-import { KeyIdentifier } from '@src/globalServices/reward/entities/keyIdentifier.entity';
+import { KeyIdentifier } from '@src/globalServices/key-management/entities/keyIdentifier.entity';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
 import { ethers } from 'ethers';
@@ -94,6 +94,7 @@ export class RewardManagementService {
         reward.rewardValueInDollars = body.rewardValueInDollars;
       if (body.treasurySupply) reward.treasurySupply = body.treasurySupply;
       if (body.contractAddress) reward.contractAddress = body.contractAddress;
+      if (body.addedLiquidity) reward.addedLiquidity = body.addedLiquidity;
 
       if (isDraft) {
         return await this.rewardService.save(reward);
@@ -107,6 +108,8 @@ export class RewardManagementService {
       });
     }
   }
+
+  // No Change
 
   async completeReward(body: UpdateRewardCreationDto) {
     const reward = await this.rewardService.getRewardByIdAndBrandId(
@@ -126,8 +129,10 @@ export class RewardManagementService {
       });
     }
 
-    // TODO generate private key and public key
+    // onboard
+    await this.syncService.pushTransactionToRuntime(body.rsvParams);
 
+    //  Create reward signers
     const createBountyKey = generateWalletRandom();
     const createRedistributionKey = generateWalletRandom();
 
@@ -148,15 +153,16 @@ export class RewardManagementService {
       KeyIdentifierType.REDISTRIBUTION;
 
     const newRedistributionKeyIdentifier =
-      await this.rewardService.createKeyIdentifer(redistributionKeyIdentifier);
+      await this.keyManagementService.createKeyIdentifer(
+        redistributionKeyIdentifier,
+      );
 
     const bountyKeyIdentifier = new KeyIdentifier();
     bountyKeyIdentifier.identifier = bountyEncryptedKey;
     bountyKeyIdentifier.identifierType = KeyIdentifierType.BOUNTY;
 
-    const newBountyKeyIdentifier = await this.rewardService.createKeyIdentifer(
-      bountyKeyIdentifier,
-    );
+    const newBountyKeyIdentifier =
+      await this.keyManagementService.createKeyIdentifer(bountyKeyIdentifier);
 
     reward.status = RewardStatus.PUBLISHED;
     reward.redistributionPublicKey = pubKey;
@@ -241,7 +247,7 @@ export class RewardManagementService {
   getAddableSyncData(syncData: any[], reward: Reward) {
     const addableSyncData = syncData.filter((syncData) => {
       if (
-        (syncData.id,
+        (syncData?.id,
         syncData.identifier,
         syncData.identifierType,
         syncData.amount)
@@ -250,7 +256,7 @@ export class RewardManagementService {
           reward.acceptedCustomerIdentitytypes.includes(syncData.identifierType)
         ) {
           return {
-            id: syncData.id,
+            id: syncData?.id,
             identifier: syncData.identifier,
             identifierType: syncData.identifierType,
             amount: syncData.amount,
@@ -262,7 +268,7 @@ export class RewardManagementService {
     const descripancies = syncData.filter((syncData) => {
       if (!syncData.id || !syncData.identifier || !syncData.identifierType) {
         return {
-          id: syncData.id,
+          id: syncData?.id,
           identifier: syncData.identifier,
           identifierType: syncData.identifierType,
           reason: `Missing required fields: id, identifier, identifierType or unaccepted identity type`,
@@ -434,23 +440,9 @@ export class RewardManagementService {
           0,
         );
 
-        checkReward.totalDistributedSupply =
-          Number(checkReward.totalDistributedSupply) + Number(totalDistributed);
+        checkReward.totalIssued =
+          Number(checkReward.totalIssued) + Number(totalDistributed);
         await this.rewardService.save(checkReward);
-
-        // Update circulating supply
-        const circulatingSupply = new RewardCirculation();
-        circulatingSupply.brandId = checkReward.brandId;
-        circulatingSupply.rewardId = checkReward.id;
-        circulatingSupply.circulatingSupply =
-          Number(checkReward.totalDistributedSupply) -
-          Number(checkReward.totalRedeemedSupply);
-        circulatingSupply.totalRedeemedAtCirculation =
-          checkReward.totalRedeemedSupply;
-        circulatingSupply.totalDistributedSupplyAtCirculation =
-          checkReward.totalDistributedSupply;
-
-        await this.analyticsRecorder.createRewardCirculation(circulatingSupply);
 
         return {
           descripancies: null,
@@ -504,23 +496,9 @@ export class RewardManagementService {
         0,
       );
 
-      checkReward.totalDistributedSupply =
-        Number(checkReward.totalDistributedSupply) + Number(totalDistributed);
+      checkReward.totalIssued =
+        Number(checkReward.totalIssued) + Number(totalDistributed);
       await this.rewardService.save(checkReward);
-
-      // Update circulating supply
-      const circulatingSupply = new RewardCirculation();
-      circulatingSupply.brandId = checkReward.brandId;
-      circulatingSupply.rewardId = checkReward.id;
-      circulatingSupply.circulatingSupply =
-        Number(checkReward.totalDistributedSupply) -
-        Number(checkReward.totalRedeemedSupply);
-      circulatingSupply.totalRedeemedAtCirculation =
-        checkReward.totalRedeemedSupply;
-      circulatingSupply.totalDistributedSupplyAtCirculation =
-        checkReward.totalDistributedSupply;
-
-      await this.analyticsRecorder.createRewardCirculation(circulatingSupply);
 
       return {
         descripancies: null,
@@ -554,10 +532,23 @@ export class RewardManagementService {
     batch: SyncBatch;
     rewardId: string;
   }) {
+    const reward = await this.rewardService.findOneById(rewardId);
+
     // Pick the rewards whose users exists and update balacne to 0
-    return await Promise.all(
+    const res = await Promise.all(
       batch.syncData.map(async (syncDataJSON) => {
         const syncData = JSON.parse(syncDataJSON as any) as typeof syncDataJSON;
+
+        const brandCustomer =
+          await this.brandService.getBrandCustomerByIdentifier({
+            identifier: syncData.identifier,
+            brandId: reward.brandId,
+            identifierType: syncData.identifierType,
+          });
+
+        brandCustomer.totalDistributed =
+          Number(brandCustomer.totalDistributed) + Number(syncData.amount);
+        await this.brandService.saveBrandCustomer(brandCustomer);
 
         let user: User;
 
@@ -591,6 +582,29 @@ export class RewardManagementService {
         }
       }),
     );
+
+    const totalDistributed = batch.syncData.reduce(
+      (acc, cur) => acc + +cur.amount,
+      0,
+    );
+
+    reward.totalDistributed =
+      Number(reward.totalDistributed) + Number(totalDistributed);
+    await this.rewardService.save(reward);
+
+    // Update circulating supply
+    const circulatingSupply = new RewardCirculation();
+    circulatingSupply.brandId = reward.brandId;
+    circulatingSupply.rewardId = reward.id;
+    circulatingSupply.circulatingSupply =
+      Number(reward.totalDistributed) - Number(reward.totalRedeemedSupply);
+    circulatingSupply.totalRedeemedAtCirculation = reward.totalRedeemedSupply;
+    circulatingSupply.totalDistributedSupplyAtCirculation =
+      reward.totalDistributed;
+
+    await this.analyticsRecorder.createRewardCirculation(circulatingSupply);
+
+    return res;
   }
 
   async distributeBatch(brandId: string, body: DistributeBatchDto) {

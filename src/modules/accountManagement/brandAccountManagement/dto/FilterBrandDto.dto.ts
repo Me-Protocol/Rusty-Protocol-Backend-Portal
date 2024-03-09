@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class FilterBrandDto {
   @ApiProperty()
+  @IsUUID()
   @IsOptional()
   categoryId: string;
 
@@ -27,4 +28,9 @@ export class FilterBrandDto {
   @IsOptional()
   @IsString()
   search: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsUUID()
+  regionId: string;
 }

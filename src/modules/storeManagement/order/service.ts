@@ -35,7 +35,6 @@ import { generateTransactionCode } from '@src/utils/helpers/generateRandomCode';
 import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
 import { SpendData } from '@src/utils/types/spendData';
 import {
-  get_transaction_by_hash_with_url,
   get_user_reward_balance_with_url,
   redistributed_failed_tx_with_url,
 } from '@developeruche/runtime-sdk';
@@ -43,6 +42,10 @@ import { RUNTIME_URL } from '@src/config/env.config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BillerService } from '@src/globalServices/biller/biller.service';
 import { ethers } from 'ethers';
+import { createCoupon } from '@src/globalServices/online-store-handler/create-coupon';
+import { checkBrandOnlineStore } from '@src/globalServices/online-store-handler/check-store';
+import { BillType } from '@src/utils/enums/BillType';
+import { checkOrderStatusGelatoOrRuntime } from '@src/globalServices/costManagement/taskId-verifier.service';
 
 @Injectable()
 export class OrderManagementService {
@@ -239,12 +242,16 @@ export class OrderManagementService {
         throw new Error('Quantity must be greater than 0');
       }
 
-      if (offer.product.inventory < quantity) {
+      const brand = await this.brandService.getBrandWithOnlineCreds(
+        offer.brandId,
+      );
+
+      if ((offer.product.inventory ?? 0) < quantity) {
         throw new Error('Offer is out of stock');
       }
 
       // Check that after removing the quantity, the inventory is still greater than 0
-      if (offer.product.inventory - quantity < 0) {
+      if ((offer.product.inventory ?? 0) - quantity < 0) {
         throw new Error(
           `You cannot redeem more than ${offer.product.inventory} at the moment`,
         );
@@ -254,6 +261,21 @@ export class OrderManagementService {
       if (offer.endDate < new Date()) {
         throw new Error('Offer has expired');
       }
+
+      if (!brand.online_store_type) {
+        throw new Error(
+          'You cannot redeem this offer at the moment. Try again later',
+        );
+      }
+
+      if (!offer.product.productIdOnBrandSite) {
+        throw new Error(
+          "We couldn't determine the product id on brand site for this offer",
+        );
+      }
+
+      // Validate online store setup
+      await checkBrandOnlineStore({ brand });
 
       // TODO: uncomment this
       // const canPayCost = await this.fiatWalletService.checkCanPayCost(
@@ -267,15 +289,10 @@ export class OrderManagementService {
 
       const user = await this.userService.getUserById(userId);
 
-      const discount = (offer.tokens * offer.discountPercentage) / 100;
-      const amount = offer.tokens - discount;
-
-      const totalAmount = amount * quantity;
-
       const orderRecord = new Order();
       orderRecord.userId = user.id;
       orderRecord.offerId = offerId;
-      orderRecord.points = totalAmount;
+      orderRecord.points = offer.tokens;
       orderRecord.quantity = quantity;
       orderRecord.brandId = offer.brandId;
       orderRecord.redeemRewardId = rewardId;
@@ -334,7 +351,7 @@ export class OrderManagementService {
       const offer = await this.offerService.getOfferById(order.offerId);
 
       await this.billerService.createBill({
-        type: 'redeem-offer',
+        type: BillType.REDEEM_OFFER,
         amount: 1.5,
         brandId: offer.brandId,
       });
@@ -353,8 +370,10 @@ export class OrderManagementService {
       const pendingOrders = await this.orderService.getPendingOrders();
 
       if (pendingOrders.length > 0) {
-        for (const order of pendingOrders) {
-          const status = await this.checkOrderStatusGelatoOrRuntime(
+        for (let index = 0; index < pendingOrders.length; index++) {
+          const order = pendingOrders[index];
+
+          const status = await checkOrderStatusGelatoOrRuntime(
             order.taskId,
             order.verifier,
           );
@@ -366,65 +385,86 @@ export class OrderManagementService {
               orderId: order.id,
             },
           });
+          const brand = await this.brandService.getBrandWithOnlineCreds(
+            order.brandId,
+          );
 
-          if (status === 'success') {
-            await this.offerService.increaseOfferSales({
-              offer,
-              amount: order.points,
-              userId: order.userId,
-            });
+          if (brand?.online_store_type) {
+            if (status === 'success') {
+              await this.offerService.increaseOfferSales({
+                offer,
+                amount: order.points,
+                userId: order.userId,
+              });
 
-            const coupon = await this.couponService.create({
-              user_id: order.userId,
-              offer_id: order.offerId,
-            });
+              const coupon = await this.couponService.create({
+                user_id: order.userId,
+                offer_id: order.offerId,
+              });
 
-            order.couponId = coupon.id;
-            order.status = StatusType.SUCCEDDED;
+              order.couponId = coupon.id;
+              order.status = StatusType.SUCCEDDED;
 
-            await this.orderService.saveOrder(order);
+              await this.orderService.saveOrder(order);
 
-            if (transaction) {
-              transaction.status = StatusType.SUCCEDDED;
-              await this.transactionRepo.save(transaction);
-            }
+              const discount =
+                (offer.product.price * offer.discountPercentage) / 100;
+              const amount = offer.product.price - discount;
 
-            const reward = await this.rewardService.findOneById(
-              order.redeemRewardId,
-            );
+              const totalAmount = amount * order.quantity;
 
-            const balance = await get_user_reward_balance_with_url(
-              {
-                address: customer.walletAddress,
-                reward_address: reward.contractAddress,
-              },
-              RUNTIME_URL,
-            );
+              // create online store coupon
+              const onlineCoupon = await createCoupon({
+                brand,
+                data: {
+                  code: coupon.code,
+                  amount: totalAmount.toString(),
+                },
+                productId: offer.product.productIdOnBrandSite,
+                email: order.user.email,
+              });
 
-            if (balance.data?.result) {
-              const registry = await this.syncService.findOneRegistryByUserId(
-                order.userId,
-                reward.id,
-              );
-              if (registry) {
-                registry.hasBalance =
-                  balance?.data?.result === '0x0' ? false : true;
-
-                await this.syncService.saveRegistry(registry);
+              if (transaction) {
+                transaction.status = StatusType.SUCCEDDED;
+                await this.transactionRepo.save(transaction);
               }
-            }
 
-            //  Send notification to user
+              const reward = await this.rewardService.findOneById(
+                order.redeemRewardId,
+              );
 
-            const notification = new Notification();
-            notification.userId = order.userId;
-            notification.message = `Congratulations! You have successfully redeemed ${offer.name} from ${offer.brand.name}`;
-            notification.type = NotificationType.ORDER;
-            notification.title = 'Order Redeemed';
-            notification.orderId = order.id;
-            notification.icon = offer.brand.logo;
-            notification.image = offer.offerImages?.[0].url;
-            notification.emailMessage = /* html */ `
+              const balance = await get_user_reward_balance_with_url(
+                {
+                  address: customer.walletAddress,
+                  reward_address: reward.contractAddress,
+                },
+                RUNTIME_URL,
+              );
+
+              if (balance.data?.result) {
+                const registry = await this.syncService.findOneRegistryByUserId(
+                  order.userId,
+                  reward.id,
+                );
+                if (registry) {
+                  registry.hasBalance =
+                    balance?.data?.result === '0x0' ? false : true;
+
+                  await this.syncService.saveRegistry(registry);
+                }
+              }
+
+              //  Send notification to user
+
+              const notification = new Notification();
+              notification.userId = order.userId;
+              notification.message = `Congratulations! You have successfully redeemed ${offer.name} from ${offer.brand.name}`;
+              notification.type = NotificationType.ORDER;
+              notification.title = 'Order Redeemed';
+              notification.orderId = order.id;
+              notification.icon = offer.brand.logo;
+              notification.image = offer.offerImages?.[0].url;
+              notification.emailMessage = /* html */ `
               <div>
                 <p>Hello ${customer?.name},</p>
                 <p>Congratulations! You have successfully redeemed ${
@@ -452,138 +492,144 @@ export class OrderManagementService {
                 })}
              `;
 
-            // await this.notificationService.createNotification(notification);
+              // await this.notificationService.createNotification(notification);
 
-            //   balance: registry.balance,
-            //   description,
-            //   transactionType: TransactionsType.CREDIT,
-            //   rewardRegistryId: registry.id,
-            //   amount: amount,
+              //   balance: registry.balance,
+              //   description,
+              //   transactionType: TransactionsType.CREDIT,
+              //   rewardRegistryId: registry.id,
+              //   amount: amount,
 
-            // create history
+              // create history
 
-            const registry =
-              await this.syncService.findOneRegistryByEmailIdentifier(
-                order.user.email,
-                reward.id,
+              const registry =
+                await this.syncService.findOneRegistryByEmailIdentifier(
+                  order.user.email,
+                  reward.id,
+                );
+
+              const history = new RegistryHistory();
+              history.rewardRegistryId = registry.id;
+              history.amount = order.points;
+              history.description = `Redeem ${offer.name} from ${offer.brand.name}`;
+              history.transactionType = TransactionsType.DEBIT;
+              history.balance =
+                balance?.data?.result === '0x0'
+                  ? 0
+                  : Number(ethers.utils.formatEther(balance.data.result) ?? 0);
+
+              await this.syncService.saveRegistryHistory(history);
+
+              reward.totalRedeemedSupply =
+                Number(reward?.totalRedeemedSupply ?? 0) + Number(order.points);
+              await this.rewardService.save(reward);
+
+              // Update circulating supply
+              const circulatingSupply = new RewardCirculation();
+              circulatingSupply.brandId = reward.brandId;
+              circulatingSupply.rewardId = reward.id;
+              circulatingSupply.circulatingSupply =
+                +reward.totalDistributed - +reward.totalRedeemedSupply;
+              circulatingSupply.totalRedeemedAtCirculation =
+                reward.totalRedeemedSupply;
+              circulatingSupply.totalDistributedSupplyAtCirculation =
+                reward.totalDistributed;
+
+              await this.analyticsRecorder.createRewardCirculation(
+                circulatingSupply,
               );
 
-            const history = new RegistryHistory();
-            history.rewardRegistryId = registry.id;
-            history.amount = order.points;
-            history.description = `Redeem ${offer.name} from ${offer.brand.name}`;
-            history.transactionType = TransactionsType.DEBIT;
-            history.balance =
-              balance?.data?.result === '0x0'
-                ? 0
-                : Number(ethers.utils.formatEther(balance.data.result) ?? 0);
+              // update customer total redeem
 
-            await this.syncService.saveRegistryHistory(history);
+              const isExternalOffer = offer.rewardId !== order.redeemRewardId;
 
-            reward.totalRedeemedSupply =
-              Number(reward?.totalRedeemedSupply ?? 0) + Number(order.points);
-            await this.rewardService.save(reward);
+              if (isExternalOffer) {
+                const totalCustomerExternalRedeemed =
+                  Number(customer?.totalExternalRedeemed ?? 0) + 1;
 
-            // Update circulating supply
-            const circulatingSupply = new RewardCirculation();
-            circulatingSupply.brandId = reward.brandId;
-            circulatingSupply.rewardId = reward.id;
-            circulatingSupply.circulatingSupply =
-              +reward.totalDistributedSupply - +reward.totalRedeemedSupply;
-            circulatingSupply.totalRedeemedAtCirculation =
-              reward.totalRedeemedSupply;
-            circulatingSupply.totalDistributedSupplyAtCirculation =
-              reward.totalDistributedSupply;
+                customer.totalExternalRedeemed = Number(
+                  totalCustomerExternalRedeemed.toFixed(0),
+                );
+                customer.totalExternalRedemptionAmount =
+                  Number(customer?.totalExternalRedemptionAmount ?? 0) +
+                  Number(order.points);
+              } else {
+                const totalCustomerRedeemed =
+                  Number(customer?.totalRedeemed ?? 0) + 1;
 
-            await this.analyticsRecorder.createRewardCirculation(
-              circulatingSupply,
-            );
+                customer.totalRedeemed = Number(
+                  totalCustomerRedeemed.toFixed(0),
+                );
 
-            // update customer total redeem
+                customer.totalRedemptionAmount =
+                  Number(customer?.totalRedemptionAmount ?? 0) +
+                  Number(order.points);
+              }
 
-            const isExternalOffer = offer.rewardId !== order.redeemRewardId;
+              await this.customerService.save(customer);
 
-            if (isExternalOffer) {
-              const totalCustomerExternalRedeemed =
-                Number(customer?.totalExternalRedeemed ?? 0) +
-                Number(order.points);
-
-              customer.totalExternalRedeemed = Number(
-                totalCustomerExternalRedeemed.toFixed(0),
+              const brandCustomer = await this.brandService.getBrandCustomer(
+                reward.brandId,
+                customer.userId,
               );
-              customer.totalExternalRedemptionAmount =
-                Number(customer?.totalExternalRedemptionAmount ?? 0) +
-                Number(order.points);
-            } else {
-              const totalCustomerRedeemed =
-                Number(customer?.totalRedeemed ?? 0) + Number(order.points);
 
-              customer.totalRedeemed = Number(totalCustomerRedeemed.toFixed(0));
-              Number(customer.totalRedeemed ?? 0) + Number(order.points);
+              if (isExternalOffer) {
+                const totalBrandCustomerExternalRedeemed =
+                  Number(brandCustomer?.totalExternalRedeemed ?? 0) + 1;
 
-              customer.totalRedemptionAmount =
-                Number(customer?.totalRedemptionAmount ?? 0) +
-                Number(order.points);
-            }
+                brandCustomer.totalExternalRedeemed = Number(
+                  totalBrandCustomerExternalRedeemed.toFixed(0),
+                );
+                brandCustomer.totalExternalRedemptionAmount =
+                  Number(brandCustomer?.totalExternalRedemptionAmount ?? 0) +
+                  Number(order.points);
+              } else {
+                const totalBrandCustomerRedeemed =
+                  Number(brandCustomer?.totalRedeemed ?? 0) + 1;
 
-            await this.customerService.save(customer);
+                brandCustomer.totalRedeemed = Number(
+                  totalBrandCustomerRedeemed.toFixed(0),
+                );
+                brandCustomer.totalRedemptionAmount =
+                  Number(brandCustomer?.totalRedemptionAmount ?? 0) +
+                  Number(order.points);
+              }
 
-            const brandCustomer = await this.brandService.getBrandCustomer(
-              reward.brandId,
-              customer.userId,
-            );
+              await this.brandService.saveBrandCustomer(brandCustomer);
 
-            if (isExternalOffer) {
-              const totalBrandCustomerExternalRedeemed =
-                Number(brandCustomer?.totalExternalRedeemed ?? 0) + 1;
+              console.log('Done');
+            } else if (status === 'failed') {
+              console.log('Order failed');
 
-              brandCustomer.totalExternalRedeemed = Number(
-                totalBrandCustomerExternalRedeemed.toFixed(0),
+              order.status = StatusType.FAILED;
+              order.failedReason = `${order.verifier} task verifier failed`;
+              await this.orderService.saveOrder(order);
+
+              await redistributed_failed_tx_with_url(
+                order.spendData,
+                RUNTIME_URL,
               );
-              brandCustomer.totalExternalRedemptionAmount =
-                Number(brandCustomer?.totalExternalRedemptionAmount ?? 0) +
-                Number(order.points);
-            } else {
-              const totalBrandCustomerRedeemed =
-                Number(brandCustomer?.totalRedeemed ?? 0) + 1;
 
-              brandCustomer.totalRedeemed = Number(
-                totalBrandCustomerRedeemed.toFixed(0),
-              );
-              brandCustomer.totalRedemptionAmount =
-                Number(brandCustomer?.totalRedemptionAmount ?? 0) +
-                Number(order.points);
-            }
+              order.isRefunded = true;
+              await this.orderService.saveOrder(order);
+              await this.offerService.increaseInventory(offer, order);
 
-            await this.brandService.saveBrandCustomer(brandCustomer);
-          } else if (status === 'failed') {
-            console.log('Order failed');
+              if (transaction) {
+                transaction.status = StatusType.FAILED;
+                await this.transactionRepo.save(transaction);
+              }
 
-            await redistributed_failed_tx_with_url(
-              order.spendData,
-              RUNTIME_URL,
-            );
+              //  Send notification to user
 
-            order.status = StatusType.FAILED;
-            await this.orderService.saveOrder(order);
-            await this.offerService.increaseInventory(offer, order);
-
-            if (transaction) {
-              transaction.status = StatusType.FAILED;
-              await this.transactionRepo.save(transaction);
-            }
-
-            //  Send notification to user
-
-            const notification = new Notification();
-            notification.userId = order.userId;
-            notification.message = `Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed and a refund has been initiated. Please try again`;
-            notification.type = NotificationType.ORDER;
-            notification.title = 'Order Failed';
-            notification.orderId = order.id;
-            notification.icon = offer.brand.logo;
-            notification.image = offer.offerImages?.[0].url;
-            notification.emailMessage = /* html */ `
+              const notification = new Notification();
+              notification.userId = order.userId;
+              notification.message = `Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed and a refund has been initiated. Please try again`;
+              notification.type = NotificationType.ORDER;
+              notification.title = 'Order Failed';
+              notification.orderId = order.id;
+              notification.icon = offer.brand.logo;
+              notification.image = offer.offerImages?.[0].url;
+              notification.emailMessage = /* html */ `
               <div>
                 <p>Hello ${customer?.name},</p>
                 <p>Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed</p>
@@ -598,16 +644,22 @@ export class OrderManagementService {
                 <p>Quantity: ${order.quantity}</p>
               `;
 
-            await this.notificationService.createNotification(notification);
-          } else {
-            if (order.retries > 4) {
-              order.status = StatusType.INCOMPLETE;
+              await this.notificationService.createNotification(notification);
+            } else {
+              console.log(order.retries, 'Retries');
+              if (order.retries > 30) {
+                order.failedReason = 'No response after retries';
+                order.status = StatusType.INCOMPLETE;
 
-              await this.orderService.saveOrder(order);
+                await this.orderService.saveOrder(order);
+              } else {
+                order.status = StatusType.PROCESSING;
+                order.retries = order.retries + 1;
+                await this.orderService.saveOrder(order);
+              }
             }
-
-            order.status = StatusType.PROCESSING;
-            order.retries = order.retries + 1;
+          } else {
+            order.status = StatusType.INCOMPLETE;
             await this.orderService.saveOrder(order);
           }
         }
@@ -618,43 +670,22 @@ export class OrderManagementService {
     }
   }
 
-  async checkOrderStatusGelatoOrRuntime(
-    taskId: string,
-    verifier: OrderVerifier,
-  ): Promise<'success' | 'failed' | 'pending'> {
-    try {
-      if (verifier === OrderVerifier.GELATO) {
-        const status =
-          await this.costModuleService.checkTransactionStatusWithRetry({
-            taskId,
-          });
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async markOrderAsIncomplete() {
+    const pendingOrders = await this.orderService.getOrderWithoutTaskId();
 
-        if (status === 'ExecSuccess') {
-          return 'success';
-        } else if (status === 'ExecFailed') {
-          return 'failed';
+    if (pendingOrders.length > 0) {
+      for (const order of pendingOrders) {
+        if (order.retries > 30) {
+          order.failedReason = 'No task id after retries';
+          order.status = StatusType.INCOMPLETE;
+          await this.orderService.saveOrder(order);
         } else {
-          return 'pending';
-        }
-      } else {
-        const runtimeStatus = await get_transaction_by_hash_with_url(
-          {
-            hash: taskId,
-          },
-          RUNTIME_URL,
-        );
-
-        if (
-          runtimeStatus.data.result.hash !==
-          '0x0000000000000000000000000000000000000000000000000000000000000000'
-        ) {
-          return 'success';
-        } else {
-          return 'failed';
+          order.status = StatusType.PROCESSING;
+          order.retries = order.retries + 1;
+          await this.orderService.saveOrder(order);
         }
       }
-    } catch (error) {
-      return 'pending';
     }
   }
 }

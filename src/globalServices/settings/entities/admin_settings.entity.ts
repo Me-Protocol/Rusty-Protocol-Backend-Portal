@@ -48,7 +48,27 @@ export class AdminSettings extends BaseEntity {
   @Column({
     nullable: true,
   })
+  meDispenserPublicKey: string;
+
+  @Column({
+    nullable: true,
+  })
   onboardWallet: string;
+
+  @Column({
+    nullable: true,
+  })
+  onboardWalletPublicKey: string;
+
+  @Column({
+    nullable: true,
+  })
+  autoTopupWallet: string;
+
+  @Column({
+    nullable: true,
+  })
+  autoTopupWalletPublicKey: string;
 
   @Column({
     default: 200,

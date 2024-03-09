@@ -32,7 +32,7 @@ export class BrandMember extends BaseEntity {
   })
   userId: string;
 
-  @OneToOne(() => User, (user) => user.brandMember)
+  @ManyToOne(() => User, (user) => user.brandMembers)
   @JoinColumn({ name: 'userId' })
   user: User;
 

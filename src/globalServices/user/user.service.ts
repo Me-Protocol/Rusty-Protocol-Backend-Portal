@@ -34,7 +34,7 @@ export class UserService {
           walletAddress,
         },
       },
-      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
+      relations: ['customer', 'brand', 'brandMembers', 'brandMembers.brand'],
     });
   }
 
@@ -119,9 +119,12 @@ export class UserService {
       relations: [
         'customer',
         'brand',
-        'brandMember',
-        'brandMember.brand',
+        'brandMembers',
+        'brandMembers.brand',
+        'brandMembers.brand.plan',
+        'brandMembers.brand.regions',
         'brand.plan',
+        'brand.regions',
         'adminMember',
       ],
     });
@@ -141,7 +144,7 @@ export class UserService {
       where: {
         email,
       },
-      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
+      relations: ['customer', 'brand', 'brandMembers', 'brandMembers.brand'],
     });
   }
 
@@ -210,7 +213,7 @@ export class UserService {
       where: {
         accountVerificationCode: code,
       },
-      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
+      relations: ['customer', 'brand', 'brandMembers', 'brandMembers.brand'],
     });
   }
 
@@ -219,7 +222,7 @@ export class UserService {
       where: {
         id: In(ids),
       },
-      relations: ['customer', 'brand', 'brandMember', 'brandMember.brand'],
+      relations: ['customer', 'brand', 'brandMembers', 'brandMembers.brand'],
     });
   }
 }

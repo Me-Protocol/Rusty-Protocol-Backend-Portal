@@ -11,6 +11,7 @@ import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { productIndex } from '@src/modules/search/interface/search.interface';
 import { ProductStatus } from '@src/utils/enums/ItemStatus';
 import { CurrencyService } from '@src/globalServices/currency/currency.service';
+import { OfferService } from '@src/globalServices/offer/offer.service';
 
 @Injectable()
 export class ProductManagementService {
@@ -20,6 +21,7 @@ export class ProductManagementService {
     private readonly collectionService: CollectionService,
     private readonly elasticIndex: ElasticIndex,
     private readonly currencyService: CurrencyService,
+    private readonly offerService: OfferService,
   ) {}
 
   async getProductImages(brandId: string, page: number, limit: number) {
@@ -75,6 +77,7 @@ export class ProductManagementService {
       if (body.currencyId) product.currencyId = body.currencyId;
       if (body.coverImage) product.coverImage = body.coverImage;
       product.productCode = productCode;
+      product.productIdOnBrandSite = body.productIdOnBrandSite;
 
       const productCollections = [];
 
@@ -93,6 +96,19 @@ export class ProductManagementService {
       }
 
       product.collections = productCollections;
+
+      if (body.regions && body.regions.length > 0) {
+        const regions = [];
+
+        for (const region of body.regions) {
+          const checkRegion = await this.currencyService.getRegionById(region);
+          if (checkRegion) {
+            regions.push(checkRegion);
+          }
+        }
+
+        product.regions = regions;
+      }
 
       const newProduct = await this.productService.createProduct(product);
 
@@ -229,6 +245,21 @@ export class ProductManagementService {
         await this.productService.saveProduct(product);
       }
 
+      if (body.regions) {
+        const regions = [];
+
+        for (const region of body.regions) {
+          const checkRegion = await this.currencyService.getRegionById(region);
+          if (checkRegion) {
+            regions.push(checkRegion);
+          }
+        }
+
+        product.regions = regions;
+
+        await this.productService.saveProduct(product);
+      }
+
       await this.productService.updateProduct(body, id);
 
       const findOneProduct = await this.productService.getOneProduct(
@@ -258,6 +289,7 @@ export class ProductManagementService {
     }
 
     await this.productService.deleteProduct(product.id, brandId);
+    await this.offerService.achieveOffersByProductId(product.id);
 
     return {
       message: 'Product deleted successfully',

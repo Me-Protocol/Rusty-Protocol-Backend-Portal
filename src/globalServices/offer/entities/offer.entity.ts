@@ -113,9 +113,6 @@ export class Offer extends BaseEntity {
   })
   endDate: Date;
 
-  @Column()
-  idOnBrandsite: string;
-
   @OneToMany(() => View, (view) => view.offer)
   views: View[];
 

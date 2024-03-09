@@ -28,7 +28,7 @@ export class RewarderService {
     try {
       const reward = await this.rewardService.findOneById(rewardId);
 
-      const keyIdentifier = await this.rewardService.getKeyIdentifier(
+      const keyIdentifier = await this.keyManagementService.getKeyIdentifier(
         reward.redistributionKeyIdentifierId,
         KeyIdentifierType.REDISTRIBUTION,
       );

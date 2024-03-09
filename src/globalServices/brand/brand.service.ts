@@ -1,5 +1,6 @@
 import {
   HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   NotFoundException,
@@ -30,7 +31,6 @@ import { User } from '@src/globalServices/user/entities/user.entity';
 import { TopupEventBlock } from './entities/topup_event_block.entity';
 import { isEmail } from 'class-validator';
 import { RewardService } from '../reward/reward.service';
-import { VoucherType } from '@src/utils/enums/VoucherType';
 import {
   StatusType,
   TransactionSource,
@@ -41,6 +41,8 @@ import { FiatWalletService } from '../fiatWallet/fiatWallet.service';
 import { Transaction } from '../fiatWallet/entities/transaction.entity';
 import { logger } from '../logger/logger.service';
 import { Role } from '@src/utils/enums/Role';
+import { CurrencyService } from '../currency/currency.service';
+import { OrderService } from '../order/order.service';
 
 @Injectable()
 export class BrandService {
@@ -61,6 +63,8 @@ export class BrandService {
     private readonly eventEmitter: EventEmitter2,
     private readonly billerService: BillerService,
     private readonly paymentService: PaymentService,
+    private readonly currencyService: CurrencyService,
+    private readonly ordersService: OrderService,
 
     @InjectRepository(FiatWallet)
     private readonly walletRepo: Repository<FiatWallet>,
@@ -127,38 +131,66 @@ export class BrandService {
         throw new NotFoundException('Brand not found');
       }
 
+      if (dto.regions) {
+        const regions = [];
+
+        for (const region of dto.regions) {
+          const checkRegion = await this.currencyService.getRegionById(region);
+          if (checkRegion) {
+            regions.push(checkRegion);
+          }
+        }
+
+        brand.regions = regions;
+      }
+
       // if (dto.name) brand.name = dto.name;
-      brand.website = dto.website;
-      brand.location = dto.location;
-      brand.categoryId = dto.categoryId;
-      brand.revenueRange = dto.revenueRange;
-      brand.vatTaxId = dto.vatTaxId;
+      if (dto.website) brand.website = dto.website;
+      if (dto.location) brand.location = dto.location;
+      if (dto.categoryId) brand.categoryId = dto.categoryId;
+      if (dto.revenueRange) brand.revenueRange = dto.revenueRange;
+      if (dto.vatTaxId) brand.vatTaxId = dto.vatTaxId;
 
-      brand.ecommercePlatform = dto.ecommercePlatform;
-      brand.loyaltyProgram = dto.loyaltyProgram;
-      brand.slogan = dto.slogan;
-      brand.socialMediaLinks = dto.socialMediaLinks;
-      brand.logo_icon = dto.logo_icon;
-      brand.description = dto.description;
-      brand.logo_white = dto.logo_white;
-      brand.logo_white_icon = dto.logo_white_icon;
-      brand.logo = dto.logo;
-      brand.banners = dto.banners;
+      if (dto.ecommercePlatform)
+        brand.ecommercePlatform = dto.ecommercePlatform;
+      if (dto.loyaltyProgram) brand.loyaltyProgram = dto.loyaltyProgram;
+      if (dto.slogan) brand.slogan = dto.slogan;
+      if (dto.socialMediaLinks) brand.socialMediaLinks = dto.socialMediaLinks;
+      if (dto.logo_icon) brand.logo_icon = dto.logo_icon;
+      if (dto.description) brand.description = dto.description;
+      if (dto.logo_white) brand.logo_white = dto.logo_white;
+      if (dto.logo_white_icon) brand.logo_white_icon = dto.logo_white_icon;
+      if (dto.logo) brand.logo = dto.logo;
+      if (dto.banners) brand.banners = dto.banners;
 
-      brand.supportPhoneNumber = dto.supportPhoneNumber;
-      brand.listOnStore = dto.listOnStore;
-      brand.vaultPercentage = dto.vaultPercentage;
-      brand.noOfCustomers = dto.noOfCustomers;
+      if (dto.supportPhoneNumber)
+        brand.supportPhoneNumber = dto.supportPhoneNumber;
+      if (dto.listOnStore !== null || dto.listOnStore !== undefined)
+        brand.listOnStore = dto.listOnStore;
+      if (dto.vaultPercentage) brand.vaultPercentage = dto.vaultPercentage;
+      if (dto.noOfCustomers) brand.noOfCustomers = dto.noOfCustomers;
 
-      brand.currency = dto.currency;
-      brand.countryCode = dto.countryCode;
-      brand.country = dto.country;
-      brand.region = dto.region;
-      brand.additionalAddress = dto.additionalAddress;
-      brand.city = dto.city;
-      brand.postalCode = dto.postalCode;
-      brand.firstTimeLogin = dto.firstTimeLogin === 'true' ? true : false;
-      brand.brandStore = dto.brandStore;
+      if (dto.currency) brand.currency = dto.currency;
+      if (dto.countryCode) brand.countryCode = dto.countryCode;
+      if (dto.country) brand.country = dto.country;
+      if (dto.region) brand.region = dto.region;
+      if (dto.additionalAddress)
+        brand.additionalAddress = dto.additionalAddress;
+      if (dto.city) brand.city = dto.city;
+      if (dto.postalCode) brand.postalCode = dto.postalCode;
+      if (dto.firstTimeLogin)
+        brand.firstTimeLogin = dto.firstTimeLogin === 'true' ? true : false;
+      if (dto.brandStore) brand.brandStore = dto.brandStore;
+      if (dto.onlineStoreType) brand.online_store_type = dto.onlineStoreType;
+      if (dto.woocommerceConsumerKey)
+        brand.woocommerce_consumer_key = dto.woocommerceConsumerKey;
+      if (dto.woocommerceConsumerSecret)
+        brand.woocommerce_consumer_secret = dto.woocommerceConsumerSecret;
+      if (dto.online_store_url) brand.online_store_url = dto.online_store_url;
+      if (dto.shopify_consumer_key)
+        brand.shopify_consumer_key = dto.shopify_consumer_key;
+      if (dto.shopify_consumer_secret)
+        brand.shopify_consumer_secret = dto.shopify_consumer_secret;
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);
@@ -207,39 +239,92 @@ export class BrandService {
     limit,
     order,
     search,
+    regionId,
   }: {
     categoryId: string;
     page: number;
     limit: number;
     order: string;
     search: string;
+    regionId: string;
   }) {
     const brandQuery = this.brandRepo
       .createQueryBuilder('brand')
       .leftJoinAndSelect('brand.category', 'category')
-      .where('brand.listOnStore = :listOnStore', { listOnStore: true });
+      .leftJoinAndSelect('brand.regions', 'regions');
 
-    if (categoryId) {
-      brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
-    }
+    const defaultRegion = await this.currencyService.getDefaultRegion();
 
-    if (order) {
-      const formatedOrder = order.split(':')[0];
-      const acceptedOrder = ['name', 'createdAt', 'updatedAt'];
+    if (regionId) {
+      // where offer product regions contains regionId or offer product regions is empty
+      brandQuery.where('regions.id = :regionId', { regionId });
 
-      if (!acceptedOrder.includes(formatedOrder)) {
-        throw new Error('Invalid order param');
+      if (order) {
+        const formatedOrder = order.split(':')[0];
+        const acceptedOrder = ['name', 'createdAt', 'updatedAt'];
+
+        if (!acceptedOrder.includes(formatedOrder)) {
+          throw new Error('Invalid order param');
+        }
+
+        brandQuery.orderBy(
+          `brand.${order.split(':')[0]}`,
+          order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+        );
       }
 
-      brandQuery.orderBy(
-        `brand.${order.split(':')[0]}`,
-        order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
-      );
-    }
+      if (search) {
+        brandQuery.andWhere('brand.name ILIKE :search', {
+          search: `%${search}%`,
+        });
+      }
 
-    if (search) {
-      brandQuery.andWhere('brand.name LIKE :search', {
-        search: `%${search}%`,
+      brandQuery.andWhere('regions.id = :regionId', {
+        regionId: defaultRegion.id,
+      });
+
+      if (categoryId) {
+        brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
+      }
+
+      brandQuery.andWhere('brand.listOnStore = :listOnStore', {
+        listOnStore: true,
+      });
+    } else {
+      console.log('here');
+      // regions is empty
+      // brandQuery.where('regions.id IS NULL');
+
+      if (order) {
+        const formatedOrder = order.split(':')[0];
+        const acceptedOrder = ['name', 'createdAt', 'updatedAt'];
+
+        if (!acceptedOrder.includes(formatedOrder)) {
+          throw new Error('Invalid order param');
+        }
+
+        brandQuery.orderBy(
+          `brand.${order.split(':')[0]}`,
+          order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+        );
+      }
+
+      if (search) {
+        brandQuery.andWhere('brand.name ILIKE :search', {
+          search: `%${search}%`,
+        });
+      }
+
+      if (categoryId) {
+        brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
+      }
+
+      brandQuery.andWhere('brand.listOnStore = :listOnStore', {
+        listOnStore: true,
+      });
+
+      brandQuery.orWhere('regions.id = :regionId', {
+        regionId: defaultRegion.id,
       });
     }
 
@@ -403,6 +488,30 @@ export class BrandService {
     return await this.brandCustomerRepo.save(brandCustomer);
   }
 
+  async deleteBrandCustomer(brandId: string, brandCustomerId: string) {
+    try {
+      const customer = await this.brandCustomerRepo.findOne({
+        where: {
+          id: brandCustomerId,
+          brandId: brandId,
+        },
+      });
+
+      if (customer) {
+        await this.brandCustomerRepo.remove(customer);
+        return { deleted: true };
+      } else {
+        throw new HttpException(
+          `Customer does not exist on brand`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
   async getBrandCustomer(brandId: string, userId: string) {
     const customer = await this.brandCustomerRepo.findOne({
       where: {
@@ -439,6 +548,34 @@ export class BrandService {
     });
   }
 
+  async getBrandCustomerByEmailAddress(email: string, brandId: string) {
+    return await this.brandCustomerRepo.findOne({
+      where: {
+        email,
+        brandId,
+      },
+      relations: ['brand'],
+    });
+  }
+
+  async getBrandCustomerByIdentifier({
+    identifier,
+    identifierType,
+    brandId,
+  }: {
+    identifier: string;
+    brandId: string;
+    identifierType: SyncIdentifierType;
+  }) {
+    return await this.brandCustomerRepo.findOne({
+      where: {
+        brandId,
+        identifier,
+        identifierType,
+      },
+    });
+  }
+
   async getBrandCustomerByUserId(userId: string) {
     return await this.brandCustomerRepo.findOne({
       where: {
@@ -446,6 +583,78 @@ export class BrandService {
       },
       relations: ['brand'],
     });
+  }
+
+  async getActivelySpendingBrandCustomers(
+    brandId: string,
+    page: number,
+    limit: number,
+  ) {
+    const activeCustomers: Array<BrandCustomer> = [];
+    // Get all brandCustomers that have redemption greater than 0
+    const brandCustomersQuery = await this.brandCustomerRepo
+      .createQueryBuilder('brandCustomer')
+      .leftJoinAndSelect('brandCustomer.brand', 'brand')
+      .leftJoinAndSelect('brandCustomer.user', 'user')
+      .leftJoinAndSelect('brand.rewards', 'rewards')
+      .where('brandCustomer.brandId = :brandId', { brandId });
+
+    const eligibleBrandCustomers = await brandCustomersQuery.getMany();
+
+    for (const customer of eligibleBrandCustomers) {
+      const user = customer.user;
+      let totalRedemptionAmount = 0;
+      // Check if each customer has order in the last 30 days
+      if (user) {
+        const { orders } = await this.ordersService.getOrders({
+          userId: user.id,
+          page: page,
+          limit: limit,
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          //@ts-ignore
+          startDate: new Date(
+            Date.now() - 24 * 60 * 60 * 1000 * 30,
+          ).toISOString(),
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          //@ts-ignore
+          endDate: new Date().toISOString(),
+        });
+
+        orders.forEach((order) => {
+          const isUsingBrandReward = !!customer.brand.rewards.find(
+            (i) => i.id === order?.reward?.id,
+          );
+          console.log('brandRewardUsed', order?.reward);
+          if (order.status === StatusType.SUCCEDDED && isUsingBrandReward)
+            totalRedemptionAmount += Number(order.points);
+        });
+
+        // console.log(
+        //   `totalRedemptionAmount for ${customer.name}:`,
+        //   totalRedemptionAmount,
+        // );
+
+        if (totalRedemptionAmount > 0) {
+          activeCustomers.push(customer);
+        }
+      }
+    }
+
+    activeCustomers.sort(
+      (a, b) => b.totalRedemptionAmount - a.totalRedemptionAmount,
+    );
+
+    // Calculate pagination
+    const startIndex = (Number(page) - 1) * Number(limit);
+    const endIndex = startIndex + Number(limit);
+    const paginatedData = activeCustomers.slice(startIndex, endIndex);
+
+    return {
+      data: paginatedData,
+      total: activeCustomers.length,
+      nextPage: endIndex < activeCustomers.length ? Number(page) + 1 : null,
+      previousPage: Number(page) > 1 ? Number(page) - 1 : null,
+    };
   }
 
   async getBrandCustomers(
@@ -465,30 +674,16 @@ export class BrandService {
       .leftJoinAndSelect('brandCustomer.brand', 'brand');
 
     brandCustomerQuery.where('brandCustomer.brandId = :brandId', { brandId });
+    brandCustomerQuery.orderBy('brandCustomer.identifier', 'ASC');
 
     if (filterBy === FilterBrandCustomer.MOST_ACTIVE) {
       // where customer redeemed greater than 2
       // brandCustomerQuery.andWhere('brandCustomer.totalRedeemed > 2');
-      brandCustomerQuery.orderBy('brandCustomer.totalRedeemed', 'DESC');
+      brandCustomerQuery.andWhere('brandCustomer.totalRedeemed > 2');
     }
 
     if (filterBy === FilterBrandCustomer.MOST_RECENT) {
-      // brand customer createdAt now to 1 month ago
-
-      const startDate = new Date();
-      startDate.setMonth(startDate.getMonth() - 1);
-
-      const endDate = new Date();
-
-      // where createdAt is between now to date ago
-
-      brandCustomerQuery.andWhere(
-        'brandCustomer.createdAt BETWEEN :startDate AND :endDate',
-        {
-          startDate,
-          endDate,
-        },
-      );
+      brandCustomerQuery.orderBy('brandCustomer.createdAt', 'DESC');
     }
 
     if (sort) {
@@ -501,7 +696,7 @@ export class BrandService {
 
     if (search) {
       brandCustomerQuery.andWhere(
-        'brandCustomer.name LIKE :search OR brandCustomer.email LIKE :search OR brandCustomer.phone LIKE :search',
+        '(brandCustomer.name ILIKE :search OR brandCustomer.email ILIKE :search OR brandCustomer.phone ILIKE :search)',
         {
           search: `%${search}%`,
         },
@@ -515,21 +710,26 @@ export class BrandService {
     }
 
     if (order) {
-      const formatedOrder = order.split(':')[0];
+      let formatedOrder = order.split(':')[0];
       const acceptedOrder = [
         'totalRedeemed',
         'totalRedemptionAmount',
         'totalExternalRedeemed',
         'totalExternalRedemptionAmount',
         'totalIssued',
+        'status',
       ];
 
       if (!acceptedOrder.includes(formatedOrder)) {
         throw new Error('Invalid order param');
       }
 
+      if (formatedOrder === 'status') {
+        formatedOrder = 'isOnboarded';
+      }
+
       brandCustomerQuery.orderBy(
-        `brandCustomer.${order.split(':')[0]}`,
+        `brandCustomer.${formatedOrder}`,
         order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
       );
     }
@@ -579,11 +779,20 @@ export class BrandService {
     });
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
-  async syncElasticSearchIndex() {
-    const allBrands = await this.brandRepo.find();
-    this.elasticIndex.batchCreateIndex(allBrands, brandIndex);
+  async getBrandMemberByUserIdAndBrandId(userId: string, brandId: string) {
+    return await this.brandMemberRepo.findOne({
+      where: {
+        userId,
+        brandId,
+      },
+    });
   }
+
+  // @Cron(CronExpression.EVERY_5_MINUTES)
+  // async syncElasticSearchIndex() {
+  //   const allBrands = await this.brandRepo.find();
+  //   this.elasticIndex.batchCreateIndex(allBrands, brandIndex);
+  // }
 
   async removeBrandMember(brandMember: BrandMember) {
     const user = await this.userRepo.findOne({
@@ -767,6 +976,48 @@ export class BrandService {
     });
   }
 
+  async getAllBrandsForAdmin({
+    page,
+    limit,
+    search,
+  }: {
+    page: number;
+    limit: number;
+    search: string;
+  }) {
+    const brandQuery = this.brandRepo.createQueryBuilder('brand');
+
+    if (search) {
+      brandQuery.andWhere('brand.name ILIKE :search', {
+        search: `%${search}%`,
+      });
+      brandQuery.orWhere('brand.slug ILIKE :search', {
+        search: `%${search}%`,
+      });
+    }
+
+    brandQuery.skip((page - 1) * limit).take(limit);
+    const [brands, total] = await brandQuery.getManyAndCount();
+
+    const brandList = [];
+
+    for (const brand of brands) {
+      const meCredits = await this.walletService.getMeCredits(brand.id);
+
+      brandList.push({
+        ...brand,
+        meCredits,
+      });
+    }
+
+    return {
+      data: brandList,
+      total,
+      nextPage: total > page * limit ? Number(page) + 1 : null,
+      previousPage: page > 1 ? Number(page) - 1 : null,
+    };
+  }
+
   @Cron(CronExpression.EVERY_5_MINUTES)
   async syncBrandCustomer() {
     const brandCustomers = await this.brandCustomerRepo.find();
@@ -788,5 +1039,20 @@ export class BrandService {
         await this.brandCustomerRepo.save(brandCustomer);
       }
     }
+  }
+
+  async getBrandWithOnlineCreds(brandId: string) {
+    return this.brandRepo.findOne({
+      where: {
+        id: brandId,
+      },
+      select: {
+        woocommerce_consumer_key: true,
+        woocommerce_consumer_secret: true,
+        online_store_url: true,
+        online_store_type: true,
+        id: true,
+      },
+    });
   }
 }

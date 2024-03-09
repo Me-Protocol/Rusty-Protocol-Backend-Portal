@@ -18,6 +18,7 @@ import { Offer } from '@src/globalServices/offer/entities/offer.entity';
 import { Variant } from './variants.entity';
 import { Collection } from '@src/globalServices/collections/entities/collection.entity';
 import { Currency } from '@src/globalServices/currency/entities/currency.entity';
+import { Region } from '@src/globalServices/currency/entities/region.entity';
 
 @Entity('product')
 export class Product extends BaseEntity {
@@ -136,4 +137,23 @@ export class Product extends BaseEntity {
     nullable: true,
   })
   coverImage: string;
+
+  @Column({
+    nullable: true,
+  })
+  productIdOnBrandSite: string;
+
+  @ManyToMany(() => Region, (region) => region.products)
+  @JoinTable({
+    name: 'product_regions',
+    joinColumn: {
+      name: 'productId',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'regionId',
+      referencedColumnName: 'id',
+    },
+  })
+  regions: Region[];
 }
