@@ -190,7 +190,7 @@ export class CurrencyService {
     return region;
   }
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  // @Cron(CronExpression.EVERY_30_SECONDS)
   async syncCurrencyValue() {
     try {
       const apiKey = 'cur_live_lqegEL92Bp2kwN37R2F8gBMTOrFtwDenyaLRh0cA';

@@ -23,14 +23,11 @@ export const checkBrandOnlineStore = async ({ brand }: { brand: Brand }) => {
 
       break;
     case OnlineStoreType.SHOPIFY:
-      // const shopifyHandler = new ShopifyHandler();
-      // const shopify = shopifyHandler.createInstance(
-      //   data.apiKey,
-      //   data.password,
-      //   data.url,
-      // );
-      // return await shopify.post('coupons', data);
-      break;
+      if (!brand.online_store_url) {
+        throw new Error('Online store url is required');
+      } else {
+        return brand.online_store_url;
+      }
     case OnlineStoreType.BIG_COMMERCE:
       // const bigCommerceHandler = new BigCommerceHandler();
       // const bigCommerce = bigCommerceHandler.createInstance(
