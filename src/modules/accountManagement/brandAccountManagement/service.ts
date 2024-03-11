@@ -459,8 +459,6 @@ export class BrandAccountManagementService {
       brand.walletAddress = walletAddress;
       brand.isOnboarded = true;
 
-      await this.brandService.save(brand);
-
       const { onboardWallet } = await this.settingsService.settingsInit();
 
       const provider = new ethers.providers.JsonRpcProvider(JSON_RPC_URL);
@@ -487,7 +485,6 @@ export class BrandAccountManagementService {
         data: input.data,
         user: input.from,
       };
-      console.log('request', request);
 
       // const register_tx = await wallet.sendTransaction({
       //   to: OPEN_REWARD_DIAMOND,
@@ -522,21 +519,19 @@ export class BrandAccountManagementService {
         BigNumber.from(brand.brandProtocolId),
       );
 
-      try {
-        const onboardBrand = await onboard_brand_with_url(
-          BigNumber.from(brandProtocolId),
-          walletAddress,
-          ethers.constants.AddressZero,
-          wallet,
-          RUNTIME_URL,
-        );
+      const onboardBrand = await onboard_brand_with_url(
+        BigNumber.from(brandProtocolId),
+        walletAddress,
+        ethers.constants.AddressZero,
+        wallet,
+        RUNTIME_URL,
+      );
 
-        if (onboardBrand.data.error) {
-          throw new Error(onboardBrand.data.error);
-        }
-      } catch (error) {
-        throw new Error(error?.message ?? 'Error onboarding brand');
+      if (onboardBrand.data.error) {
+        throw new Error(onboardBrand.data.error.message);
       }
+
+      await this.brandService.save(brand);
 
       return paymentRequest;
     } catch (error) {
