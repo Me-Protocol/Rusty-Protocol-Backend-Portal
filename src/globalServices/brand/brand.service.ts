@@ -470,7 +470,7 @@ export class BrandService {
     brandCustomer.identifier = identifier;
     brandCustomer.identifierType = identifierType;
     brandCustomer.phone = phone;
-    brandCustomer.email = email;
+    brandCustomer.email = email.toLowerCase();
     brandCustomer.name = name;
 
     await this.brandCustomerRepo.save(brandCustomer);
