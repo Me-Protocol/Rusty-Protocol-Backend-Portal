@@ -900,7 +900,7 @@ export class BrandService {
         }
 
         await this.paymentService.chargePaymentMethod({
-          amount: amount.amountToPay,
+          amount: amount.amountToPay * 100,
           paymentMethodId,
           wallet,
           narration: `Payment for ${plan.name} subscription`,

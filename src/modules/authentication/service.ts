@@ -267,7 +267,7 @@ export class AuthenticationService {
   async checkIfUserExists(email: string): Promise<void> {
     const user = await this.userService.getUserByEmail(email);
     if (user) {
-      throw new Error('Email already exists');
+      throw new Error('Email already exists. Please login.');
     }
   }
 

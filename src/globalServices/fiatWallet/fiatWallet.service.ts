@@ -315,8 +315,7 @@ export class FiatWalletService {
 
     // TODO: Use costgetter for this
 
-    const meTokenValue = (await this.settingsService.getPublicSettings())
-      .meTokenValue;
+    const { meTokenValue } = await this.settingsService.getPublicSettings();
 
     const meCreditsInDollars = Number(wallet.meCredits) * Number(meTokenValue);
 

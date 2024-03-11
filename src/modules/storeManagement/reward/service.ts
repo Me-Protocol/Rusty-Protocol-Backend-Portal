@@ -436,12 +436,12 @@ export class RewardManagementService {
         await this.addPointsToRewardRegistry(addableSyncData, body.rewardId);
 
         const totalDistributed = addableSyncData.reduce(
-          (acc, cur) => acc + +cur.amount,
+          (acc, cur) => acc + Number(cur.amount),
           0,
         );
 
         checkReward.totalIssued =
-          Number(checkReward.totalIssued) + Number(totalDistributed);
+          Number(checkReward.totalIssued ?? 0) + Number(totalDistributed ?? 0);
         await this.rewardService.save(checkReward);
 
         return {
@@ -492,12 +492,12 @@ export class RewardManagementService {
       await this.addPointsToRewardRegistry(addableSyncData, body.rewardId);
 
       const totalDistributed = addableSyncData.reduce(
-        (acc, cur) => acc + +cur.amount,
+        (acc, cur) => acc + Number(cur.amount),
         0,
       );
 
       checkReward.totalIssued =
-        Number(checkReward.totalIssued) + Number(totalDistributed);
+        Number(checkReward.totalIssued ?? 0) + Number(totalDistributed ?? 0);
       await this.rewardService.save(checkReward);
 
       return {
@@ -584,12 +584,12 @@ export class RewardManagementService {
     );
 
     const totalDistributed = batch.syncData.reduce(
-      (acc, cur) => acc + +cur.amount,
+      (acc, cur) => acc + Number(cur.amount),
       0,
     );
 
     reward.totalDistributed =
-      Number(reward.totalDistributed) + Number(totalDistributed);
+      Number(reward.totalDistributed ?? 0) + Number(totalDistributed ?? 0);
     await this.rewardService.save(reward);
 
     // Update circulating supply

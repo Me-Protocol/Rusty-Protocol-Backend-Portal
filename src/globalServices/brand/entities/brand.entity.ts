@@ -238,6 +238,11 @@ export class Brand extends BaseEntity {
   listOnStore: boolean;
 
   @Column({
+    default: false,
+  })
+  isOnboarded: boolean;
+
+  @Column({
     nullable: true,
   })
   brandPrimaryColor: string;
