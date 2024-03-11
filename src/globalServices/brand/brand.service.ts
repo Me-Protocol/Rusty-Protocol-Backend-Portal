@@ -605,6 +605,7 @@ export class BrandService {
       .leftJoinAndSelect('brandCustomer.user', 'user')
       .leftJoinAndSelect('brand.rewards', 'rewards')
       .where('brandCustomer.brandId = :brandId', { brandId });
+      
 
     const eligibleBrandCustomers = await brandCustomersQuery.getMany();
 
@@ -629,17 +630,13 @@ export class BrandService {
 
         orders.forEach((order) => {
           const isUsingBrandReward = !!customer.brand.rewards.find(
-            (i) => i.id === order?.reward?.id,
+            (i) => i.id === order?.offer?.reward?.id,
           );
-          console.log('brandRewardUsed', order?.reward);
+          console.log('brandRewardUsed', order?.offer?.reward);
           if (order.status === StatusType.SUCCEDDED && isUsingBrandReward)
-            totalRedemptionAmount += Number(order.points);
+            totalRedemptionAmount += Number(order?.points || 0);
         });
 
-        // console.log(
-        //   `totalRedemptionAmount for ${customer.name}:`,
-        //   totalRedemptionAmount,
-        // );
 
         if (totalRedemptionAmount > 0) {
           activeCustomers.push(customer);
