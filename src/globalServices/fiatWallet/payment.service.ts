@@ -26,13 +26,21 @@ export class PaymentService {
     private readonly transactionRepo: Repository<Transaction>,
   ) {}
 
-  async createAccount() {
-    const customer = await stripe.customers.create();
+  async createAccount(email: string) {
+    const customer = await stripe.customers.create({
+      email,
+    });
 
     return {
       customerId: customer.id,
       accountId: null,
     };
+  }
+
+  async updateStripeCustomerEmail(customerId: string, email: string) {
+    return stripe.customers.update(customerId, {
+      email,
+    });
   }
 
   async createStripePaymentIntent(amount: number, wallet: FiatWallet) {

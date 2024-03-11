@@ -160,7 +160,7 @@ export class CurrencyService {
 
     if (!region) {
       const newRegion = new Region();
-      newRegion.name = 'Default Region';
+      newRegion.name = 'Global';
       newRegion.code = 'DR';
       newRegion.flag = 'dr';
       newRegion.isDefault = true;
