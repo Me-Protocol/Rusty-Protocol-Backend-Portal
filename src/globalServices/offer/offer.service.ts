@@ -252,7 +252,10 @@ export class OfferService {
       .leftJoinAndSelect('offer.reward', 'reward')
       .where('offer.status = :status', { status: ItemStatus.PUBLISHED })
       // brand.listOnStore is used to check if brand is active
-      .andWhere('brand.listOnStore = :listOnStore', { listOnStore: true });
+      .andWhere('brand.listOnStore = :listOnStore', { listOnStore: true })
+      .andWhere('brand.disabled = :disabled', {
+        disabled: false,
+      });
 
     if (category) {
       offersQuery
@@ -372,6 +375,7 @@ export class OfferService {
           updatedAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
           brand: {
             listOnStore: true,
+            disabled: false,
           },
           //  if regionId is present, get offers for that region
           //  else get offers for default region
@@ -480,6 +484,7 @@ export class OfferService {
               },
           brand: {
             listOnStore: true,
+            disabled: false,
           },
         },
         skip: (page - 1) * limit,

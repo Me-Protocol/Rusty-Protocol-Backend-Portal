@@ -290,6 +290,9 @@ export class BrandService {
       brandQuery.andWhere('brand.listOnStore = :listOnStore', {
         listOnStore: true,
       });
+      brandQuery.andWhere('brand.disabled = :disabled', {
+        disabled: false,
+      });
     } else {
       console.log('here');
       // regions is empty
@@ -321,6 +324,10 @@ export class BrandService {
 
       brandQuery.andWhere('brand.listOnStore = :listOnStore', {
         listOnStore: true,
+      });
+
+      brandQuery.andWhere('brand.disabled = :disabled', {
+        disabled: false,
       });
 
       brandQuery.orWhere('regions.id = :regionId', {
@@ -980,10 +987,12 @@ export class BrandService {
     page,
     limit,
     search,
+    disabled,
   }: {
     page: number;
     limit: number;
     search: string;
+    disabled: boolean;
   }) {
     const brandQuery = this.brandRepo.createQueryBuilder('brand');
 
@@ -993,6 +1002,16 @@ export class BrandService {
       });
       brandQuery.orWhere('brand.slug ILIKE :search', {
         search: `%${search}%`,
+      });
+    }
+
+    if (disabled) {
+      brandQuery.andWhere('brand.disabled = :disabled', {
+        disabled,
+      });
+    } else {
+      brandQuery.andWhere('brand.disabled = :disabled', {
+        disabled: false,
       });
     }
 

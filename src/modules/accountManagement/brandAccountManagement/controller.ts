@@ -82,7 +82,7 @@ export class BrandManagementController {
   @AdminRoles([AdminRole.SUPER_ADMIN])
   @UseGuards(AdminJwtStrategy)
   @Get('/admin/brands')
-  async issueMeCredits(
+  async getAllBrandsForAdmin(
     @Query(ValidationPipe) query: FilterBrandDto,
     @Req() req: any,
   ) {
@@ -333,5 +333,12 @@ export class BrandManagementController {
     body.brandId = brandId;
 
     return await this.brandAccountManagementService.onboardBrand(body);
+  }
+
+  @AdminRoles([AdminRole.ADMIN])
+  @UseGuards(AdminJwtStrategy)
+  @Post('disable/:id')
+  async disableBrand(@Param('id') id: string, @Req() req: any) {
+    return await this.brandAccountManagementService.disableBrand(id);
   }
 }
