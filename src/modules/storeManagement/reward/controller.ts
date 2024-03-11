@@ -248,7 +248,6 @@ export class RewardManagementController {
     @Body(ValidationPipe) body: DistributeBatchDto,
   ) {
     const brandId = req.user.brand.id;
-
     return await this.rewardManagementService.distributeBatch(brandId, body);
   }
 
