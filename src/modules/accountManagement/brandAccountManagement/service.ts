@@ -459,8 +459,6 @@ export class BrandAccountManagementService {
       brand.walletAddress = walletAddress;
       brand.isOnboarded = true;
 
-      await this.brandService.save(brand);
-
       const { onboardWallet } = await this.settingsService.settingsInit();
 
       const provider = new ethers.providers.JsonRpcProvider(JSON_RPC_URL);
@@ -537,6 +535,8 @@ export class BrandAccountManagementService {
       } catch (error) {
         throw new Error(error?.message ?? 'Error onboarding brand');
       }
+
+      await this.brandService.save(brand);
 
       return paymentRequest;
     } catch (error) {
