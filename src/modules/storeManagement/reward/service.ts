@@ -595,8 +595,9 @@ export class RewardManagementService {
     }, 0);
 
     const totalDistributed =
-      Number(isNaN(reward.totalDistributed) ? 0 : reward.totalDistributed) +
-      Number(total ?? 0);
+      Number(
+        Number.isNaN(reward.totalDistributed) ? 0 : reward.totalDistributed,
+      ) + Number(total ?? 0);
 
     reward.totalDistributed = totalDistributed;
     await this.rewardService.save(reward);
@@ -639,13 +640,6 @@ export class RewardManagementService {
       if (!reward) {
         throw new Error('Reward not found');
       }
-
-      // TODO: Check if brand can pay cost
-      // const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
-
-      // if (!canPayCost) {
-      //   throw new Error('Brand cannot pay cost');
-      // }
 
       await this.syncService.pushTransactionToRuntime(body.params);
 
