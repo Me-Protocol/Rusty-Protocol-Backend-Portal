@@ -614,4 +614,22 @@ export class BrandAccountManagementService {
       });
     }
   }
+
+  async disableBrand(brandId: string) {
+    try {
+      const brand = await this.brandService.getBrandById(brandId);
+
+      if (!brand) {
+        throw new HttpException('Brand not found', 404);
+      }
+
+      brand.disabled = true;
+
+      return await this.brandService.save(brand);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
 }

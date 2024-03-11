@@ -529,7 +529,8 @@ export class OrderManagementService {
               circulatingSupply.brandId = reward.brandId;
               circulatingSupply.rewardId = reward.id;
               circulatingSupply.circulatingSupply =
-                +reward.totalDistributed - +reward.totalRedeemedSupply;
+                Number(reward.totalDistributed ?? 0) -
+                Number(reward.totalRedeemedSupply);
               circulatingSupply.totalRedeemedAtCirculation =
                 reward.totalRedeemedSupply;
               circulatingSupply.totalDistributedSupplyAtCirculation =
