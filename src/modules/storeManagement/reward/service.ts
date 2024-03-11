@@ -589,15 +589,14 @@ export class RewardManagementService {
       }),
     );
 
-    const total = batch.syncData.reduce(
-      (acc, cur) => acc + Number(cur.amount),
-      0,
-    );
+    const total = batch.syncData.reduce((acc, cur) => {
+      const item = JSON.parse(cur as any) as typeof cur;
+      return acc + Number(item.amount);
+    }, 0);
 
     const totalDistributed =
-      Number(reward.totalDistributed ?? 0) + Number(total ?? 0);
-
-    console.log('Total distributed', total, totalDistributed);
+      Number(isNaN(reward.totalDistributed) ? 0 : reward.totalDistributed) +
+      Number(total ?? 0);
 
     reward.totalDistributed = totalDistributed;
     await this.rewardService.save(reward);
