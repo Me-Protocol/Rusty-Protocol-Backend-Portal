@@ -435,13 +435,16 @@ export class RewardManagementService {
 
         await this.addPointsToRewardRegistry(addableSyncData, body.rewardId);
 
-        const totalDistributed = addableSyncData.reduce(
+        const total = addableSyncData.reduce(
           (acc, cur) => acc + Number(cur.amount),
           0,
         );
+        const totalIssued =
+          Number(checkReward.totalIssued ?? 0) + Number(total ?? 0);
 
-        checkReward.totalIssued =
-          Number(checkReward.totalIssued ?? 0) + Number(totalDistributed ?? 0);
+        console.log('Total issued', totalIssued, total);
+
+        checkReward.totalIssued = totalIssued;
         await this.rewardService.save(checkReward);
 
         return {
@@ -491,13 +494,16 @@ export class RewardManagementService {
 
       await this.addPointsToRewardRegistry(addableSyncData, body.rewardId);
 
-      const totalDistributed = addableSyncData.reduce(
+      const total = addableSyncData.reduce(
         (acc, cur) => acc + Number(cur.amount),
         0,
       );
+      const totalIssued =
+        Number(checkReward.totalIssued ?? 0) + Number(total ?? 0);
 
-      checkReward.totalIssued =
-        Number(checkReward.totalIssued ?? 0) + Number(totalDistributed ?? 0);
+      console.log('Total issued', totalIssued, total);
+
+      checkReward.totalIssued = totalIssued;
       await this.rewardService.save(checkReward);
 
       return {
@@ -583,13 +589,17 @@ export class RewardManagementService {
       }),
     );
 
-    const totalDistributed = batch.syncData.reduce(
+    const total = batch.syncData.reduce(
       (acc, cur) => acc + Number(cur.amount),
       0,
     );
 
-    reward.totalDistributed =
-      Number(reward.totalDistributed ?? 0) + Number(totalDistributed ?? 0);
+    const totalDistributed =
+      Number(reward.totalDistributed ?? 0) + Number(total ?? 0);
+
+    console.log('Total distributed', total, totalDistributed);
+
+    reward.totalDistributed = totalDistributed;
     await this.rewardService.save(reward);
 
     // Update circulating supply
