@@ -86,6 +86,12 @@ export class BrandJwtStrategy implements CanActivate {
         throw new UnauthorizedException('Unauthorized. Brand not found');
       }
 
+      if (brand.disabled) {
+        throw new UnauthorizedException(
+          'Unauthorized. Brand is disabled. Please contact support',
+        );
+      }
+
       const brandMember =
         await this.brandService.getBrandMemberByUserIdAndBrandId(
           user.id,
