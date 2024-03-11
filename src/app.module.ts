@@ -118,7 +118,7 @@ import { DebugController } from './debug/debug.controller';
 import { ReviewManagementController } from './modules/storeManagement/review/controller';
 import { ReviewService } from './globalServices/review/review.service';
 import { ReviewManagementService } from './modules/storeManagement/review/service';
-import { TasksService } from './globalServices/task/task.service';
+import { TASK_QUEUE, TasksService } from './globalServices/task/task.service';
 import { TasksController } from './modules/taskModule/tasks.controller';
 import { Task } from './globalServices/task/entities/task.entity';
 import { TaskResponder } from './globalServices/task/entities/taskResponder.entity';
@@ -156,6 +156,13 @@ import { VariantOption } from '@src/globalServices/product/entities/variantvalue
 import { BrandUploadGateway } from './modules/accountManagement/brandAccountManagement/socket/brand-upload.gateway';
 import { Region } from './globalServices/currency/entities/region.entity';
 import { AutoTopupRequest } from './globalServices/biller/entity/auto-topup-request.entity';
+import { REDIS_HOSTNAME, REDIS_PORT } from './config/env.config';
+import {
+  BullService,
+  ORDER_PROCESSOR_QUEUE,
+  ORDER_TASK_QUEUE,
+  OrderProcessor,
+} from './globalServices/task-queue/bull.service';
 
 @Module({
   imports: [
@@ -231,8 +238,8 @@ import { AutoTopupRequest } from './globalServices/biller/entity/auto-topup-requ
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         redis: {
-          host: configService.get('REDIS_HOSTNAME'),
-          port: configService.get('REDIS_PORT'),
+          host: REDIS_HOSTNAME,
+          port: REDIS_PORT,
         },
       }),
       inject: [ConfigService],
@@ -242,10 +249,27 @@ import { AutoTopupRequest } from './globalServices/biller/entity/auto-topup-requ
       name: 'task-queue',
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        name: configService.get('TASK_QUEUE'),
+        name: TASK_QUEUE,
       }),
       inject: [ConfigService],
     }),
+    BullModule.registerQueueAsync({
+      name: ORDER_TASK_QUEUE,
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        name: ORDER_TASK_QUEUE,
+      }),
+      inject: [ConfigService],
+    }),
+    BullModule.registerQueueAsync({
+      name: ORDER_PROCESSOR_QUEUE,
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        name: ORDER_TASK_QUEUE,
+      }),
+      inject: [ConfigService],
+    }),
+
     HttpModule,
   ],
   controllers: [
@@ -344,7 +368,9 @@ import { AutoTopupRequest } from './globalServices/biller/entity/auto-topup-requ
     CreateSendgridContactHandler,
     CurrencyService,
     BrandUploadGateway,
+    BullService,
+    OrderProcessor,
   ],
-  exports: [JwtStrategy, PassportModule, AuthenticationModule],
+  exports: [JwtStrategy, PassportModule, AuthenticationModule, BullModule],
 })
 export class AppModule {}

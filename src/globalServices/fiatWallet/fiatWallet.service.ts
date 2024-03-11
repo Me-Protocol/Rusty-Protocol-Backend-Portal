@@ -12,6 +12,8 @@ import { SettingsService } from '../settings/settings.service';
 import { BrandSubscriptionService } from '../brand/brandSeviceSubscription.service';
 import { BrandSubServices } from '@src/utils/enums/BrandSubServices';
 import { logger } from '../logger/logger.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class FiatWalletService {
@@ -29,6 +31,7 @@ export class FiatWalletService {
 
     private readonly settingsService: SettingsService,
     private readonly brandServiceSubscription: BrandSubscriptionService,
+    private readonly userService: UserService,
   ) {}
 
   generateTransactionCode() {
@@ -60,7 +63,9 @@ export class FiatWalletService {
       return checkWallet;
     }
 
-    const stripeAccount = await this.paymentService.createAccount();
+    const stripeAccount = await this.paymentService.createAccount(
+      user.email ?? brand.user.email,
+    );
 
     wallet.stripeAccountId = stripeAccount.accountId;
     wallet.stripeCustomerId = stripeAccount.customerId;
@@ -354,5 +359,30 @@ export class FiatWalletService {
     wallet.meCredits = Number(wallet.meCredits) - Number(amount);
 
     return await this.walletRepo.save(wallet);
+  }
+
+  // @Cron(CronExpression.EVERY_MINUTE)
+  async updateStripeCustomer() {
+    const wallets = await this.walletRepo.find();
+
+    await Promise.all(
+      wallets.map(async (wallet) => {
+        let user: User;
+
+        if (wallet.userId) {
+          user = await this.userService.getUserById(wallet.userId);
+        } else {
+          user = await this.userService.getUserByBrandId(wallet.brandId);
+        }
+
+        if (user) {
+          console.log('Done');
+          await this.paymentService.updateStripeCustomerEmail(
+            wallet.stripeCustomerId,
+            wallet.userId,
+          );
+        }
+      }),
+    );
   }
 }
