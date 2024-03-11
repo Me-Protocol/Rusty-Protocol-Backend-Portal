@@ -595,9 +595,8 @@ export class RewardManagementService {
     }, 0);
 
     const totalDistributed =
-      Number(
-        Number.isNaN(reward.totalDistributed) ? 0 : reward.totalDistributed,
-      ) + Number(total ?? 0);
+      Number(isNaN(reward.totalDistributed) ? 0 : reward.totalDistributed) +
+      Number(total ?? 0);
 
     reward.totalDistributed = totalDistributed;
     await this.rewardService.save(reward);

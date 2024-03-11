@@ -156,7 +156,6 @@ import { VariantOption } from '@src/globalServices/product/entities/variantvalue
 import { BrandUploadGateway } from './modules/accountManagement/brandAccountManagement/socket/brand-upload.gateway';
 import { Region } from './globalServices/currency/entities/region.entity';
 import { AutoTopupRequest } from './globalServices/biller/entity/auto-topup-request.entity';
-import { REDIS_HOSTNAME, REDIS_PORT } from './config/env.config';
 import {
   BullService,
   ORDER_PROCESSOR_QUEUE,
@@ -238,8 +237,8 @@ import {
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         redis: {
-          host: REDIS_HOSTNAME,
-          port: REDIS_PORT,
+          host: configService.get('REDIS_HOSTNAME'),
+          port: configService.get('REDIS_PORT'),
         },
       }),
       inject: [ConfigService],
@@ -249,7 +248,7 @@ import {
       name: 'task-queue',
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        name: TASK_QUEUE,
+        name: 'task-queue',
       }),
       inject: [ConfigService],
     }),
