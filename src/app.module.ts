@@ -239,6 +239,7 @@ import {
         redis: {
           host: configService.get('REDIS_HOSTNAME'),
           port: configService.get('REDIS_PORT'),
+          password: configService.get('REDIS_PASSWORD'),
         },
       }),
       inject: [ConfigService],
