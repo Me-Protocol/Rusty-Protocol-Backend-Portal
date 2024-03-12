@@ -205,6 +205,9 @@ export class OrderService {
         'offer',
         'offer.offerImages',
         'offer.brand',
+        'offer.product',
+        'user',
+        'user.customer',
       ],
     });
   }
