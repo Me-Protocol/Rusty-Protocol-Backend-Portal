@@ -418,16 +418,16 @@ export class OrderManagementService {
 
           const totalAmount = amount * order.quantity;
 
-          // create online store coupon
-          const onlineCoupon = await createCoupon({
-            brand,
-            data: {
-              code: coupon.code,
-              amount: totalAmount.toString(),
-            },
-            productId: offer.product.productIdOnBrandSite,
-            email: order.user.email,
-          });
+          // // create online store coupon
+          // const onlineCoupon = await createCoupon({
+          //   brand,
+          //   data: {
+          //     code: coupon.code,
+          //     amount: totalAmount.toString(),
+          //   },
+          //   productId: offer.product.productIdOnBrandSite,
+          //   email: order.user.email,
+          // });
 
           if (transaction) {
             transaction.status = StatusType.SUCCEDDED;
