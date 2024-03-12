@@ -640,13 +640,6 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
-      // TODO: Check if brand can pay cost
-      // const canPayCost = await this.fiatWalletService.checkCanPayCost(brandId);
-
-      // if (!canPayCost) {
-      //   throw new Error('Brand cannot pay cost');
-      // }
-
       await this.syncService.pushTransactionToRuntime(body.params);
 
       await this.updateUsersRewardRegistryAfterDistribution({

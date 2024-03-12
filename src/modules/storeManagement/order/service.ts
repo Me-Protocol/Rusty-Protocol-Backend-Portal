@@ -374,7 +374,7 @@ export class OrderManagementService {
     try {
       const order = await this.orderService.getOrderByOrderId(orderId);
 
-      if (order.status === StatusType.SUCCEDDED) {
+      if (order.status !== StatusType.PROCESSING) {
         return;
       }
 
@@ -418,16 +418,16 @@ export class OrderManagementService {
 
           const totalAmount = amount * order.quantity;
 
-          // create online store coupon
-          const onlineCoupon = await createCoupon({
-            brand,
-            data: {
-              code: coupon.code,
-              amount: totalAmount.toString(),
-            },
-            productId: offer.product.productIdOnBrandSite,
-            email: order.user.email,
-          });
+          // // create online store coupon
+          // const onlineCoupon = await createCoupon({
+          //   brand,
+          //   data: {
+          //     code: coupon.code,
+          //     amount: totalAmount.toString(),
+          //   },
+          //   productId: offer.product.productIdOnBrandSite,
+          //   email: order.user.email,
+          // });
 
           if (transaction) {
             transaction.status = StatusType.SUCCEDDED;
@@ -600,6 +600,7 @@ export class OrderManagementService {
           }
 
           await this.brandService.saveBrandCustomer(brandCustomer);
+          console.log('Done');
         } else if (status === 'failed') {
           console.log('Order failed');
 
