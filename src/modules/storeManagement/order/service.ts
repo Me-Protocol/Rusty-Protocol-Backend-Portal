@@ -600,6 +600,7 @@ export class OrderManagementService {
           }
 
           await this.brandService.saveBrandCustomer(brandCustomer);
+          console.log('Done');
         } else if (status === 'failed') {
           console.log('Order failed');
 
