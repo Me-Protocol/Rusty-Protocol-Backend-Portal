@@ -232,6 +232,7 @@ export class OrderManagementService {
     offerId,
     quantity,
     rewardId,
+    amount,
   }: CreateOrderDto) {
     try {
       const offer = await this.offerService.getOfferById(offerId);
@@ -294,7 +295,7 @@ export class OrderManagementService {
       const orderRecord = new Order();
       orderRecord.userId = user.id;
       orderRecord.offerId = offerId;
-      orderRecord.points = offer.tokens;
+      orderRecord.points = amount;
       orderRecord.quantity = quantity;
       orderRecord.brandId = offer.brandId;
       orderRecord.redeemRewardId = rewardId;
@@ -416,6 +417,7 @@ export class OrderManagementService {
             (offer.product.price * offer.discountPercentage) / 100;
           const amount = offer.product.price - discount;
 
+          // TODO: check discount amount calculation
           const totalAmount = amount * order.quantity;
 
           // // create online store coupon
@@ -645,9 +647,11 @@ export class OrderManagementService {
               `;
 
           await this.notificationService.createNotification(notification);
+
+          throw new Error('Order failed');
         } else {
           console.log(order.retries, 'Retries');
-          if (order.retries > 29) {
+          if (order.retries >= 5) {
             order.failedReason = 'No response after retries';
             order.status = StatusType.INCOMPLETE;
 
@@ -657,14 +661,20 @@ export class OrderManagementService {
             order.retries = order.retries + 1;
             await this.orderService.saveOrder(order);
           }
+
+          throw new Error('Order is still processing');
         }
       } else {
         order.status = StatusType.INCOMPLETE;
         await this.orderService.saveOrder(order);
+
+        throw new Error('Order is still processing');
       }
     } catch (error) {
       console.log(error);
       logger.error(error);
+
+      throw new Error('Order is still processing');
     }
   }
 
