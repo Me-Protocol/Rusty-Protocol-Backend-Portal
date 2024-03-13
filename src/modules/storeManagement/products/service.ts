@@ -12,6 +12,8 @@ import { productIndex } from '@src/modules/search/interface/search.interface';
 import { ProductStatus } from '@src/utils/enums/ItemStatus';
 import { CurrencyService } from '@src/globalServices/currency/currency.service';
 import { OfferService } from '@src/globalServices/offer/offer.service';
+import { checkProductOnBrandStore } from '@src/globalServices/online-store-handler/check-product';
+import { BrandService } from '@src/globalServices/brand/brand.service';
 
 @Injectable()
 export class ProductManagementService {
@@ -22,6 +24,7 @@ export class ProductManagementService {
     private readonly elasticIndex: ElasticIndex,
     private readonly currencyService: CurrencyService,
     private readonly offerService: OfferService,
+    private readonly brandService: BrandService,
   ) {}
 
   async getProductImages(brandId: string, page: number, limit: number) {
@@ -60,6 +63,17 @@ export class ProductManagementService {
         if (!currency) {
           throw new HttpException('Currency not found', 404);
         }
+      }
+
+      const brand = await this.brandService.getBrandById(body.brandId);
+
+      const productOnBrandSite = await checkProductOnBrandStore({
+        brand,
+        productId: body.productIdOnBrandSite,
+      });
+
+      if (!productOnBrandSite) {
+        throw new HttpException('Product not found on brand store', 400);
       }
 
       const product = new Product();
