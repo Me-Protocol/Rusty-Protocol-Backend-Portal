@@ -27,11 +27,11 @@ export class BullService {
       'process-order',
       { orderId },
       {
-        repeat: {
-          every: 30000,
-          limit: 10,
+        attempts: 6, // Number of retry attempts
+        backoff: {
+          type: 'exponential', // Exponential backoff
+          delay: 30000, // Initial delay before first retry in milliseconds
         },
-        removeOnComplete: true,
       },
     );
   }
