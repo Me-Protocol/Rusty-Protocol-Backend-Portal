@@ -36,6 +36,7 @@ import { NotificationService } from '@src/globalServices/notification/notificati
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 import { NotificationType } from '@src/utils/enums/notification.enum';
 import { API_KEY_SALT } from '@src/config/env.config';
+import { Role } from '@src/utils/enums/Role';
 
 @Injectable()
 export class RewardManagementService {
@@ -642,6 +643,11 @@ export class RewardManagementService {
 
       await this.syncService.pushTransactionToRuntime(body.params);
 
+      const { users } = await this.getDistributionUsersAndAmount({
+        rewardId: batch.rewardId,
+        syncData: batch.syncData,
+      });
+
       await this.updateUsersRewardRegistryAfterDistribution({
         batch,
         rewardId: body.rewardId,
@@ -650,6 +656,11 @@ export class RewardManagementService {
       batch.isDistributed = true;
 
       await this.syncService.saveBatch(batch);
+
+      await this.completeDistribution({
+        users,
+        rewardId: body.rewardId,
+      });
 
       return {
         message: 'distributed',
@@ -811,6 +822,11 @@ export class RewardManagementService {
 
       await this.syncService.saveBatch(batch);
 
+      await this.completeDistribution({
+        users,
+        rewardId,
+      });
+
       return {
         message: 'distributed',
       };
@@ -920,7 +936,7 @@ export class RewardManagementService {
         user.wallet,
       );
 
-      if (userDetail) {
+      if (userDetail.role === Role.CUSTOMER) {
         this.rewardDistrbutedEmail({
           user: userDetail,
           reward,
@@ -945,7 +961,7 @@ export class RewardManagementService {
     notification.userId = user.id;
     notification.message = `Hello ${user?.customer?.name} you just recieved ${amount} ${reward.rewardSymbol} from ${reward.brand.name}`;
     notification.type = NotificationType.POINT;
-    notification.title = 'Order Failed';
+    notification.title = 'Reward Distributed';
     notification.icon = reward.rewardImage;
     notification.emailMessage = /* html */ `
               <div>

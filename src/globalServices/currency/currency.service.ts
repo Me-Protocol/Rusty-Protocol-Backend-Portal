@@ -245,4 +245,61 @@ export class CurrencyService {
       console.log(error);
     }
   }
+
+  // @Cron(CronExpression.EVERY_5_MINUTES)
+  // async syncCurrencies() {
+  //   const currenciesData = await axios.get(
+  //     'https://api.meappbounty.com/payment/currencies',
+  //   );
+  //   const currencies = currenciesData.data.data;
+
+  //   for (const currency of currencies) {
+  //     const currencyRecord = await this.getCurrencyByCurrency(currency.code);
+
+  //     if (currencyRecord) {
+  //       currencyRecord.code = currency.code;
+  //       currencyRecord.value = currency.value;
+  //       currencyRecord.name = currency.name;
+  //       currencyRecord.symbol = currency.symbol;
+  //       currencyRecord.value = currency.value;
+  //       await this.updateCurrency(currencyRecord);
+  //     } else {
+  //       const newCurrency = new Currency();
+  //       newCurrency.code = currency.code;
+  //       newCurrency.value = currency.value;
+  //       newCurrency.name = currency.name;
+  //       newCurrency.symbol = currency.symbol;
+
+  //       await this.createCurrency(newCurrency);
+  //     }
+
+  //     if (currency.id === currencies[currencies.length - 1].id) {
+  //       console.log('last currency');
+  //     }
+  //   }
+  // }
+
+  // @Cron(CronExpression.EVERY_30_SECONDS)
+  // async removeDuplicateCurrencies() {
+  //   const currencies = await this.currencyRepo.find();
+
+  //   for (const currency of currencies) {
+  //     const duplicateCurrencies = await this.currencyRepo.find({
+  //       where: {
+  //         code: currency.id,
+  //       },
+  //     });
+
+  //     if (duplicateCurrencies.length > 1) {
+  //       console.log('duplicateCurrencies', duplicateCurrencies);
+  //       await Promise.all(
+  //         duplicateCurrencies.map(async (duplicateCurrency, index) => {
+  //           if (index > 0) {
+  //             await this.currencyRepo.remove(duplicateCurrency);
+  //           }
+  //         }),
+  //       );
+  //     }
+  //   }
+  // }
 }
