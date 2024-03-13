@@ -456,7 +456,7 @@ export class AuthenticationService {
   async handleBrandWalletCreation(user: User): Promise<void> {
     if (user.userType === UserAppType.BRAND) {
       const brand = await this.brandService.getBrandByUserId(user.id);
-      await this.walletService.createWallet({ brand });
+      await this.walletService.createWallet({ brand, user });
     }
   }
 
@@ -500,6 +500,7 @@ export class AuthenticationService {
 
       return token;
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),

@@ -36,7 +36,7 @@ export class TaskScheduleService {
     private readonly notificationService: NotificationService,
   ) {}
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  // @Cron(CronExpression.EVERY_5_MINUTES)
   async fundJob() {
     // get one record with no escrow address
     const record = await this.taskResponseRecordRepo.findOne({
@@ -67,7 +67,7 @@ export class TaskScheduleService {
     }
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  // @Cron(CronExpression.EVERY_DAY_AT_10AM)
   async sendNotificationOfNewActiveTasks() {
     const tasks = await this.taskRepository.find({
       relations: ['brand', 'reward'],
@@ -127,7 +127,7 @@ export class TaskScheduleService {
   }
 
   //expire tasks
-  @Cron(CronExpression.EVERY_2ND_HOUR)
+  // @Cron(CronExpression.EVERY_2ND_HOUR)
   async expireTask() {
     try {
       const activeTasks = await this.taskRepository.find({

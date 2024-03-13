@@ -635,7 +635,7 @@ export class SyncRewardService {
           await this.billerService.createBill({
             amount: amountInDollar,
             brandId: body.brandId,
-            type: BillType.INITIAL_METOKEN_PURCHASE,
+            type: BillType.INITIAL_REWARD_PURCHASE,
           });
         }
 

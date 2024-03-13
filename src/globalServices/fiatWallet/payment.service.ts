@@ -125,6 +125,7 @@ export class PaymentService {
     paymentMethodId: string,
     amount: number,
     customerId: string,
+    narration: string,
   ) {
     return stripe.paymentIntents.create({
       amount: amount,
@@ -132,6 +133,7 @@ export class PaymentService {
       payment_method: paymentMethodId,
       // confirm: true,
       customer: customerId,
+      statement_descriptor_suffix: narration,
     });
   }
 
@@ -225,6 +227,7 @@ export class PaymentService {
       paymentMethodId,
       amount,
       wallet.stripeCustomerId,
+      narration,
     );
 
     await this.confirmPaymentIntent(paymentIntent.id);

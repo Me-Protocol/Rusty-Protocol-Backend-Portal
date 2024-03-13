@@ -66,15 +66,23 @@ export class PaymentModuleService {
   }
 
   async getMeCredits(brandId: string) {
-    const wallet = await this.walletService.getWalletByBrandId(brandId);
-    const settings = await this.settingsService.getPublicSettings();
+    try {
+      const wallet = await this.walletService.getWalletByBrandId(brandId);
+      const settings = await this.settingsService.getPublicSettings();
 
-    const meCreditsInDollars = wallet.meCredits * settings.meTokenValue;
+      console.log(wallet);
 
-    return {
-      meCredits: wallet.meCredits,
-      meCreditsInDollars,
-    };
+      const meCreditsInDollars = wallet.meCredits * settings.meTokenValue;
+
+      return {
+        meCredits: wallet.meCredits,
+        meCreditsInDollars,
+      };
+    } catch (error) {
+      console.log(error, 'ERROR');
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
   }
 
   async getPaymentMethods(brandId: string) {

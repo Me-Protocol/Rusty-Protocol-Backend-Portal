@@ -176,7 +176,7 @@ export class CostModuleManagementService {
     );
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  // @Cron(CronExpression.EVERY_MINUTE)
   async costCollector() {
     // Runs every 4 hours (picks all the requests in the active batch and sends to the processor to get cost) update requests with cost and close batch
 
@@ -324,7 +324,7 @@ export class CostModuleManagementService {
     }
   }
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  // @Cron(CronExpression.EVERY_30_SECONDS)
   async costReimburserRetry() {
     const closedFailedBatch =
       await this.costModuleService.getSingleFailedCostBatch();

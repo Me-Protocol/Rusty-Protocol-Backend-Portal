@@ -256,6 +256,7 @@ export class FiatWalletService {
             paymentMethodId ?? defaultPaymentMethod.stripePaymentMethodId,
             autoTopupAmountInDollar,
             wallet.stripeCustomerId,
+            'Cost reimbursement',
           );
 
         await this.paymentService.confirmPaymentIntent(paymentIntent.id);
@@ -364,9 +365,10 @@ export class FiatWalletService {
   // @Cron(CronExpression.EVERY_MINUTE)
   async updateStripeCustomer() {
     const wallets = await this.walletRepo.find();
+    console.log(wallets.length);
 
     await Promise.all(
-      wallets.map(async (wallet) => {
+      wallets.map(async (wallet, index) => {
         let user: User;
 
         if (wallet.userId) {
@@ -376,11 +378,18 @@ export class FiatWalletService {
         }
 
         if (user) {
-          console.log('Done');
-          await this.paymentService.updateStripeCustomerEmail(
-            wallet.stripeCustomerId,
-            wallet.userId,
+          const stripeAccount = await this.paymentService.createAccount(
+            user.email,
           );
+
+          wallet.stripeAccountId = stripeAccount.accountId;
+          wallet.stripeCustomerId = stripeAccount.customerId;
+
+          await this.walletRepo.save(wallet);
+        }
+
+        if (index === wallets.length - 1) {
+          console.log('All wallets updated');
         }
       }),
     );
