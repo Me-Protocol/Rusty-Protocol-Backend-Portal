@@ -637,9 +637,11 @@ export class OrderManagementService {
                 <p>Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed</p>
                 <p>Offer Details</p>
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                  <img src="${offer.offerImages?.[0].url}" alt="offer image" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; margin-bottom: 10px;" />
-                  <p style="font-size: 20px; font-weight: bold;">${offer.name}</p>
-                  <p style="font-size: 16px; font-weight: bold;">${offer.brand.name}</p>
+                  <img src="${offer.offerImages?.[0].url}" alt="offer image" style="width: 100px; height: 100px; object-fit: cover; border-radius: 16px; margin-right: 10px;" />
+                  <div>
+                    <p style="font-size: 20px; font-weight: bold;">${offer.name}</p>
+                    <p style="font-size: 14px;">${offer.brand.name}</p>
+                  </div>
                 </div>
                 <p>Redemption Details</p>
                 <p>Points: ${order.points}</p>
