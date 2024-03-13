@@ -72,6 +72,11 @@ export class Product extends BaseEntity {
   inventory: number;
 
   @Column({
+    nullable: true,
+  })
+  availableInventory: number;
+
+  @Column({
     default: false,
   })
   isUnlimited: boolean;

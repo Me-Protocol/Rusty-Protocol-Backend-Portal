@@ -249,14 +249,14 @@ export class OrderManagementService {
         offer.brandId,
       );
 
-      if ((offer.product.inventory ?? 0) < quantity) {
+      if ((offer.inventory ?? 0) < quantity) {
         throw new Error('Offer is out of stock');
       }
 
       // Check that after removing the quantity, the inventory is still greater than 0
-      if ((offer.product.inventory ?? 0) - quantity < 0) {
+      if ((offer.inventory ?? 0) - quantity < 0) {
         throw new Error(
-          `You cannot redeem more than ${offer.product.inventory} at the moment`,
+          `You cannot redeem more than ${offer.inventory} at the moment`,
         );
       }
 
@@ -695,6 +695,42 @@ export class OrderManagementService {
           order.retries = order.retries + 1;
           await this.orderService.saveOrder(order);
         }
+      }
+    }
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async retryPendingOrders() {
+    const pendingOrders = await this.orderService.getPendingOrders();
+
+    console.log(pendingOrders.length, 'Pending orders');
+    for (const order of pendingOrders) {
+      const status = await checkOrderStatusGelatoOrRuntime(
+        order.taskId,
+        order.verifier,
+      );
+
+      console.log(status);
+
+      if (status === 'success') {
+        await this.completeOrder({
+          orderId: order.id,
+          taskId: order.taskId,
+          verifier: order.verifier,
+          spendData: order.spendData,
+        });
+      } else if (status === 'failed') {
+        order.status = StatusType.FAILED;
+        order.failedReason = `${order.verifier} task verifier failed`;
+        await this.orderService.saveOrder(order);
+
+        await redistributed_failed_tx_with_url(order.spendData, RUNTIME_URL);
+
+        order.isRefunded = true;
+        await this.orderService.saveOrder(order);
+      } else {
+        console.log('Pending');
+        return;
       }
     }
   }
