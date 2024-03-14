@@ -229,6 +229,7 @@ export class ProductService {
         coverImage: body.coverImage ?? product.coverImage,
         productIdOnBrandSite:
           body.productIdOnBrandSite ?? product.productIdOnBrandSite,
+        availableInventory: body.inventory ?? product.availableInventory,
       },
     );
   }

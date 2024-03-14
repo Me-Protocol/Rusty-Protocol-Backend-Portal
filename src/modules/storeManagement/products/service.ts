@@ -83,7 +83,10 @@ export class ProductManagementService {
       if (body.description) product.description = body.description;
       if (body.price) product.price = body.price;
       if (body.status) product.status = body.status;
-      if (body.inventory) product.inventory = body.inventory;
+      if (body.inventory) {
+        product.inventory = body.inventory;
+        product.availableInventory = body.inventory;
+      }
       if (body.isUnlimited) product.isUnlimited = body.isUnlimited;
       if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
       if (body.productUrl) product.productUrl = body.productUrl;
