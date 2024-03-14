@@ -43,6 +43,7 @@ import { logger } from '../logger/logger.service';
 import { Role } from '@src/utils/enums/Role';
 import { CurrencyService } from '../currency/currency.service';
 import { OrderService } from '../order/order.service';
+import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 
 @Injectable()
 export class BrandService {
@@ -186,7 +187,13 @@ export class BrandService {
         brand.woocommerce_consumer_key = dto.woocommerceConsumerKey;
       if (dto.woocommerceConsumerSecret)
         brand.woocommerce_consumer_secret = dto.woocommerceConsumerSecret;
-      if (dto.online_store_url) brand.online_store_url = dto.online_store_url;
+      if (dto.online_store_url) {
+        if (brand.online_store_type === OnlineStoreType.SHOPIFY) {
+          brand.shopify_online_store_url = dto.online_store_url;
+        } else if (brand.online_store_type === OnlineStoreType.WOOCOMMERCE) {
+          brand.woocommerce_online_store_url = dto.online_store_url;
+        }
+      }
       if (dto.shopify_consumer_key)
         brand.shopify_consumer_key = dto.shopify_consumer_key;
       if (dto.shopify_consumer_secret)
@@ -605,7 +612,6 @@ export class BrandService {
       .leftJoinAndSelect('brandCustomer.user', 'user')
       .leftJoinAndSelect('brand.rewards', 'rewards')
       .where('brandCustomer.brandId = :brandId', { brandId });
-      
 
     const eligibleBrandCustomers = await brandCustomersQuery.getMany();
 
@@ -636,7 +642,6 @@ export class BrandService {
           if (order.status === StatusType.SUCCEDDED && isUsingBrandReward)
             totalRedemptionAmount += Number(order?.points || 0);
         });
-
 
         if (totalRedemptionAmount > 0) {
           activeCustomers.push(customer);
@@ -1065,7 +1070,8 @@ export class BrandService {
       select: {
         woocommerce_consumer_key: true,
         woocommerce_consumer_secret: true,
-        online_store_url: true,
+        shopify_online_store_url: true,
+        woocommerce_online_store_url: true,
         online_store_type: true,
         id: true,
       },
