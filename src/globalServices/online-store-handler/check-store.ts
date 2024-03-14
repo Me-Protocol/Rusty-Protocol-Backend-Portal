@@ -23,10 +23,10 @@ export const checkBrandOnlineStore = async ({ brand }: { brand: Brand }) => {
 
       break;
     case OnlineStoreType.SHOPIFY:
-      if (!brand.online_store_url) {
+      if (!brand.shopify_online_store_url) {
         throw new Error('Online store url is required');
       } else {
-        return brand.online_store_url;
+        return brand.shopify_online_store_url;
       }
     case OnlineStoreType.BIG_COMMERCE:
       // const bigCommerceHandler = new BigCommerceHandler();

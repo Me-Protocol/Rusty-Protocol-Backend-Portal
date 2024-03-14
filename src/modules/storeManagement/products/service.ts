@@ -67,22 +67,25 @@ export class ProductManagementService {
 
       const brand = await this.brandService.getBrandById(body.brandId);
 
-      // const productOnBrandSite = await checkProductOnBrandStore({
-      //   brand,
-      //   productId: body.productIdOnBrandSite,
-      // });
-
-      // if (!productOnBrandSite) {
-      //   throw new HttpException('Product not found on brand store', 400);
-      // }
-
       const product = new Product();
       product.brandId = body.brandId;
       if (body.categoryId) product.categoryId = body.categoryId;
       if (body.name) product.name = body.name;
       if (body.description) product.description = body.description;
       if (body.price) product.price = body.price;
-      if (body.status) product.status = body.status;
+      if (body.status) {
+        product.status = body.status;
+
+        if (body.status === ProductStatus.PUBLISHED) {
+          const productOnBrandSite = await checkProductOnBrandStore({
+            brand,
+            productId: body.productIdOnBrandSite,
+          });
+          if (!productOnBrandSite) {
+            throw new HttpException('Product not found on brand store', 400);
+          }
+        }
+      }
       if (body.inventory) {
         product.inventory = body.inventory;
         product.availableInventory = body.inventory;
@@ -275,6 +278,22 @@ export class ProductManagementService {
         product.regions = regions;
 
         await this.productService.saveProduct(product);
+      }
+
+      const brand = await this.brandService.getBrandById(body.brandId);
+
+      if (body.status) {
+        product.status = body.status;
+
+        if (body.status === ProductStatus.PUBLISHED) {
+          const productOnBrandSite = await checkProductOnBrandStore({
+            brand,
+            productId: body.productIdOnBrandSite,
+          });
+          if (!productOnBrandSite) {
+            throw new HttpException('Product not found on brand store', 400);
+          }
+        }
       }
 
       await this.productService.updateProduct(body, id);

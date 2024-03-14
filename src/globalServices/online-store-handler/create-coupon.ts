@@ -50,7 +50,7 @@ export const createCoupon = async ({
         const coupon = await axios.post(
           'https://shopify.memarketplace.io/api/coupon/create',
           {
-            shop: brand.online_store_url,
+            shop: brand.shopify_online_store_url,
             email,
             coupon_code: data.code,
             product_id: productId,

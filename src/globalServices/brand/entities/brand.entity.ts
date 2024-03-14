@@ -376,7 +376,12 @@ export class Brand extends BaseEntity {
   @Column({
     nullable: true,
   })
-  online_store_url: string;
+  woocommerce_online_store_url: string;
+
+  @Column({
+    nullable: true,
+  })
+  shopify_online_store_url: string;
 
   @Column({
     nullable: true,
