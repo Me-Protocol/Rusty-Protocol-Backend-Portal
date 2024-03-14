@@ -67,14 +67,14 @@ export class ProductManagementService {
 
       const brand = await this.brandService.getBrandById(body.brandId);
 
-      const productOnBrandSite = await checkProductOnBrandStore({
-        brand,
-        productId: body.productIdOnBrandSite,
-      });
+      // const productOnBrandSite = await checkProductOnBrandStore({
+      //   brand,
+      //   productId: body.productIdOnBrandSite,
+      // });
 
-      if (!productOnBrandSite) {
-        throw new HttpException('Product not found on brand store', 400);
-      }
+      // if (!productOnBrandSite) {
+      //   throw new HttpException('Product not found on brand store', 400);
+      // }
 
       const product = new Product();
       product.brandId = body.brandId;
