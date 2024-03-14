@@ -6,6 +6,7 @@ import { promises as fs } from 'fs';
 import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 
 @Injectable()
 export class GoogleSheetService {
@@ -94,7 +95,9 @@ export class GoogleSheetService {
         email,
         first_name,
         last_name,
-        r.reward.brand.online_store_url ?? '',
+        r.reward.brand.online_store_type === OnlineStoreType.WOOCOMMERCE
+          ? r.reward.brand.woocommerce_online_store_url
+          : r.reward.brand.shopify_online_store_url ?? '',
         r.totalBalance,
         r.reward.brand.name,
         r.reward.rewardName,
