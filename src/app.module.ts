@@ -162,6 +162,7 @@ import {
   ORDER_TASK_QUEUE,
   OrderProcessor,
 } from './globalServices/task-queue/bull.service';
+import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
 
 @Module({
   imports: [
@@ -325,6 +326,7 @@ import {
     FollowManagementService,
     CollectionService,
     FollowService,
+    GoogleSheetService,
     LikeService,
     LikeManagementService,
     OfferService,

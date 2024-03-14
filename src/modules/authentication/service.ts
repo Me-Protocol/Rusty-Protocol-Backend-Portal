@@ -40,6 +40,7 @@ import {
   CREATE_SENDGRID_CONTACT,
   CreateSendgridContactEvent,
 } from '@src/globalServices/mail/create-sendgrid-contact.event';
+import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -62,7 +63,26 @@ export class AuthenticationService {
     private customerAccountManagementService: CustomerAccountManagementService,
     private collectionService: CollectionService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly googleService: GoogleSheetService,
   ) {}
+
+  async writeDataToGoogleSheet(userId: string): Promise<any> {
+    const user = await this.userService.getUserById(userId);
+    if (!user) {
+      return false;
+    }
+    await this.googleService.writeToSpreadsheet(
+      user.id,
+      user.email,
+      user.username,
+      user.username,
+    );
+    return true;
+  }
+
+  async authorizeGoogle(): Promise<any> {
+    return await this.googleService.authorize();
+  }
 
   // Signs a token
   async signToken(payload: JwtPayload): Promise<string> {
@@ -405,6 +425,7 @@ export class AuthenticationService {
         ),
       );
 
+      await this.writeDataToGoogleSheet(newUser.id);
       return token;
     } catch (error) {
       logger.error(error);
