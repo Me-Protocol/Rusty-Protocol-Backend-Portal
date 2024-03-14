@@ -50,6 +50,11 @@ export class AuthenticationController {
     private readonly socialAuth: SocialAuthenticationService,
   ) {}
 
+  @Post('google-spreadsheet')
+  async googleSheet(): Promise<any> {
+    return await this.authService.authorizeGoogle();
+  }
+
   @Post('signup/email')
   async signupWithEmail(
     @Body(ValidationPipe) body: EmailSignupDto,
