@@ -44,6 +44,7 @@ import { Role } from '@src/utils/enums/Role';
 import { CurrencyService } from '../currency/currency.service';
 import { OrderService } from '../order/order.service';
 import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
+import { checkBrandOnlineStore } from '../online-store-handler/check-store';
 
 @Injectable()
 export class BrandService {
@@ -187,6 +188,7 @@ export class BrandService {
         brand.woocommerce_consumer_key = dto.woocommerceConsumerKey;
       if (dto.woocommerceConsumerSecret)
         brand.woocommerce_consumer_secret = dto.woocommerceConsumerSecret;
+
       if (dto.online_store_url) {
         if (brand.online_store_type === OnlineStoreType.SHOPIFY) {
           brand.shopify_online_store_url = dto.online_store_url;
@@ -198,6 +200,15 @@ export class BrandService {
         brand.shopify_consumer_key = dto.shopify_consumer_key;
       if (dto.shopify_consumer_secret)
         brand.shopify_consumer_secret = dto.shopify_consumer_secret;
+
+      if (
+        brand.woocommerce_consumer_key &&
+        brand.woocommerce_consumer_secret &&
+        brand.woocommerce_online_store_url
+      ) {
+        const brancToCheck = await this.getBrandWithOnlineCreds(brand.id);
+        await checkBrandOnlineStore({ brand: brancToCheck });
+      }
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);
@@ -1074,6 +1085,7 @@ export class BrandService {
         woocommerce_online_store_url: true,
         online_store_type: true,
         id: true,
+        currency: true,
       },
     });
   }

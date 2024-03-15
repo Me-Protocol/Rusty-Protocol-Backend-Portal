@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Injectable } from '@nestjs/common';
 import * as path from 'path';
 import { authenticate } from '@google-cloud/local-auth';
@@ -47,7 +48,7 @@ export class GoogleSheetService {
 
   public async authorize() {
     try {
-      let savedClient = await this.loadSavedCredentialsIfExist();
+      const savedClient = await this.loadSavedCredentialsIfExist();
       if (savedClient) {
         return savedClient;
       }

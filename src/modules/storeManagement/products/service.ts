@@ -55,7 +55,9 @@ export class ProductManagementService {
         body.name,
       );
 
-      const brand = await this.brandService.getBrandById(body.brandId);
+      const brand = await this.brandService.getBrandWithOnlineCreds(
+        body.brandId,
+      );
 
       const product = new Product();
       product.brandId = body.brandId;
@@ -71,6 +73,7 @@ export class ProductManagementService {
             brand,
             productId: body.productIdOnBrandSite,
           });
+
           if (!productOnBrandSite) {
             throw new HttpException('Product not found on brand store', 400);
           }
@@ -193,7 +196,9 @@ export class ProductManagementService {
         );
       }
 
-      const brand = await this.brandService.getBrandById(body.brandId);
+      const brand = await this.brandService.getBrandWithOnlineCreds(
+        body.brandId,
+      );
 
       if (body.categoryId) {
         const category = await this.categoryService.findOne(body.categoryId);
