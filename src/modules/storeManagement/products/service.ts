@@ -55,16 +55,6 @@ export class ProductManagementService {
         body.name,
       );
 
-      if (body.currencyId) {
-        const currency = await this.currencyService.getCurrencyById(
-          body.currencyId,
-        );
-
-        if (!currency) {
-          throw new HttpException('Currency not found', 404);
-        }
-      }
-
       const brand = await this.brandService.getBrandById(body.brandId);
 
       const product = new Product();
@@ -94,10 +84,36 @@ export class ProductManagementService {
       if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
       if (body.productUrl) product.productUrl = body.productUrl;
       if (body.minAge) product.minAge = body.minAge;
-      if (body.currencyId) product.currencyId = body.currencyId;
       if (body.coverImage) product.coverImage = body.coverImage;
       product.productCode = productCode;
       product.productIdOnBrandSite = body.productIdOnBrandSite;
+
+      if (body.currencyId) {
+        const currency = await this.currencyService.getCurrencyById(
+          body.currencyId,
+        );
+
+        if (!currency) {
+          throw new HttpException('Currency not found', 404);
+        }
+
+        product.currencyId = body.currencyId;
+      } else if (body.currencyCode) {
+        const currency = await this.currencyService.getCurrencyByCurrency(
+          body.currencyCode,
+        );
+
+        if (!currency) {
+          throw new HttpException('Currency not found', 404);
+        }
+        product.currencyId = currency.id;
+      } else {
+        const currency = await this.currencyService.getCurrencyByCurrency(
+          brand.currency,
+        );
+
+        product.currencyId = currency.id;
+      }
 
       const productCollections = [];
 
@@ -177,6 +193,8 @@ export class ProductManagementService {
         );
       }
 
+      const brand = await this.brandService.getBrandById(body.brandId);
+
       if (body.categoryId) {
         const category = await this.categoryService.findOne(body.categoryId);
 
@@ -209,6 +227,23 @@ export class ProductManagementService {
         if (!currency) {
           throw new HttpException('Currency not found', 404);
         }
+
+        product.currencyId = body.currencyId;
+      } else if (body.currencyCode) {
+        const currency = await this.currencyService.getCurrencyByCurrency(
+          body.currencyCode,
+        );
+
+        if (!currency) {
+          throw new HttpException('Currency not found', 404);
+        }
+        product.currencyId = currency.id;
+      } else {
+        const currency = await this.currencyService.getCurrencyByCurrency(
+          brand.currency,
+        );
+
+        product.currencyId = currency.id;
       }
 
       // update only what is provided
@@ -279,8 +314,6 @@ export class ProductManagementService {
 
         await this.productService.saveProduct(product);
       }
-
-      const brand = await this.brandService.getBrandById(body.brandId);
 
       if (body.status) {
         product.status = body.status;
