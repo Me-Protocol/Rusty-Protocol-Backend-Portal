@@ -46,24 +46,25 @@ export const createCoupon = async ({
 
       break;
     case OnlineStoreType.SHOPIFY:
-      try {
-        const coupon = await axios.post(
-          'https://shopify.memarketplace.io/api/coupon/create',
-          {
-            shop: brand.shopify_online_store_url,
-            email,
-            coupon_code: data.code,
-            product_id: productId,
-            discount_type: 'FIXED_AMOUNT',
-            discount_value: data.amount,
-            starts_at: new Date().toISOString(),
-          },
-        );
+      return await axios
+        .post('https://shopify.memarketplace.io/api/coupon/create', {
+          shop: brand.shopify_online_store_url,
+          email,
+          coupon_code: data.code,
+          product_id: productId,
+          discount_type: 'FIXED_AMOUNT',
+          discount_value: data.amount,
+          starts_at: new Date().toISOString(),
+        })
+        .then((res) => {
+          console.log(res);
+          return res.data;
+        })
+        .catch((err) => {
+          console.log(err);
+          throw new Error(err);
+        });
 
-        return coupon.data;
-      } catch (error) {
-        throw new Error(error);
-      }
     case OnlineStoreType.BIG_COMMERCE:
       // const bigCommerceHandler = new BigCommerceHandler();
       // const bigCommerce = bigCommerceHandler.createInstance(
