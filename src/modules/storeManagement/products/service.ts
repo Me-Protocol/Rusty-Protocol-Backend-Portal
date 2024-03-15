@@ -322,11 +322,13 @@ export class ProductManagementService {
 
       if (body.status) {
         product.status = body.status;
+        product.productIdOnBrandSite =
+          body.productIdOnBrandSite ?? product.productIdOnBrandSite;
 
         if (body.status === ProductStatus.PUBLISHED) {
           const productOnBrandSite = await checkProductOnBrandStore({
             brand,
-            productId: body.productIdOnBrandSite,
+            productId: product.productIdOnBrandSite,
           });
           if (!productOnBrandSite) {
             throw new HttpException('Product not found on brand store', 400);
