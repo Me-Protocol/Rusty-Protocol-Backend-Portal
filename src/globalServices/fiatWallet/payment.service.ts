@@ -133,7 +133,7 @@ export class PaymentService {
       payment_method: paymentMethodId,
       // confirm: true,
       customer: customerId,
-      statement_descriptor_suffix: narration,
+      description: narration,
     });
   }
 

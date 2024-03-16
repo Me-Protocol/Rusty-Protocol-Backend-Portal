@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Injectable } from '@nestjs/common';
 import * as path from 'path';
 import { authenticate } from '@google-cloud/local-auth';
@@ -6,6 +7,7 @@ import { promises as fs } from 'fs';
 import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 
 @Injectable()
 export class GoogleSheetService {
@@ -58,7 +60,7 @@ export class GoogleSheetService {
 
   public async authorize() {
     try {
-      let savedClient = await this.loadSavedCredentialsIfExist();
+      const savedClient = await this.loadSavedCredentialsIfExist();
       if (savedClient) {
         return savedClient;
       }
@@ -105,13 +107,15 @@ export class GoogleSheetService {
 
     const userRewards = reward.map((r) => {
       return [
-        email ?? '',
-        first_name ?? '',
-        last_name ?? '',
-        r.reward.brand.online_store_url ?? '',
-        r.totalBalance ?? 0,
-        r.reward.brand.name ?? '',
-        r.reward.rewardName ?? '',
+        email,
+        first_name,
+        last_name,
+        r.reward.brand.online_store_type === OnlineStoreType.WOOCOMMERCE
+          ? r.reward.brand.woocommerce_online_store_url
+          : r.reward.brand.shopify_online_store_url ?? '',
+        r.totalBalance,
+        r.reward.brand.name,
+        r.reward.rewardName,
         'pending',
       ];
     });

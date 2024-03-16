@@ -1,32 +1,32 @@
 import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 import { WooCommerceHandler } from './woocommerce';
 import { Brand } from '../brand/entities/brand.entity';
+import WooCommerceRestApi from '@woocommerce/woocommerce-rest-api';
 
 export const checkBrandOnlineStore = async ({ brand }: { brand: Brand }) => {
   let woocommerceHandler: WooCommerceHandler;
-  let woocommerce;
+  let woocommerce: WooCommerceRestApi;
 
   switch (brand.online_store_type) {
     case OnlineStoreType.WOOCOMMERCE:
       woocommerceHandler = new WooCommerceHandler();
       woocommerce = woocommerceHandler.createInstance(brand);
 
-      await woocommerce
+      return await woocommerce
         .get('')
         .then((response) => {
           console.log('response', response.data);
           return response.data;
         })
         .catch((error) => {
-          throw new Error(error);
+          throw new Error('Store not found on woocommerce');
         });
 
-      break;
     case OnlineStoreType.SHOPIFY:
-      if (!brand.online_store_url) {
+      if (!brand.shopify_online_store_url) {
         throw new Error('Online store url is required');
       } else {
-        return brand.online_store_url;
+        return brand.shopify_online_store_url;
       }
     case OnlineStoreType.BIG_COMMERCE:
       // const bigCommerceHandler = new BigCommerceHandler();

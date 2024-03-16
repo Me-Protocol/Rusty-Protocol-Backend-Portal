@@ -1,5 +1,6 @@
 import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 import { WooCommerceHandler } from './woocommerce';
+import WooCommerceRestApi from '@woocommerce/woocommerce-rest-api';
 import { Brand } from '../brand/entities/brand.entity';
 
 export const checkProductOnBrandStore = async ({
@@ -10,24 +11,23 @@ export const checkProductOnBrandStore = async ({
   productId: string;
 }) => {
   let woocommerceHandler: WooCommerceHandler;
-  let woocommerce;
+  let woocommerce: WooCommerceRestApi;
 
   switch (brand.online_store_type) {
     case OnlineStoreType.WOOCOMMERCE:
       woocommerceHandler = new WooCommerceHandler();
       woocommerce = woocommerceHandler.createInstance(brand);
 
-      await woocommerce
+      return await woocommerce
         .get(`products/${productId}`)
         .then((response) => {
-          console.log('response', response.data);
           return response.data;
         })
         .catch((error) => {
-          throw new Error(error);
+          console.log(error);
+          throw new Error('Product not found on brand store.');
         });
 
-      break;
     case OnlineStoreType.SHOPIFY:
       return 'product';
     case OnlineStoreType.BIG_COMMERCE:
