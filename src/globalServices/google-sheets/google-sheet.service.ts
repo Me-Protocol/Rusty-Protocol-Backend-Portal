@@ -93,7 +93,19 @@ export class GoogleSheetService {
     const sheets = google.sheets({ version: 'v4', auth });
 
     const spreadsheetId = '1su--p_P8lvy2E6ZFlfO7t2uwo0IKUZGwktkDYZFMa2w';
-    const range = 'Templating!A1';
+    const range = 'Templating!A1:H';
+
+    let existingData = [];
+    try {
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId: spreadsheetId,
+        range: range,
+      });
+      existingData = response.data.values || [];
+    } catch (err) {
+      console.error('Error reading existing data from the sheet:', err);
+      return;
+    }
 
     const reward = await this.rewardRegistryRepository.find({
       where: {
@@ -124,19 +136,7 @@ export class GoogleSheetService {
       return;
     }
 
-    const values = [
-      [
-        'email',
-        'first_name',
-        'last_name',
-        'link',
-        'amount_rewards',
-        'user_brand_store',
-        'name_of_reward',
-        'status',
-      ],
-      ...userRewards,
-    ];
+    const values = [...existingData, ...userRewards];
 
     const resource = {
       values: values,
@@ -148,7 +148,7 @@ export class GoogleSheetService {
         {
           spreadsheetId: spreadsheetId,
           range: range,
-          valueInputOption: 'RAW',
+          valueInputOption: 'USER_ENTERED',
           // @ts-ignore
           resource: resource,
         },
