@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
   HttpException,
   HttpStatus,
@@ -202,12 +203,19 @@ export class BrandService {
         brand.shopify_consumer_secret = dto.shopify_consumer_secret;
 
       if (
-        brand.woocommerce_consumer_key &&
-        brand.woocommerce_consumer_secret &&
-        brand.woocommerce_online_store_url
+        dto.onlineStoreType === OnlineStoreType.WOOCOMMERCE &&
+        dto.woocommerceConsumerKey &&
+        dto.woocommerceConsumerSecret
       ) {
-        const brancToCheck = await this.getBrandWithOnlineCreds(brand.id);
-        await checkBrandOnlineStore({ brand: brancToCheck });
+        await checkBrandOnlineStore({
+          // @ts-ignore
+          brand: {
+            woocommerce_consumer_key: dto.woocommerceConsumerKey,
+            woocommerce_consumer_secret: dto.woocommerceConsumerSecret,
+            woocommerce_online_store_url: dto.online_store_url,
+            online_store_type: dto.onlineStoreType,
+          },
+        });
       }
 
       // await this.brandRepo.update({ id: brandId }, brand);
