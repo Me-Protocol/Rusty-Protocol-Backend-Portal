@@ -46,16 +46,30 @@ export class GoogleSheetService {
     await fs.writeFile(this.TOKEN_PATH, payload);
   }
 
+  public async authorizeWithSavedCredentials() {
+    try {
+      let savedClient = await this.loadSavedCredentialsIfExist();
+      if (savedClient) {
+        return savedClient;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   public async authorize() {
     try {
       const savedClient = await this.loadSavedCredentialsIfExist();
       if (savedClient) {
         return savedClient;
       }
+      console.log(this.CREDENTIALS_PATH);
       const authClient = await authenticate({
         scopes: this.SCOPES,
         keyfilePath: this.CREDENTIALS_PATH,
       });
+      console.log('authClient', authClient);
       if (authClient.credentials) {
         await this.saveCredentials(authClient);
       }
@@ -71,7 +85,7 @@ export class GoogleSheetService {
     first_name: string,
     last_name: string,
   ) {
-    const auth = await this.authorize();
+    const auth = await this.authorizeWithSavedCredentials();
     if (!auth) {
       return;
     }
@@ -79,7 +93,7 @@ export class GoogleSheetService {
     const sheets = google.sheets({ version: 'v4', auth });
 
     const spreadsheetId = '1su--p_P8lvy2E6ZFlfO7t2uwo0IKUZGwktkDYZFMa2w';
-    const range = 'Sheet1!A1';
+    const range = 'Templating!A1';
 
     const reward = await this.rewardRegistryRepository.find({
       where: {
@@ -105,6 +119,10 @@ export class GoogleSheetService {
         'pending',
       ];
     });
+
+    if (userRewards.length === 0) {
+      return;
+    }
 
     const values = [
       [
