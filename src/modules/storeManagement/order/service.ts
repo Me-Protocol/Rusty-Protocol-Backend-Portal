@@ -404,19 +404,12 @@ export class OrderManagementService {
         if (status === 'success') {
           const couponCode = await this.couponService.generateCouponCode();
 
-          const discount =
-            (offer.product.price * offer.discountPercentage) / 100;
-          const amount = offer.product.price - discount;
-
-          // TODO: check discount amount calculation
-          const totalAmount = amount * order.quantity;
-
           try {
             await createCoupon({
               brand,
               data: {
                 code: couponCode,
-                amount: totalAmount.toString(),
+                amount: offer.discountPercentage,
               },
               productId: offer.product.id,
               productIdOnBrandSite: offer.product.productIdOnBrandSite,
@@ -511,9 +504,9 @@ export class OrderManagementService {
                   </div>
                 </div>
                 <p>Redemption Details</p>
-                <p>Coupon Code: ${coupon.code}</p>
-                <p>Points: ${order.points}</p>
-                <p>Quantity: ${order.quantity}</p>
+                <p>Coupon Code: <b>${coupon.code}</b></p>
+                <p>Points: <b>${order.points}</b></p>
+                <p>Quantity: <b>${order.quantity}</b></p>
                 ${emailButton({
                   text: 'Redeem now',
                   url: `${offer.product.productUrl}?coupon=${coupon.code}`,

@@ -13,7 +13,7 @@ export const createCoupon = async ({
 }: {
   data: {
     code: string;
-    amount: string;
+    amount: number;
   };
   brand: Brand;
   productId: string;
@@ -25,11 +25,14 @@ export const createCoupon = async ({
 
   const body = {
     ...data,
-    discount_type: 'fixed_product',
+    discount_type: 'percent',
     product_ids: [productIdOnBrandSite],
     individual_use: true,
     exclude_sale_items: false,
     usage_limit: 1,
+    code: 'PERCENT_COUPON_CODE',
+    amount: data.amount.toString(),
+    date_expires: null,
   };
 
   const shopify_body = {
@@ -37,12 +40,10 @@ export const createCoupon = async ({
     email,
     coupon_code: data.code,
     product_id: productId,
-    discount_type: 'FIXED_AMOUNT',
+    discount_type: 'PERCENTAGE',
     discount_value: data.amount,
     starts_at: new Date().toISOString(),
   };
-
-  console.log('Shopify body', shopify_body);
 
   switch (brand?.online_store_type) {
     case OnlineStoreType.WOOCOMMERCE:
@@ -52,6 +53,7 @@ export const createCoupon = async ({
       return await woocommerce
         .post('coupons', body)
         .then((response) => {
+          console.log('Redeem', response.data);
           return response.data;
         })
         .catch((error) => {
