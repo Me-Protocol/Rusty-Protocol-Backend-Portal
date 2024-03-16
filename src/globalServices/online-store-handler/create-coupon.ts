@@ -30,10 +30,11 @@ export const createCoupon = async ({
     individual_use: true,
     exclude_sale_items: false,
     usage_limit: 1,
-    code: 'PERCENT_COUPON_CODE',
     amount: data.amount.toString(),
     date_expires: null,
   };
+
+  console.log('Create Coupon', body);
 
   const shopify_body = {
     shop: brand.shopify_online_store_url,

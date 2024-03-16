@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, LessThan, Repository } from 'typeorm';
 import { Offer } from './entities/offer.entity';
@@ -16,6 +16,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { BrandCustomer } from '../brand/entities/brand_customer.entity';
 import { User } from '../user/entities/user.entity';
 import { CurrencyService } from '../currency/currency.service';
+import { OrderService } from '../order/order.service';
 
 @Injectable()
 export class OfferService {
@@ -32,6 +33,9 @@ export class OfferService {
     private readonly productService: ProductService,
     private readonly elasticIndex: ElasticIndex,
     private readonly currencyService: CurrencyService,
+
+    @Inject(forwardRef(() => OrderService))
+    private readonly orderService: OrderService,
   ) {}
 
   async saveOffer(offer: Offer) {
@@ -715,28 +719,38 @@ export class OfferService {
 
   async increaseOfferSales({
     offer,
-    amount,
     userId,
   }: {
     offer: Offer;
-    amount: number;
     userId: string;
   }) {
     try {
-      const totalSales = Number(offer.totalSales) + Number(amount);
+      const successOrders =
+        await this.orderService.getSuccessfulOrdersByOfferId(offer.id);
+
+      const totalSales = successOrders.reduce((acc, order) => {
+        return Number(acc) + Number(order?.offer?.product?.price ?? 0);
+      }, 0);
       const totalSalesParse = totalSales.toFixed(2);
 
-      offer.totalOrders = offer.totalOrders + 1;
+      offer.totalOrders = successOrders.length;
       offer.totalSales = +totalSalesParse;
 
       // update customer total redeem
       const customer = await this.customerService.getByUserId(userId);
 
-      const totalRedemptionAmount =
-        Number(customer.totalRedemptionAmount) + Number(amount);
+      const userSuccessfulOrders =
+        await this.orderService.getSuccessfulOrdersByUserId(userId);
+
+      const totalRedemptionAmount = userSuccessfulOrders.reduce(
+        (acc, order) => {
+          return Number(acc) + Number(order?.offer?.product?.price ?? 0);
+        },
+        0,
+      );
       const totalRedemptionAmountParse = totalRedemptionAmount.toFixed(3);
 
-      customer.totalRedeemed += 1;
+      customer.totalRedeemed = userSuccessfulOrders.length;
       customer.totalRedemptionAmount = +totalRedemptionAmountParse;
 
       const brandCustomer = await this.brandCustomerRepo.findOne({
@@ -744,7 +758,7 @@ export class OfferService {
       });
 
       if (brandCustomer) {
-        brandCustomer.totalRedeemed += 1;
+        brandCustomer.totalRedeemed = userSuccessfulOrders.length;
         brandCustomer.totalRedemptionAmount = +totalRedemptionAmountParse;
 
         await this.brandCustomerRepo.save(brandCustomer);

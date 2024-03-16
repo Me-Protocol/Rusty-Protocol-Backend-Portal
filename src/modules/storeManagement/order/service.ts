@@ -49,6 +49,7 @@ import { checkOrderStatusGelatoOrRuntime } from '@src/globalServices/costManagem
 import { BullService } from '@src/globalServices/task-queue/bull.service';
 import { Offer } from '@src/globalServices/offer/entities/offer.entity';
 import { Customer } from '@src/globalServices/customer/entities/customer.entity';
+import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 
 @Injectable()
 export class OrderManagementService {
@@ -380,9 +381,9 @@ export class OrderManagementService {
     try {
       const order = await this.orderService.getOrderByOrderId(orderId);
 
-      // if (order.status !== StatusType.PROCESSING) {
-      //   return;
-      // }
+      if (order.status !== StatusType.PROCESSING) {
+        return;
+      }
 
       const status = await checkOrderStatusGelatoOrRuntime(
         order.taskId,
@@ -400,12 +401,23 @@ export class OrderManagementService {
         order.brandId,
       );
 
-      if (brand?.online_store_type) {
+      const isSetupWoocommerce =
+        brand?.online_store_type === OnlineStoreType.WOOCOMMERCE &&
+        brand.woocommerce_online_store_url &&
+        brand.woocommerce_consumer_key &&
+        brand.woocommerce_consumer_secret;
+
+      const isSetupShopify =
+        brand?.online_store_type === OnlineStoreType.SHOPIFY &&
+        brand.shopify_online_store_url;
+
+      if (isSetupWoocommerce || isSetupShopify) {
         if (status === 'success') {
           const couponCode = await this.couponService.generateCouponCode();
 
           try {
-            await createCoupon({
+            console.log('Create coupon');
+            const coupon = await createCoupon({
               brand,
               data: {
                 code: couponCode,
@@ -415,7 +427,10 @@ export class OrderManagementService {
               productIdOnBrandSite: offer.product.productIdOnBrandSite,
               email: order.user.email,
             });
+
+            console.log(coupon);
           } catch (error) {
+            console.log(error);
             const msg = error?.message;
             if (msg === 'Product is not synchronized or not found.') {
               await this.failOrderAndRefund({
@@ -619,7 +634,6 @@ export class OrderManagementService {
 
           await this.offerService.increaseOfferSales({
             offer,
-            amount: order.points,
             userId: order.userId,
           });
 

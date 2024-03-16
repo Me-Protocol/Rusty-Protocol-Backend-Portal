@@ -262,4 +262,21 @@ export class OrderService {
       relations: ['coupon'],
     });
   }
+
+  async getSuccessfulOrdersByOfferId(offerId: string) {
+    return await this.orderRepo.find({
+      where: {
+        offerId: offerId,
+        status: StatusType.SUCCEDDED,
+      },
+      relations: ['coupon', 'offer', 'reward', 'offer.product'],
+    });
+  }
+
+  async getSuccessfulOrdersByUserId(userId: string) {
+    return await this.orderRepo.find({
+      where: { userId: userId },
+      relations: ['coupon', 'offer', 'reward', 'offer.product'],
+    });
+  }
 }
