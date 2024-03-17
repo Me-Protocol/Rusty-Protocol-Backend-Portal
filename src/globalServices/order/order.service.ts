@@ -68,6 +68,7 @@ export class OrderService {
       orderQuery
         .leftJoinAndSelect('offer.product', 'product')
         .leftJoinAndSelect('product.productImages', 'productImages')
+        .leftJoinAndSelect('product.currency', 'currency')
         .leftJoinAndSelect('product.variants', 'variants')
         .leftJoinAndSelect('product.collections', 'collections')
         .andWhere('order.brandId = :brandId', {

@@ -208,6 +208,7 @@ export class OfferService {
       .leftJoinAndSelect('product.subCategory', 'subCategory')
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
+      .leftJoinAndSelect('product.currency', 'currency')
       .leftJoinAndSelect('offer.reward', 'reward')
       .where('offer.status = :status', { status: ItemStatus.PUBLISHED })
       .andWhere('offer.rewardId = :rewardId', { rewardId });
@@ -553,6 +554,7 @@ export class OfferService {
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
       .leftJoinAndSelect('offer.reward', 'reward')
+      .leftJoinAndSelect('product.currency', 'currency')
       .where('offer.brandId = :brandId', { brandId });
 
     if (status) {
