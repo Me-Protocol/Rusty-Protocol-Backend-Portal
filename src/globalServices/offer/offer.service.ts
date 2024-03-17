@@ -254,6 +254,7 @@ export class OfferService {
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
       .leftJoinAndSelect('offer.reward', 'reward')
+      .leftJoinAndSelect('product.currency', 'currency')
       .where('offer.status = :status', { status: ItemStatus.PUBLISHED })
       // brand.listOnStore is used to check if brand is active
       .andWhere('brand.listOnStore = :listOnStore', { listOnStore: true })
