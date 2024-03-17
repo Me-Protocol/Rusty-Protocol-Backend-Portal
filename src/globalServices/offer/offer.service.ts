@@ -156,6 +156,7 @@ export class OfferService {
         'product.variants',
         'offerImages',
         'reward',
+        'product.currency',
       ],
     });
 
