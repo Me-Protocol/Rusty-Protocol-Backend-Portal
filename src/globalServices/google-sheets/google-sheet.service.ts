@@ -8,6 +8,10 @@ import { RewardRegistry } from '@src/globalServices/reward/entities/registry.ent
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
+import sgMail from '@sendgrid/mail';
+import { SENDGRID_API_KEY } from '@src/config/env.config';
+
+sgMail.setApiKey(SENDGRID_API_KEY);
 
 @Injectable()
 export class GoogleSheetService {
@@ -133,6 +137,7 @@ export class GoogleSheetService {
     });
 
     if (userRewards.length === 0) {
+      await this.sendEmailToUserWithoutRewards(email, first_name);
       return;
     }
 
@@ -163,5 +168,28 @@ export class GoogleSheetService {
         },
       );
     });
+  }
+
+  public async sendEmailToUserWithoutRewards(
+    email: string,
+    first_name: string,
+  ) {
+    const payload = {
+      to: email,
+      from: 'Me Marketplace <noreply@memarketplace.io>',
+      templateId: 'd-797d63ae277e455a8694de84e7673ed4',
+      dynamic_template_data: {
+        name: first_name,
+      },
+    };
+    sgMail.send(payload).then(
+      () => {},
+      (error) => {
+        console.error(error);
+        if (error.response) {
+          console.error(error.response.body);
+        }
+      },
+    );
   }
 }
