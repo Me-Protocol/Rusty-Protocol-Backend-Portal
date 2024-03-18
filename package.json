@@ -50,6 +50,7 @@
     "@nestjs/typeorm": "^10.0.0",
     "@nestjs/websockets": "^9.4.3",
     "@sendgrid/client": "^8.1.0",
+    "@sendgrid/mail": "^8.1.1",
     "@sentry/node": "^7.73.0",
     "@sentry/profiling-node": "^1.2.1",
     "@sentry/tracing": "^7.73.0",
