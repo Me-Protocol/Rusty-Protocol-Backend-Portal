@@ -1,6 +1,7 @@
 import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 import { WooCommerceHandler } from './woocommerce';
 import { Brand } from '../brand/entities/brand.entity';
+import WooCommerceRestApi from '@woocommerce/woocommerce-rest-api';
 import axios from 'axios';
 
 export const createCoupon = async ({
@@ -8,25 +9,41 @@ export const createCoupon = async ({
   brand,
   productId,
   email,
+  productIdOnBrandSite,
 }: {
   data: {
     code: string;
-    amount: string;
+    amount: number;
   };
   brand: Brand;
   productId: string;
   email: string;
+  productIdOnBrandSite: string;
 }) => {
   let woocommerceHandler: WooCommerceHandler;
-  let woocommerce;
+  let woocommerce: WooCommerceRestApi;
 
   const body = {
     ...data,
-    discount_type: 'fixed_product',
-    product_ids: [productId],
+    discount_type: 'percent',
+    product_ids: [productIdOnBrandSite],
     individual_use: true,
     exclude_sale_items: false,
     usage_limit: 1,
+    amount: data.amount.toString(),
+    date_expires: null,
+  };
+
+  console.log('Create Coupon', body);
+
+  const shopify_body = {
+    shop: brand.shopify_online_store_url,
+    email,
+    coupon_code: data.code,
+    product_id: productId,
+    discount_type: 'PERCENTAGE',
+    discount_value: data.amount,
+    starts_at: new Date().toISOString(),
   };
 
   switch (brand?.online_store_type) {
@@ -34,9 +51,10 @@ export const createCoupon = async ({
       woocommerceHandler = new WooCommerceHandler();
       woocommerce = woocommerceHandler.createInstance(brand);
 
-      await woocommerce
+      return await woocommerce
         .post('coupons', body)
         .then((response) => {
+          console.log('Redeem', response.data);
           return response.data;
         })
         .catch((error) => {
@@ -44,26 +62,24 @@ export const createCoupon = async ({
           throw new Error(error);
         });
 
-      break;
     case OnlineStoreType.SHOPIFY:
-      try {
-        const coupon = await axios.post(
+      return await axios
+        .post(
           'https://shopify.memarketplace.io/api/coupon/create',
-          {
-            shop: brand.shopify_online_store_url,
-            email,
-            coupon_code: data.code,
-            product_id: productId,
-            discount_type: 'FIXED_AMOUNT',
-            discount_value: data.amount,
-            starts_at: new Date().toISOString(),
-          },
-        );
+          shopify_body,
+        )
+        .then((res) => {
+          if (res?.data?.error) {
+            throw new Error('Product is not synchronized or not found.');
+          } else {
+            return res.data.data;
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+          throw new Error(err.message);
+        });
 
-        return coupon.data;
-      } catch (error) {
-        throw new Error(error);
-      }
     case OnlineStoreType.BIG_COMMERCE:
       // const bigCommerceHandler = new BigCommerceHandler();
       // const bigCommerce = bigCommerceHandler.createInstance(

@@ -14,16 +14,15 @@ export class CouponService {
     user_id,
     offer_id,
     isUsed,
+    couponCode,
   }: {
     user_id: string;
     offer_id: string;
     isUsed?: boolean;
+    couponCode: string;
   }) {
     // 6 characters coupon code
-    const couponCode = `${process.env.COUPON_CODE_PREFIX}_${Math.random()
-      .toString(36)
-      .substring(2, 8)
-      .toUpperCase()}`;
+
     const coupon = new Coupon();
     coupon.code = couponCode;
     coupon.isUsed = isUsed ?? false;
@@ -115,5 +114,22 @@ export class CouponService {
       success: true,
       message: 'Coupon code used',
     };
+  }
+
+  async generateCouponCode(): Promise<string> {
+    const code = `${process.env.COUPON_CODE_PREFIX}_${Math.random()
+      .toString(36)
+      .substring(2, 8)
+      .toUpperCase()}`;
+
+    const checkCode = await this.couponRepository.findOne({
+      where: { code },
+    });
+
+    if (checkCode) {
+      return await this.generateCouponCode();
+    }
+
+    return code;
   }
 }

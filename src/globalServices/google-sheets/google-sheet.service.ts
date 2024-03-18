@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Injectable } from '@nestjs/common';
 import * as path from 'path';
 import { authenticate } from '@google-cloud/local-auth';
@@ -6,6 +7,7 @@ import { promises as fs } from 'fs';
 import { RewardRegistry } from '@src/globalServices/reward/entities/registry.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 
 @Injectable()
 export class GoogleSheetService {
@@ -44,16 +46,30 @@ export class GoogleSheetService {
     await fs.writeFile(this.TOKEN_PATH, payload);
   }
 
-  public async authorize() {
+  public async authorizeWithSavedCredentials() {
     try {
       let savedClient = await this.loadSavedCredentialsIfExist();
       if (savedClient) {
         return savedClient;
       }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  public async authorize() {
+    try {
+      const savedClient = await this.loadSavedCredentialsIfExist();
+      if (savedClient) {
+        return savedClient;
+      }
+      console.log(this.CREDENTIALS_PATH);
       const authClient = await authenticate({
         scopes: this.SCOPES,
         keyfilePath: this.CREDENTIALS_PATH,
       });
+      console.log('authClient', authClient);
       if (authClient.credentials) {
         await this.saveCredentials(authClient);
       }
@@ -69,7 +85,7 @@ export class GoogleSheetService {
     first_name: string,
     last_name: string,
   ) {
-    const auth = await this.authorize();
+    const auth = await this.authorizeWithSavedCredentials();
     if (!auth) {
       return;
     }
@@ -77,7 +93,19 @@ export class GoogleSheetService {
     const sheets = google.sheets({ version: 'v4', auth });
 
     const spreadsheetId = '1su--p_P8lvy2E6ZFlfO7t2uwo0IKUZGwktkDYZFMa2w';
-    const range = 'Sheet1!A1';
+    const range = 'Templating!A1:H';
+
+    let existingData = [];
+    try {
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId: spreadsheetId,
+        range: range,
+      });
+      existingData = response.data.values || [];
+    } catch (err) {
+      console.error('Error reading existing data from the sheet:', err);
+      return;
+    }
 
     const reward = await this.rewardRegistryRepository.find({
       where: {
@@ -94,7 +122,9 @@ export class GoogleSheetService {
         email,
         first_name,
         last_name,
-        r.reward.brand.online_store_url ?? '',
+        r.reward.brand.online_store_type === OnlineStoreType.WOOCOMMERCE
+          ? r.reward.brand.woocommerce_online_store_url
+          : r.reward.brand.shopify_online_store_url ?? '',
         r.totalBalance,
         r.reward.brand.name,
         r.reward.rewardName,
@@ -102,19 +132,11 @@ export class GoogleSheetService {
       ];
     });
 
-    const values = [
-      [
-        'email',
-        'first_name',
-        'last_name',
-        'link',
-        'amount_rewards',
-        'user_brand_store',
-        'name_of_reward',
-        'status',
-      ],
-      ...userRewards,
-    ];
+    if (userRewards.length === 0) {
+      return;
+    }
+
+    const values = [...existingData, ...userRewards];
 
     const resource = {
       values: values,
@@ -126,7 +148,7 @@ export class GoogleSheetService {
         {
           spreadsheetId: spreadsheetId,
           range: range,
-          valueInputOption: 'RAW',
+          valueInputOption: 'USER_ENTERED',
           // @ts-ignore
           resource: resource,
         },

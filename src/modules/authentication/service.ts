@@ -68,6 +68,7 @@ export class AuthenticationService {
 
   async writeDataToGoogleSheet(userId: string): Promise<any> {
     const user = await this.userService.getUserById(userId);
+
     if (!user) {
       return false;
     }

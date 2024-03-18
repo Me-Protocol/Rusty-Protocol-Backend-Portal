@@ -47,6 +47,9 @@ import { checkBrandOnlineStore } from '@src/globalServices/online-store-handler/
 import { BillType } from '@src/utils/enums/BillType';
 import { checkOrderStatusGelatoOrRuntime } from '@src/globalServices/costManagement/taskId-verifier.service';
 import { BullService } from '@src/globalServices/task-queue/bull.service';
+import { Offer } from '@src/globalServices/offer/entities/offer.entity';
+import { Customer } from '@src/globalServices/customer/entities/customer.entity';
+import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 
 @Injectable()
 export class OrderManagementService {
@@ -145,10 +148,13 @@ export class OrderManagementService {
         description: `Redeem offer ${offer.name}`,
       });
 
+      const couponCode = await this.couponService.generateCouponCode();
+
       const coupon = await this.couponService.create({
         user_id: user.id,
         offer_id: offerId,
         isUsed: false,
+        couponCode,
       });
 
       const orderRecord = new Order();
@@ -395,17 +401,54 @@ export class OrderManagementService {
         order.brandId,
       );
 
-      if (brand?.online_store_type) {
+      const isSetupWoocommerce =
+        brand?.online_store_type === OnlineStoreType.WOOCOMMERCE &&
+        brand.woocommerce_online_store_url &&
+        brand.woocommerce_consumer_key &&
+        brand.woocommerce_consumer_secret;
+
+      const isSetupShopify =
+        brand?.online_store_type === OnlineStoreType.SHOPIFY &&
+        brand.shopify_online_store_url;
+
+      if (isSetupWoocommerce || isSetupShopify) {
         if (status === 'success') {
-          await this.offerService.increaseOfferSales({
-            offer,
-            amount: order.points,
-            userId: order.userId,
-          });
+          const couponCode = await this.couponService.generateCouponCode();
+
+          try {
+            console.log('Create coupon');
+            const coupon = await createCoupon({
+              brand,
+              data: {
+                code: couponCode,
+                amount: offer.discountPercentage,
+              },
+              productId: offer.product.id,
+              productIdOnBrandSite: offer.product.productIdOnBrandSite,
+              email: order.user.email,
+            });
+
+            console.log(coupon);
+          } catch (error) {
+            console.log(error);
+            const msg = error?.message;
+            if (msg === 'Product is not synchronized or not found.') {
+              await this.failOrderAndRefund({
+                order,
+                transaction,
+                offer,
+                customer,
+                failReason: 'Product is not synchronized or not found',
+                status: StatusType.FAILED,
+              });
+              return;
+            }
+          }
 
           const coupon = await this.couponService.create({
             user_id: order.userId,
             offer_id: order.offerId,
+            couponCode,
           });
 
           order.couponId = coupon.id;
@@ -413,23 +456,7 @@ export class OrderManagementService {
 
           await this.orderService.saveOrder(order);
 
-          const discount =
-            (offer.product.price * offer.discountPercentage) / 100;
-          const amount = offer.product.price - discount;
-
-          // TODO: check discount amount calculation
-          const totalAmount = amount * order.quantity;
-
           // create online store coupon
-          await createCoupon({
-            brand,
-            data: {
-              code: coupon.code,
-              amount: totalAmount.toString(),
-            },
-            productId: offer.product.productIdOnBrandSite,
-            email: order.user.email,
-          });
 
           if (transaction) {
             transaction.status = StatusType.SUCCEDDED;
@@ -481,18 +508,20 @@ export class OrderManagementService {
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
                   <img src="${
                     offer.offerImages?.[0].url
-                  }" alt="offer image" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; margin-bottom: 10px;" />
-                  <p style="font-size: 20px; font-weight: bold;">${
-                    offer.name
-                  }</p>
-                  <p style="font-size: 16px; font-weight: bold;">${
-                    offer.brand.name
-                  }</p>
+                  }" alt="offer image" style="width: 100px; height: 100px; object-fit: cover; border-radius: 16px; margin-bottom: 10px; margin-right: 10px;" />
+                  <div>
+                    <p style="font-size: 20px; font-weight: bold;">${
+                      offer.name
+                    }</p>
+                    <p style="font-size: 16px; font-weight: bold;">${
+                      offer.brand.name
+                    }</p>
+                  </div>
                 </div>
                 <p>Redemption Details</p>
-                <p>Coupon Code: ${coupon.code}</p>
-                <p>Points: ${order.points}</p>
-                <p>Quantity: ${order.quantity}</p>
+                <p>Coupon Code: <b>${coupon.code}</b></p>
+                <p>Points: <b>${order.points}</b></p>
+                <p>Quantity: <b>${order.quantity}</b></p>
                 ${emailButton({
                   text: 'Redeem now',
                   url: `${offer.product.productUrl}?coupon=${coupon.code}`,
@@ -602,57 +631,23 @@ export class OrderManagementService {
           }
 
           await this.brandService.saveBrandCustomer(brandCustomer);
+
+          await this.offerService.increaseOfferSales({
+            offer,
+            userId: order.userId,
+          });
+
           console.log('Done');
         } else if (status === 'failed') {
-          console.log('Order failed');
-
-          order.status = StatusType.FAILED;
-          order.failedReason = `${order.verifier} task verifier failed`;
-          await this.orderService.saveOrder(order);
-
-          await redistributed_failed_tx_with_url(order.spendData, RUNTIME_URL);
-
-          order.isRefunded = true;
-          await this.orderService.saveOrder(order);
-          await this.offerService.increaseInventory(offer, order);
-
-          if (transaction) {
-            transaction.status = StatusType.FAILED;
-            await this.transactionRepo.save(transaction);
-          }
-
-          //  Send notification to user
-
-          const notification = new Notification();
-          notification.userId = order.userId;
-          notification.message = `Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed and a refund has been initiated. Please try again`;
-          notification.type = NotificationType.ORDER;
-          notification.title = 'Order Failed';
-          notification.orderId = order.id;
-          notification.icon = offer.brand.logo;
-          notification.image = offer.offerImages?.[0].url;
-          notification.emailMessage = /* html */ `
-              <div>
-                <p>Hello ${customer?.name},</p>
-                <p>Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed</p>
-                <p>Offer Details</p>
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                  <img src="${offer.offerImages?.[0].url}" alt="offer image" style="width: 100px; height: 100px; object-fit: cover; border-radius: 16px; margin-right: 10px;" />
-                  <div>
-                    <p style="font-size: 20px; font-weight: bold;">${offer.name}</p>
-                    <p style="font-size: 14px;">${offer.brand.name}</p>
-                  </div>
-                </div>
-                <p>Redemption Details</p>
-                <p>Points: ${order.points}</p>
-                <p>Quantity: ${order.quantity}</p>
-              `;
-
-          await this.notificationService.createNotification(notification);
-
-          throw new Error('Order failed');
+          await this.failOrderAndRefund({
+            order,
+            transaction,
+            offer,
+            customer,
+            failReason: `${order.verifier} verifier failed`,
+            status: StatusType.FAILED,
+          });
         } else {
-          console.log(order.retries, 'Retries');
           if (order.retries >= 5) {
             order.failedReason = 'No response after retries';
             order.status = StatusType.INCOMPLETE;
@@ -667,10 +662,14 @@ export class OrderManagementService {
           throw new Error('Order is still processing');
         }
       } else {
-        order.status = StatusType.INCOMPLETE;
-        await this.orderService.saveOrder(order);
-
-        throw new Error('Order is still processing');
+        await this.failOrderAndRefund({
+          order,
+          transaction,
+          offer,
+          customer,
+          failReason: 'Brand store not setup',
+          status: StatusType.FAILED,
+        });
       }
     } catch (error) {
       console.log(error);
@@ -733,5 +732,66 @@ export class OrderManagementService {
         return;
       }
     }
+  }
+
+  async failOrderAndRefund({
+    order,
+    transaction,
+    offer,
+    customer,
+    failReason,
+    status,
+  }: {
+    order: Order;
+    transaction: Transaction;
+    offer: Offer;
+    customer: Customer;
+    failReason: string;
+    status: StatusType;
+  }) {
+    order.status = status;
+    order.failedReason = failReason;
+    await this.orderService.saveOrder(order);
+
+    await redistributed_failed_tx_with_url(order.spendData, RUNTIME_URL);
+
+    order.isRefunded = true;
+    await this.orderService.saveOrder(order);
+    await this.offerService.increaseInventory(offer, order);
+
+    if (transaction) {
+      transaction.status = StatusType.FAILED;
+      await this.transactionRepo.save(transaction);
+    }
+
+    //  Send notification to user
+
+    const notification = new Notification();
+    notification.userId = order.userId;
+    notification.message = `Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed and a refund has been initiated. Please try again`;
+    notification.type = NotificationType.ORDER;
+    notification.title = 'Order Failed';
+    notification.orderId = order.id;
+    notification.icon = offer.brand.logo;
+    notification.image = offer.offerImages?.[0].url;
+    notification.emailMessage = /* html */ `
+              <div>
+                <p>Hello ${customer?.name},</p>
+                <p>Sorry! Your order for ${offer.name} from ${offer.brand.name} has failed</p>
+                <p><b>Reason</b>: ${failReason}</p>
+                <p>Offer Details</p>
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                  <img src="${offer.offerImages?.[0].url}" alt="offer image" style="width: 100px; height: 100px; object-fit: cover; border-radius: 16px; margin-right: 10px;" />
+                  <div>
+                    <p style="font-size: 20px; font-weight: bold;">${offer.name}</p>
+                    <p style="font-size: 14px;">${offer.brand.name}</p>
+                  </div>
+                </div>
+                <p>Redemption Details</p>
+                <p>Points: ${order.points}</p>
+                <p>Quantity: ${order.quantity}</p>
+              `;
+
+    await this.notificationService.createNotification(notification);
   }
 }
