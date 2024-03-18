@@ -38,7 +38,7 @@ export const checkProductOnBrandStore = async ({
       shopify = shopifyHandler.createInstance(brand);
 
       return await shopify
-        .get(`admin/api/2021-07/products/${productId}.json?fields=id`)
+        .get(`products/${productId}.json?fields=id`)
         .then((response) => {
           console.log('response', response.data);
           return response.data;

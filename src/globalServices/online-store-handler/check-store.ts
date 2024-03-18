@@ -32,7 +32,7 @@ export const checkBrandOnlineStore = async ({ brand }: { brand: Brand }) => {
       shopify = shopifyHandler.createInstance(brand);
 
       return await shopify
-        .get('admin/api/2021-07/shop.json')
+        .get('shop.json')
         .then((response) => {
           console.log('response', response.data);
           return response.data;

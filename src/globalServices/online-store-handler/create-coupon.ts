@@ -71,7 +71,7 @@ export const createCoupon = async ({
       shopify = shopifyHandler.createInstance(brand);
 
       return await shopify
-        .post('admin/api/2021-10/price_rules.json', {
+        .post('price_rules.json', {
           price_rule: {
             title: `${APP_NAME}Discount`, // Your discount title
             target_type: 'line_item',
@@ -92,14 +92,11 @@ export const createCoupon = async ({
           const price_rule_id = response.data.price_rule.id;
 
           return shopify
-            .post(
-              `admin/api/2021-10/price_rules/${price_rule_id}/discount_codes.json`,
-              {
-                discount_code: {
-                  code: body.code,
-                },
+            .post(`price_rules/${price_rule_id}/discount_codes.json`, {
+              discount_code: {
+                code: body.code,
               },
-            )
+            })
             .then((response) => {
               console.log('Redeem', response.data);
               return response.data;
