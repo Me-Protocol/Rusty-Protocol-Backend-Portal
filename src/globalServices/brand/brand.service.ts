@@ -221,8 +221,7 @@ export class BrandService {
 
       if (
         dto.onlineStoreType === OnlineStoreType.SHOPIFY &&
-        dto.shopify_consumer_secret &&
-        dto.shopify_consumer_key
+        dto.shopify_consumer_secret
       ) {
         await checkBrandOnlineStore({
           // @ts-ignore
@@ -1116,6 +1115,7 @@ export class BrandService {
         location: true,
         regions: true,
       },
+      relations: ['regions'],
     });
   }
 }

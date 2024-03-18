@@ -5,6 +5,7 @@ import {
   IsBoolean,
   IsBooleanString,
   IsEnum,
+  IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
@@ -13,6 +14,10 @@ export class UpdateCustomerWalletDto {
   @ApiProperty()
   @IsString()
   walletAddress: string;
+
+  @ApiProperty()
+  @IsNumber()
+  walletVersion: number;
 }
 
 export class UpdateCustomerDto {

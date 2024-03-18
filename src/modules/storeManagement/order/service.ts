@@ -410,8 +410,7 @@ export class OrderManagementService {
       const isSetupShopify =
         brand?.online_store_type === OnlineStoreType.SHOPIFY &&
         brand.shopify_online_store_url &&
-        brand.shopify_consumer_secret &&
-        brand.shopify_consumer_key;
+        brand.shopify_consumer_secret;
 
       if (isSetupWoocommerce || isSetupShopify) {
         if (status === 'success') {

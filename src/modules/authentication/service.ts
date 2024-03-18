@@ -41,6 +41,7 @@ import {
   CreateSendgridContactEvent,
 } from '@src/globalServices/mail/create-sendgrid-contact.event';
 import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
+import { SettingsService } from '@src/globalServices/settings/settings.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -64,6 +65,7 @@ export class AuthenticationService {
     private collectionService: CollectionService,
     private readonly eventEmitter: EventEmitter2,
     private readonly googleService: GoogleSheetService,
+    private readonly settingService: SettingsService,
   ) {}
 
   async writeDataToGoogleSheet(userId: string): Promise<any> {
@@ -388,6 +390,8 @@ export class AuthenticationService {
         throw new Error('Wallet address is required');
       }
 
+      const settings = await this.settingService.getPublicSettings();
+
       const lowerCasedEmail = email.toLowerCase();
       await this.checkIfUserExists(lowerCasedEmail);
       await this.checkDuplicateBrandName(userType, name);
@@ -410,6 +414,7 @@ export class AuthenticationService {
         );
         await this.customerAccountManagementService.setWalletAddress(
           walletAddress,
+          settings.walletVersion,
           newUser.id,
         );
         await this.collectionService.create({
