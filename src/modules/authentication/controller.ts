@@ -68,7 +68,7 @@ export class AuthenticationController {
     });
   }
 
-  @Post('signup/email/:brandId')
+  @Post('signup/email/with-brand/:brandId')
   async signupAsBrandCustomerWithEmail(
     @Body(ValidationPipe) body: EmailSignupDto,
     @RealIP() ip: string,

@@ -2,7 +2,9 @@ import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 import { WooCommerceHandler } from './woocommerce';
 import { Brand } from '../brand/entities/brand.entity';
 import WooCommerceRestApi from '@woocommerce/woocommerce-rest-api';
-import axios from 'axios';
+import { AxiosInstance } from 'axios';
+import { ShopifyHandler } from './shopify';
+import { APP_NAME } from '@src/config/env.config';
 
 export const createCoupon = async ({
   data,
@@ -23,6 +25,9 @@ export const createCoupon = async ({
   let woocommerceHandler: WooCommerceHandler;
   let woocommerce: WooCommerceRestApi;
 
+  let shopifyHandler: ShopifyHandler;
+  let shopify: AxiosInstance;
+
   const body = {
     ...data,
     discount_type: 'percent',
@@ -34,17 +39,16 @@ export const createCoupon = async ({
     date_expires: null,
   };
 
-  console.log('Create Coupon', body);
-
-  const shopify_body = {
-    shop: brand.shopify_online_store_url,
-    email,
-    coupon_code: data.code,
-    product_id: productId,
-    discount_type: 'PERCENTAGE',
-    discount_value: data.amount,
-    starts_at: new Date().toISOString(),
-  };
+  // const shopify_body = {
+  //   access_token: brand.shopify_consumer_secret,
+  //   shop: brand.shopify_online_store_url,
+  //   email,
+  //   coupon_code: data.code,
+  //   product_id: productIdOnBrandSite,
+  //   discount_type: 'PERCENTAGE',
+  //   discount_value: data.amount,
+  //   starts_at: new Date().toISOString(),
+  // };
 
   switch (brand?.online_store_type) {
     case OnlineStoreType.WOOCOMMERCE:
@@ -63,21 +67,51 @@ export const createCoupon = async ({
         });
 
     case OnlineStoreType.SHOPIFY:
-      return await axios
-        .post(
-          'https://shopify.memarketplace.io/api/coupon/create',
-          shopify_body,
-        )
-        .then((res) => {
-          if (res?.data?.error) {
-            throw new Error('Product is not synchronized or not found.');
-          } else {
-            return res.data.data;
-          }
+      shopifyHandler = new ShopifyHandler();
+      shopify = shopifyHandler.createInstance(brand);
+
+      return await shopify
+        .post('admin/api/2021-10/price_rules.json', {
+          price_rule: {
+            title: `${APP_NAME}Discount`, // Your discount title
+            target_type: 'line_item',
+            target_selection: 'entitled',
+            allocation_method: 'each',
+            value_type: 'percentage',
+            value: `-${body.amount}`,
+            prerequisite_subtotal_range: {
+              greater_than_or_equal_to: body.amount,
+            },
+            starts_at: new Date().toISOString(),
+            entitled_product_ids: [productIdOnBrandSite.toString()],
+            allocation_limit: 1,
+            customer_selection: 'all',
+          },
         })
-        .catch((err) => {
-          console.log(err);
-          throw new Error(err.message);
+        .then((response) => {
+          const price_rule_id = response.data.price_rule.id;
+
+          return shopify
+            .post(
+              `admin/api/2021-10/price_rules/${price_rule_id}/discount_codes.json`,
+              {
+                discount_code: {
+                  code: body.code,
+                },
+              },
+            )
+            .then((response) => {
+              console.log('Redeem', response.data);
+              return response.data;
+            })
+            .catch((error) => {
+              console.log(error.response.data);
+              throw new Error(error);
+            });
+        })
+        .catch((error) => {
+          console.log(error.response.data);
+          throw new Error(error);
         });
 
     case OnlineStoreType.BIG_COMMERCE:

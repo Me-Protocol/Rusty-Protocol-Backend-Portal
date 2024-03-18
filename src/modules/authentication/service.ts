@@ -509,13 +509,14 @@ export class AuthenticationService {
   }
 
   async verifyEmail(
-    user: User,
+    userInfo: User,
     code: number,
     userAgent: string,
     clientIp: string,
     is2Fa?: boolean,
   ): Promise<string> {
     try {
+      const user = await this.userService.getUserByEmail(userInfo.email);
       this.validateUser(user, is2Fa);
       this.validateVerificationCode(user, code);
 
