@@ -332,12 +332,21 @@ export class AuthenticationService {
     userType: UserAppType,
     newUser: User,
     name: string,
+    brandId?: string,
   ): Promise<void> {
     if (userType === UserAppType.USER) {
       await this.customerService.create({
         name,
         userId: newUser.id,
       });
+      if (brandId) {
+        this.brandService.createBrandCustomer({
+          email: newUser.email,
+          brandId,
+          phone: newUser.phone,
+          name,
+        });
+      }
       newUser.role = Role.CUSTOMER;
     } else if (userType === UserAppType.BRAND) {
       await this.brandService.create({
@@ -368,9 +377,11 @@ export class AuthenticationService {
     userAgent,
     ip,
     walletAddress,
+    brandId,
   }: EmailSignupDto & {
     userAgent: string;
     ip: string;
+    brandId?: string;
   }): Promise<string> {
     try {
       if (userType === UserAppType.USER && !walletAddress) {
@@ -386,7 +397,7 @@ export class AuthenticationService {
         confirmPassword,
         userType,
       );
-      await this.handleUserTypeRoles(userType, newUser, name);
+      await this.handleUserTypeRoles(userType, newUser, name, brandId);
       if (userType === UserAppType.BRAND) {
         await this.sendEmailVerificationCode(newUser.email, newUser.username);
       } else {
