@@ -6,7 +6,7 @@ import { PaymentRequestTnxType } from '@src/utils/enums/PaymentRequestTnxType';
 import { PaymentRequest } from '@src/globalServices/costManagement/entities/paymentRequest.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { BrandService } from '@src/globalServices/brand/brand.service';
-import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection';
+import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection.entity';
 import { supportedNetworks } from '@src/globalServices/costManagement/symbol-finder.service';
 import retrieveCost from '@src/globalServices/costManagement/relayer-costgetter.service';
 import { GelatoRelay } from '@gelatonetwork/relay-sdk';

@@ -3,7 +3,7 @@
 import { BaseEntity } from '@src/common/entities/base.entity';
 import { Column, Entity, OneToMany } from 'typeorm';
 import { PaymentRequest } from './paymentRequest.entity';
-import { CostCollection } from './costCollection';
+import { CostCollection } from './costCollection.entity';
 
 @Entity('cost_batch')
 export class CostBatch extends BaseEntity {
