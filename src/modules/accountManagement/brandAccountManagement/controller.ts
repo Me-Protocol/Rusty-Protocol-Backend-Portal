@@ -95,6 +95,12 @@ export class BrandManagementController {
     return await this.brandAccountManagementService.getBrandById(id);
   }
 
+  //@UseGuards(AuthGuard())
+  @Get('public/:id')
+  async getBrandByIdPublic(@Param('id', ParseUUIDPipe) id: string) {
+    return await this.brandAccountManagementService.getBrandById(id);
+  }
+
   @UseGuards(BrandJwtStrategy)
   @Get('member/roles/owner')
   async getBrandOwner(@Req() req: any) {
