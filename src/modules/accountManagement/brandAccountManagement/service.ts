@@ -41,11 +41,13 @@ import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
 import { Role } from '@src/utils/enums/Role';
 import { BrandUploadGateway } from './socket/brand-upload.gateway';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
+import { AuditTrailService } from '@src/globalServices/auditTrail/auditTrail.service'; 
 
 @Injectable()
 export class BrandAccountManagementService {
   constructor(
     private readonly brandService: BrandService,
+    private readonly auditTrailService: AuditTrailService, 
     private readonly userService: UserService,
     private readonly mailService: MailService,
     private readonly customerService: CustomerService,
@@ -588,9 +590,22 @@ export class BrandAccountManagementService {
     });
   }
 
-  async getAllBrandsForAdmin(query: FilterBrandDto) {
+  async getAllBrandsForAdmin(query: FilterBrandDto, userId: string) {
     try {
-      return await this.brandService.getAllBrandsForAdmin(query);
+      const brands = await this.brandService.getAllBrandsForAdmin(query);
+
+      const auditTrailEntry = {
+        userId: userId,
+        auditType: 'GET_ALL_BRANDS_FOR_ADMIN',
+        description: `User ${userId} retrieved all brands for admin with query parameters: ${JSON.stringify(query)}.`,
+        reportableId: ''
+
+      };
+
+      await this.auditTrailService.createAuditTrail(auditTrailEntry);
+
+      return brands;
+
     } catch (error) {
       console.log(error);
       logger.error(error);

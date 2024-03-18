@@ -21,11 +21,13 @@ import {
 import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
 import { Transaction } from '@src/globalServices/fiatWallet/entities/transaction.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { AuditTrailService } from '@src/globalServices/auditTrail/auditTrail.service';
 
 @Injectable()
 export class PaymentModuleService {
   constructor(
     private readonly walletService: FiatWalletService,
+    private readonly auditTrailService: AuditTrailService,
     private readonly paymentService: PaymentService,
     private readonly billerService: BillerService,
     private readonly brandService: BrandService,
@@ -47,11 +49,20 @@ export class PaymentModuleService {
     }
   }
 
-  async getMeCredits(brandId: string) {
+  async getMeCredits(brandId: string, userId: string) {
     const wallet = await this.walletService.getWalletByBrandId(brandId);
     const settings = await this.settingsService.getPublicSettings();
 
     const meCreditsInDollars = wallet.meCredits * settings.meTokenValue;
+
+    const auditTrailEntry = {
+      userId : userId,
+      auditType: 'RETRIEVE_ME_CREDITS',
+      description: `User ${userId} retrieved ME credits for brand ${brandId}.`,
+      reportableId: brandId,
+
+    };
+    await this.auditTrailService.createAuditTrail(auditTrailEntry);
 
     return {
       meCredits: wallet.meCredits,
@@ -417,7 +428,7 @@ export class PaymentModuleService {
   // @Cron(CronExpression.EVERY_30_SECONDS)
   // async handleAutoTop() {}
 
-  async issueMeCredits(brandId: string, amount: number) {
+  async issueMeCredits(brandId: string, amount: number, userId: string) {
     try {
       const brand = await this.brandService.getBrandById(brandId);
       if (!brand) throw new HttpException('Brand not found', 404);
@@ -427,6 +438,15 @@ export class PaymentModuleService {
       brandWallet.meCredits = Number(brandWallet.meCredits) + Number(amount);
 
       await this.walletService.save(brandWallet);
+
+      //Audit Trail Entry
+      const auditTrailEntry = {
+        userId: userId,
+        auditType: 'ISSUE_ME_CREDITS',
+        description: `User ${userId} issued ${amount} ME credits to brand ${brandId} successfully.`,
+        reportableId: brandId,  
+      };
+      await this.auditTrailService.createAuditTrail(auditTrailEntry);
 
       return {
         message: 'Me credits issued successfully',
