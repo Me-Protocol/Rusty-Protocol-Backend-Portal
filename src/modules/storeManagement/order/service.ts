@@ -409,14 +409,14 @@ export class OrderManagementService {
 
       const isSetupShopify =
         brand?.online_store_type === OnlineStoreType.SHOPIFY &&
-        brand.shopify_online_store_url;
+        brand.shopify_online_store_url &&
+        brand.shopify_consumer_secret;
 
       if (isSetupWoocommerce || isSetupShopify) {
         if (status === 'success') {
           const couponCode = await this.couponService.generateCouponCode();
 
           try {
-            console.log('Create coupon');
             const coupon = await createCoupon({
               brand,
               data: {
@@ -430,19 +430,23 @@ export class OrderManagementService {
 
             console.log(coupon);
           } catch (error) {
-            console.log(error);
-            const msg = error?.message;
-            if (msg === 'Product is not synchronized or not found.') {
-              await this.failOrderAndRefund({
-                order,
-                transaction,
-                offer,
-                customer,
-                failReason: 'Product is not synchronized or not found',
-                status: StatusType.FAILED,
-              });
-              return;
-            }
+            // console.log(error);
+            // const msg = error?.message;
+            // if (msg === 'Product is not synchronized or not found.') {
+
+            //   return;
+            // }
+
+            await this.failOrderAndRefund({
+              order,
+              transaction,
+              offer,
+              customer,
+              failReason: 'Failed to create coupon',
+              status: StatusType.FAILED,
+            });
+
+            return;
           }
 
           const coupon = await this.couponService.create({

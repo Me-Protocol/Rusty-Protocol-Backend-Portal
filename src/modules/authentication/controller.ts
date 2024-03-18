@@ -68,6 +68,21 @@ export class AuthenticationController {
     });
   }
 
+  @Post('signup/email/with-brand/:brandId')
+  async signupAsBrandCustomerWithEmail(
+    @Body(ValidationPipe) body: EmailSignupDto,
+    @RealIP() ip: string,
+    @Req() req: any,
+    @Param('brandId', ParseUUIDPipe) brandId: string,
+  ): Promise<any> {
+    return await this.authService.signupEmail({
+      ...body,
+      brandId,
+      userAgent: req.headers['user-agent'],
+      ip,
+    });
+  }
+
   @UseGuards(JwtAuthStrategy)
   @Post('signup/email/resend')
   async resendEmailOTP(@Req() req: any): Promise<any> {

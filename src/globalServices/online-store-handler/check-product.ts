@@ -2,6 +2,8 @@ import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 import { WooCommerceHandler } from './woocommerce';
 import WooCommerceRestApi from '@woocommerce/woocommerce-rest-api';
 import { Brand } from '../brand/entities/brand.entity';
+import { ShopifyHandler } from './shopify';
+import { AxiosInstance } from 'axios';
 
 export const checkProductOnBrandStore = async ({
   brand,
@@ -12,6 +14,9 @@ export const checkProductOnBrandStore = async ({
 }) => {
   let woocommerceHandler: WooCommerceHandler;
   let woocommerce: WooCommerceRestApi;
+
+  let shopifyHandler: ShopifyHandler;
+  let shopify: AxiosInstance;
 
   switch (brand.online_store_type) {
     case OnlineStoreType.WOOCOMMERCE:
@@ -29,7 +34,19 @@ export const checkProductOnBrandStore = async ({
         });
 
     case OnlineStoreType.SHOPIFY:
-      return 'product';
+      shopifyHandler = new ShopifyHandler();
+      shopify = shopifyHandler.createInstance(brand);
+
+      return await shopify
+        .get(`products/${productId}.json?fields=id`)
+        .then((response) => {
+          console.log('response', response.data);
+          return response.data;
+        })
+        .catch((error) => {
+          console.log('error', error.response.data);
+          throw new Error('Store not found on shopify');
+        });
     case OnlineStoreType.BIG_COMMERCE:
       // const bigCommerceHandler = new BigCommerceHandler();
       // const bigCommerce = bigCommerceHandler.createInstance(

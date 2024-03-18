@@ -41,6 +41,7 @@ import {
   CreateSendgridContactEvent,
 } from '@src/globalServices/mail/create-sendgrid-contact.event';
 import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
+import { SettingsService } from '@src/globalServices/settings/settings.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -64,6 +65,7 @@ export class AuthenticationService {
     private collectionService: CollectionService,
     private readonly eventEmitter: EventEmitter2,
     private readonly googleService: GoogleSheetService,
+    private readonly settingService: SettingsService,
   ) {}
 
   async writeDataToGoogleSheet(userId: string): Promise<any> {
@@ -332,12 +334,21 @@ export class AuthenticationService {
     userType: UserAppType,
     newUser: User,
     name: string,
+    brandId?: string,
   ): Promise<void> {
     if (userType === UserAppType.USER) {
       await this.customerService.create({
         name,
         userId: newUser.id,
       });
+      if (brandId) {
+        this.brandService.createBrandCustomer({
+          email: newUser.email,
+          brandId,
+          phone: newUser.phone,
+          name,
+        });
+      }
       newUser.role = Role.CUSTOMER;
     } else if (userType === UserAppType.BRAND) {
       await this.brandService.create({
@@ -368,14 +379,18 @@ export class AuthenticationService {
     userAgent,
     ip,
     walletAddress,
+    brandId,
   }: EmailSignupDto & {
     userAgent: string;
     ip: string;
+    brandId?: string;
   }): Promise<string> {
     try {
       if (userType === UserAppType.USER && !walletAddress) {
         throw new Error('Wallet address is required');
       }
+
+      const settings = await this.settingService.getPublicSettings();
 
       const lowerCasedEmail = email.toLowerCase();
       await this.checkIfUserExists(lowerCasedEmail);
@@ -386,7 +401,7 @@ export class AuthenticationService {
         confirmPassword,
         userType,
       );
-      await this.handleUserTypeRoles(userType, newUser, name);
+      await this.handleUserTypeRoles(userType, newUser, name, brandId);
       if (userType === UserAppType.BRAND) {
         await this.sendEmailVerificationCode(newUser.email, newUser.username);
       } else {
@@ -399,6 +414,7 @@ export class AuthenticationService {
         );
         await this.customerAccountManagementService.setWalletAddress(
           walletAddress,
+          settings.walletVersion,
           newUser.id,
         );
         await this.collectionService.create({
@@ -498,13 +514,14 @@ export class AuthenticationService {
   }
 
   async verifyEmail(
-    user: User,
+    userInfo: User,
     code: number,
     userAgent: string,
     clientIp: string,
     is2Fa?: boolean,
   ): Promise<string> {
     try {
+      const user = await this.userService.getUserByEmail(userInfo.email);
       this.validateUser(user, is2Fa);
       this.validateVerificationCode(user, code);
 

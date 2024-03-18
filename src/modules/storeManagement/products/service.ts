@@ -147,6 +147,16 @@ export class ProductManagementService {
         }
 
         product.regions = regions;
+      } else {
+        if (brand.regions && brand.regions.length > 0) {
+          const regions = [];
+
+          for (const region of brand.regions) {
+            regions.push(region);
+          }
+
+          product.regions = regions;
+        }
       }
 
       const newProduct = await this.productService.createProduct(product);

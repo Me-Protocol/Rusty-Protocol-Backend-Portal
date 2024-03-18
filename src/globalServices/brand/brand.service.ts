@@ -199,6 +199,7 @@ export class BrandService {
       }
       if (dto.shopify_consumer_key)
         brand.shopify_consumer_key = dto.shopify_consumer_key;
+
       if (dto.shopify_consumer_secret)
         brand.shopify_consumer_secret = dto.shopify_consumer_secret;
 
@@ -213,6 +214,21 @@ export class BrandService {
             woocommerce_consumer_key: dto.woocommerceConsumerKey,
             woocommerce_consumer_secret: dto.woocommerceConsumerSecret,
             woocommerce_online_store_url: dto.online_store_url,
+            online_store_type: dto.onlineStoreType,
+          },
+        });
+      }
+
+      if (
+        dto.onlineStoreType === OnlineStoreType.SHOPIFY &&
+        dto.shopify_consumer_secret
+      ) {
+        await checkBrandOnlineStore({
+          // @ts-ignore
+          brand: {
+            shopify_consumer_secret: dto.shopify_consumer_secret,
+            shopify_consumer_key: dto.shopify_consumer_key,
+            shopify_online_store_url: dto.online_store_url,
             online_store_type: dto.onlineStoreType,
           },
         });
@@ -1089,12 +1105,17 @@ export class BrandService {
       select: {
         woocommerce_consumer_key: true,
         woocommerce_consumer_secret: true,
-        shopify_online_store_url: true,
         woocommerce_online_store_url: true,
+        shopify_online_store_url: true,
+        shopify_consumer_secret: true,
+        shopify_consumer_key: true,
         online_store_type: true,
         id: true,
         currency: true,
+        location: true,
+        regions: true,
       },
+      relations: ['regions'],
     });
   }
 }
