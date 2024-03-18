@@ -238,7 +238,7 @@ export class Brand extends BaseEntity {
   listOnStore: boolean;
 
   @Column({
-    default: false,
+    default: true,
   })
   isOnboarded: boolean;
 
