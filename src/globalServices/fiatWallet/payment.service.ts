@@ -1,7 +1,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { FiatWallet } from './entities/fiatWallet.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PaymentMethod } from './entities/paymentMethod';
+import { PaymentMethod } from './entities/paymentMethod.entity';
 import { Repository } from 'typeorm';
 import { logger } from '../logger/logger.service';
 import { Transaction } from './entities/transaction.entity';

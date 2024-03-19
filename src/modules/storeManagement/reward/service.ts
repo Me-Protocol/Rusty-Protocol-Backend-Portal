@@ -30,7 +30,7 @@ import { FilterRegistryHistoryDto } from './dto/filterRegistryHistoryDto.dto';
 import { RewardStatus } from '@src/utils/enums/ItemStatus';
 import { BrandService } from '@src/globalServices/brand/brand.service';
 import { AnalyticsRecorderService } from '@src/globalServices/analytics/analytic_recorder.service';
-import { RewardCirculation } from '@src/globalServices/analytics/entities/reward_circulation';
+import { RewardCirculation } from '@src/globalServices/analytics/entities/reward_circulation.entity';
 import { UpdateRewardDto } from './dto/updateRewardDto';
 import { NotificationService } from '@src/globalServices/notification/notification.service';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';

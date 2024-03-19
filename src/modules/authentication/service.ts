@@ -336,13 +336,14 @@ export class AuthenticationService {
     name: string,
     brandId?: string,
   ): Promise<void> {
+    await this.customerService.create({
+      name,
+      userId: newUser.id,
+    });
+
     if (userType === UserAppType.USER) {
-      await this.customerService.create({
-        name,
-        userId: newUser.id,
-      });
       if (brandId) {
-        this.brandService.createBrandCustomer({
+        await this.brandService.createBrandCustomer({
           email: newUser.email,
           brandId,
           phone: newUser.phone,
@@ -1135,6 +1136,7 @@ export class AuthenticationService {
     username: string,
     userAgent: string,
     ip: string,
+    brandId?: string,
   ): Promise<{ token: string; provider: LoginType }> {
     const newUser = new User();
     newUser.email = email;

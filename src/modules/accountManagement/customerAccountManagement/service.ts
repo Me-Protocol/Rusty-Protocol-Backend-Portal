@@ -103,6 +103,7 @@ export class CustomerAccountManagementService {
 
       // 6. We assign the walletAddress to the customer.
       customer.walletAddress = walletAddress;
+      customer.walletVersion = walletVersion;
       await this.customerService.save(customer);
 
       // 8. We check if the user has undistributed points.

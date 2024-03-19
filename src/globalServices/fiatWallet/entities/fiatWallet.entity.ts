@@ -9,7 +9,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
-import { PaymentMethod } from './paymentMethod';
+import { PaymentMethod } from './paymentMethod.entity';
 
 @Entity('fiat_wallet')
 export class FiatWallet extends BaseEntity {
