@@ -381,9 +381,9 @@ export class OrderManagementService {
     try {
       const order = await this.orderService.getOrderByOrderId(orderId);
 
-      // if (order.status !== StatusType.PROCESSING) {
-      //   return;
-      // }
+      if (order.status !== StatusType.PROCESSING) {
+        return;
+      }
 
       const status = await checkOrderStatusGelatoOrRuntime(
         order.taskId,
