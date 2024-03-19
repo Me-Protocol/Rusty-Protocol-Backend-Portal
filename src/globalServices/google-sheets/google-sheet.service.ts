@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 import sgMail from '@sendgrid/mail';
-import { SENDGRID_API_KEY } from '@src/config/env.config';
+import { SENDGRID_API_KEY, SENDGRID_EMAIL } from '@src/config/env.config';
 
 sgMail.setApiKey(SENDGRID_API_KEY);
 
@@ -176,7 +176,7 @@ export class GoogleSheetService {
   ) {
     const payload = {
       to: email,
-      from: 'Me Marketplace <noreply@memarketplace.io>',
+      from: `"Me Marketplace" <${SENDGRID_EMAIL}>`,
       templateId: 'd-797d63ae277e455a8694de84e7673ed4',
       dynamic_template_data: {
         name: first_name,

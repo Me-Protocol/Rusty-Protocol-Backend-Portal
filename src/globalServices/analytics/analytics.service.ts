@@ -11,7 +11,7 @@ import { Task } from '../task/entities/task.entity';
 import { BrandCustomer } from '../brand/entities/brand_customer.entity';
 import { Follow } from '../follow/entities/follow.entity';
 import { Review } from '../review/entities/review.entity';
-import { RewardCirculation } from './entities/reward_circulation';
+import { RewardCirculation } from './entities/reward_circulation.entity';
 import { RewardCirculationFilter } from '@src/utils/enums/RewardCirculationFilter';
 import moment from 'moment';
 import { Transaction } from '../fiatWallet/entities/transaction.entity';
