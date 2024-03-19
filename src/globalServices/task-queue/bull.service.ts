@@ -3,6 +3,7 @@ import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { Job, Queue } from 'bull';
 import { OrderManagementService } from '@src/modules/storeManagement/order/service';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 export const ORDER_TASK_QUEUE = 'order-processing';
 export const ORDER_PROCESSOR_QUEUE = 'order-processor';
@@ -22,7 +23,6 @@ export class BullService {
   }
 
   async addOrderToQueue(orderId: string) {
-    console.log('Adding order to queue', orderId);
     return await this.queue.add(
       'process-order',
       { orderId },
@@ -38,6 +38,17 @@ export class BullService {
 
   async getJob(jobId: string) {
     return await this.queue.getJob(jobId);
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async jobs() {
+    const jobs = await this.queue.getJobs([
+      'active',
+      'waiting',
+      'delayed',
+      'failed',
+    ]);
+    console.log(jobs.length, 'jobs found');
   }
 }
 

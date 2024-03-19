@@ -705,6 +705,9 @@ export class OrderManagementService {
 
       if (status === 'success') {
         const job = await this.bullService.getJob(order.jobId);
+
+        console.log('JOB', job);
+
         if (!job) {
           await this.completeOrder({
             orderId: order.id,
