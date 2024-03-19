@@ -343,7 +343,7 @@ export class AuthenticationService {
 
     if (userType === UserAppType.USER) {
       if (brandId) {
-        this.brandService.createBrandCustomer({
+        await this.brandService.createBrandCustomer({
           email: newUser.email,
           brandId,
           phone: newUser.phone,
