@@ -381,9 +381,9 @@ export class OrderManagementService {
     try {
       const order = await this.orderService.getOrderByOrderId(orderId);
 
-      if (order.status !== StatusType.PROCESSING) {
-        return;
-      }
+      // if (order.status !== StatusType.PROCESSING) {
+      //   return;
+      // }
 
       const status = await checkOrderStatusGelatoOrRuntime(
         order.taskId,
@@ -582,27 +582,24 @@ export class OrderManagementService {
 
           const brandCustomer = await this.brandService.getBrandCustomer(
             reward.brandId,
-            customer.userId,
+            order.userId,
           );
 
           // update customer total redeem
-
           const isExternalOffer = offer.rewardId !== order.redeemRewardId;
 
           if (isExternalOffer) {
             const externalRedemptions =
               await this.orderService.getCustomerExternalRedemptions({
                 userId: order.userId,
-                rewardId: order.redeemRewardId,
+                rewardId: reward.id,
               });
 
-            console.log(externalRedemptions.length, 'External Redemptions');
-
-            customer.totalExternalRedeemed = externalRedemptions.length;
-            customer.totalExternalRedemptionAmount = externalRedemptions.reduce(
-              (acc, curr) => acc + Number(curr.points),
-              0,
-            );
+            customer.totalExternalRedeemed =
+              Number(customer.totalExternalRedeemed) + 1;
+            customer.totalExternalRedemptionAmount =
+              Number(customer.totalExternalRedemptionAmount) +
+              Number(order.points);
 
             brandCustomer.totalExternalRedeemed = externalRedemptions.length;
             brandCustomer.totalExternalRedemptionAmount =
@@ -614,16 +611,8 @@ export class OrderManagementService {
             const internalRedemptions =
               await this.orderService.getCustomerInternalRedemptions({
                 userId: order.userId,
-                rewardId: order.redeemRewardId,
+                rewardId: reward.id,
               });
-
-            console.log(internalRedemptions.length, 'Internal Redemptions');
-
-            customer.totalRedeemed = internalRedemptions.length;
-            customer.totalRedemptionAmount = internalRedemptions.reduce(
-              (acc, curr) => acc + Number(curr.points),
-              0,
-            );
 
             brandCustomer.totalRedeemed = internalRedemptions.length;
             brandCustomer.totalRedemptionAmount = internalRedemptions.reduce(
