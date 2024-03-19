@@ -30,6 +30,8 @@ export class BrandJwtStrategy implements CanActivate {
         queries?.brandID ||
         queries.currentBrandId;
 
+      console.log('brandId', brandId);
+
       if (!brandId) {
         console.log('No brand specified');
         throw new UnauthorizedException(
@@ -60,10 +62,6 @@ export class BrandJwtStrategy implements CanActivate {
         );
       }
 
-      if (user.userType !== UserAppType.BRAND) {
-        throw new UnauthorizedException('Unauthorized. Please login');
-      }
-
       if (user.banned) {
         throw new UnauthorizedException(
           'You account has been banned. Please contact support',
@@ -83,6 +81,17 @@ export class BrandJwtStrategy implements CanActivate {
       }
 
       const brand = await this.brandService.getBrandById(brandId);
+
+      if (!brand) {
+        throw new UnauthorizedException('Unauthorized. Brand not found');
+      }
+
+      if (brand.disabled) {
+        throw new UnauthorizedException(
+          'Unauthorized. Brand is disabled. Please contact support',
+        );
+      }
+
       const brandMember =
         await this.brandService.getBrandMemberByUserIdAndBrandId(
           user.id,
@@ -105,6 +114,7 @@ export class BrandJwtStrategy implements CanActivate {
 
       return true;
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new UnauthorizedException(
         error.message || 'Unauthorized. Please login',

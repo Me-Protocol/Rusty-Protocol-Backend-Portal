@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
   HttpException,
   HttpStatus,
@@ -43,6 +44,8 @@ import { logger } from '../logger/logger.service';
 import { Role } from '@src/utils/enums/Role';
 import { CurrencyService } from '../currency/currency.service';
 import { OrderService } from '../order/order.service';
+import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
+import { checkBrandOnlineStore } from '../online-store-handler/check-store';
 
 @Injectable()
 export class BrandService {
@@ -186,11 +189,50 @@ export class BrandService {
         brand.woocommerce_consumer_key = dto.woocommerceConsumerKey;
       if (dto.woocommerceConsumerSecret)
         brand.woocommerce_consumer_secret = dto.woocommerceConsumerSecret;
-      if (dto.online_store_url) brand.online_store_url = dto.online_store_url;
+
+      if (dto.online_store_url) {
+        if (brand.online_store_type === OnlineStoreType.SHOPIFY) {
+          brand.shopify_online_store_url = dto.online_store_url;
+        } else if (brand.online_store_type === OnlineStoreType.WOOCOMMERCE) {
+          brand.woocommerce_online_store_url = dto.online_store_url;
+        }
+      }
       if (dto.shopify_consumer_key)
         brand.shopify_consumer_key = dto.shopify_consumer_key;
+
       if (dto.shopify_consumer_secret)
         brand.shopify_consumer_secret = dto.shopify_consumer_secret;
+
+      if (
+        dto.onlineStoreType === OnlineStoreType.WOOCOMMERCE &&
+        dto.woocommerceConsumerKey &&
+        dto.woocommerceConsumerSecret
+      ) {
+        await checkBrandOnlineStore({
+          // @ts-ignore
+          brand: {
+            woocommerce_consumer_key: dto.woocommerceConsumerKey,
+            woocommerce_consumer_secret: dto.woocommerceConsumerSecret,
+            woocommerce_online_store_url: dto.online_store_url,
+            online_store_type: dto.onlineStoreType,
+          },
+        });
+      }
+
+      if (
+        dto.onlineStoreType === OnlineStoreType.SHOPIFY &&
+        dto.shopify_consumer_secret
+      ) {
+        await checkBrandOnlineStore({
+          // @ts-ignore
+          brand: {
+            shopify_consumer_secret: dto.shopify_consumer_secret,
+            shopify_consumer_key: dto.shopify_consumer_key,
+            shopify_online_store_url: dto.online_store_url,
+            online_store_type: dto.onlineStoreType,
+          },
+        });
+      }
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);
@@ -251,37 +293,88 @@ export class BrandService {
     const brandQuery = this.brandRepo
       .createQueryBuilder('brand')
       .leftJoinAndSelect('brand.category', 'category')
-      .leftJoinAndSelect('brand.regions', 'regions')
-      .where('brand.listOnStore = :listOnStore', { listOnStore: true });
+      .leftJoinAndSelect('brand.regions', 'regions');
 
-    if (categoryId) {
-      brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
-    }
-
-    if (order) {
-      const formatedOrder = order.split(':')[0];
-      const acceptedOrder = ['name', 'createdAt', 'updatedAt'];
-
-      if (!acceptedOrder.includes(formatedOrder)) {
-        throw new Error('Invalid order param');
-      }
-
-      brandQuery.orderBy(
-        `brand.${order.split(':')[0]}`,
-        order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
-      );
-    }
-
-    if (search) {
-      brandQuery.andWhere('brand.name ILIKE :search', {
-        search: `%${search}%`,
-      });
-    }
+    const defaultRegion = await this.currencyService.getDefaultRegion();
 
     if (regionId) {
       // where offer product regions contains regionId or offer product regions is empty
-      brandQuery.andWhere('regions.id = :regionId', { regionId });
-      brandQuery.orWhere('regions.id IS NULL');
+      brandQuery.where('regions.id = :regionId', { regionId });
+
+      if (order) {
+        const formatedOrder = order.split(':')[0];
+        const acceptedOrder = ['name', 'createdAt', 'updatedAt'];
+
+        if (!acceptedOrder.includes(formatedOrder)) {
+          throw new Error('Invalid order param');
+        }
+
+        brandQuery.orderBy(
+          `brand.${order.split(':')[0]}`,
+          order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+        );
+      }
+
+      if (search) {
+        brandQuery.andWhere('brand.name ILIKE :search', {
+          search: `%${search}%`,
+        });
+      }
+
+      brandQuery.andWhere('regions.id = :regionId', {
+        regionId: defaultRegion.id,
+      });
+
+      if (categoryId) {
+        brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
+      }
+
+      brandQuery.andWhere('brand.listOnStore = :listOnStore', {
+        listOnStore: true,
+      });
+      brandQuery.andWhere('brand.disabled = :disabled', {
+        disabled: false,
+      });
+    } else {
+      console.log('here');
+      // regions is empty
+      // brandQuery.where('regions.id IS NULL');
+
+      if (order) {
+        const formatedOrder = order.split(':')[0];
+        const acceptedOrder = ['name', 'createdAt', 'updatedAt'];
+
+        if (!acceptedOrder.includes(formatedOrder)) {
+          throw new Error('Invalid order param');
+        }
+
+        brandQuery.orderBy(
+          `brand.${order.split(':')[0]}`,
+          order.split(':')[1] === 'ASC' ? 'ASC' : 'DESC',
+        );
+      }
+
+      if (search) {
+        brandQuery.andWhere('brand.name ILIKE :search', {
+          search: `%${search}%`,
+        });
+      }
+
+      if (categoryId) {
+        brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
+      }
+
+      brandQuery.andWhere('brand.listOnStore = :listOnStore', {
+        listOnStore: true,
+      });
+
+      brandQuery.andWhere('brand.disabled = :disabled', {
+        disabled: false,
+      });
+
+      brandQuery.orWhere('regions.id = :regionId', {
+        regionId: defaultRegion.id,
+      });
     }
 
     brandQuery.skip((page - 1) * limit).take(limit);
@@ -426,7 +519,7 @@ export class BrandService {
     brandCustomer.identifier = identifier;
     brandCustomer.identifierType = identifierType;
     brandCustomer.phone = phone;
-    brandCustomer.email = email;
+    brandCustomer.email = email.toLowerCase();
     brandCustomer.name = name;
 
     await this.brandCustomerRepo.save(brandCustomer);
@@ -578,17 +671,12 @@ export class BrandService {
 
         orders.forEach((order) => {
           const isUsingBrandReward = !!customer.brand.rewards.find(
-            (i) => i.id === order?.reward?.id,
+            (i) => i.id === order?.offer?.reward?.id,
           );
-          console.log('brandRewardUsed', order?.reward);
+          console.log('brandRewardUsed', order?.offer?.reward);
           if (order.status === StatusType.SUCCEDDED && isUsingBrandReward)
-            totalRedemptionAmount += Number(order.points);
+            totalRedemptionAmount += Number(order?.points || 0);
         });
-
-        // console.log(
-        //   `totalRedemptionAmount for ${customer.name}:`,
-        //   totalRedemptionAmount,
-        // );
 
         if (totalRedemptionAmount > 0) {
           activeCustomers.push(customer);
@@ -856,7 +944,7 @@ export class BrandService {
         }
 
         await this.paymentService.chargePaymentMethod({
-          amount: amount.amountToPay,
+          amount: amount.amountToPay * 100,
           paymentMethodId,
           wallet,
           narration: `Payment for ${plan.name} subscription`,
@@ -936,10 +1024,12 @@ export class BrandService {
     page,
     limit,
     search,
+    disabled,
   }: {
     page: number;
     limit: number;
     search: string;
+    disabled: boolean;
   }) {
     const brandQuery = this.brandRepo.createQueryBuilder('brand');
 
@@ -949,6 +1039,16 @@ export class BrandService {
       });
       brandQuery.orWhere('brand.slug ILIKE :search', {
         search: `%${search}%`,
+      });
+    }
+
+    if (disabled) {
+      brandQuery.andWhere('brand.disabled = :disabled', {
+        disabled,
+      });
+    } else {
+      brandQuery.andWhere('brand.disabled = :disabled', {
+        disabled: false,
       });
     }
 
@@ -1005,10 +1105,17 @@ export class BrandService {
       select: {
         woocommerce_consumer_key: true,
         woocommerce_consumer_secret: true,
-        online_store_url: true,
+        woocommerce_online_store_url: true,
+        shopify_online_store_url: true,
+        shopify_consumer_secret: true,
+        shopify_consumer_key: true,
         online_store_type: true,
         id: true,
+        currency: true,
+        location: true,
+        regions: true,
       },
+      relations: ['regions'],
     });
   }
 }

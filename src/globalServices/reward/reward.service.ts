@@ -6,10 +6,7 @@ import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { Reward } from './entities/reward.entity';
 import { rewardIndex } from '@src/modules/search/interface/search.interface';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
-import { KeyIdentifier } from './entities/keyIdentifier.entity';
-import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { RewardStatus } from '@src/utils/enums/ItemStatus';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
@@ -19,9 +16,6 @@ export class RewardService {
 
     @InjectRepository(Reward)
     private readonly rewardsRepo: Repository<Reward>,
-
-    @InjectRepository(KeyIdentifier)
-    private readonly keyIdentifierRepo: Repository<KeyIdentifier>,
 
     private readonly settingsService: SettingsService,
   ) {}
@@ -131,7 +125,8 @@ export class RewardService {
       select: {
         syncData: true,
         id: true,
-        totalDistributedSupply: true,
+        totalDistributed: true,
+        totalIssued: true,
         brandId: true,
         totalRedeemedSupply: true,
         acceptedCustomerIdentitytypes: true,
@@ -201,21 +196,6 @@ export class RewardService {
     return this.rewardsRepo.findOne({
       where: { contractAddress: contractAddress },
       relations: ['brand'],
-    });
-  }
-
-  async createKeyIdentifer(
-    keyIdentifier: KeyIdentifier,
-  ): Promise<KeyIdentifier> {
-    return this.keyIdentifierRepo.save(keyIdentifier);
-  }
-
-  async getKeyIdentifier(id: string, type: KeyIdentifierType) {
-    return this.keyIdentifierRepo.findOne({
-      where: {
-        id,
-        identifierType: type,
-      },
     });
   }
 

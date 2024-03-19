@@ -86,7 +86,7 @@ import { CouponService } from './globalServices/order/coupon.service';
 import { OrderManagementController } from './modules/storeManagement/order/controller';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CostBatch } from './globalServices/costManagement/entities/costBatch.entity';
-import { CostCollection } from './globalServices/costManagement/entities/costCollection';
+import { CostCollection } from './globalServices/costManagement/entities/costCollection.entity';
 import { PaymentRequest } from './globalServices/costManagement/entities/paymentRequest.entity';
 import { CostManagementController } from './modules/costModule/controller';
 import { CostModuleService } from './globalServices/costManagement/costModule.service';
@@ -96,14 +96,14 @@ import { Transaction } from './globalServices/fiatWallet/entities/transaction.en
 import { PaymentService } from './globalServices/fiatWallet/payment.service';
 import { FiatWalletService } from './globalServices/fiatWallet/fiatWallet.service';
 import { PaymentModuleService } from './modules/paymentModule/service';
-import { PaymentMethod } from './globalServices/fiatWallet/entities/paymentMethod';
+import { PaymentMethod } from './globalServices/fiatWallet/entities/paymentMethod.entity';
 import { PaymentModuleController } from './modules/paymentModule/controller';
 import { InAppApiKeyJwtStrategy } from './middlewares/inapp-api-jwt-strategy.middleware';
 import { SettingsService } from './globalServices/settings/settings.service';
 import { BrandSubscriptionService } from './globalServices/brand/brandSeviceSubscription.service';
 import { BrandMember } from './globalServices/brand/entities/brand_member.entity';
 import { KeyManagementService } from './globalServices/key-management/key-management.service';
-import { KeyIdentifier } from './globalServices/reward/entities/keyIdentifier.entity';
+import { KeyIdentifier } from './globalServices/key-management/entities/keyIdentifier.entity';
 import { BrandCustomer } from './globalServices/brand/entities/brand_customer.entity';
 import { Notification } from './globalServices/notification/entities/notification.entity';
 import { NotificationController } from './modules/notification/controller';
@@ -118,7 +118,7 @@ import { DebugController } from './debug/debug.controller';
 import { ReviewManagementController } from './modules/storeManagement/review/controller';
 import { ReviewService } from './globalServices/review/review.service';
 import { ReviewManagementService } from './modules/storeManagement/review/service';
-import { TasksService } from './globalServices/task/task.service';
+import { TASK_QUEUE, TasksService } from './globalServices/task/task.service';
 import { TasksController } from './modules/taskModule/tasks.controller';
 import { Task } from './globalServices/task/entities/task.entity';
 import { TaskResponder } from './globalServices/task/entities/taskResponder.entity';
@@ -144,7 +144,7 @@ import { AnalyticsManagementService } from './modules/storeManagement/analytics/
 import { AnalyticsManagementController } from './modules/storeManagement/analytics/controller';
 import { RewarderService } from './globalServices/task/common/rewarder/rewarder.service';
 import { AnalyticsRecorderService } from './globalServices/analytics/analytic_recorder.service';
-import { RewardCirculation } from './globalServices/analytics/entities/reward_circulation';
+import { RewardCirculation } from './globalServices/analytics/entities/reward_circulation.entity';
 import { BrandSubscriptionPlan } from './globalServices/brand/entities/brand_subscription_plan.entity';
 import { NotificationHandler } from '@src/globalServices/notification/notification.handler';
 import { CurrencyService } from './globalServices/currency/currency.service';
@@ -155,6 +155,14 @@ import { TopupEventBlock } from './globalServices/brand/entities/topup_event_blo
 import { VariantOption } from '@src/globalServices/product/entities/variantvalue.entity';
 import { BrandUploadGateway } from './modules/accountManagement/brandAccountManagement/socket/brand-upload.gateway';
 import { Region } from './globalServices/currency/entities/region.entity';
+import { AutoTopupRequest } from './globalServices/biller/entity/auto-topup-request.entity';
+import {
+  BullService,
+  ORDER_PROCESSOR_QUEUE,
+  ORDER_TASK_QUEUE,
+  OrderProcessor,
+} from './globalServices/task-queue/bull.service';
+import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
 
 @Module({
   imports: [
@@ -211,6 +219,7 @@ import { Region } from './globalServices/currency/entities/region.entity';
       TopupEventBlock,
       VariantOption,
       Region,
+      AutoTopupRequest,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
@@ -231,6 +240,7 @@ import { Region } from './globalServices/currency/entities/region.entity';
         redis: {
           host: configService.get('REDIS_HOSTNAME'),
           port: configService.get('REDIS_PORT'),
+          password: configService.get('REDIS_PASSWORD'),
         },
       }),
       inject: [ConfigService],
@@ -240,10 +250,27 @@ import { Region } from './globalServices/currency/entities/region.entity';
       name: 'task-queue',
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        name: configService.get('TASK_QUEUE'),
+        name: 'task-queue',
       }),
       inject: [ConfigService],
     }),
+    BullModule.registerQueueAsync({
+      name: ORDER_TASK_QUEUE,
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        name: ORDER_TASK_QUEUE,
+      }),
+      inject: [ConfigService],
+    }),
+    BullModule.registerQueueAsync({
+      name: ORDER_PROCESSOR_QUEUE,
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        name: ORDER_TASK_QUEUE,
+      }),
+      inject: [ConfigService],
+    }),
+
     HttpModule,
   ],
   controllers: [
@@ -299,6 +326,7 @@ import { Region } from './globalServices/currency/entities/region.entity';
     FollowManagementService,
     CollectionService,
     FollowService,
+    GoogleSheetService,
     LikeService,
     LikeManagementService,
     OfferService,
@@ -342,7 +370,9 @@ import { Region } from './globalServices/currency/entities/region.entity';
     CreateSendgridContactHandler,
     CurrencyService,
     BrandUploadGateway,
+    BullService,
+    OrderProcessor,
   ],
-  exports: [JwtStrategy, PassportModule, AuthenticationModule],
+  exports: [JwtStrategy, PassportModule, AuthenticationModule, BullModule],
 })
 export class AppModule {}

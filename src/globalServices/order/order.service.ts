@@ -68,6 +68,7 @@ export class OrderService {
       orderQuery
         .leftJoinAndSelect('offer.product', 'product')
         .leftJoinAndSelect('product.productImages', 'productImages')
+        .leftJoinAndSelect('product.currency', 'currency')
         .leftJoinAndSelect('product.variants', 'variants')
         .leftJoinAndSelect('product.collections', 'collections')
         .andWhere('order.brandId = :brandId', {
@@ -205,6 +206,9 @@ export class OrderService {
         'offer',
         'offer.offerImages',
         'offer.brand',
+        'offer.product',
+        'user',
+        'user.customer',
       ],
     });
   }
@@ -213,7 +217,7 @@ export class OrderService {
     return await this.orderRepo.find({
       where: {
         status: StatusType.PROCESSING,
-        // taskId: Not(IsNull()),
+        taskId: Not(IsNull()),
       },
       relations: ['coupon', 'user', 'brand'],
     });
@@ -257,6 +261,23 @@ export class OrderService {
         userId: userId,
       },
       relations: ['coupon'],
+    });
+  }
+
+  async getSuccessfulOrdersByOfferId(offerId: string) {
+    return await this.orderRepo.find({
+      where: {
+        offerId: offerId,
+        status: StatusType.SUCCEDDED,
+      },
+      relations: ['coupon', 'offer', 'reward', 'offer.product'],
+    });
+  }
+
+  async getSuccessfulOrdersByUserId(userId: string) {
+    return await this.orderRepo.find({
+      where: { userId: userId },
+      relations: ['coupon', 'offer', 'reward', 'offer.product'],
     });
   }
 }

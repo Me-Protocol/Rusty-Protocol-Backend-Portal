@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Currency } from './entities/currency.entity';
@@ -90,6 +90,47 @@ export class CurrencyService {
     return await this.regionRepo.save(region);
   }
 
+  async updateRegion({
+    name,
+    code,
+    currencyId,
+    flag,
+    id,
+  }: {
+    name: string;
+    code: string;
+    currencyId: string;
+    flag: string;
+    id: string;
+  }) {
+    try {
+      const currency = await this.currencyRepo.findOne({
+        where: { id: currencyId },
+      });
+
+      if (!currency) throw new Error('Currency not found');
+
+      const region = await this.regionRepo.findOne({
+        where: { id },
+      });
+
+      if (!region) throw new Error('Region not found');
+
+      if (name) region.name = name;
+      if (code) region.code = code;
+      if (currencyId) region.currencyId = currencyId;
+      if (flag) region.flag = flag;
+
+      return await this.regionRepo.save(region);
+    } catch (error) {
+      console.log(error);
+
+      throw new HttpException(error.message, 400, {
+        cause: new Error('updateRegion'),
+      });
+    }
+  }
+
   async getRegions() {
     const regions = await this.regionRepo.find({
       relations: ['currency'],
@@ -119,7 +160,7 @@ export class CurrencyService {
 
     if (!region) {
       const newRegion = new Region();
-      newRegion.name = 'Default Region';
+      newRegion.name = 'Global';
       newRegion.code = 'DR';
       newRegion.flag = 'dr';
       newRegion.isDefault = true;
@@ -130,6 +171,12 @@ export class CurrencyService {
     }
 
     return region;
+  }
+
+  async saveRegion(region: Region) {
+    const regionRecord = await this.regionRepo.save(region);
+
+    return regionRecord;
   }
 
   async getRegionByCode(code: string) {
@@ -143,13 +190,14 @@ export class CurrencyService {
     return region;
   }
 
-  @Cron(CronExpression.EVERY_4_HOURS)
+  // @Cron(CronExpression.EVERY_30_SECONDS)
   async syncCurrencyValue() {
     try {
-      const apiKey = 'sgiPfh4j3aXFR3l2CnjWqdKQzxpqGn9pX5b3CUsz';
+      const apiKey = 'cur_live_lqegEL92Bp2kwN37R2F8gBMTOrFtwDenyaLRh0cA';
+      const apiKey2 = 'sgiPfh4j3aXFR3l2CnjWqdKQzxpqGn9pX5b3CUsz';
 
       const countriesData = await axios.get(
-        `https://api.freecurrencyapi.com/v1/currencies?apikey=${apiKey}`,
+        `https://api.currencyapi.com/v3/currencies?apikey=${apiKey}`,
       );
 
       const countries = Object.keys(countriesData?.data?.data).map(
@@ -157,11 +205,11 @@ export class CurrencyService {
       );
 
       const currenciesData = await axios.get(
-        `https://api.freecurrencyapi.com/v1/latest?apikey=${apiKey}`,
+        `https://api.currencyapi.com/v3/latest?apikey=${apiKey}`,
       );
 
       const currencies = Object.keys(currenciesData?.data?.data).map((key) => ({
-        value: currenciesData?.data?.data[key],
+        value: currenciesData?.data?.data[key]?.value,
         currency: key,
       }));
 
@@ -171,28 +219,87 @@ export class CurrencyService {
             currency.currency,
           );
 
+          const country = countries.find(
+            (country) => country.code === currency.currency,
+          );
+
           if (currencyRecord) {
+            currencyRecord.code = currency?.currency;
+            currencyRecord.value = currency.value;
+            currencyRecord.name = country?.name ?? currency.currency;
+            currencyRecord.symbol = country?.symbol ?? currency.currency;
             currencyRecord.value = currency.value;
             await this.updateCurrency(currencyRecord);
           } else {
-            const country = countries.find(
-              (country) => country.code === currency.currency,
-            );
-
             const newCurrency = new Currency();
-            newCurrency.code = country.code;
+            newCurrency.code = currency?.currency;
             newCurrency.value = currency.value;
-            newCurrency.name = country.code;
-            newCurrency.symbol = country.symbol;
+            newCurrency.name = country?.name ?? currency.currency;
+            newCurrency.symbol = country.symbol ?? currency.currency;
 
             await this.createCurrency(newCurrency);
           }
-
-          console.log(currencies);
         }),
       );
     } catch (error) {
       console.log(error);
     }
   }
+
+  // @Cron(CronExpression.EVERY_5_MINUTES)
+  // async syncCurrencies() {
+  //   const currenciesData = await axios.get(
+  //     'https://api.meappbounty.com/payment/currencies',
+  //   );
+  //   const currencies = currenciesData.data.data;
+
+  //   for (const currency of currencies) {
+  //     const currencyRecord = await this.getCurrencyByCurrency(currency.code);
+
+  //     if (currencyRecord) {
+  //       currencyRecord.code = currency.code;
+  //       currencyRecord.value = currency.value;
+  //       currencyRecord.name = currency.name;
+  //       currencyRecord.symbol = currency.symbol;
+  //       currencyRecord.value = currency.value;
+  //       await this.updateCurrency(currencyRecord);
+  //     } else {
+  //       const newCurrency = new Currency();
+  //       newCurrency.code = currency.code;
+  //       newCurrency.value = currency.value;
+  //       newCurrency.name = currency.name;
+  //       newCurrency.symbol = currency.symbol;
+
+  //       await this.createCurrency(newCurrency);
+  //     }
+
+  //     if (currency.id === currencies[currencies.length - 1].id) {
+  //       console.log('last currency');
+  //     }
+  //   }
+  // }
+
+  // @Cron(CronExpression.EVERY_30_SECONDS)
+  // async removeDuplicateCurrencies() {
+  //   const currencies = await this.currencyRepo.find();
+
+  //   for (const currency of currencies) {
+  //     const duplicateCurrencies = await this.currencyRepo.find({
+  //       where: {
+  //         code: currency.id,
+  //       },
+  //     });
+
+  //     if (duplicateCurrencies.length > 1) {
+  //       console.log('duplicateCurrencies', duplicateCurrencies);
+  //       await Promise.all(
+  //         duplicateCurrencies.map(async (duplicateCurrency, index) => {
+  //           if (index > 0) {
+  //             await this.currencyRepo.remove(duplicateCurrency);
+  //           }
+  //         }),
+  //       );
+  //     }
+  //   }
+  // }
 }

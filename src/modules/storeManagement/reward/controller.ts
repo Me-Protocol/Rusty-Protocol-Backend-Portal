@@ -42,6 +42,7 @@ import { FilterRegistryHistoryDto } from './dto/filterRegistryHistoryDto.dto';
 import { CheckExistingRewardParams } from './dto/check-existing-reward.dto';
 import { UpdateRewardDto } from './dto/updateRewardDto';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
+import { BillType } from '@src/utils/enums/BillType';
 
 @ApiTags('Reward')
 @Controller('reward')
@@ -247,7 +248,6 @@ export class RewardManagementController {
     @Body(ValidationPipe) body: DistributeBatchDto,
   ) {
     const brandId = req.user.brand.id;
-
     return await this.rewardManagementService.distributeBatch(brandId, body);
   }
 
@@ -284,7 +284,10 @@ export class RewardManagementController {
     @Req() req: any,
     @Body(ValidationPipe) body: GetTreasuryPermitDto,
   ) {
-    return await this.syncService.getTreasuryPermitAsync(body);
+    return await this.syncService.getTreasuryPermitAsync({
+      ...body,
+      createBill: true,
+    });
   }
 
   @UseGuards(BrandJwtStrategy)

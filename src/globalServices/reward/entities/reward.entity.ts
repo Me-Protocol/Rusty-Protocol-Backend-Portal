@@ -186,7 +186,13 @@ export class Reward extends BaseEntity {
     type: 'decimal',
     default: 0.0,
   })
-  totalDistributedSupply: number;
+  totalIssued: number;
+
+  @Column({
+    type: 'decimal',
+    default: 0.0,
+  })
+  totalDistributed: number;
 
   @Column({
     type: 'decimal',

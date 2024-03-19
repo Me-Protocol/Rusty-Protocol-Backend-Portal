@@ -17,7 +17,10 @@ import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import {
+  DOLLAR_PRECISION,
+  JSON_RPC_URL,
   getTreasuryPermitSignature,
+  meTokenToDollarInPrecision,
   treasuryContract,
 } from '@developeruche/protocol-core';
 import { GetTreasuryPermitDto } from '@src/modules/storeManagement/reward/dto/PushTransactionDto.dto';
@@ -32,6 +35,8 @@ import {
 import { RUNTIME_URL } from '@src/config/env.config';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { User } from '@src/globalServices/user/entities/user.entity';
+import { BillerService } from '@src/globalServices/biller/biller.service';
+import { BillType } from '@src/utils/enums/BillType';
 
 @Injectable()
 export class SyncRewardService {
@@ -51,6 +56,7 @@ export class SyncRewardService {
     private readonly fiatWalletService: FiatWalletService,
     private readonly settingsService: SettingsService,
     private readonly brandService: BrandService,
+    private readonly billerService: BillerService,
   ) {}
 
   async createBatch(batch: SyncBatch) {
@@ -605,12 +611,10 @@ export class SyncRewardService {
 
   async getTreasuryPermitAsync(body: GetTreasuryPermitDto) {
     try {
-      const { onboardWallet } = await this.settingsService.settingsInit();
+      const { meDispenser } = await this.settingsService.settingsInit();
 
-      const provider = new ethers.providers.JsonRpcProvider(
-        process.env.JSON_RPC_URL,
-      );
-      const wallet = new ethers.Wallet(onboardWallet, provider);
+      const provider = new ethers.providers.JsonRpcProvider(JSON_RPC_URL);
+      const wallet = new ethers.Wallet(meDispenser, provider);
 
       const result = await getTreasuryPermitSignature(
         wallet,
@@ -621,6 +625,20 @@ export class SyncRewardService {
       );
 
       if (result) {
+        if (body.createBill) {
+          const valueToDollar = await meTokenToDollarInPrecision(
+            BigNumber.from(body.value),
+          );
+          const amountInDollar =
+            Number(valueToDollar.toString()) / DOLLAR_PRECISION;
+
+          await this.billerService.createBill({
+            amount: amountInDollar,
+            brandId: body.brandId,
+            type: BillType.INITIAL_REWARD_PURCHASE,
+          });
+        }
+
         return {
           v: result.v,
           r: result.r,
@@ -693,12 +711,10 @@ export class SyncRewardService {
     // }
 
     //3. If the brand has enough balance, we use the redistributionKeyIdentifierId to get the private key identifier and decrypt the private key.
-    const keyIdentifier = await this.rewardService.getKeyIdentifier(
+
+    const decryptedPrivateKey = await this.keyManagementService.getEncryptedKey(
       reward.redistributionKeyIdentifierId,
       KeyIdentifierType.REDISTRIBUTION,
-    );
-    const decryptedPrivateKey = await this.keyManagementService.decryptKey(
-      keyIdentifier.identifier,
     );
     // 4. We then use the private key to sign the transaction and distribute the rewards to the wallet address.
     const signer = new Wallet(decryptedPrivateKey);
@@ -766,12 +782,9 @@ export class SyncRewardService {
     //   return 'Brand cannot pay cost';
     // }
 
-    const keyIdentifier = await this.rewardService.getKeyIdentifier(
+    const decryptedPrivateKey = await this.keyManagementService.getEncryptedKey(
       reward.redistributionKeyIdentifierId,
       KeyIdentifierType.REDISTRIBUTION,
-    );
-    const decryptedPrivateKey = await this.keyManagementService.decryptKey(
-      keyIdentifier.identifier,
     );
     const signer = new Wallet(decryptedPrivateKey);
 

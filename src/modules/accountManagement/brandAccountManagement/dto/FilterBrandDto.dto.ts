@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class FilterBrandDto {
   @ApiProperty()
+  @IsUUID()
   @IsOptional()
   categoryId: string;
 
@@ -32,4 +33,9 @@ export class FilterBrandDto {
   @IsOptional()
   @IsUUID()
   regionId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsBoolean()
+  disabled: boolean;
 }

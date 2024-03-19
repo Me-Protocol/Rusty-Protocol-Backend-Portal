@@ -230,6 +230,7 @@ export class CollectionService {
       collections.push({
         ...collection,
         likes: likes,
+        totalLikes: likes.length,
       });
     }
 

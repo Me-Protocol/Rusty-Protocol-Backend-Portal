@@ -50,6 +50,7 @@ export class CustomerManagementController {
 
     return await this.customerAccountManagementService.setWalletAddress(
       body.walletAddress,
+      body.walletVersion,
       userId,
     );
   }

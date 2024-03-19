@@ -1,7 +1,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { FiatWallet } from './entities/fiatWallet.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PaymentMethod } from './entities/paymentMethod';
+import { PaymentMethod } from './entities/paymentMethod.entity';
 import { Repository } from 'typeorm';
 import { logger } from '../logger/logger.service';
 import { Transaction } from './entities/transaction.entity';
@@ -26,13 +26,21 @@ export class PaymentService {
     private readonly transactionRepo: Repository<Transaction>,
   ) {}
 
-  async createAccount() {
-    const customer = await stripe.customers.create();
+  async createAccount(email: string) {
+    const customer = await stripe.customers.create({
+      email,
+    });
 
     return {
       customerId: customer.id,
       accountId: null,
     };
+  }
+
+  async updateStripeCustomerEmail(customerId: string, email: string) {
+    return stripe.customers.update(customerId, {
+      email,
+    });
   }
 
   async createStripePaymentIntent(amount: number, wallet: FiatWallet) {
@@ -117,6 +125,7 @@ export class PaymentService {
     paymentMethodId: string,
     amount: number,
     customerId: string,
+    narration: string,
   ) {
     return stripe.paymentIntents.create({
       amount: amount,
@@ -124,6 +133,7 @@ export class PaymentService {
       payment_method: paymentMethodId,
       // confirm: true,
       customer: customerId,
+      description: narration,
     });
   }
 
@@ -217,6 +227,7 @@ export class PaymentService {
       paymentMethodId,
       amount,
       wallet.stripeCustomerId,
+      narration,
     );
 
     await this.confirmPaymentIntent(paymentIntent.id);

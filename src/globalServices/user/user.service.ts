@@ -121,6 +121,29 @@ export class UserService {
         'brand',
         'brandMembers',
         'brandMembers.brand',
+        'brandMembers.brand.plan',
+        'brandMembers.brand.regions',
+        'brand.plan',
+        'brand.regions',
+        'adminMember',
+      ],
+    });
+  }
+
+  async getUserByBrandId(brandId: string): Promise<User> {
+    return await this.userRepository.findOne({
+      where: {
+        brand: {
+          id: brandId,
+        },
+      },
+      relations: [
+        'customer',
+        'brand',
+        'brandMembers',
+        'brandMembers.brand',
+        'brandMembers.brand.plan',
+        'brandMembers.brand.regions',
         'brand.plan',
         'brand.regions',
         'adminMember',

@@ -63,6 +63,16 @@ export class OfferManagementService {
     offer.inventory = body.inventory;
     offer.coverImage = body.coverImage;
 
+    if (product.availableInventory < body.inventory) {
+      throw new HttpException(
+        'Inventory cannot be more than available inventory',
+        400,
+      );
+    }
+
+    product.availableInventory = product.availableInventory - body.inventory;
+    await this.productService.saveProduct(product);
+
     const saveOffer = await this.offerService.saveOffer(offer);
 
     // upload images
@@ -154,6 +164,30 @@ export class OfferManagementService {
         this.elasticIndex.deleteDocument(offerIndex, offer.id);
       }
 
+      if (body.inventory) {
+        const product = await this.productService.getOneProduct(
+          offer.productId,
+          body.brandId,
+        );
+
+        if (!product) {
+          throw new HttpException('Product not found', 404, {
+            cause: new Error('Product not found'),
+          });
+        }
+
+        if (body.inventory > product.availableInventory) {
+          throw new HttpException(
+            'Inventory cannot be more than available inventory',
+            400,
+          );
+        }
+
+        product.availableInventory =
+          product.availableInventory - body.inventory;
+        await this.productService.saveProduct(product);
+      }
+
       return findOne;
     } catch (error) {
       logger.error(error);
@@ -190,6 +224,7 @@ export class OfferManagementService {
       query.page,
       query.limit,
       query.userId,
+      query.regionId,
     );
   }
 

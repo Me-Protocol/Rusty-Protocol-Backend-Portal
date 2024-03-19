@@ -18,6 +18,8 @@ import { FilterCustomerDto } from './dto/FilterCustomerDto.dto';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { BigNumber, ethers } from 'ethers';
 import {
+  CHAIN_ID,
+  JSON_RPC_URL,
   OPEN_REWARD_DIAMOND,
   adminService,
   getBrandIdHex,
@@ -451,16 +453,19 @@ export class BrandAccountManagementService {
   async onboardBrand({ brandId, walletAddress, website }: OnboardBrandDto) {
     try {
       const brand = await this.brandService.getBrandById(brandId);
-      brand.walletAddress = walletAddress;
 
-      await this.brandService.save(brand);
+      if (brand.isOnboarded && brand.walletAddress) {
+        throw new HttpException('Brand already onboarded', 400);
+      }
+
+      brand.walletAddress = walletAddress;
+      brand.isOnboarded = true;
 
       const { onboardWallet } = await this.settingsService.settingsInit();
 
-      const provider = new ethers.providers.JsonRpcProvider(
-        process.env.JSON_RPC_URL,
-      );
+      const provider = new ethers.providers.JsonRpcProvider(JSON_RPC_URL);
       const wallet = new ethers.Wallet(onboardWallet, provider);
+
       const ts2 = await adminService.registerBrand(
         brand.name,
         website,
@@ -477,12 +482,11 @@ export class BrandAccountManagementService {
       };
 
       const request: CallWithERC2771Request = {
-        chainId: 80001,
+        chainId: CHAIN_ID,
         target: OPEN_REWARD_DIAMOND,
         data: input.data,
         user: input.from,
       };
-      console.log('request', request);
 
       // const register_tx = await wallet.sendTransaction({
       //   to: OPEN_REWARD_DIAMOND,
@@ -499,11 +503,11 @@ export class BrandAccountManagementService {
 
       const data = {
         data: struct,
-        tnxType: PaymentRequestTnxType.RELAYER,
         narration: '1',
-        network: supportedNetworks.MUMBAI,
         signature,
         brandId: brandId,
+        tnxType: PaymentRequestTnxType.RELAYER,
+        network: supportedNetworks.MUMBAI,
       };
 
       const paymentRequest =
@@ -517,13 +521,19 @@ export class BrandAccountManagementService {
         BigNumber.from(brand.brandProtocolId),
       );
 
-      await onboard_brand_with_url(
+      const onboardBrand = await onboard_brand_with_url(
         BigNumber.from(brandProtocolId),
         walletAddress,
         ethers.constants.AddressZero,
         wallet,
         RUNTIME_URL,
       );
+
+      if (onboardBrand.data.error) {
+        throw new Error(onboardBrand.data.error.message);
+      }
+
+      await this.brandService.save(brand);
 
       return paymentRequest;
     } catch (error) {
@@ -612,6 +622,24 @@ export class BrandAccountManagementService {
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
       });
+    }
+  }
+
+  async disableBrand(brandId: string) {
+    try {
+      const brand = await this.brandService.getBrandById(brandId);
+
+      if (!brand) {
+        throw new HttpException('Brand not found', 404);
+      }
+
+      brand.disabled = true;
+
+      return await this.brandService.save(brand);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
     }
   }
 }

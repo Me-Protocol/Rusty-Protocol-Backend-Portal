@@ -105,4 +105,9 @@ export class UpdateProductDto {
   @IsOptional()
   @IsArray()
   regions: string[];
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  currencyCode: string;
 }

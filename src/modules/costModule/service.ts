@@ -1,4 +1,4 @@
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { CostModuleService } from '@src/globalServices/costManagement/costModule.service';
 import { PaymentRequestService } from '@src/globalServices/costManagement/paymentRequestProcessors.service';
 import { PaymentRequestDto } from './dto/PaymentRequestDto.dto';
@@ -6,25 +6,22 @@ import { PaymentRequestTnxType } from '@src/utils/enums/PaymentRequestTnxType';
 import { PaymentRequest } from '@src/globalServices/costManagement/entities/paymentRequest.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { BrandService } from '@src/globalServices/brand/brand.service';
-import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection';
+import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection.entity';
 import { supportedNetworks } from '@src/globalServices/costManagement/symbol-finder.service';
 import retrieveCost from '@src/globalServices/costManagement/relayer-costgetter.service';
 import { GelatoRelay } from '@gelatonetwork/relay-sdk';
 import axios from 'axios';
-import { PaymentService } from '../../globalServices/fiatWallet/payment.service';
-import {
-  StatusType,
-  TransactionSource,
-  TransactionsType,
-} from '@src/utils/enums/Transactions';
+import { TransactionsType } from '@src/utils/enums/Transactions';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { PaymentOrigin } from '@src/utils/enums/PaymentOrigin';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { CostBatch } from '@src/globalServices/costManagement/entities/costBatch.entity';
 import { logger } from '@src/globalServices/logger/logger.service';
-import { Transaction } from '@src/globalServices/fiatWallet/entities/transaction.entity';
-import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
+import {
+  GELATO_API_KEY,
+  GELATO_RELAYER_STATUS_URL,
+} from '@src/config/env.config';
 
 @Injectable()
 export class CostModuleManagementService {
@@ -117,19 +114,17 @@ export class CostModuleManagementService {
         // Query the relayer processor
 
         const relay = new GelatoRelay();
-
         const struct = body.data;
 
         const relayResponse = await relay.sponsoredCallERC2771WithSignature(
           struct,
           body.signature,
-          process.env.GELATO_API_KEY,
+          GELATO_API_KEY,
         );
 
         // check task id for status
 
-        const url =
-          process.env.GELATO_RELAYER_STATUS_URL + relayResponse.taskId;
+        const url = GELATO_RELAYER_STATUS_URL + relayResponse.taskId;
         const gelatoResponse = await axios.get(url);
         const transactionHash = gelatoResponse.data;
 
@@ -181,7 +176,7 @@ export class CostModuleManagementService {
     );
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  // @Cron(CronExpression.EVERY_MINUTE)
   async costCollector() {
     // Runs every 4 hours (picks all the requests in the active batch and sends to the processor to get cost) update requests with cost and close batch
 
@@ -329,7 +324,7 @@ export class CostModuleManagementService {
     }
   }
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  // @Cron(CronExpression.EVERY_30_SECONDS)
   async costReimburserRetry() {
     const closedFailedBatch =
       await this.costModuleService.getSingleFailedCostBatch();
