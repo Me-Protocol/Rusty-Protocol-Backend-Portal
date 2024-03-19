@@ -417,7 +417,7 @@ export class OrderManagementService {
           const couponCode = await this.couponService.generateCouponCode();
 
           try {
-            const coupon = await createCoupon({
+            await createCoupon({
               brand,
               data: {
                 code: couponCode,
@@ -427,8 +427,6 @@ export class OrderManagementService {
               productIdOnBrandSite: offer.product.productIdOnBrandSite,
               email: order.user.email,
             });
-
-            console.log(coupon);
           } catch (error) {
             // console.log(error);
             // const msg = error?.message;
@@ -454,6 +452,8 @@ export class OrderManagementService {
             offer_id: order.offerId,
             couponCode,
           });
+
+          console.log(coupon);
 
           order.couponId = coupon.id;
           order.status = StatusType.SUCCEDDED;
@@ -580,61 +580,62 @@ export class OrderManagementService {
             circulatingSupply,
           );
 
-          // update customer total redeem
-
-          const isExternalOffer = offer.rewardId !== order.redeemRewardId;
-
-          if (isExternalOffer) {
-            const totalCustomerExternalRedeemed =
-              Number(customer?.totalExternalRedeemed ?? 0) + 1;
-
-            customer.totalExternalRedeemed = Number(
-              totalCustomerExternalRedeemed.toFixed(0),
-            );
-            customer.totalExternalRedemptionAmount =
-              Number(customer?.totalExternalRedemptionAmount ?? 0) +
-              Number(order.points);
-          } else {
-            const totalCustomerRedeemed =
-              Number(customer?.totalRedeemed ?? 0) + 1;
-
-            customer.totalRedeemed = Number(totalCustomerRedeemed.toFixed(0));
-
-            customer.totalRedemptionAmount =
-              Number(customer?.totalRedemptionAmount ?? 0) +
-              Number(order.points);
-          }
-
-          await this.customerService.save(customer);
-
           const brandCustomer = await this.brandService.getBrandCustomer(
             reward.brandId,
             customer.userId,
           );
 
+          // update customer total redeem
+
+          const isExternalOffer = offer.rewardId !== order.redeemRewardId;
+
           if (isExternalOffer) {
-            const totalBrandCustomerExternalRedeemed =
-              Number(brandCustomer?.totalExternalRedeemed ?? 0) + 1;
+            const externalRedemptions =
+              await this.orderService.getCustomerExternalRedemptions({
+                userId: order.userId,
+                rewardId: order.redeemRewardId,
+              });
 
-            brandCustomer.totalExternalRedeemed = Number(
-              totalBrandCustomerExternalRedeemed.toFixed(0),
+            console.log(externalRedemptions.length, 'External Redemptions');
+
+            customer.totalExternalRedeemed = externalRedemptions.length;
+            customer.totalExternalRedemptionAmount = externalRedemptions.reduce(
+              (acc, curr) => acc + Number(curr.points),
+              0,
             );
+
+            brandCustomer.totalExternalRedeemed = externalRedemptions.length;
             brandCustomer.totalExternalRedemptionAmount =
-              Number(brandCustomer?.totalExternalRedemptionAmount ?? 0) +
-              Number(order.points);
+              externalRedemptions.reduce(
+                (acc, curr) => acc + Number(curr.points),
+                0,
+              );
           } else {
-            const totalBrandCustomerRedeemed =
-              Number(brandCustomer?.totalRedeemed ?? 0) + 1;
+            const internalRedemptions =
+              await this.orderService.getCustomerInternalRedemptions({
+                userId: order.userId,
+                rewardId: order.redeemRewardId,
+              });
 
-            brandCustomer.totalRedeemed = Number(
-              totalBrandCustomerRedeemed.toFixed(0),
+            console.log(internalRedemptions.length, 'Internal Redemptions');
+
+            customer.totalRedeemed = internalRedemptions.length;
+            customer.totalRedemptionAmount = internalRedemptions.reduce(
+              (acc, curr) => acc + Number(curr.points),
+              0,
             );
-            brandCustomer.totalRedemptionAmount =
-              Number(brandCustomer?.totalRedemptionAmount ?? 0) +
-              Number(order.points);
+
+            brandCustomer.totalRedeemed = internalRedemptions.length;
+            brandCustomer.totalRedemptionAmount = internalRedemptions.reduce(
+              (acc, curr) => acc + Number(curr.points),
+              0,
+            );
           }
 
+          await this.customerService.save(customer);
           await this.brandService.saveBrandCustomer(brandCustomer);
+
+          console.log(brandCustomer);
 
           await this.offerService.increaseOfferSales({
             offer,

@@ -280,4 +280,40 @@ export class OrderService {
       relations: ['coupon', 'offer', 'reward', 'offer.product'],
     });
   }
+
+  async getCustomerExternalRedemptions({
+    userId,
+    rewardId,
+  }: {
+    userId: string;
+    rewardId: string;
+  }) {
+    return await this.orderRepo.find({
+      where: {
+        redeemRewardId: rewardId,
+        offer: {
+          rewardId: Not(rewardId),
+        },
+        userId,
+      },
+    });
+  }
+
+  async getCustomerInternalRedemptions({
+    userId,
+    rewardId,
+  }: {
+    userId: string;
+    rewardId: string;
+  }) {
+    return await this.orderRepo.find({
+      where: {
+        redeemRewardId: rewardId,
+        offer: {
+          rewardId: rewardId,
+        },
+        userId,
+      },
+    });
+  }
 }
