@@ -76,7 +76,7 @@ export const createCoupon = async ({
             title: `${APP_NAME}Discount`, // Your discount title
             target_type: 'line_item',
             target_selection: 'entitled',
-            allocation_method: 'each',
+            allocation_method: 'across',
             value_type: 'percentage',
             value: `-${body.amount}`,
             prerequisite_subtotal_range: {
