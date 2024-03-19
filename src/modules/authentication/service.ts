@@ -341,16 +341,15 @@ export class AuthenticationService {
       userId: newUser.id,
     });
 
-    if (brandId) {
-      await this.brandService.createBrandCustomer({
-        email: newUser.email,
-        brandId,
-        phone: newUser.phone,
-        name,
-      });
-    }
-
     if (userType === UserAppType.USER) {
+      if (brandId) {
+        await this.brandService.createBrandCustomer({
+          email: newUser.email,
+          brandId,
+          phone: newUser.phone,
+          name,
+        });
+      }
       newUser.role = Role.CUSTOMER;
     } else if (userType === UserAppType.BRAND) {
       await this.brandService.create({
