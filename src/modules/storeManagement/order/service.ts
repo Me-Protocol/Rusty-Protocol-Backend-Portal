@@ -26,7 +26,7 @@ import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.ser
 import { RegistryHistory } from '@src/globalServices/reward/entities/registryHistory.entity';
 import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
 import { RewardService } from '@src/globalServices/reward/reward.service';
-import { RewardCirculation } from '@src/globalServices/analytics/entities/reward_circulation';
+import { RewardCirculation } from '@src/globalServices/analytics/entities/reward_circulation.entity';
 import { AnalyticsRecorderService } from '@src/globalServices/analytics/analytic_recorder.service';
 import { Transaction } from '@src/globalServices/fiatWallet/entities/transaction.entity';
 import { Repository } from 'typeorm';
