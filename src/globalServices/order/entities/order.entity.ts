@@ -124,4 +124,9 @@ export class Order extends BaseEntity {
     default: 0,
   })
   retries: number;
+
+  @Column({
+    nullable: true,
+  })
+  jobId: string;
 }

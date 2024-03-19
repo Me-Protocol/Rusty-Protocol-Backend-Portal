@@ -365,9 +365,10 @@ export class OrderManagementService {
         brandId: offer.brandId,
       });
 
-      const saveOrder = await this.orderService.saveOrder(order);
+      const job = await this.bullService.addOrderToQueue(orderId);
+      order.jobId = job.id.toString();
 
-      await this.bullService.addOrderToQueue(orderId);
+      const saveOrder = await this.orderService.saveOrder(order);
 
       return saveOrder;
     } catch (error) {
@@ -696,22 +697,22 @@ export class OrderManagementService {
   async retryPendingOrders() {
     const pendingOrders = await this.orderService.getPendingOrders();
 
-    console.log(pendingOrders.length, 'Pending orders');
     for (const order of pendingOrders) {
       const status = await checkOrderStatusGelatoOrRuntime(
         order.taskId,
         order.verifier,
       );
 
-      console.log(status);
-
       if (status === 'success') {
-        await this.completeOrder({
-          orderId: order.id,
-          taskId: order.taskId,
-          verifier: order.verifier,
-          spendData: order.spendData,
-        });
+        const job = await this.bullService.getJob(order.jobId);
+        if (!job) {
+          await this.completeOrder({
+            orderId: order.id,
+            taskId: order.taskId,
+            verifier: order.verifier,
+            spendData: order.spendData,
+          });
+        }
       } else if (status === 'failed') {
         order.status = StatusType.FAILED;
         order.failedReason = `${order.verifier} task verifier failed`;

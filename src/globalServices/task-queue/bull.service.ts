@@ -21,9 +21,9 @@ export class BullService {
     await this.orderMgtService.checkOrderStatus(orderId);
   }
 
-  async addOrderToQueue(orderId: string): Promise<void> {
+  async addOrderToQueue(orderId: string) {
     console.log('Adding order to queue', orderId);
-    await this.queue.add(
+    return await this.queue.add(
       'process-order',
       { orderId },
       {
@@ -34,6 +34,10 @@ export class BullService {
         },
       },
     );
+  }
+
+  async getJob(jobId: string) {
+    return await this.queue.getJob(jobId);
   }
 }
 
