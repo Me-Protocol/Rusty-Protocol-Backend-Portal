@@ -163,6 +163,7 @@ import {
   OrderProcessor,
 } from './globalServices/task-queue/bull.service';
 import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
+import { AmplitudeModule } from './globalServices/tracking/amplitude/amplitude.module';
 
 @Module({
   imports: [
@@ -231,6 +232,13 @@ import { GoogleSheetService } from '@src/globalServices/google-sheets/google-she
     SearchModule,
     AuthenticationModule,
     UploadModule,
+    AmplitudeModule.registerAsync({
+      useFactory: async (configService: ConfigService) => {
+        return {
+          apiKey: configService.get('AMPLITUDE_API_KEY'),
+        };
+      },
+    }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     ClientModuleConfig, // microservice
