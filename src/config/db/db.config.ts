@@ -34,7 +34,7 @@ import {
         migrations: [join(__dirname, '../dist/migrations/**.js')],
         subscribers: [join(__dirname, '../dist/subscribers/**.js')],
         migrationsRun: RUN_DEFAULT_MIGRATION || false,
-        synchronize: RUN_DB_SYNC || false,
+        synchronize: true,
         autoLoadEntities: true,
         ssl: {
           rejectUnauthorized: false,

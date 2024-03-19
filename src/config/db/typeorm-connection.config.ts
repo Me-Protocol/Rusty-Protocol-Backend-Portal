@@ -24,7 +24,7 @@ export const typeormConfig: DataSourceOptions = {
   migrations: [process.cwd() + '/dist/migrations/*.{js,ts}'],
   subscribers: [join(__dirname, '../dist/subscribers/**.js')],
   migrationsRun: RUN_DEFAULT_MIGRATION || false,
-  synchronize: RUN_DB_SYNC || false,
+  synchronize: true,
   ssl: {
     rejectUnauthorized: false,
   },
