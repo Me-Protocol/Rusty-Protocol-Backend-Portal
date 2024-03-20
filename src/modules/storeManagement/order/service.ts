@@ -365,6 +365,11 @@ export class OrderManagementService {
         brandId: offer.brandId,
       });
 
+      if (order.jobId) {
+        const job = await this.bullService.getJob(order.jobId);
+        console.log('JOB', job.isActive);
+      }
+
       const job = await this.bullService.addOrderToQueue(orderId);
       order.jobId = job.id.toString();
 
@@ -704,31 +709,30 @@ export class OrderManagementService {
         order.verifier,
       );
 
-      if (status === 'success') {
-        const job = await this.bullService.getJob(order.jobId);
+      const job = await this.bullService.getJob(order.jobId);
+      console.log('JOB', job.isActive);
 
-        console.log('JOB', job);
-
-        if (!job) {
+      if (job.isActive) {
+        if (status === 'success') {
           await this.completeOrder({
             orderId: order.id,
             taskId: order.taskId,
             verifier: order.verifier,
             spendData: order.spendData,
           });
+        } else if (status === 'failed') {
+          order.status = StatusType.FAILED;
+          order.failedReason = `${order.verifier} task verifier failed`;
+          await this.orderService.saveOrder(order);
+
+          await redistributed_failed_tx_with_url(order.spendData, RUNTIME_URL);
+
+          order.isRefunded = true;
+          await this.orderService.saveOrder(order);
+        } else {
+          console.log('Pending');
+          return;
         }
-      } else if (status === 'failed') {
-        order.status = StatusType.FAILED;
-        order.failedReason = `${order.verifier} task verifier failed`;
-        await this.orderService.saveOrder(order);
-
-        await redistributed_failed_tx_with_url(order.spendData, RUNTIME_URL);
-
-        order.isRefunded = true;
-        await this.orderService.saveOrder(order);
-      } else {
-        console.log('Pending');
-        return;
       }
     }
   }
