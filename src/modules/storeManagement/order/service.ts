@@ -704,15 +704,15 @@ export class OrderManagementService {
     console.log(pendingOrders.length, 'Pending orders');
 
     for (const order of pendingOrders) {
-      const status = await checkOrderStatusGelatoOrRuntime(
-        order.taskId,
-        order.verifier,
-      );
-
       const job = await this.bullService.getJob(order.jobId);
       console.log('JOB', job.isActive);
 
-      if (job.isActive) {
+      if (!job.isActive) {
+        const status = await checkOrderStatusGelatoOrRuntime(
+          order.taskId,
+          order.verifier,
+        );
+
         if (status === 'success') {
           await this.completeOrder({
             orderId: order.id,
