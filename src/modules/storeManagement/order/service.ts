@@ -696,6 +696,7 @@ export class OrderManagementService {
   @Cron(CronExpression.EVERY_MINUTE)
   async retryPendingOrders() {
     const pendingOrders = await this.orderService.getPendingOrders();
+    console.log(pendingOrders.length, 'Pending orders');
 
     for (const order of pendingOrders) {
       const status = await checkOrderStatusGelatoOrRuntime(
