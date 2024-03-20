@@ -19,7 +19,7 @@ import { Reward } from '@src/globalServices/reward/entities/reward.entity';
 import { Task } from '@src/globalServices/task/entities/task.entity';
 import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
 import { PaymentRequest } from '@src/globalServices/costManagement/entities/paymentRequest.entity';
-import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection';
+import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection.entity';
 import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.entity';
 import { BrandSubServices } from '@src/utils/enums/BrandSubServices';
 import { BrandMember } from './brand_member.entity';
@@ -238,7 +238,7 @@ export class Brand extends BaseEntity {
   listOnStore: boolean;
 
   @Column({
-    default: false,
+    default: true,
   })
   isOnboarded: boolean;
 
@@ -376,7 +376,12 @@ export class Brand extends BaseEntity {
   @Column({
     nullable: true,
   })
-  online_store_url: string;
+  woocommerce_online_store_url: string;
+
+  @Column({
+    nullable: true,
+  })
+  shopify_online_store_url: string;
 
   @Column({
     nullable: true,

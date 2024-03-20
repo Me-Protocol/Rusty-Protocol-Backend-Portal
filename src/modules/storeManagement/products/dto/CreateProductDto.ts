@@ -130,4 +130,9 @@ export class CreateProductDto {
   @ApiProperty()
   @IsString()
   productIdOnBrandSite: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  currencyCode: string;
 }

@@ -5,7 +5,7 @@ import { Brand } from '@src/globalServices/brand/entities/brand.entity';
 import { Category } from '@src/globalServices/category/entities/category.entity';
 import { Collection } from '@src/globalServices/collections/entities/collection.entity';
 import { CostBatch } from '@src/globalServices/costManagement/entities/costBatch.entity';
-import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection';
+import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection.entity';
 import { PaymentRequest } from '@src/globalServices/costManagement/entities/paymentRequest.entity';
 import { Customer } from '@src/globalServices/customer/entities/customer.entity';
 import { Follow } from '@src/globalServices/follow/entities/follow.entity';
@@ -30,7 +30,7 @@ import { TaskResponseRecord } from '@src/globalServices/task/entities/taskRespon
 import { Device } from '@src/globalServices/user/entities/device.entity';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { View } from '@src/globalServices/views/entities/view.entity';
-import { PaymentMethod } from '@src/globalServices/fiatWallet/entities/paymentMethod';
+import { PaymentMethod } from '@src/globalServices/fiatWallet/entities/paymentMethod.entity';
 import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.entity';
 import { BrandMember } from '@src/globalServices/brand/entities/brand_member.entity';
 import { KeyIdentifier } from '@src/globalServices/key-management/entities/keyIdentifier.entity';

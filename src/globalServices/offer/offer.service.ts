@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, LessThan, Repository } from 'typeorm';
 import { Offer } from './entities/offer.entity';
@@ -16,6 +16,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { BrandCustomer } from '../brand/entities/brand_customer.entity';
 import { User } from '../user/entities/user.entity';
 import { CurrencyService } from '../currency/currency.service';
+import { OrderService } from '../order/order.service';
 
 @Injectable()
 export class OfferService {
@@ -32,6 +33,9 @@ export class OfferService {
     private readonly productService: ProductService,
     private readonly elasticIndex: ElasticIndex,
     private readonly currencyService: CurrencyService,
+
+    @Inject(forwardRef(() => OrderService))
+    private readonly orderService: OrderService,
   ) {}
 
   async saveOffer(offer: Offer) {
@@ -152,6 +156,7 @@ export class OfferService {
         'product.variants',
         'offerImages',
         'reward',
+        'product.currency',
       ],
     });
 
@@ -204,6 +209,7 @@ export class OfferService {
       .leftJoinAndSelect('product.subCategory', 'subCategory')
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
+      .leftJoinAndSelect('product.currency', 'currency')
       .leftJoinAndSelect('offer.reward', 'reward')
       .where('offer.status = :status', { status: ItemStatus.PUBLISHED })
       .andWhere('offer.rewardId = :rewardId', { rewardId });
@@ -250,6 +256,7 @@ export class OfferService {
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
       .leftJoinAndSelect('offer.reward', 'reward')
+      .leftJoinAndSelect('product.currency', 'currency')
       .where('offer.status = :status', { status: ItemStatus.PUBLISHED })
       // brand.listOnStore is used to check if brand is active
       .andWhere('brand.listOnStore = :listOnStore', { listOnStore: true })
@@ -438,6 +445,7 @@ export class OfferService {
           'product.variants.options',
           'product.subCategory',
           'product.variants',
+          'product.currency',
           'offerImages',
           'reward',
         ],
@@ -497,6 +505,7 @@ export class OfferService {
           'product.variants.options',
           'product.subCategory',
           'product.variants',
+          'product.currency',
           'offerImages',
           'reward',
         ],
@@ -548,6 +557,7 @@ export class OfferService {
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
       .leftJoinAndSelect('offer.reward', 'reward')
+      .leftJoinAndSelect('product.currency', 'currency')
       .where('offer.brandId = :brandId', { brandId });
 
     if (status) {
@@ -715,43 +725,41 @@ export class OfferService {
 
   async increaseOfferSales({
     offer,
-    amount,
     userId,
   }: {
     offer: Offer;
-    amount: number;
     userId: string;
   }) {
     try {
-      const totalSales = Number(offer.totalSales) + Number(amount);
+      const successOrders =
+        await this.orderService.getSuccessfulOrdersByOfferId(offer.id);
+
+      const totalSales = successOrders.reduce((acc, order) => {
+        return Number(acc) + Number(order?.offer?.product?.price ?? 0);
+      }, 0);
       const totalSalesParse = totalSales.toFixed(2);
 
-      offer.totalOrders = offer.totalOrders + 1;
+      offer.totalOrders = successOrders.length;
       offer.totalSales = +totalSalesParse;
 
       // update customer total redeem
       const customer = await this.customerService.getByUserId(userId);
 
-      const totalRedemptionAmount =
-        Number(customer.totalRedemptionAmount) + Number(amount);
+      const userSuccessfulOrders =
+        await this.orderService.getSuccessfulOrdersByUserId(userId);
+
+      const totalRedemptionAmount = userSuccessfulOrders.reduce(
+        (acc, order) => {
+          return Number(acc) + Number(order?.points ?? 0);
+        },
+        0,
+      );
       const totalRedemptionAmountParse = totalRedemptionAmount.toFixed(3);
 
-      customer.totalRedeemed += 1;
+      customer.totalRedeemed = userSuccessfulOrders.length;
       customer.totalRedemptionAmount = +totalRedemptionAmountParse;
 
-      const brandCustomer = await this.brandCustomerRepo.findOne({
-        where: { userId: userId, brandId: offer.brandId },
-      });
-
-      if (brandCustomer) {
-        brandCustomer.totalRedeemed += 1;
-        brandCustomer.totalRedemptionAmount = +totalRedemptionAmountParse;
-
-        await this.brandCustomerRepo.save(brandCustomer);
-      }
-
       await this.offerRepo.save(offer);
-
       await this.customerService.save(customer);
 
       return 'done';
@@ -761,25 +769,13 @@ export class OfferService {
   }
 
   async reduceInventory(offer: Offer, order: Order) {
-    // offer.inventory = -order.quantity; TODO: check if this is needed
-
-    const product = await this.productService.findOneProduct(offer.productId);
-    product.inventory = product.inventory - order.quantity;
-
-    await this.productService.saveProduct(product);
-
-    // await this.offerRepo.save(offer);
+    offer.inventory = Number(offer.inventory) - Number(order.quantity);
+    await this.offerRepo.save(offer);
   }
 
   async increaseInventory(offer: Offer, order: Order) {
-    // offer.inventory = +order.quantity; TODO: check if this is needed
-
-    const product = await this.productService.findOneProduct(offer.productId);
-    product.inventory = product.inventory + order.quantity;
-
-    await this.productService.saveProduct(product);
-
-    // await this.offerRepo.save(offer);
+    offer.inventory = Number(offer.inventory) + Number(order.quantity);
+    await this.offerRepo.save(offer);
   }
 
   // @Cron(CronExpression.EVERY_5_MINUTES)

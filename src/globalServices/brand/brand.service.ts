@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
   HttpException,
   HttpStatus,
@@ -43,6 +44,8 @@ import { logger } from '../logger/logger.service';
 import { Role } from '@src/utils/enums/Role';
 import { CurrencyService } from '../currency/currency.service';
 import { OrderService } from '../order/order.service';
+import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
+import { checkBrandOnlineStore } from '../online-store-handler/check-store';
 
 @Injectable()
 export class BrandService {
@@ -186,11 +189,50 @@ export class BrandService {
         brand.woocommerce_consumer_key = dto.woocommerceConsumerKey;
       if (dto.woocommerceConsumerSecret)
         brand.woocommerce_consumer_secret = dto.woocommerceConsumerSecret;
-      if (dto.online_store_url) brand.online_store_url = dto.online_store_url;
+
+      if (dto.online_store_url) {
+        if (brand.online_store_type === OnlineStoreType.SHOPIFY) {
+          brand.shopify_online_store_url = dto.online_store_url;
+        } else if (brand.online_store_type === OnlineStoreType.WOOCOMMERCE) {
+          brand.woocommerce_online_store_url = dto.online_store_url;
+        }
+      }
       if (dto.shopify_consumer_key)
         brand.shopify_consumer_key = dto.shopify_consumer_key;
+
       if (dto.shopify_consumer_secret)
         brand.shopify_consumer_secret = dto.shopify_consumer_secret;
+
+      if (
+        dto.onlineStoreType === OnlineStoreType.WOOCOMMERCE &&
+        dto.woocommerceConsumerKey &&
+        dto.woocommerceConsumerSecret
+      ) {
+        await checkBrandOnlineStore({
+          // @ts-ignore
+          brand: {
+            woocommerce_consumer_key: dto.woocommerceConsumerKey,
+            woocommerce_consumer_secret: dto.woocommerceConsumerSecret,
+            woocommerce_online_store_url: dto.online_store_url,
+            online_store_type: dto.onlineStoreType,
+          },
+        });
+      }
+
+      if (
+        dto.onlineStoreType === OnlineStoreType.SHOPIFY &&
+        dto.shopify_consumer_secret
+      ) {
+        await checkBrandOnlineStore({
+          // @ts-ignore
+          brand: {
+            shopify_consumer_secret: dto.shopify_consumer_secret,
+            shopify_consumer_key: dto.shopify_consumer_key,
+            shopify_online_store_url: dto.online_store_url,
+            online_store_type: dto.onlineStoreType,
+          },
+        });
+      }
 
       // await this.brandRepo.update({ id: brandId }, brand);
       const newBrand = await this.brandRepo.save(brand);
@@ -605,7 +647,6 @@ export class BrandService {
       .leftJoinAndSelect('brandCustomer.user', 'user')
       .leftJoinAndSelect('brand.rewards', 'rewards')
       .where('brandCustomer.brandId = :brandId', { brandId });
-      
 
     const eligibleBrandCustomers = await brandCustomersQuery.getMany();
 
@@ -636,7 +677,6 @@ export class BrandService {
           if (order.status === StatusType.SUCCEDDED && isUsingBrandReward)
             totalRedemptionAmount += Number(order?.points || 0);
         });
-
 
         if (totalRedemptionAmount > 0) {
           activeCustomers.push(customer);
@@ -1065,10 +1105,17 @@ export class BrandService {
       select: {
         woocommerce_consumer_key: true,
         woocommerce_consumer_secret: true,
-        online_store_url: true,
+        woocommerce_online_store_url: true,
+        shopify_online_store_url: true,
+        shopify_consumer_secret: true,
+        shopify_consumer_key: true,
         online_store_type: true,
         id: true,
+        currency: true,
+        location: true,
+        regions: true,
       },
+      relations: ['regions'],
     });
   }
 }

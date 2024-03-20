@@ -229,6 +229,7 @@ export class ProductService {
         coverImage: body.coverImage ?? product.coverImage,
         productIdOnBrandSite:
           body.productIdOnBrandSite ?? product.productIdOnBrandSite,
+        availableInventory: body.inventory ?? product.availableInventory,
       },
     );
   }
@@ -402,6 +403,7 @@ export class ProductService {
       .leftJoinAndSelect('variants.options', 'options')
       .leftJoinAndSelect('product.collections', 'collections')
       .leftJoinAndSelect('product.offers', 'offers')
+      .leftJoinAndSelect('product.currency', 'currency')
       .leftJoinAndSelect('product.regions', 'regions')
       .where('product.brandId = :brandId', { brandId });
 

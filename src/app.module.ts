@@ -86,7 +86,7 @@ import { CouponService } from './globalServices/order/coupon.service';
 import { OrderManagementController } from './modules/storeManagement/order/controller';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CostBatch } from './globalServices/costManagement/entities/costBatch.entity';
-import { CostCollection } from './globalServices/costManagement/entities/costCollection';
+import { CostCollection } from './globalServices/costManagement/entities/costCollection.entity';
 import { PaymentRequest } from './globalServices/costManagement/entities/paymentRequest.entity';
 import { CostManagementController } from './modules/costModule/controller';
 import { CostModuleService } from './globalServices/costManagement/costModule.service';
@@ -96,7 +96,7 @@ import { Transaction } from './globalServices/fiatWallet/entities/transaction.en
 import { PaymentService } from './globalServices/fiatWallet/payment.service';
 import { FiatWalletService } from './globalServices/fiatWallet/fiatWallet.service';
 import { PaymentModuleService } from './modules/paymentModule/service';
-import { PaymentMethod } from './globalServices/fiatWallet/entities/paymentMethod';
+import { PaymentMethod } from './globalServices/fiatWallet/entities/paymentMethod.entity';
 import { PaymentModuleController } from './modules/paymentModule/controller';
 import { InAppApiKeyJwtStrategy } from './middlewares/inapp-api-jwt-strategy.middleware';
 import { SettingsService } from './globalServices/settings/settings.service';
@@ -144,7 +144,7 @@ import { AnalyticsManagementService } from './modules/storeManagement/analytics/
 import { AnalyticsManagementController } from './modules/storeManagement/analytics/controller';
 import { RewarderService } from './globalServices/task/common/rewarder/rewarder.service';
 import { AnalyticsRecorderService } from './globalServices/analytics/analytic_recorder.service';
-import { RewardCirculation } from './globalServices/analytics/entities/reward_circulation';
+import { RewardCirculation } from './globalServices/analytics/entities/reward_circulation.entity';
 import { BrandSubscriptionPlan } from './globalServices/brand/entities/brand_subscription_plan.entity';
 import { NotificationHandler } from '@src/globalServices/notification/notification.handler';
 import { CurrencyService } from './globalServices/currency/currency.service';
@@ -162,6 +162,7 @@ import {
   ORDER_TASK_QUEUE,
   OrderProcessor,
 } from './globalServices/task-queue/bull.service';
+import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
 
 @Module({
   imports: [
@@ -325,6 +326,7 @@ import {
     FollowManagementService,
     CollectionService,
     FollowService,
+    GoogleSheetService,
     LikeService,
     LikeManagementService,
     OfferService,

@@ -452,7 +452,7 @@ export class BrandAccountManagementService {
     try {
       const brand = await this.brandService.getBrandById(brandId);
 
-      if (brand.isOnboarded) {
+      if (brand.isOnboarded && brand.walletAddress) {
         throw new HttpException('Brand already onboarded', 400);
       }
 

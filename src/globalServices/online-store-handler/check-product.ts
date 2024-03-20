@@ -1,11 +1,17 @@
 import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 import { WooCommerceHandler } from './woocommerce';
-import { Brand } from '../brand/entities/brand.entity';
 import WooCommerceRestApi from '@woocommerce/woocommerce-rest-api';
-import axios, { AxiosInstance } from 'axios';
+import { Brand } from '../brand/entities/brand.entity';
 import { ShopifyHandler } from './shopify';
+import { AxiosInstance } from 'axios';
 
-export const checkBrandOnlineStore = async ({ brand }: { brand: Brand }) => {
+export const checkProductOnBrandStore = async ({
+  brand,
+  productId,
+}: {
+  brand: Brand;
+  productId: string;
+}) => {
   let woocommerceHandler: WooCommerceHandler;
   let woocommerce: WooCommerceRestApi;
 
@@ -18,13 +24,13 @@ export const checkBrandOnlineStore = async ({ brand }: { brand: Brand }) => {
       woocommerce = woocommerceHandler.createInstance(brand);
 
       return await woocommerce
-        .get('')
+        .get(`products/${productId}`)
         .then((response) => {
-          console.log('response', response.data);
           return response.data;
         })
         .catch((error) => {
-          throw new Error('Store not found on woocommerce');
+          console.log(error);
+          throw new Error('Product not found on brand store.');
         });
 
     case OnlineStoreType.SHOPIFY:
@@ -32,7 +38,7 @@ export const checkBrandOnlineStore = async ({ brand }: { brand: Brand }) => {
       shopify = shopifyHandler.createInstance(brand);
 
       return await shopify
-        .get('shop.json')
+        .get(`products/${productId}.json?fields=id`)
         .then((response) => {
           console.log('response', response.data);
           return response.data;
@@ -41,7 +47,6 @@ export const checkBrandOnlineStore = async ({ brand }: { brand: Brand }) => {
           console.log('error', error.response.data);
           throw new Error('Store not found on shopify');
         });
-
     case OnlineStoreType.BIG_COMMERCE:
       // const bigCommerceHandler = new BigCommerceHandler();
       // const bigCommerce = bigCommerceHandler.createInstance(

@@ -12,6 +12,8 @@ import { productIndex } from '@src/modules/search/interface/search.interface';
 import { ProductStatus } from '@src/utils/enums/ItemStatus';
 import { CurrencyService } from '@src/globalServices/currency/currency.service';
 import { OfferService } from '@src/globalServices/offer/offer.service';
+import { checkProductOnBrandStore } from '@src/globalServices/online-store-handler/check-product';
+import { BrandService } from '@src/globalServices/brand/brand.service';
 
 @Injectable()
 export class ProductManagementService {
@@ -22,6 +24,7 @@ export class ProductManagementService {
     private readonly elasticIndex: ElasticIndex,
     private readonly currencyService: CurrencyService,
     private readonly offerService: OfferService,
+    private readonly brandService: BrandService,
   ) {}
 
   async getProductImages(brandId: string, page: number, limit: number) {
@@ -52,6 +55,42 @@ export class ProductManagementService {
         body.name,
       );
 
+      const brand = await this.brandService.getBrandWithOnlineCreds(
+        body.brandId,
+      );
+
+      const product = new Product();
+      product.brandId = body.brandId;
+      if (body.categoryId) product.categoryId = body.categoryId;
+      if (body.name) product.name = body.name;
+      if (body.description) product.description = body.description;
+      if (body.price) product.price = body.price;
+      if (body.status) {
+        product.status = body.status;
+
+        if (body.status === ProductStatus.PUBLISHED) {
+          const productOnBrandSite = await checkProductOnBrandStore({
+            brand,
+            productId: body.productIdOnBrandSite,
+          });
+
+          if (!productOnBrandSite) {
+            throw new HttpException('Product not found on brand store', 400);
+          }
+        }
+      }
+      if (body.inventory) {
+        product.inventory = body.inventory;
+        product.availableInventory = body.inventory;
+      }
+      if (body.isUnlimited) product.isUnlimited = body.isUnlimited;
+      if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
+      if (body.productUrl) product.productUrl = body.productUrl;
+      if (body.minAge) product.minAge = body.minAge;
+      if (body.coverImage) product.coverImage = body.coverImage;
+      product.productCode = productCode;
+      product.productIdOnBrandSite = body.productIdOnBrandSite;
+
       if (body.currencyId) {
         const currency = await this.currencyService.getCurrencyById(
           body.currencyId,
@@ -60,24 +99,24 @@ export class ProductManagementService {
         if (!currency) {
           throw new HttpException('Currency not found', 404);
         }
-      }
 
-      const product = new Product();
-      product.brandId = body.brandId;
-      if (body.categoryId) product.categoryId = body.categoryId;
-      if (body.name) product.name = body.name;
-      if (body.description) product.description = body.description;
-      if (body.price) product.price = body.price;
-      if (body.status) product.status = body.status;
-      if (body.inventory) product.inventory = body.inventory;
-      if (body.isUnlimited) product.isUnlimited = body.isUnlimited;
-      if (body.subCategoryId) product.subCategoryId = body.subCategoryId;
-      if (body.productUrl) product.productUrl = body.productUrl;
-      if (body.minAge) product.minAge = body.minAge;
-      if (body.currencyId) product.currencyId = body.currencyId;
-      if (body.coverImage) product.coverImage = body.coverImage;
-      product.productCode = productCode;
-      product.productIdOnBrandSite = body.productIdOnBrandSite;
+        product.currencyId = body.currencyId;
+      } else if (body.currencyCode) {
+        const currency = await this.currencyService.getCurrencyByCurrency(
+          body.currencyCode,
+        );
+
+        if (!currency) {
+          throw new HttpException('Currency not found', 404);
+        }
+        product.currencyId = currency.id;
+      } else {
+        const currency = await this.currencyService.getCurrencyByCurrency(
+          brand.currency,
+        );
+
+        product.currencyId = currency.id;
+      }
 
       const productCollections = [];
 
@@ -108,6 +147,16 @@ export class ProductManagementService {
         }
 
         product.regions = regions;
+      } else {
+        if (brand.regions && brand.regions.length > 0) {
+          const regions = [];
+
+          for (const region of brand.regions) {
+            regions.push(region);
+          }
+
+          product.regions = regions;
+        }
       }
 
       const newProduct = await this.productService.createProduct(product);
@@ -157,6 +206,10 @@ export class ProductManagementService {
         );
       }
 
+      const brand = await this.brandService.getBrandWithOnlineCreds(
+        body.brandId,
+      );
+
       if (body.categoryId) {
         const category = await this.categoryService.findOne(body.categoryId);
 
@@ -189,6 +242,23 @@ export class ProductManagementService {
         if (!currency) {
           throw new HttpException('Currency not found', 404);
         }
+
+        product.currencyId = body.currencyId;
+      } else if (body.currencyCode) {
+        const currency = await this.currencyService.getCurrencyByCurrency(
+          body.currencyCode,
+        );
+
+        if (!currency) {
+          throw new HttpException('Currency not found', 404);
+        }
+        product.currencyId = currency.id;
+      } else {
+        const currency = await this.currencyService.getCurrencyByCurrency(
+          brand.currency,
+        );
+
+        product.currencyId = currency.id;
       }
 
       // update only what is provided
@@ -258,6 +328,22 @@ export class ProductManagementService {
         product.regions = regions;
 
         await this.productService.saveProduct(product);
+      }
+
+      if (body.status) {
+        product.status = body.status;
+        product.productIdOnBrandSite =
+          body.productIdOnBrandSite ?? product.productIdOnBrandSite;
+
+        if (body.status === ProductStatus.PUBLISHED) {
+          const productOnBrandSite = await checkProductOnBrandStore({
+            brand,
+            productId: product.productIdOnBrandSite,
+          });
+          if (!productOnBrandSite) {
+            throw new HttpException('Product not found on brand store', 400);
+          }
+        }
       }
 
       await this.productService.updateProduct(body, id);

@@ -50,6 +50,11 @@ export class AuthenticationController {
     private readonly socialAuth: SocialAuthenticationService,
   ) {}
 
+  @Post('google-spreadsheet')
+  async googleSheet(): Promise<any> {
+    return await this.authService.authorizeGoogle();
+  }
+
   @Post('signup/email')
   async signupWithEmail(
     @Body(ValidationPipe) body: EmailSignupDto,
@@ -58,6 +63,21 @@ export class AuthenticationController {
   ): Promise<any> {
     return await this.authService.signupEmail({
       ...body,
+      userAgent: req.headers['user-agent'],
+      ip,
+    });
+  }
+
+  @Post('signup/email/with-brand/:brandId')
+  async signupAsBrandCustomerWithEmail(
+    @Body(ValidationPipe) body: EmailSignupDto,
+    @RealIP() ip: string,
+    @Req() req: any,
+    @Param('brandId', ParseUUIDPipe) brandId: string,
+  ): Promise<any> {
+    return await this.authService.signupEmail({
+      ...body,
+      brandId,
       userAgent: req.headers['user-agent'],
       ip,
     });

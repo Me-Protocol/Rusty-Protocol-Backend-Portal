@@ -120,4 +120,9 @@ export class AdminSettings extends BaseEntity {
     default: 0.09,
   })
   meTokenValue: number;
+
+  @Column({
+    default: 1,
+  })
+  walletVersion: number;
 }
