@@ -50,6 +50,9 @@ const geoip = require('geoip-lite');
 const DeviceDetector = require('node-device-detector');
 const deviceDetector = new DeviceDetector();
 
+function capitalizeFirstLetter(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
 @Injectable()
 export class AuthenticationService {
   constructor(
@@ -74,11 +77,16 @@ export class AuthenticationService {
     if (!user) {
       return false;
     }
+
+    const [firstName, lastName] = user.customer.name.split(' ');
+
+    const capitalizedFirstName = capitalizeFirstLetter(firstName);
+    const capitalizedLastName = capitalizeFirstLetter(lastName);
     await this.googleService.writeToSpreadsheet(
       user.id,
       user.email,
-      user.username,
-      user.username,
+      capitalizedFirstName,
+      capitalizedLastName,
     );
     return true;
   }
