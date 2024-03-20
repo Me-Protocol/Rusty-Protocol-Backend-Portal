@@ -53,6 +53,7 @@ const deviceDetector = new DeviceDetector();
 function capitalizeFirstLetter(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
+
 @Injectable()
 export class AuthenticationService {
   constructor(
@@ -455,7 +456,10 @@ export class AuthenticationService {
         ),
       );
 
-      await this.writeDataToGoogleSheet(newUser.id);
+      if (userType === UserAppType.USER) {
+        await this.writeDataToGoogleSheet(newUser.id);
+      }
+
       return token;
     } catch (error) {
       logger.error(error);
