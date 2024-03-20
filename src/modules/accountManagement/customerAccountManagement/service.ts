@@ -7,6 +7,7 @@ import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service'
 import { UserService } from '@src/globalServices/user/user.service';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { User } from '@src/globalServices/user/entities/user.entity';
+import { CampaignService } from '@src/globalServices/campaign/campaign.service';
 
 @Injectable()
 export class CustomerAccountManagementService {
@@ -15,6 +16,7 @@ export class CustomerAccountManagementService {
     private readonly rewardService: RewardService,
     private readonly syncService: SyncRewardService,
     private readonly userService: UserService,
+    private readonly campaignService: CampaignService,
   ) {}
 
   async updateCustomer(body: UpdateCustomerDto, userId: string) {
@@ -150,6 +152,27 @@ export class CustomerAccountManagementService {
       return true;
     } else {
       return false;
+    }
+  }
+
+  async rewardForCampaign({
+    userId,
+    brandId,
+  }: {
+    userId: string;
+    brandId: string;
+  }) {
+    const campaign = await this.campaignService.getBrandSignUpCampaign(brandId);
+
+    if (campaign) {
+      const user = await this.userService.getUserById(userId);
+
+      await this.syncService.distributeRewardWithPrivateKey({
+        rewardId: campaign.rewardId,
+        walletAddress: user.customer.walletAddress,
+        amount: campaign.rewardPerUser,
+        email: user.email,
+      });
     }
   }
 }

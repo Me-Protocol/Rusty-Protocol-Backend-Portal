@@ -43,6 +43,12 @@ import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
 import { Role } from '@src/utils/enums/Role';
 import { BrandUploadGateway } from './socket/brand-upload.gateway';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
+import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
+import { CampaignService } from '@src/globalServices/campaign/campaign.service';
+import { Campaign } from '@src/globalServices/campaign/entities/campaign.entity';
+import { RewardService } from '@src/globalServices/reward/reward.service';
+import { CreateCampaignDto, UpdateCampaignDto } from './dto/CreateCampaignDto';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -56,6 +62,9 @@ export class BrandAccountManagementService {
     private readonly walletService: FiatWalletService,
     private eventEmitter: EventEmitter2,
     private BrandUploadGateway: BrandUploadGateway,
+    private readonly syncService: SyncRewardService,
+    private readonly campaignService: CampaignService,
+    private readonly rewardService: RewardService,
   ) {}
 
   async updateBrand(body: UpdateBrandDto, brandId: string) {
@@ -625,6 +634,183 @@ export class BrandAccountManagementService {
       console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400);
+    }
+  }
+
+  async createCampaign({
+    totalUsers,
+    rewardPerUser,
+    type,
+    brandId,
+    rewardId,
+    name,
+    description,
+    end_date,
+  }: CreateCampaignDto) {
+    try {
+      const activeCampaign = await this.campaignService.getActiveCampaigns(
+        brandId,
+      );
+
+      if (activeCampaign) {
+        throw new Error('Brand already has an active campaign');
+      }
+
+      const reward = await this.rewardService.getRewardByIdAndBrandId(
+        rewardId,
+        brandId,
+      );
+
+      if (!reward) {
+        throw new Error('Reward not found');
+      }
+
+      const totalRewardToDistribute = totalUsers * rewardPerUser;
+
+      const campaign = new Campaign();
+      campaign.type = type;
+      campaign.totalUsers = totalUsers;
+      campaign.rewardPerUser = rewardPerUser;
+      campaign.brandId = brandId;
+      campaign.availableUsers = totalUsers;
+      campaign.active = true;
+      campaign.availableRewards = totalRewardToDistribute;
+      campaign.rewardId = rewardId;
+      campaign.name = name;
+      campaign.description = description;
+      campaign.end_date = end_date;
+
+      const distributeToBrandWallet =
+        await this.syncService.distributeRewardWithPrivateKey({
+          rewardId: rewardId,
+          walletAddress: reward.redistributionPublicKey,
+          amount: totalRewardToDistribute,
+        });
+
+      if (distributeToBrandWallet.error) {
+        throw new Error('Funding redistribution wallet failed');
+      }
+
+      return await this.campaignService.save(campaign);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async updateCampaign({
+    totalUsers,
+    rewardPerUser,
+    brandId,
+    id,
+    name,
+    description,
+    end_date,
+  }: UpdateCampaignDto) {
+    try {
+      const campaign = await this.campaignService.findByIdAndBrandId(
+        id,
+        brandId,
+      );
+
+      if (!campaign) {
+        throw new Error('Campaign is not found');
+      }
+
+      const reward = await this.rewardService.getRewardByIdAndBrandId(
+        campaign.rewardId,
+        brandId,
+      );
+
+      if (rewardPerUser) campaign.rewardPerUser = rewardPerUser;
+
+      if (name) campaign.name = name;
+      if (description) campaign.description = description;
+      if (end_date) campaign.end_date = end_date;
+
+      const totalUserDifference = campaign.totalUsers - totalUsers;
+
+      if (
+        totalUserDifference < 0 &&
+        campaign.availableUsers < Math.abs(totalUserDifference)
+      ) {
+        throw new Error('Total users cannot be less than available users');
+      }
+
+      if (totalUserDifference > 0) {
+        campaign.availableUsers += totalUserDifference;
+      }
+
+      const amountToFund = totalUserDifference * campaign.rewardPerUser;
+
+      if (amountToFund > 0) {
+        campaign.availableRewards = campaign.availableRewards + amountToFund;
+        const distributeToBrandWallet =
+          await this.syncService.distributeRewardWithPrivateKey({
+            rewardId: campaign.rewardId,
+            walletAddress: reward.redistributionPublicKey,
+            amount: amountToFund,
+          });
+
+        if (distributeToBrandWallet.error) {
+          throw new Error('Funding redistribution wallet failed');
+        }
+      }
+
+      if (totalUsers) campaign.totalUsers = totalUsers;
+
+      return await this.campaignService.save(campaign);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async endCampaign(brandId: string, id: string) {
+    try {
+      const campaign = await this.campaignService.findByIdAndBrandId(
+        id,
+        brandId,
+      );
+
+      if (!campaign) {
+        throw new Error('Campaign is not found');
+      }
+
+      // TODO Refund logic
+
+      campaign.active = false;
+      campaign.ended = false;
+
+      return await this.campaignService.save(campaign);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async getCampaigns(brandId: string) {
+    try {
+      return await this.campaignService.findByBrandId(brandId);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async checkCampaigns() {
+    const campaigns = await this.campaignService.getAllActiveCampaigns();
+    for (const campaign of campaigns) {
+      if (campaign.end_date < new Date()) {
+        campaign.active = false;
+        campaign.ended = true;
+        await this.campaignService.save(campaign);
+      }
     }
   }
 }

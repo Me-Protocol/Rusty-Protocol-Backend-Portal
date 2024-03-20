@@ -163,6 +163,8 @@ import {
   OrderProcessor,
 } from './globalServices/task-queue/bull.service';
 import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
+import { Campaign } from './globalServices/campaign/entities/campaign.entity';
+import { CampaignService } from './globalServices/campaign/campaign.service';
 
 @Module({
   imports: [
@@ -220,6 +222,7 @@ import { GoogleSheetService } from '@src/globalServices/google-sheets/google-she
       VariantOption,
       Region,
       AutoTopupRequest,
+      Campaign,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
@@ -372,6 +375,7 @@ import { GoogleSheetService } from '@src/globalServices/google-sheets/google-she
     BrandUploadGateway,
     BullService,
     OrderProcessor,
+    CampaignService,
   ],
   exports: [JwtStrategy, PassportModule, AuthenticationModule, BullModule],
 })
