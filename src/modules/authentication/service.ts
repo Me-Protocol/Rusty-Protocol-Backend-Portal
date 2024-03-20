@@ -418,6 +418,10 @@ export class AuthenticationService {
           settings.walletVersion,
           newUser.id,
         );
+        await this.customerAccountManagementService.rewardForCampaign({
+          userId: newUser.id,
+          brandId,
+        });
         await this.collectionService.create({
           name: 'Favorites',
           description: 'Favorites collection',
