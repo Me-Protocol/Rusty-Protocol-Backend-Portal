@@ -27,8 +27,8 @@
     "typeorm:migration:run": "npx typeorm-ts-node-commonjs  migration:run -d ./src/config/db/typeorm-connection.config.ts"
   },
   "dependencies": {
-    "@developeruche/protocol-core": "^1.0.0",
-    "@developeruche/runtime-sdk": "1.0.0",
+    "@developeruche/protocol-core": "^0.7.9-production",
+    "@developeruche/runtime-sdk": "0.4.7-production",
     "@elastic/elasticsearch": "^8.6.0",
     "@gelatonetwork/relay-sdk": "^4.0.0",
     "@google-cloud/local-auth": "^2.1.0",
