@@ -90,6 +90,50 @@ export class BrandManagementController {
     return await this.brandAccountManagementService.getAllBrandsForAdmin(query);
   }
 
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
+  @UseGuards(BrandJwtStrategy)
+  @Post('campaign')
+  async createCampaign(
+    @Body(ValidationPipe) body: CreateCampaignDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    body.brandId = brandId;
+    return await this.brandAccountManagementService.createCampaign(body);
+  }
+
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
+  @UseGuards(BrandJwtStrategy)
+  @Put('campaign/:id')
+  async updateCampaign(
+    @Body(ValidationPipe) body: UpdateCampaignDto,
+    @Req() req: any,
+    @Param('id') id: string,
+  ) {
+    const brandId = req.user.brand.id;
+    body.brandId = brandId;
+    body.id = id;
+
+    return await this.brandAccountManagementService.updateCampaign(body);
+  }
+
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
+  @UseGuards(BrandJwtStrategy)
+  @Put('campaign/:id/end')
+  async endCampaign(@Req() req: any, @Param('id') id: string) {
+    const brandId = req.user.brand.id;
+
+    return await this.brandAccountManagementService.endCampaign(brandId, id);
+  }
+
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
+  @UseGuards(BrandJwtStrategy)
+  @Get('campaign')
+  async getCampaigns(@Req() req: any) {
+    const brandId = req.user.brand.id;
+    return await this.brandAccountManagementService.getCampaigns(brandId);
+  }
+
   @UseGuards(AuthGuard())
   @Get(':id')
   async getBrandById(@Param('id', ParseUUIDPipe) id: string) {
@@ -347,49 +391,5 @@ export class BrandManagementController {
   @Post('disable/:id')
   async disableBrand(@Param('id') id: string, @Req() req: any) {
     return await this.brandAccountManagementService.disableBrand(id);
-  }
-
-  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
-  @UseGuards(BrandJwtStrategy)
-  @Post('campaign')
-  async createCampaign(
-    @Body(ValidationPipe) body: CreateCampaignDto,
-    @Req() req: any,
-  ) {
-    const brandId = req.user.brand.id;
-    body.brandId = brandId;
-    return await this.brandAccountManagementService.createCampaign(body);
-  }
-
-  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
-  @UseGuards(BrandJwtStrategy)
-  @Put('campaign/:id')
-  async updateCampaign(
-    @Body(ValidationPipe) body: UpdateCampaignDto,
-    @Req() req: any,
-    @Param('id') id: string,
-  ) {
-    const brandId = req.user.brand.id;
-    body.brandId = brandId;
-    body.id = id;
-
-    return await this.brandAccountManagementService.updateCampaign(body);
-  }
-
-  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
-  @UseGuards(BrandJwtStrategy)
-  @Put('campaign/:id/end')
-  async endCampaign(@Req() req: any, @Param('id') id: string) {
-    const brandId = req.user.brand.id;
-
-    return await this.brandAccountManagementService.endCampaign(brandId, id);
-  }
-
-  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
-  @UseGuards(BrandJwtStrategy)
-  @Get('campaign')
-  async getCampaigns(@Req() req: any) {
-    const brandId = req.user.brand.id;
-    return await this.brandAccountManagementService.getCampaigns(brandId);
   }
 }
