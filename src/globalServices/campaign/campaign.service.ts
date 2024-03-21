@@ -34,7 +34,7 @@ export class CampaignService {
   }
 
   async getActiveCampaigns(brandid: string) {
-    return this.campaignRepo.find({
+    return await this.campaignRepo.findOne({
       where: { brandId: brandid, active: true },
     });
   }
