@@ -688,7 +688,9 @@ export class BrandAccountManagementService {
         });
 
       if (distributeToBrandWallet.error) {
-        throw new Error('Funding redistribution wallet failed');
+        throw new Error(
+          `${distributeToBrandWallet?.data?.error?.message}. Funding redistribution wallet failed.`,
+        );
       }
 
       return await this.campaignService.save(campaign);
