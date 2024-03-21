@@ -367,7 +367,10 @@ export class OrderManagementService {
 
       if (order.jobId) {
         const job = await this.bullService.getJob(order.jobId);
-        console.log('JOB', job.isActive);
+        if (job) {
+          const isActive = await job.isActive();
+          console.log('JOB', isActive);
+        }
       }
 
       const job = await this.bullService.addOrderToQueue(orderId);
@@ -705,33 +708,39 @@ export class OrderManagementService {
 
     for (const order of pendingOrders) {
       const job = await this.bullService.getJob(order.jobId);
-      console.log('JOB', job.isActive);
+      if (job) {
+        const isActive = await job.isActive();
+        console.log('JOB', isActive);
 
-      if (!job.isActive) {
-        const status = await checkOrderStatusGelatoOrRuntime(
-          order.taskId,
-          order.verifier,
-        );
+        if (!isActive) {
+          const status = await checkOrderStatusGelatoOrRuntime(
+            order.taskId,
+            order.verifier,
+          );
 
-        if (status === 'success') {
-          await this.completeOrder({
-            orderId: order.id,
-            taskId: order.taskId,
-            verifier: order.verifier,
-            spendData: order.spendData,
-          });
-        } else if (status === 'failed') {
-          order.status = StatusType.FAILED;
-          order.failedReason = `${order.verifier} task verifier failed`;
-          await this.orderService.saveOrder(order);
+          if (status === 'success') {
+            await this.completeOrder({
+              orderId: order.id,
+              taskId: order.taskId,
+              verifier: order.verifier,
+              spendData: order.spendData,
+            });
+          } else if (status === 'failed') {
+            order.status = StatusType.FAILED;
+            order.failedReason = `${order.verifier} task verifier failed`;
+            await this.orderService.saveOrder(order);
 
-          await redistributed_failed_tx_with_url(order.spendData, RUNTIME_URL);
+            await redistributed_failed_tx_with_url(
+              order.spendData,
+              RUNTIME_URL,
+            );
 
-          order.isRefunded = true;
-          await this.orderService.saveOrder(order);
-        } else {
-          console.log('Pending');
-          return;
+            order.isRefunded = true;
+            await this.orderService.saveOrder(order);
+          } else {
+            console.log('Pending');
+            return;
+          }
         }
       }
     }

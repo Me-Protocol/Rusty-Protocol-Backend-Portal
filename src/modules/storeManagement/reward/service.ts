@@ -267,7 +267,12 @@ export class RewardManagementService {
     });
 
     const descripancies = syncData.filter((syncData) => {
-      if (!syncData.id || !syncData.identifier || !syncData.identifierType) {
+      if (
+        !syncData.id ||
+        !syncData.identifier ||
+        !syncData.identifierType ||
+        !syncData.amount
+      ) {
         return {
           id: syncData?.id,
           identifier: syncData.identifier,
