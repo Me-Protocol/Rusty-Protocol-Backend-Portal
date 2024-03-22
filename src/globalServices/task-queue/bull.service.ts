@@ -6,9 +6,11 @@ import { OrderManagementService } from '@src/modules/storeManagement/order/servi
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { CustomerAccountManagementService } from '@src/modules/accountManagement/customerAccountManagement/service';
 import { SettingsService } from '../settings/settings.service';
-
-export const ORDER_TASK_QUEUE = 'order-processing';
-export const ORDER_PROCESSOR_QUEUE = 'order-processor';
+import { CampaignService } from '../campaign/campaign.service';
+import {
+  ORDER_PROCESSOR_QUEUE,
+  ORDER_TASK_QUEUE,
+} from '@src/utils/helpers/queue-names';
 
 @Injectable()
 export class BullService {
@@ -17,47 +19,11 @@ export class BullService {
 
     @Inject(forwardRef(() => OrderManagementService))
     private readonly orderMgtService: OrderManagementService,
-
-    @Inject(forwardRef(() => CustomerAccountManagementService))
-    private readonly customerAccountManagementService: CustomerAccountManagementService,
-
-    private readonly settingService: SettingsService,
   ) {}
 
   async processOrder(orderId: string): Promise<void> {
     console.log('Processing order', orderId);
     await this.orderMgtService.checkOrderStatus(orderId);
-  }
-
-  async processSetCustomerWalletAddress({
-    walletAddress,
-    userId,
-  }: {
-    userId: string;
-    walletAddress: string;
-  }) {
-    console.log('Processing set customer wallet address', userId);
-    const settings = await this.settingService.getPublicSettings();
-
-    await this.customerAccountManagementService.setWalletAddress(
-      walletAddress,
-      settings.walletVersion,
-      userId,
-    );
-  }
-
-  async processCampaignReward({
-    userId,
-    brandId,
-  }: {
-    userId: string;
-    brandId: string;
-  }) {
-    console.log('Processing campaign reward');
-    await this.customerAccountManagementService.rewardForCampaign({
-      userId,
-      brandId,
-    });
   }
 
   async addOrderToQueue(orderId: string) {
@@ -126,13 +92,20 @@ export class BullService {
       'delayed',
       'failed',
     ]);
-    console.log(jobs.length, 'jobs found');
   }
 }
 
 @Processor(ORDER_PROCESSOR_QUEUE)
 export class OrderProcessor {
-  constructor(private readonly bullService: BullService) {}
+  constructor(
+    private readonly bullService: BullService,
+    private readonly settingService: SettingsService,
+
+    @Inject(forwardRef(() => CustomerAccountManagementService))
+    private readonly customerAccountManagementService: CustomerAccountManagementService,
+
+    private readonly campaignService: CampaignService,
+  ) {}
 
   @Process('process-order')
   async processOrder(job: Job) {
@@ -142,15 +115,22 @@ export class OrderProcessor {
   @Process('process-set-customer-wallet-address')
   async redistribute(job: Job) {
     const { walletAddress, userId } = job.data;
-    await this.bullService.processSetCustomerWalletAddress({
+    const settings = await this.settingService.getPublicSettings();
+    await this.customerAccountManagementService.setWalletAddress(
       walletAddress,
+      settings.walletVersion,
       userId,
-    });
+    );
   }
 
   @Process('process-campaign-reward')
   async processCampaignReward(job: Job) {
     const { userId, brandId } = job.data;
-    await this.bullService.processCampaignReward({ userId, brandId });
+
+    await this.customerAccountManagementService.rewardForCampaign({
+      userId,
+      brandId,
+      jobId: job.id.toString(),
+    });
   }
 }

@@ -41,8 +41,9 @@ import {
   CreateSendgridContactEvent,
 } from '@src/globalServices/mail/create-sendgrid-contact.event';
 import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
-import { SettingsService } from '@src/globalServices/settings/settings.service';
-import { BullService } from '@src/globalServices/task-queue/bull.service';
+import { Queue } from 'bull';
+import { InjectQueue } from '@nestjs/bull';
+import { ORDER_PROCESSOR_QUEUE } from '@src/utils/helpers/queue-names';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -66,12 +67,11 @@ export class AuthenticationService {
     private brandService: BrandService,
     private walletService: FiatWalletService,
     private syncService: SyncRewardService,
-    private customerAccountManagementService: CustomerAccountManagementService,
     private collectionService: CollectionService,
     private readonly eventEmitter: EventEmitter2,
     private readonly googleService: GoogleSheetService,
-    private readonly settingService: SettingsService,
-    private readonly bullService: BullService,
+
+    @InjectQueue(ORDER_PROCESSOR_QUEUE) private readonly queue: Queue,
   ) {}
 
   async writeDataToGoogleSheet(userId: string): Promise<any> {
@@ -423,17 +423,32 @@ export class AuthenticationService {
           ip,
         );
         // Queue to set wallet address
-        await this.bullService.setCustomerWalletAddressQueue({
-          walletAddress,
-          userId: newUser.id,
-        });
+        await this.queue.add(
+          'process-set-customer-wallet-address',
+          { userId: newUser.id, walletAddress },
+          {
+            attempts: 6, // Number of retry attempts
+            backoff: {
+              type: 'exponential', // Exponential backoff
+              delay: 30000, // Initial delay before first retry in milliseconds
+            },
+          },
+        );
+
         // Queue campaign reward
 
         if (brandId) {
-          await this.bullService.addCampainRewardToQueue({
-            userId: newUser.id,
-            brandId,
-          });
+          await this.queue.add(
+            'process-campaign-reward',
+            { userId: newUser.id, brandId },
+            {
+              attempts: 6, // Number of retry attempts
+              backoff: {
+                type: 'exponential', // Exponential backoff
+                delay: 30000, // Initial delay before first retry in milliseconds
+              },
+            },
+          );
         }
 
         await this.collectionService.create({

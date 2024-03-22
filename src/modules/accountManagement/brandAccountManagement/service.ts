@@ -58,6 +58,9 @@ import { KeyManagementService } from '@src/globalServices/key-management/key-man
 import { KeyIdentifier } from '@src/globalServices/key-management/entities/keyIdentifier.entity';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { SendTransactionData } from '@src/modules/storeManagement/reward/dto/distributeBatch.dto';
+import { Queue } from 'bull';
+import { InjectQueue } from '@nestjs/bull';
+import { ORDER_TASK_QUEUE } from '@src/utils/helpers/queue-names';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -75,6 +78,8 @@ export class BrandAccountManagementService {
     private readonly campaignService: CampaignService,
     private readonly rewardService: RewardService,
     private readonly keyManagementService: KeyManagementService,
+
+    @InjectQueue(ORDER_TASK_QUEUE) private readonly queue: Queue,
   ) {}
 
   async updateBrand(body: UpdateBrandDto, brandId: string) {
@@ -726,7 +731,7 @@ export class BrandAccountManagementService {
       await this.campaignService.save(campaign);
 
       return {
-        totalRewardToDistribute,
+        amount: totalRewardToDistribute,
         walletAddress: reward.campaignPublicKey,
       };
     } catch (error) {
@@ -823,28 +828,32 @@ export class BrandAccountManagementService {
         brandId,
       );
 
-      if (rewardPerUser) campaign.rewardPerUser = rewardPerUser;
-      if (name) campaign.name = name;
-      if (description) campaign.description = description;
-      if (end_date) campaign.end_date = end_date;
+      if (!reward) {
+        throw new Error('Reward is not found');
+      }
 
-      const totalUserDifference = campaign.totalUsers - totalUsers;
+      campaign.isUpdating = true;
+      await this.campaignService.save(campaign);
+
+      const newTotaUser = totalUsers ? totalUsers : campaign.totalUsers;
+      const newRewardPeruser = rewardPerUser
+        ? rewardPerUser
+        : campaign.rewardPerUser;
+      const oldTotalRewardToDistribute =
+        campaign.totalUsers * campaign.rewardPerUser;
+      let newTotalRewardToDistribute = 0;
 
       if (
-        totalUsers &&
-        totalUsers < campaign.availableUsers &&
-        totalUserDifference < 0
+        newTotaUser !== campaign.totalUsers ||
+        newRewardPeruser !== campaign.rewardPerUser
       ) {
-        throw new Error('Total users cannot be less than available users');
+        newTotalRewardToDistribute = newTotaUser * newRewardPeruser;
       }
 
-      if (totalUserDifference > 0) {
-        campaign.availableUsers += totalUserDifference;
-      }
+      if (newTotalRewardToDistribute > oldTotalRewardToDistribute) {
+        const checkBalanceDifference =
+          newTotalRewardToDistribute - oldTotalRewardToDistribute;
 
-      const amountToFund = totalUserDifference * campaign.rewardPerUser;
-
-      if (amountToFund > 0) {
         const campaignWalletBalance = await get_user_reward_balance_with_url(
           {
             address: reward.campaignPublicKey,
@@ -862,12 +871,30 @@ export class BrandAccountManagementService {
         );
         const balance = Number(formattedBalance);
 
-        if (balance < amountToFund) {
-          throw new Error('Insufficient funds in campaign wallet');
+        if (balance < checkBalanceDifference + campaign.availableRewards) {
+          return {
+            amount:
+              checkBalanceDifference + campaign.availableRewards - balance,
+            walletAddress: reward.campaignPublicKey,
+          };
         }
+
+        campaign.availableRewards =
+          checkBalanceDifference + campaign.availableRewards;
       }
 
+      if (name) campaign.name = name;
+      if (description) campaign.description = description;
+      if (end_date) campaign.end_date = end_date;
       if (totalUsers) campaign.totalUsers = totalUsers;
+      if (rewardPerUser) campaign.rewardPerUser = rewardPerUser;
+
+      const jobs = await this.queue.getJobs(['failed']);
+
+      for (const job of jobs) {
+        // resume job
+        await job.retry();
+      }
 
       return await this.campaignService.save(campaign);
     } catch (error) {

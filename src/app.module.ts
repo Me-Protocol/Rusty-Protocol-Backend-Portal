@@ -158,13 +158,15 @@ import { Region } from './globalServices/currency/entities/region.entity';
 import { AutoTopupRequest } from './globalServices/biller/entity/auto-topup-request.entity';
 import {
   BullService,
-  ORDER_PROCESSOR_QUEUE,
-  ORDER_TASK_QUEUE,
   OrderProcessor,
 } from './globalServices/task-queue/bull.service';
 import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
 import { Campaign } from './globalServices/campaign/entities/campaign.entity';
 import { CampaignService } from './globalServices/campaign/campaign.service';
+import {
+  ORDER_PROCESSOR_QUEUE,
+  ORDER_TASK_QUEUE,
+} from './utils/helpers/queue-names';
 
 @Module({
   imports: [

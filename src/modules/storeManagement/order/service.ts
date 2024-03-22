@@ -46,11 +46,13 @@ import { createCoupon } from '@src/globalServices/online-store-handler/create-co
 import { checkBrandOnlineStore } from '@src/globalServices/online-store-handler/check-store';
 import { BillType } from '@src/utils/enums/BillType';
 import { checkOrderStatusGelatoOrRuntime } from '@src/globalServices/costManagement/taskId-verifier.service';
-import { BullService } from '@src/globalServices/task-queue/bull.service';
+
 import { Offer } from '@src/globalServices/offer/entities/offer.entity';
 import { Customer } from '@src/globalServices/customer/entities/customer.entity';
 import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 import { checkProductOnBrandStore } from '@src/globalServices/online-store-handler/check-product';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 
 @Injectable()
 export class OrderManagementService {
@@ -69,7 +71,7 @@ export class OrderManagementService {
     private readonly analyticsRecorder: AnalyticsRecorderService,
     private eventEmitter: EventEmitter2,
     private readonly billerService: BillerService,
-    private readonly bullService: BullService,
+    @InjectQueue('order-processing') private readonly queue: Queue,
 
     @InjectRepository(Transaction)
     private readonly transactionRepo: Repository<Transaction>,
@@ -371,14 +373,24 @@ export class OrderManagementService {
       });
 
       if (order.jobId) {
-        const job = await this.bullService.getJob(order.jobId);
+        const job = await this.queue.getJob(order.jobId);
         if (job) {
           const isActive = await job.isActive();
           console.log('JOB', isActive);
         }
       }
 
-      const job = await this.bullService.addOrderToQueue(orderId);
+      const job = await this.queue.add(
+        'process-order',
+        { orderId },
+        {
+          attempts: 6, // Number of retry attempts
+          backoff: {
+            type: 'exponential', // Exponential backoff
+            delay: 30000, // Initial delay before first retry in milliseconds
+          },
+        },
+      );
       order.jobId = job.id.toString();
 
       const saveOrder = await this.orderService.saveOrder(order);
@@ -712,7 +724,7 @@ export class OrderManagementService {
     console.log(pendingOrders.length, 'Pending orders');
 
     for (const order of pendingOrders) {
-      const job = await this.bullService.getJob(order.jobId);
+      const job = await this.queue.getJob(order.jobId);
       if (job) {
         const isActive = await job.isActive();
         console.log('JOB', isActive);

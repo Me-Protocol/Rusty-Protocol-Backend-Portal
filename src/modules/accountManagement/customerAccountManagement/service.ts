@@ -9,6 +9,9 @@ import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { CampaignService } from '@src/globalServices/campaign/campaign.service';
 import { BrandService } from '@src/globalServices/brand/brand.service';
+import { Queue } from 'bull';
+import { InjectQueue } from '@nestjs/bull';
+import { ORDER_TASK_QUEUE } from '@src/utils/helpers/queue-names';
 
 @Injectable()
 export class CustomerAccountManagementService {
@@ -19,6 +22,7 @@ export class CustomerAccountManagementService {
     private readonly userService: UserService,
     private readonly campaignService: CampaignService,
     private readonly brandService: BrandService,
+    @InjectQueue(ORDER_TASK_QUEUE) private readonly queue: Queue,
   ) {}
 
   async updateCustomer(body: UpdateCustomerDto, userId: string) {
@@ -186,15 +190,26 @@ export class CustomerAccountManagementService {
   async rewardForCampaign({
     userId,
     brandId,
+    jobId,
   }: {
     userId: string;
     brandId: string;
+    jobId: string;
   }) {
     const campaign = await this.campaignService.getBrandSignUpCampaign(brandId);
 
     if (campaign) {
+      // if (campaign.isUpdating) {
+
+      //   const job = await this.queue.getJob(jobId);
+      //   // pause the job
+      //   await job.remove();
+      // }
+
       const user = await this.userService.getUserById(userId);
       const reward = await this.rewardService.getRewardById(campaign.rewardId);
+      campaign.availableRewards =
+        campaign.availableRewards - campaign.rewardPerUser;
 
       await this.syncService.distributeRewardWithPrivateKey({
         rewardId: campaign.rewardId,
@@ -203,6 +218,8 @@ export class CustomerAccountManagementService {
         email: user.email,
         keySource: 'campaign',
       });
+
+      await this.campaignService.save(campaign);
 
       const brandCustomer =
         await this.brandService.getBrandCustomerByIdentifier({

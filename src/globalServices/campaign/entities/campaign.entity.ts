@@ -48,4 +48,9 @@ export class Campaign extends BaseEntity {
   @ManyToOne(() => Brand, (brand) => brand.id)
   @JoinColumn({ name: 'brandId' })
   brand: Brand;
+
+  @Column({
+    default: false,
+  })
+  isUpdating: boolean;
 }
