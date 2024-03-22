@@ -22,6 +22,7 @@ import {
   JSON_RPC_URL,
   OPEN_REWARD_DIAMOND,
   adminService,
+  generateWalletRandom,
   getBrandIdHex,
 } from '@developeruche/protocol-core';
 import { OnboardBrandDto } from './dto/OnboardBrandDto.dto';
@@ -37,7 +38,10 @@ import {
 import { ProcessBrandColorEvent } from '@src/globalServices/brand/events/process-brand-color.event';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BrandRole } from '@src/utils/enums/BrandRole';
-import { onboard_brand_with_url } from '@developeruche/runtime-sdk';
+import {
+  get_user_reward_balance_with_url,
+  onboard_brand_with_url,
+} from '@developeruche/runtime-sdk';
 import { RUNTIME_URL } from '@src/config/env.config';
 import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
 import { Role } from '@src/utils/enums/Role';
@@ -49,6 +53,11 @@ import { Campaign } from '@src/globalServices/campaign/entities/campaign.entity'
 import { RewardService } from '@src/globalServices/reward/reward.service';
 import { CreateCampaignDto, UpdateCampaignDto } from './dto/CreateCampaignDto';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { CampaignStatus } from '@src/utils/enums/CampaignStatus';
+import { KeyManagementService } from '@src/globalServices/key-management/key-management.service';
+import { KeyIdentifier } from '@src/globalServices/key-management/entities/keyIdentifier.entity';
+import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
+import { SendTransactionData } from '@src/modules/storeManagement/reward/dto/distributeBatch.dto';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -65,6 +74,7 @@ export class BrandAccountManagementService {
     private readonly syncService: SyncRewardService,
     private readonly campaignService: CampaignService,
     private readonly rewardService: RewardService,
+    private readonly keyManagementService: KeyManagementService,
   ) {}
 
   async updateBrand(body: UpdateBrandDto, brandId: string) {
@@ -665,6 +675,30 @@ export class BrandAccountManagementService {
         throw new Error('Reward not found');
       }
 
+      if (!reward.campaignKeyIdentifierId) {
+        const { pubKey, privKey } = generateWalletRandom();
+
+        // Encrypt private key
+        const campaignEncryptedKey = await this.keyManagementService.encryptKey(
+          privKey,
+        );
+
+        // Create key identifier
+        const campaignKeyIdentifier = new KeyIdentifier();
+        campaignKeyIdentifier.identifier = campaignEncryptedKey;
+        campaignKeyIdentifier.identifierType = KeyIdentifierType.REDISTRIBUTION;
+
+        const newCampaignKeyIdentifier =
+          await this.keyManagementService.createKeyIdentifer(
+            campaignKeyIdentifier,
+          );
+
+        reward.campaignPublicKey = pubKey;
+        reward.campaignKeyIdentifierId = newCampaignKeyIdentifier.id;
+
+        await this.rewardService.save(reward);
+      }
+
       const totalRewardToDistribute = totalUsers * rewardPerUser;
 
       const campaign = new Campaign();
@@ -673,25 +707,80 @@ export class BrandAccountManagementService {
       campaign.rewardPerUser = rewardPerUser;
       campaign.brandId = brandId;
       campaign.availableUsers = totalUsers;
-      campaign.active = true;
+      campaign.status = CampaignStatus.PENDING;
       campaign.availableRewards = totalRewardToDistribute;
-      campaign.rewardId = rewardId;
+      campaign.rewardId = reward.id;
       campaign.name = name;
       campaign.description = description;
       campaign.end_date = end_date;
 
-      const distributeToBrandWallet =
-        await this.syncService.distributeRewardWithPrivateKey({
-          rewardId: rewardId,
-          walletAddress: reward.redistributionPublicKey,
-          amount: totalRewardToDistribute,
-        });
+      await this.campaignService.save(campaign);
 
-      if (distributeToBrandWallet.error) {
-        throw new Error(
-          `${distributeToBrandWallet?.data?.error?.message}. Funding redistribution wallet failed.`,
-        );
+      return {
+        totalRewardToDistribute,
+        walletAddress: reward.campaignPublicKey,
+      };
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async fundAndActivateCampaign({
+    brandId,
+    campaignId,
+    params,
+  }: {
+    brandId: string;
+    campaignId: string;
+    params: SendTransactionData;
+  }) {
+    try {
+      const campaign = await this.campaignService.findByIdAndBrandId(
+        campaignId,
+        brandId,
+      );
+
+      if (!campaign) {
+        throw new Error('Campaign is not found');
       }
+
+      const reward = await this.rewardService.getRewardByIdAndBrandId(
+        campaign.rewardId,
+        brandId,
+      );
+
+      if (!reward) {
+        throw new Error('Reward is not found');
+      }
+
+      await this.syncService.pushTransactionToRuntime(params);
+
+      const amountToFund = campaign.totalUsers * campaign.rewardPerUser;
+
+      const campaignWalletBalance = await get_user_reward_balance_with_url(
+        {
+          address: reward.campaignPublicKey,
+          reward_address: reward.contractAddress,
+        },
+        RUNTIME_URL,
+      );
+
+      if (!campaignWalletBalance.data?.result) {
+        throw new Error('Error fetching campaign wallet balance');
+      }
+
+      const formattedBalance = ethers.utils.formatEther(
+        campaignWalletBalance.data.result,
+      );
+      const balance = Number(formattedBalance);
+
+      if (balance < amountToFund) {
+        throw new Error('Insufficient funds in campaign wallet');
+      }
+
+      campaign.status = CampaignStatus.ACTIVE;
 
       return await this.campaignService.save(campaign);
     } catch (error) {
@@ -726,7 +815,6 @@ export class BrandAccountManagementService {
       );
 
       if (rewardPerUser) campaign.rewardPerUser = rewardPerUser;
-
       if (name) campaign.name = name;
       if (description) campaign.description = description;
       if (end_date) campaign.end_date = end_date;
@@ -734,8 +822,9 @@ export class BrandAccountManagementService {
       const totalUserDifference = campaign.totalUsers - totalUsers;
 
       if (
-        totalUserDifference < 0 &&
-        campaign.availableUsers < Math.abs(totalUserDifference)
+        totalUsers &&
+        totalUsers < campaign.availableUsers &&
+        totalUserDifference < 0
       ) {
         throw new Error('Total users cannot be less than available users');
       }
@@ -747,16 +836,25 @@ export class BrandAccountManagementService {
       const amountToFund = totalUserDifference * campaign.rewardPerUser;
 
       if (amountToFund > 0) {
-        campaign.availableRewards = campaign.availableRewards + amountToFund;
-        const distributeToBrandWallet =
-          await this.syncService.distributeRewardWithPrivateKey({
-            rewardId: campaign.rewardId,
-            walletAddress: reward.redistributionPublicKey,
-            amount: amountToFund,
-          });
+        const campaignWalletBalance = await get_user_reward_balance_with_url(
+          {
+            address: reward.campaignPublicKey,
+            reward_address: reward.contractAddress,
+          },
+          RUNTIME_URL,
+        );
 
-        if (distributeToBrandWallet.error) {
-          throw new Error('Funding redistribution wallet failed');
+        if (!campaignWalletBalance.data?.result) {
+          throw new Error('Error fetching campaign wallet balance');
+        }
+
+        const formattedBalance = ethers.utils.formatEther(
+          campaignWalletBalance.data.result,
+        );
+        const balance = Number(formattedBalance);
+
+        if (balance < amountToFund) {
+          throw new Error('Insufficient funds in campaign wallet');
         }
       }
 
@@ -782,9 +880,7 @@ export class BrandAccountManagementService {
       }
 
       // TODO Refund logic
-
-      campaign.active = false;
-      campaign.ended = false;
+      campaign.status = CampaignStatus.ENDED;
 
       return await this.campaignService.save(campaign);
     } catch (error) {
@@ -809,8 +905,7 @@ export class BrandAccountManagementService {
     const campaigns = await this.campaignService.getAllActiveCampaigns();
     for (const campaign of campaigns) {
       if (campaign.end_date < new Date()) {
-        campaign.active = false;
-        campaign.ended = true;
+        campaign.status = CampaignStatus.ENDED;
         await this.campaignService.save(campaign);
       }
     }

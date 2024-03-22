@@ -42,6 +42,7 @@ import {
 } from '@src/globalServices/mail/create-sendgrid-contact.event';
 import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
+import { BullService } from '@src/globalServices/task-queue/bull.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -70,6 +71,7 @@ export class AuthenticationService {
     private readonly eventEmitter: EventEmitter2,
     private readonly googleService: GoogleSheetService,
     private readonly settingService: SettingsService,
+    private readonly bullService: BullService,
   ) {}
 
   async writeDataToGoogleSheet(userId: string): Promise<any> {
@@ -400,8 +402,6 @@ export class AuthenticationService {
         throw new Error('Wallet address is required');
       }
 
-      const settings = await this.settingService.getPublicSettings();
-
       const lowerCasedEmail = email.toLowerCase();
       await this.checkIfUserExists(lowerCasedEmail);
       await this.checkDuplicateBrandName(userType, name);
@@ -422,15 +422,20 @@ export class AuthenticationService {
           userAgent,
           ip,
         );
-        await this.customerAccountManagementService.setWalletAddress(
+        // Queue to set wallet address
+        await this.bullService.setCustomerWalletAddressQueue({
           walletAddress,
-          settings.walletVersion,
-          newUser.id,
-        );
-        await this.customerAccountManagementService.rewardForCampaign({
           userId: newUser.id,
-          brandId,
         });
+        // Queue campaign reward
+
+        if (brandId) {
+          await this.bullService.addCampainRewardToQueue({
+            userId: newUser.id,
+            brandId,
+          });
+        }
+
         await this.collectionService.create({
           name: 'Favorites',
           description: 'Favorites collection',

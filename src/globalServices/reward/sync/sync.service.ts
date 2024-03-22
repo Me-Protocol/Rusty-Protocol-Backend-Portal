@@ -691,11 +691,13 @@ export class SyncRewardService {
     walletAddress,
     amount,
     email,
+    keySource = 'redistribution',
   }: {
     rewardId: string;
     walletAddress: string;
     amount: number;
     email?: string;
+    keySource?: 'redistribution' | 'campaign';
   }): Promise<{
     data: any;
     error: boolean;
@@ -716,7 +718,9 @@ export class SyncRewardService {
     //3. If the brand has enough balance, we use the redistributionKeyIdentifierId to get the private key identifier and decrypt the private key.
 
     const decryptedPrivateKey = await this.keyManagementService.getEncryptedKey(
-      reward.redistributionKeyIdentifierId,
+      keySource === 'campaign'
+        ? reward.campaignKeyIdentifierId
+        : reward.redistributionKeyIdentifierId,
       KeyIdentifierType.REDISTRIBUTION,
     );
     // 4. We then use the private key to sign the transaction and distribute the rewards to the wallet address.

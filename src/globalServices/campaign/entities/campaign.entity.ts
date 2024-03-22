@@ -1,5 +1,6 @@
 import { BaseEntity } from '@src/common/entities/base.entity';
 import { Brand } from '@src/globalServices/brand/entities/brand.entity';
+import { CampaignStatus } from '@src/utils/enums/CampaignStatus';
 import { CampaignType } from '@src/utils/enums/CampaignType';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
@@ -15,20 +16,16 @@ export class Campaign extends BaseEntity {
   end_date: Date;
 
   @Column({
-    default: false,
+    type: 'enum',
+    enum: CampaignStatus,
   })
-  ended: boolean;
+  status: CampaignStatus;
 
   @Column({
     type: 'enum',
     enum: CampaignType,
   })
   type: CampaignType;
-
-  @Column({
-    default: false,
-  })
-  active: boolean;
 
   @Column()
   totalUsers: number;

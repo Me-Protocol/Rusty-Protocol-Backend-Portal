@@ -114,12 +114,22 @@ export class Reward extends BaseEntity {
   @Column({
     nullable: true,
   })
+  campaignPublicKey: string;
+
+  @Column({
+    nullable: true,
+  })
   bountyPublicKey: string;
 
   @Column({
     nullable: true,
   })
   redistributionKeyIdentifierId: string;
+
+  @Column({
+    nullable: true,
+  })
+  campaignKeyIdentifierId: string;
 
   @Column({
     nullable: true,

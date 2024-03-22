@@ -8,6 +8,7 @@ import { UserService } from '@src/globalServices/user/user.service';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { CampaignService } from '@src/globalServices/campaign/campaign.service';
+import { BrandService } from '@src/globalServices/brand/brand.service';
 
 @Injectable()
 export class CustomerAccountManagementService {
@@ -17,6 +18,7 @@ export class CustomerAccountManagementService {
     private readonly syncService: SyncRewardService,
     private readonly userService: UserService,
     private readonly campaignService: CampaignService,
+    private readonly brandService: BrandService,
   ) {}
 
   async updateCustomer(body: UpdateCustomerDto, userId: string) {
@@ -115,11 +117,37 @@ export class CustomerAccountManagementService {
       if (undistributedRewards.length > 0) {
         // 9. We iterate through the undistributed points and distribute them to the new walletAddress.
         for (const point of undistributedRewards) {
+          const reward = await this.rewardService.getRewardById(point.rewardId);
+
           await this.syncService.distributeRewardWithPrivateKey({
             rewardId: point.rewardId,
             walletAddress: walletAddress,
             amount: point.undistributedBalance,
             email: user.email,
+          });
+
+          const brandCustomer =
+            await this.brandService.getBrandCustomerByIdentifier({
+              identifier: user.email,
+              brandId: reward.brandId,
+              identifierType: SyncIdentifierType.EMAIL,
+            });
+
+          brandCustomer.totalDistributed =
+            Number(brandCustomer.totalDistributed) +
+            Number(point.undistributedBalance);
+          await this.brandService.saveBrandCustomer(brandCustomer);
+
+          const registry = await this.syncService.getRegistryRecordByIdentifer(
+            user.email,
+            reward.id,
+            SyncIdentifierType.EMAIL,
+          );
+
+          await this.syncService.disbutributeRewardToExistingUsers({
+            registryId: registry.id,
+            amount: point.undistributedBalance,
+            description: `Reward distributed to ${user.customer.walletAddress}`,
           });
         }
       }
@@ -166,12 +194,37 @@ export class CustomerAccountManagementService {
 
     if (campaign) {
       const user = await this.userService.getUserById(userId);
+      const reward = await this.rewardService.getRewardById(campaign.rewardId);
 
       await this.syncService.distributeRewardWithPrivateKey({
         rewardId: campaign.rewardId,
         walletAddress: user.customer.walletAddress,
         amount: campaign.rewardPerUser,
         email: user.email,
+        keySource: 'campaign',
+      });
+
+      const brandCustomer =
+        await this.brandService.getBrandCustomerByIdentifier({
+          identifier: user.email,
+          brandId: reward.brandId,
+          identifierType: SyncIdentifierType.EMAIL,
+        });
+
+      brandCustomer.totalDistributed =
+        Number(brandCustomer.totalDistributed) + Number(campaign.rewardPerUser);
+      await this.brandService.saveBrandCustomer(brandCustomer);
+
+      const registry = await this.syncService.getRegistryRecordByIdentifer(
+        user.email,
+        reward.id,
+        SyncIdentifierType.EMAIL,
+      );
+
+      await this.syncService.disbutributeRewardToExistingUsers({
+        registryId: registry.id,
+        amount: campaign.rewardPerUser,
+        description: `Campaign reward distributed to ${user.customer.walletAddress}`,
       });
     }
   }

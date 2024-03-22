@@ -50,6 +50,7 @@ import { BullService } from '@src/globalServices/task-queue/bull.service';
 import { Offer } from '@src/globalServices/offer/entities/offer.entity';
 import { Customer } from '@src/globalServices/customer/entities/customer.entity';
 import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
+import { checkProductOnBrandStore } from '@src/globalServices/online-store-handler/check-product';
 
 @Injectable()
 export class OrderManagementService {
@@ -285,6 +286,10 @@ export class OrderManagementService {
 
       // Validate online store setup
       await checkBrandOnlineStore({ brand });
+      await checkProductOnBrandStore({
+        brand,
+        productId: offer.product.productIdOnBrandSite,
+      });
 
       // TODO: uncomment this
       // const canPayCost = await this.fiatWalletService.checkCanPayCost(

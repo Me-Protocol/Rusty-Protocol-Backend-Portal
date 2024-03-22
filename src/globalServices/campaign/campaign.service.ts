@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Campaign } from './entities/campaign.entity';
 import { Repository } from 'typeorm';
 import { CampaignType } from '@src/utils/enums/CampaignType';
+import { CampaignStatus } from '@src/utils/enums/CampaignStatus';
 
 @Injectable()
 export class CampaignService {
@@ -33,21 +34,31 @@ export class CampaignService {
     });
   }
 
-  async getActiveCampaigns(brandid: string) {
+  async getActiveCampaign(brandid: string) {
     return await this.campaignRepo.findOne({
-      where: { brandId: brandid, active: true },
+      where: { brandId: brandid, status: CampaignStatus.ACTIVE },
+    });
+  }
+
+  async getPendingCampaign(brandid: string) {
+    return await this.campaignRepo.findOne({
+      where: { brandId: brandid, status: CampaignStatus.PENDING },
     });
   }
 
   async getAllActiveCampaigns() {
     return this.campaignRepo.find({
-      where: { active: true, ended: false },
+      where: { status: CampaignStatus.ACTIVE },
     });
   }
 
   async getBrandSignUpCampaign(brandId: string) {
     return this.campaignRepo.findOne({
-      where: { brandId, type: CampaignType.SIGNUP_REWARD, active: true },
+      where: {
+        brandId,
+        type: CampaignType.SIGNUP_REWARD,
+        status: CampaignStatus.ACTIVE,
+      },
     });
   }
 }

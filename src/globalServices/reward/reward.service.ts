@@ -146,6 +146,8 @@ export class RewardService {
         bountyKeyIdentifierId: true,
         rewardValueInDollars: true,
         rewardValueIsManual: true,
+        campaignKeyIdentifierId: true,
+        campaignPublicKey: true,
         status: true,
         poolTotalSupply: true,
         rewardDollarPrice: true,
@@ -233,6 +235,14 @@ export class RewardService {
       rewardName: existingRewardWithName,
       rewardSymbol: existingRewardWithSymbol,
     };
+  }
+
+  async getRewardById(rewardId: string) {
+    return this.rewardsRepo.findOne({
+      where: {
+        id: rewardId,
+      },
+    });
   }
 
   // @Cron(CronExpression.EVERY_5_MINUTES)
