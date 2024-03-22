@@ -658,12 +658,20 @@ export class BrandAccountManagementService {
     end_date,
   }: CreateCampaignDto) {
     try {
-      const activeCampaign = await this.campaignService.getActiveCampaigns(
+      const activeCampaign = await this.campaignService.getActiveCampaign(
         brandId,
       );
 
       if (activeCampaign) {
         throw new Error('Brand already has an active campaign');
+      }
+
+      const pendingCampaign = await this.campaignService.getPendingCampaign(
+        brandId,
+      );
+
+      if (pendingCampaign) {
+        throw new Error('Brand already has a pending campaign');
       }
 
       const reward = await this.rewardService.getRewardByIdAndBrandId(
@@ -675,6 +683,7 @@ export class BrandAccountManagementService {
         throw new Error('Reward not found');
       }
 
+      // Create campaign wallet if it doesn't exist
       if (!reward.campaignKeyIdentifierId) {
         const { pubKey, privKey } = generateWalletRandom();
 
