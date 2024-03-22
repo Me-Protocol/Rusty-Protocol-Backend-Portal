@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import { BrandService } from '@src/globalServices/brand/brand.service';
 import { UpdateBrandDto } from './dto/UpdateBrandDto.dto';
 import { logger } from '@src/globalServices/logger/logger.service';
@@ -58,9 +58,7 @@ import { KeyManagementService } from '@src/globalServices/key-management/key-man
 import { KeyIdentifier } from '@src/globalServices/key-management/entities/keyIdentifier.entity';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { SendTransactionData } from '@src/modules/storeManagement/reward/dto/distributeBatch.dto';
-import { Queue } from 'bull';
-import { InjectQueue } from '@nestjs/bull';
-import { ORDER_TASK_QUEUE } from '@src/utils/helpers/queue-names';
+import { BullService } from '@src/globalServices/task-queue/bull.service';
 
 @Injectable()
 export class BrandAccountManagementService {
@@ -79,7 +77,8 @@ export class BrandAccountManagementService {
     private readonly rewardService: RewardService,
     private readonly keyManagementService: KeyManagementService,
 
-    @InjectQueue(ORDER_TASK_QUEUE) private readonly queue: Queue,
+    @Inject(forwardRef(() => BullService))
+    private readonly bullService: BullService,
   ) {}
 
   async updateBrand(body: UpdateBrandDto, brandId: string) {
@@ -889,12 +888,7 @@ export class BrandAccountManagementService {
       if (totalUsers) campaign.totalUsers = totalUsers;
       if (rewardPerUser) campaign.rewardPerUser = rewardPerUser;
 
-      const jobs = await this.queue.getJobs(['failed']);
-
-      for (const job of jobs) {
-        // resume job
-        await job.retry();
-      }
+      await this.bullService.retryCampaignFailedJobs();
 
       return await this.campaignService.save(campaign);
     } catch (error) {

@@ -118,7 +118,7 @@ import { DebugController } from './debug/debug.controller';
 import { ReviewManagementController } from './modules/storeManagement/review/controller';
 import { ReviewService } from './globalServices/review/review.service';
 import { ReviewManagementService } from './modules/storeManagement/review/service';
-import { TASK_QUEUE, TasksService } from './globalServices/task/task.service';
+import { TasksService } from './globalServices/task/task.service';
 import { TasksController } from './modules/taskModule/tasks.controller';
 import { Task } from './globalServices/task/entities/task.entity';
 import { TaskResponder } from './globalServices/task/entities/taskResponder.entity';
@@ -130,7 +130,6 @@ import { JobResponse } from './globalServices/task/entities/jobResponse.entity';
 import { HttpModule } from '@nestjs/axios';
 import { InAppTaskVerifier } from './globalServices/task/common/verifier/inapp.service';
 import { TwitterTaskVerifier } from './globalServices/task/common/verifier/outapp/twitter.verifier';
-import { BullModule } from '@nestjs/bull';
 import { SocialAuthenticationService } from './modules/authentication/socialAuth';
 import { BountyService } from './globalServices/oracles/bounty/bounty.service';
 import { Block } from './globalServices/oracles/bounty/entities/block.entity';
@@ -156,16 +155,27 @@ import { VariantOption } from '@src/globalServices/product/entities/variantvalue
 import { BrandUploadGateway } from './modules/accountManagement/brandAccountManagement/socket/brand-upload.gateway';
 import { Region } from './globalServices/currency/entities/region.entity';
 import { AutoTopupRequest } from './globalServices/biller/entity/auto-topup-request.entity';
-import {
-  BullService,
-  OrderProcessor,
-} from './globalServices/task-queue/bull.service';
 import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
 import { Campaign } from './globalServices/campaign/entities/campaign.entity';
 import { CampaignService } from './globalServices/campaign/campaign.service';
 import {
-  ORDER_PROCESSOR_QUEUE,
+  BullService,
+  CampaignProcessor,
+  OrderProcessor,
+  SetCustomerWalletProcessor,
+} from './globalServices/task-queue/bull.service';
+import { BullModule } from '@nestjs/bullmq';
+import {
+  REDIS_HOSTNAME,
+  REDIS_PASSWORD,
+  REDIS_PORT,
+} from './config/env.config';
+import {
+  CAMPAIGN_REWARD_PROCESSOR_QUEUE,
+  CAMPAIGN_REWARD_QUEUE,
   ORDER_TASK_QUEUE,
+  SET_CUSTOMER_WALLET_PROCESSOR_QUEUE,
+  SET_CUSTOMER_WALLET_QUEUE,
 } from './utils/helpers/queue-names';
 
 @Module({
@@ -239,44 +249,32 @@ import {
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     ClientModuleConfig, // microservice
-    BullModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        redis: {
-          host: configService.get('REDIS_HOSTNAME'),
-          port: configService.get('REDIS_PORT'),
-          password: configService.get('REDIS_PASSWORD'),
-        },
-      }),
-      inject: [ConfigService],
-    }),
-
-    BullModule.registerQueueAsync({
-      name: 'task-queue',
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        name: 'task-queue',
-      }),
-      inject: [ConfigService],
-    }),
-    BullModule.registerQueueAsync({
-      name: ORDER_TASK_QUEUE,
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        name: ORDER_TASK_QUEUE,
-      }),
-      inject: [ConfigService],
-    }),
-    BullModule.registerQueueAsync({
-      name: ORDER_PROCESSOR_QUEUE,
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        name: ORDER_TASK_QUEUE,
-      }),
-      inject: [ConfigService],
-    }),
-
     HttpModule,
+    BullModule.forRoot({
+      connection: {
+        host: REDIS_HOSTNAME,
+        port: REDIS_PORT,
+        password: REDIS_PASSWORD,
+      },
+    }),
+    BullModule.registerQueue({
+      name: 'task-queue',
+    }),
+    BullModule.registerQueue({
+      name: ORDER_TASK_QUEUE,
+    }),
+    BullModule.registerQueue({
+      name: SET_CUSTOMER_WALLET_QUEUE,
+    }),
+    BullModule.registerQueue({
+      name: CAMPAIGN_REWARD_QUEUE,
+    }),
+    BullModule.registerQueue({
+      name: SET_CUSTOMER_WALLET_PROCESSOR_QUEUE,
+    }),
+    BullModule.registerQueue({
+      name: CAMPAIGN_REWARD_PROCESSOR_QUEUE,
+    }),
   ],
   controllers: [
     AppController,
@@ -375,10 +373,12 @@ import {
     CreateSendgridContactHandler,
     CurrencyService,
     BrandUploadGateway,
+    CampaignService,
     BullService,
     OrderProcessor,
-    CampaignService,
+    SetCustomerWalletProcessor,
+    CampaignProcessor,
   ],
-  exports: [JwtStrategy, PassportModule, AuthenticationModule, BullModule],
+  exports: [JwtStrategy, PassportModule, AuthenticationModule],
 })
 export class AppModule {}

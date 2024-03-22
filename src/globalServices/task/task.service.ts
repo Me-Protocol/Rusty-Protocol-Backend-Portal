@@ -7,8 +7,6 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { writeFile, readFile } from 'fs/promises';
 import { HttpService } from '@nestjs/axios';
 import { Wallet, ethers, providers } from 'ethers';
-import { Queue } from 'bull';
-import { InjectQueue } from '@nestjs/bull';
 import { Task } from './entities/task.entity';
 import { TaskResponse } from './entities/taskResponse.entity';
 import { Reward } from '../reward/entities/reward.entity';
@@ -92,9 +90,6 @@ export class TasksService {
     private readonly twitterTaskVerifier: TwitterTaskVerifier,
 
     private readonly rewarderService: RewarderService,
-
-    @InjectQueue(TASK_QUEUE)
-    private readonly taskQueue: Queue,
   ) {}
 
   // fetch based on contract address
@@ -877,16 +872,6 @@ export class TasksService {
             );
 
           if (!check) throw new Error('We could not validate your response');
-
-          const queuedJob: any = await this.taskQueue.add({
-            activeTask,
-            response,
-          });
-
-          const job = await this.taskQueue.getJob(queuedJob.id);
-          const isFinishedValue = await job.finished();
-
-          if (isFinishedValue) return isFinishedValue;
 
           await this.taskRepository.update(activeTask.id, {
             winnerCount: activeTask.winnerCount + 1,
