@@ -32,7 +32,6 @@ import { Enable2FADto } from './dto/Enable2FADto.dto';
 import { UpdatePreferenceDto } from './dto/UpdatePreferenceDto.dto';
 import fetch from 'node-fetch';
 import { emailCode } from '@src/utils/helpers/email';
-import { CustomerAccountManagementService } from '../accountManagement/customerAccountManagement/service';
 import { CollectionService } from '@src/globalServices/collections/collections.service';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
 import { EventEmitter2 } from '@node_modules/@nestjs/event-emitter';
@@ -41,9 +40,7 @@ import {
   CreateSendgridContactEvent,
 } from '@src/globalServices/mail/create-sendgrid-contact.event';
 import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
-import { Queue } from 'bull';
-import { InjectQueue } from '@nestjs/bull';
-import { ORDER_PROCESSOR_QUEUE } from '@src/utils/helpers/queue-names';
+import { BullService } from '@src/globalServices/task-queue/bull.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -70,8 +67,7 @@ export class AuthenticationService {
     private collectionService: CollectionService,
     private readonly eventEmitter: EventEmitter2,
     private readonly googleService: GoogleSheetService,
-
-    @InjectQueue(ORDER_PROCESSOR_QUEUE) private readonly queue: Queue,
+    private readonly bullService: BullService,
   ) {}
 
   async writeDataToGoogleSheet(userId: string): Promise<any> {
@@ -423,32 +419,18 @@ export class AuthenticationService {
           ip,
         );
         // Queue to set wallet address
-        await this.queue.add(
-          'process-set-customer-wallet-address',
-          { userId: newUser.id, walletAddress },
-          {
-            attempts: 6, // Number of retry attempts
-            backoff: {
-              type: 'exponential', // Exponential backoff
-              delay: 30000, // Initial delay before first retry in milliseconds
-            },
-          },
-        );
+        await this.bullService.setCustomerWalletAddressQueue({
+          userId: newUser.id,
+          walletAddress,
+        });
 
         // Queue campaign reward
 
         if (brandId) {
-          await this.queue.add(
-            'process-campaign-reward',
-            { userId: newUser.id, brandId },
-            {
-              attempts: 6, // Number of retry attempts
-              backoff: {
-                type: 'exponential', // Exponential backoff
-                delay: 30000, // Initial delay before first retry in milliseconds
-              },
-            },
-          );
+          await this.bullService.addCampainRewardToQueue({
+            userId: newUser.id,
+            brandId,
+          });
         }
 
         await this.collectionService.create({

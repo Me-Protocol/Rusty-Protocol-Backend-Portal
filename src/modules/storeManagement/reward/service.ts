@@ -110,68 +110,68 @@ export class RewardManagementService {
     }
   }
 
-  // No Change
-
   async completeReward(body: UpdateRewardCreationDto) {
-    const reward = await this.rewardService.getRewardByIdAndBrandId(
-      body.rewardId,
-      body.brandId,
-    );
-
-    if (!reward) {
-      throw new HttpException('Reward not found', 404, {
-        cause: new Error('Reward not found'),
-      });
-    }
-
-    if (reward.status === RewardStatus.PUBLISHED) {
-      throw new HttpException('Reward already published', 400, {
-        cause: new Error('Reward already published'),
-      });
-    }
-
-    // onboard
-    await this.syncService.pushTransactionToRuntime(body.rsvParams);
-
-    //  Create reward signers
-    const createBountyKey = generateWalletRandom();
-    const createRedistributionKey = generateWalletRandom();
-
-    const { pubKey, privKey } = createRedistributionKey;
-    const { pubKey: bountyPubKey, privKey: bountyPrivKey } = createBountyKey;
-
-    // Encrypt private key
-    const redistributionEncryptedKey =
-      await this.keyManagementService.encryptKey(privKey);
-    const bountyEncryptedKey = await this.keyManagementService.encryptKey(
-      bountyPrivKey,
-    );
-
-    // Create key identifier
-    const redistributionKeyIdentifier = new KeyIdentifier();
-    redistributionKeyIdentifier.identifier = redistributionEncryptedKey;
-    redistributionKeyIdentifier.identifierType =
-      KeyIdentifierType.REDISTRIBUTION;
-
-    const newRedistributionKeyIdentifier =
-      await this.keyManagementService.createKeyIdentifer(
-        redistributionKeyIdentifier,
+    try {
+      const reward = await this.rewardService.getRewardByIdAndBrandId(
+        body.rewardId,
+        body.brandId,
       );
 
-    const bountyKeyIdentifier = new KeyIdentifier();
-    bountyKeyIdentifier.identifier = bountyEncryptedKey;
-    bountyKeyIdentifier.identifierType = KeyIdentifierType.BOUNTY;
+      if (!reward) {
+        throw new Error('Reward not found');
+      }
 
-    const newBountyKeyIdentifier =
-      await this.keyManagementService.createKeyIdentifer(bountyKeyIdentifier);
+      if (reward.status === RewardStatus.PUBLISHED) {
+        throw new Error('Reward already published');
+      }
 
-    reward.status = RewardStatus.PUBLISHED;
-    reward.redistributionPublicKey = pubKey;
-    reward.bountyPublicKey = bountyPubKey;
-    reward.redistributionKeyIdentifierId = newRedistributionKeyIdentifier.id;
-    reward.bountyKeyIdentifierId = newBountyKeyIdentifier.id;
+      // onboard
+      await this.syncService.pushTransactionToRuntime(body.rsvParams);
 
-    return await this.rewardService.save(reward);
+      //  Create reward signers
+      const createBountyKey = generateWalletRandom();
+      const createRedistributionKey = generateWalletRandom();
+
+      const { pubKey, privKey } = createRedistributionKey;
+      const { pubKey: bountyPubKey, privKey: bountyPrivKey } = createBountyKey;
+
+      // Encrypt private key
+      const redistributionEncryptedKey =
+        await this.keyManagementService.encryptKey(privKey);
+      const bountyEncryptedKey = await this.keyManagementService.encryptKey(
+        bountyPrivKey,
+      );
+
+      // Create key identifier
+      const redistributionKeyIdentifier = new KeyIdentifier();
+      redistributionKeyIdentifier.identifier = redistributionEncryptedKey;
+      redistributionKeyIdentifier.identifierType =
+        KeyIdentifierType.REDISTRIBUTION;
+
+      const newRedistributionKeyIdentifier =
+        await this.keyManagementService.createKeyIdentifer(
+          redistributionKeyIdentifier,
+        );
+
+      const bountyKeyIdentifier = new KeyIdentifier();
+      bountyKeyIdentifier.identifier = bountyEncryptedKey;
+      bountyKeyIdentifier.identifierType = KeyIdentifierType.BOUNTY;
+
+      const newBountyKeyIdentifier =
+        await this.keyManagementService.createKeyIdentifer(bountyKeyIdentifier);
+
+      reward.status = RewardStatus.PUBLISHED;
+      reward.redistributionPublicKey = pubKey;
+      reward.bountyPublicKey = bountyPubKey;
+      reward.redistributionKeyIdentifierId = newRedistributionKeyIdentifier.id;
+      reward.bountyKeyIdentifierId = newBountyKeyIdentifier.id;
+
+      return await this.rewardService.save(reward);
+    } catch (error) {
+      throw new HttpException(error.message, error.status, {
+        cause: new Error(error.message),
+      });
+    }
   }
 
   async updateReward(rewardId: string, body: UpdateRewardDto) {
