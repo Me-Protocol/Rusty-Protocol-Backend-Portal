@@ -34,10 +34,10 @@ export async function checkOrderStatusGelatoOrRuntime(
         RUNTIME_URL,
       );
 
-      console.log(runtimeStatus.data.result.hash);
+      console.log(runtimeStatus.data.result);
 
       if (
-        runtimeStatus.data.result.hash !==
+        runtimeStatus?.data?.result?.hash !==
         '0x0000000000000000000000000000000000000000000000000000000000000000'
       ) {
         return 'success';

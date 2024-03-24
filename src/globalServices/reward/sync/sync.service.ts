@@ -691,12 +691,17 @@ export class SyncRewardService {
     walletAddress,
     amount,
     email,
+    keySource = 'redistribution',
   }: {
     rewardId: string;
     walletAddress: string;
     amount: number;
-    email: string;
-  }) {
+    email?: string;
+    keySource?: 'redistribution' | 'campaign';
+  }): Promise<{
+    data: any;
+    error: boolean;
+  }> {
     // 1. The function distributeRewardWithPrivateKey takes in the rewardId, walletAddress, amount, and email as parameters. The amount parameter is the amount of rewards you want to send to the wallet address.
     // 2. We then use the rewardId to get the reward and check if the brand has enough balance to distribute rewards.
     const reward = await this.rewardService.findOneById(rewardId);
@@ -713,7 +718,9 @@ export class SyncRewardService {
     //3. If the brand has enough balance, we use the redistributionKeyIdentifierId to get the private key identifier and decrypt the private key.
 
     const decryptedPrivateKey = await this.keyManagementService.getEncryptedKey(
-      reward.redistributionKeyIdentifierId,
+      keySource === 'campaign'
+        ? reward.campaignKeyIdentifierId
+        : reward.redistributionKeyIdentifierId,
       KeyIdentifierType.REDISTRIBUTION,
     );
     // 4. We then use the private key to sign the transaction and distribute the rewards to the wallet address.
@@ -744,20 +751,29 @@ export class SyncRewardService {
     if (distributionData?.data?.error) {
       console.log(distributionData.data);
       // throw new Error("We couldn't distribute reward");
-      return distributionData.data;
+      return {
+        error: true,
+        data: distributionData.data,
+      };
     } else {
-      const registry = await this.findOneRegistryByEmailIdentifier(
-        email,
-        rewardId,
-      );
+      if (email) {
+        const registry = await this.getRegistryRecordByIdentifer(
+          email,
+          rewardId,
+          SyncIdentifierType.EMAIL,
+        );
 
-      await this.clearUndistributedBalance({
-        registryId: registry.id,
-        amount: amount,
-        description: `Reward distributed to ${walletAddress}`,
-      });
+        await this.clearUndistributedBalance({
+          registryId: registry.id,
+          amount: amount,
+          description: `Reward distributed to ${walletAddress}`,
+        });
+      }
 
-      return distributionData;
+      return {
+        data: distributionData,
+        error: false,
+      };
     }
   }
 
