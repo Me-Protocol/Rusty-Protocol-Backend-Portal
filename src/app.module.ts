@@ -250,29 +250,33 @@ import {
     ScheduleModule.forRoot(),
     ClientModuleConfig, // microservice
     HttpModule,
-    BullModule.forRoot({
-      connection: {
-        host: REDIS_HOSTNAME,
-        port: REDIS_PORT,
-        password: REDIS_PASSWORD,
-      },
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        connection: {
+          host: configService.get('REDIS_HOSTNAME'),
+          port: configService.get('REDIS_PORT'),
+          password: configService.get('REDIS_PASSWORD'),
+        },
+      }),
+      inject: [ConfigService],
     }),
-    BullModule.registerQueue({
+    BullModule.registerQueueAsync({
       name: 'task-queue',
     }),
-    BullModule.registerQueue({
+    BullModule.registerQueueAsync({
       name: ORDER_TASK_QUEUE,
     }),
-    BullModule.registerQueue({
+    BullModule.registerQueueAsync({
       name: SET_CUSTOMER_WALLET_QUEUE,
     }),
-    BullModule.registerQueue({
+    BullModule.registerQueueAsync({
       name: CAMPAIGN_REWARD_QUEUE,
     }),
-    BullModule.registerQueue({
+    BullModule.registerQueueAsync({
       name: SET_CUSTOMER_WALLET_PROCESSOR_QUEUE,
     }),
-    BullModule.registerQueue({
+    BullModule.registerQueueAsync({
       name: CAMPAIGN_REWARD_PROCESSOR_QUEUE,
     }),
   ],
