@@ -224,4 +224,22 @@ export class Reward extends BaseEntity {
     default: false,
   })
   addedLiquidity: boolean;
+
+  @Column({
+    type: 'decimal',
+    default: 0.0,
+  })
+  vaultTotalSupply: number;
+
+  @Column({
+    type: 'decimal',
+    default: 0.0,
+  })
+  vaultAvailableSupply: number;
+
+  @Column({
+    type: 'decimal',
+    default: 0.0,
+  })
+  treasuryAvailableSupply: number;
 }

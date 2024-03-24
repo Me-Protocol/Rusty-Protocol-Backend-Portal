@@ -97,6 +97,13 @@ export class RewardManagementService {
       if (body.contractAddress) reward.contractAddress = body.contractAddress;
       if (body.addedLiquidity) reward.addedLiquidity = body.addedLiquidity;
 
+      if (body.vaultTotalSupply)
+        reward.vaultTotalSupply = body.vaultTotalSupply;
+      if (body.vaultAvailableSupply)
+        reward.vaultAvailableSupply = body.vaultAvailableSupply;
+      if (body.treasuryAvailableSupply)
+        reward.treasuryAvailableSupply = body.treasuryAvailableSupply;
+
       if (isDraft) {
         return await this.rewardService.save(reward);
       } else {
@@ -126,7 +133,7 @@ export class RewardManagementService {
       }
 
       // onboard
-      await this.syncService.pushTransactionToRuntime(body.rsvParams);
+      // await this.syncService.pushTransactionToRuntime(body.rsvParams);
 
       //  Create reward signers
       const createBountyKey = generateWalletRandom();
@@ -168,6 +175,7 @@ export class RewardManagementService {
 
       return await this.rewardService.save(reward);
     } catch (error) {
+      console.log(error);
       throw new HttpException(error.message, error.status, {
         cause: new Error(error.message),
       });
@@ -198,10 +206,14 @@ export class RewardManagementService {
       if (body.totalSupply) reward.totalSupply = +body.totalSupply;
       if (reward.rewardValueInDollars)
         reward.rewardValueInDollars = body.rewardValueInDollars;
+      if (body.vaultTotalSupply)
+        reward.vaultTotalSupply = body.vaultTotalSupply;
+      if (body.vaultAvailableSupply)
+        reward.vaultAvailableSupply = body.vaultAvailableSupply;
+      if (body.treasuryAvailableSupply)
+        reward.treasuryAvailableSupply = body.treasuryAvailableSupply;
 
-      const updatedReward = await this.rewardService.updateReward(reward);
-
-      console.log(updatedReward);
+      await this.rewardService.updateReward(reward);
 
       return await this.rewardService.findOneByIdAndBrand(
         rewardId,
