@@ -36,7 +36,11 @@ import { AdminJwtStrategy } from '@src/middlewares/admin-jwt-strategy.middleware
 import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
 import { BrandRoles } from '@src/decorators/brand_roles.decorator';
 import { BrandRole } from '@src/utils/enums/BrandRole';
-import { CreateCampaignDto, UpdateCampaignDto } from './dto/CreateCampaignDto';
+import {
+  CreateCampaignDto,
+  FundCampaignDto,
+  UpdateCampaignDto,
+} from './dto/CreateCampaignDto';
 
 @ApiTags('Brand')
 @Controller('brand')
@@ -100,6 +104,20 @@ export class BrandManagementController {
     const brandId = req.user.brand.id;
     body.brandId = brandId;
     return await this.brandAccountManagementService.createCampaign(body);
+  }
+
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
+  @UseGuards(BrandJwtStrategy)
+  @Post('campaign/fund')
+  async fundAndActivateCampaign(
+    @Body(ValidationPipe) body: FundCampaignDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    body.brandId = brandId;
+    return await this.brandAccountManagementService.fundAndActivateCampaign(
+      body,
+    );
   }
 
   @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])

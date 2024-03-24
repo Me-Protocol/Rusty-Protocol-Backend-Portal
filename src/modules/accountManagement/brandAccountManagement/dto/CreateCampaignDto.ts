@@ -1,8 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { SendTransactionData } from '@src/modules/storeManagement/reward/dto/distributeBatch.dto';
 import { CampaignType } from '@src/utils/enums/CampaignType';
 import {
   IsDateString,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
@@ -70,4 +72,29 @@ export class UpdateCampaignDto {
 
   brandId: string;
   id: string;
+}
+
+export class FundCampaignDto {
+  @ApiProperty({
+    type: 'object',
+    example: {
+      from: '0x000000',
+      nonce: 0,
+      data: '0x000000',
+      r: '0x000000',
+      s: '0x000000',
+      v: '0x000000',
+      hash: '0x000000',
+    },
+  })
+  @IsObject({
+    each: true,
+  })
+  params: SendTransactionData;
+
+  brandId: string;
+
+  @ApiProperty()
+  @IsUUID()
+  campaignId: string;
 }
