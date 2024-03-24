@@ -133,6 +133,7 @@ export class RewardManagementService {
       }
 
       // onboard
+      // TODO uncomment
       // await this.syncService.pushTransactionToRuntime(body.rsvParams);
 
       //  Create reward signers
