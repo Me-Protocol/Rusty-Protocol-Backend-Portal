@@ -164,6 +164,10 @@ import {
   OrderProcessor,
   SetCustomerWalletProcessor,
 } from './globalServices/task-queue/bull.service';
+
+import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
+import { AuditTrailService } from './globalServices/auditTrail/auditTrail.service';
+import { AuditTrail } from './globalServices/auditTrail/entities/auditTrail.entity';
 import { BullModule } from '@nestjs/bullmq';
 import {
   REDIS_HOSTNAME,
@@ -176,7 +180,7 @@ import {
   ORDER_TASK_QUEUE,
   SET_CUSTOMER_WALLET_PROCESSOR_QUEUE,
   SET_CUSTOMER_WALLET_QUEUE,
-} from './utils/helpers/queue-names';
+
 
 @Module({
   imports: [
@@ -234,6 +238,7 @@ import {
       VariantOption,
       Region,
       AutoTopupRequest,
+      AuditTrail
       Campaign,
     ]),
     SettingsModule,
@@ -380,6 +385,7 @@ import {
     CampaignService,
     BullService,
     OrderProcessor,
+    AuditTrailService
     SetCustomerWalletProcessor,
     CampaignProcessor,
   ],

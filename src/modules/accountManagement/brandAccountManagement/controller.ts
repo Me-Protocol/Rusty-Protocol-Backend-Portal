@@ -91,7 +91,7 @@ export class BrandManagementController {
     @Query(ValidationPipe) query: FilterBrandDto,
     @Req() req: any,
   ) {
-    return await this.brandAccountManagementService.getAllBrandsForAdmin(query);
+    return await this.brandAccountManagementService.getAllBrandsForAdmin(query, req.user.id);
   }
 
   @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
