@@ -683,6 +683,7 @@ export class RewardManagementService {
         message: 'distributed',
       };
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),

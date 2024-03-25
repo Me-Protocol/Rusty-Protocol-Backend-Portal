@@ -596,12 +596,15 @@ export class SyncRewardService {
         spend = await mutate_with_url(params, RUNTIME_URL);
       }
 
+      console.log(spend.data);
+
       if (spend?.data?.error) {
         throw new Error(spend?.data?.error?.message ?? 'Error pushing rsv');
       }
 
       return spend?.data ?? spend;
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
