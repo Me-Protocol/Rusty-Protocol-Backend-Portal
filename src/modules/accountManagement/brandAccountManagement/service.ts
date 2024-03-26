@@ -47,7 +47,7 @@ import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
 import { Role } from '@src/utils/enums/Role';
 import { BrandUploadGateway } from './socket/brand-upload.gateway';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
-import { AuditTrailService } from '@src/globalServices/auditTrail/auditTrail.service'; 
+import { AuditTrailService } from '@src/globalServices/auditTrail/auditTrail.service';
 import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
 import { CampaignService } from '@src/globalServices/campaign/campaign.service';
 import { Campaign } from '@src/globalServices/campaign/entities/campaign.entity';
@@ -61,12 +61,11 @@ import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { SendTransactionData } from '@src/modules/storeManagement/reward/dto/distributeBatch.dto';
 import { BullService } from '@src/globalServices/task-queue/bull.service';
 
-
 @Injectable()
 export class BrandAccountManagementService {
   constructor(
     private readonly brandService: BrandService,
-    private readonly auditTrailService: AuditTrailService, 
+    private readonly auditTrailService: AuditTrailService,
     private readonly userService: UserService,
     private readonly mailService: MailService,
     private readonly customerService: CustomerService,
@@ -490,12 +489,22 @@ export class BrandAccountManagementService {
       const provider = new ethers.providers.JsonRpcProvider(JSON_RPC_URL);
       const wallet = new ethers.Wallet(onboardWallet, provider);
 
-      const ts2 = await adminService.registerBrand(
-        brand.name,
-        website,
-        brand.walletAddress,
-        getBrandIdHex(BigNumber.from(brand.brandProtocolId)),
-      );
+      let ts2: any;
+
+      try {
+        ts2 = await adminService.registerBrand(
+          brand.name,
+          website,
+          brand.walletAddress,
+          getBrandIdHex(BigNumber.from(brand.brandProtocolId)),
+        );
+      } catch (error) {
+        throw Error(error.message ?? 'Error onboarding to protocol');
+      }
+
+      if (!ts2?.data) {
+        throw Error('Error onboarding to protocol');
+      }
 
       const relay = new GelatoRelay();
 
@@ -628,18 +637,19 @@ export class BrandAccountManagementService {
     try {
       const brands = await this.brandService.getAllBrandsForAdmin(query);
 
-      const auditTrailEntry = {
-        userId: userId,
-        auditType: 'GET_ALL_BRANDS_FOR_ADMIN',
-        description: `User ${userId} retrieved all brands for admin with query parameters: ${JSON.stringify(query)}.`,
-        reportableId: ''
+      // TODO No need
+      // const auditTrailEntry = {
+      //   userId: userId,
+      //   auditType: 'GET_ALL_BRANDS_FOR_ADMIN',
+      //   description: `User ${userId} retrieved all brands for admin with query parameters: ${JSON.stringify(
+      //     query,
+      //   )}.`,
+      //   reportableId: '',
+      // };
 
-      };
-
-      await this.auditTrailService.createAuditTrail(auditTrailEntry);
+      // await this.auditTrailService.createAuditTrail(auditTrailEntry);
 
       return brands;
-
     } catch (error) {
       console.log(error);
       logger.error(error);
