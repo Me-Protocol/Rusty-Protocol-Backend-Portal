@@ -544,7 +544,7 @@ export class BrandAccountManagementService {
       };
 
       const paymentRequest =
-        this.costModuleManagementService.createPaymentRequest(
+        await this.costModuleManagementService.createPaymentRequest(
           data,
           PaymentOrigin.IN_APP,
           true,
