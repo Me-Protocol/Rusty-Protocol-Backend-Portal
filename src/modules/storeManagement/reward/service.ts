@@ -984,7 +984,7 @@ export class RewardManagementService {
     notification.emailMessage = /* html */ `
               <div>
                 <p>Hello ${user?.customer?.name},</p>
-                <p>You just recieved ${amount} ${reward.rewardSymbol} from ${reward.brand.name}<p>
+                <p>You just recieved ${amount} ${reward.rewardSymbol} from ${reward?.brand?.name}<p>
               `;
 
     await this.notificationService.createNotification(notification);

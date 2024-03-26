@@ -109,6 +109,7 @@ export class RewardService {
       where: {
         id: id,
       },
+      relations: ['brand'],
     });
   }
 
