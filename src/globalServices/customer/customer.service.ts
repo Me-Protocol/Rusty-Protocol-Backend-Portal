@@ -25,14 +25,13 @@ export class CustomerService {
   }) {
     const { walletVersion } = await this.settingService.getPublicSettings();
 
-    const customer = this.customerRepo.create({
-      userId,
-      name,
-      walletVersion,
-      walletAddress,
-    });
+    const customer = new Customer();
+    customer.walletAddress = walletAddress;
+    customer.walletVersion = walletVersion;
+    customer.userId = userId;
+    customer.name = name;
 
-    return this.customerRepo.save(customer);
+    return await this.customerRepo.save(customer);
   }
 
   save(customer: Customer) {

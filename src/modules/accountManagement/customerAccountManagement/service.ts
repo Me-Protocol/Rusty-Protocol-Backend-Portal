@@ -69,6 +69,10 @@ export class CustomerAccountManagementService {
     userId: string,
   ) {
     try {
+      if (!walletAddress) {
+        return 'Wallet address is required';
+      }
+
       // 1. We retrieve the customer based on the userId and the user based on the userId.
       const customer = await this.customerService.getByUserId(userId);
       const user = await this.userService.getUserById(userId);
@@ -78,17 +82,6 @@ export class CustomerAccountManagementService {
         throw new HttpException('Customer not found', 404, {
           cause: new Error('Customer not found'),
         });
-      }
-
-      // 5. We check if the walletAddress is already set.
-      if (customer.walletAddress) {
-        customer.walletAddress = walletAddress;
-        customer.walletVersion = walletVersion;
-        await this.customerService.save(customer);
-
-        return {
-          message: 'Wallet address updated successfully',
-        };
       }
 
       // 2. We get all the rewards registered with the user's email that do not have a userId field. This is because the rewards were registered before the user account was created.
@@ -106,7 +99,9 @@ export class CustomerAccountManagementService {
       }
 
       // 6. We assign the walletAddress to the customer.
-      customer.walletAddress = walletAddress;
+      customer.walletAddress = walletAddress
+        ? walletAddress
+        : customer.walletAddress;
       customer.walletVersion = walletVersion;
       await this.customerService.save(customer);
 

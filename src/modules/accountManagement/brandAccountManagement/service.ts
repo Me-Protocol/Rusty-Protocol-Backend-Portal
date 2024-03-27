@@ -800,11 +800,12 @@ export class BrandAccountManagementService {
       campaign.description = description;
       campaign.end_date = end_date;
 
-      await this.campaignService.save(campaign);
+      const newCampaign = await this.campaignService.save(campaign);
 
       return {
         amount: totalRewardToDistribute,
         walletAddress: reward.campaignPublicKey,
+        id: newCampaign.id,
       };
     } catch (error) {
       console.log(error);
@@ -993,9 +994,9 @@ export class BrandAccountManagementService {
     }
   }
 
-  async getCampaigns(brandId: string) {
+  async getCampaigns(brandId: string, status: CampaignStatus) {
     try {
-      return await this.campaignService.findByBrandId(brandId);
+      return await this.campaignService.findByBrandId(brandId, status);
     } catch (error) {
       console.log(error);
       logger.error(error);

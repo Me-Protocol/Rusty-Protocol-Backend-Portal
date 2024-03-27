@@ -396,6 +396,7 @@ export class AuthenticationService {
     brandId?: string;
   }): Promise<string> {
     try {
+      // Double check that wallet address is required for user
       if (userType === UserAppType.USER && !walletAddress) {
         throw new Error('Wallet address is required');
       }
@@ -409,7 +410,13 @@ export class AuthenticationService {
         confirmPassword,
         userType,
       );
-      await this.handleUserTypeRoles(userType, newUser, name, brandId);
+      await this.handleUserTypeRoles(
+        userType,
+        newUser,
+        name,
+        brandId,
+        walletAddress,
+      );
       if (userType === UserAppType.BRAND) {
         await this.sendEmailVerificationCode(newUser.email, newUser.username);
       } else {
