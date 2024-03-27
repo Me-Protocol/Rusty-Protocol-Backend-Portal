@@ -23,8 +23,8 @@ export const typeormConfig: DataSourceOptions = {
   entities: ['dist/**/*.entity{.ts,.js}'],
   migrations: [process.cwd() + '/dist/migrations/*.{js,ts}'],
   subscribers: [join(__dirname, '../dist/subscribers/**.js')],
-  migrationsRun: RUN_DEFAULT_MIGRATION || false,
-  synchronize: RUN_DB_SYNC || false,
+  migrationsRun: true,
+  synchronize: true,
   ssl: {
     rejectUnauthorized: false,
   },

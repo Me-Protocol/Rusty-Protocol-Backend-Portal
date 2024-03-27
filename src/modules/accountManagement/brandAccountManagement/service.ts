@@ -316,6 +316,7 @@ export class BrandAccountManagementService {
       await this.customerService.create({
         name,
         userId: saveUser.id,
+        walletAddress: '',
       });
 
       const brandMember = new BrandMember();

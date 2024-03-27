@@ -14,14 +14,24 @@ export class CustomerService {
     private readonly settingService: SettingsService,
   ) {}
 
-  async create({ userId, name }: { userId: string; name: string }) {
+  async create({
+    userId,
+    name,
+    walletAddress,
+  }: {
+    userId: string;
+    name: string;
+    walletAddress: string;
+  }) {
     const { walletVersion } = await this.settingService.getPublicSettings();
 
     const customer = this.customerRepo.create({
       userId,
       name,
       walletVersion,
+      walletAddress,
     });
+
     return this.customerRepo.save(customer);
   }
 

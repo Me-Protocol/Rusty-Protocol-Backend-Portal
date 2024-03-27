@@ -342,10 +342,12 @@ export class AuthenticationService {
     newUser: User,
     name: string,
     brandId?: string,
+    walletAddress?: string,
   ): Promise<void> {
     await this.customerService.create({
       name,
       userId: newUser.id,
+      walletAddress,
     });
 
     if (userType === UserAppType.USER) {
