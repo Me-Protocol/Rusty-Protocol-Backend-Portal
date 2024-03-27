@@ -246,6 +246,26 @@ export class RewardService {
     });
   }
 
+  async reduceVaultAvailableSupply({
+    rewardId,
+    amount,
+  }: {
+    rewardId: string;
+    amount: number;
+  }) {
+    const reward = await this.getRewardById(rewardId);
+    const diff = Number(reward.vaultAvailableSupply) - Number(amount);
+    // if diff is less than 0 or it is a negative number return false
+    if (diff < 0) {
+      reward.vaultAvailableSupply = 0;
+    } else {
+      reward.vaultAvailableSupply =
+        Number(reward.vaultAvailableSupply) - Number(amount);
+    }
+
+    return this.rewardsRepo.save(reward);
+  }
+
   // @Cron(CronExpression.EVERY_5_MINUTES)
   // async syncElasticSearchIndex() {
   //   const allRewards = await this.rewardsRepo.find({

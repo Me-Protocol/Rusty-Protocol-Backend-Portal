@@ -473,19 +473,17 @@ export class BrandAccountManagementService {
     );
   }
 
-  async onboardBrand({ brandId, walletAddress, website }: OnboardBrandDto) {
+  async onboardBrandToProtocol({
+    brandId,
+    website,
+  }: {
+    brandId: string;
+    website: string;
+  }) {
     try {
       const brand = await this.brandService.getBrandById(brandId);
 
-      if (brand.isOnboarded && brand.walletAddress) {
-        throw new HttpException('Brand already onboarded', 400);
-      }
-
-      brand.walletAddress = walletAddress;
-      brand.isOnboarded = true;
-
       const { onboardWallet } = await this.settingsService.settingsInit();
-
       const provider = new ethers.providers.JsonRpcProvider(JSON_RPC_URL);
       const wallet = new ethers.Wallet(onboardWallet, provider);
 
@@ -550,6 +548,28 @@ export class BrandAccountManagementService {
           true,
         );
 
+      return paymentRequest;
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async onboardBrandToRuntime({
+    brandId,
+    walletAddress,
+  }: {
+    brandId: string;
+    walletAddress: string;
+  }) {
+    try {
+      const brand = await this.brandService.getBrandById(brandId);
+
+      const { onboardWallet } = await this.settingsService.settingsInit();
+      const provider = new ethers.providers.JsonRpcProvider(JSON_RPC_URL);
+      const wallet = new ethers.Wallet(onboardWallet, provider);
+
       const brandProtocolId = getBrandIdHex(
         BigNumber.from(brand.brandProtocolId),
       );
@@ -565,10 +585,33 @@ export class BrandAccountManagementService {
       if (onboardBrand.data.error) {
         throw new Error(onboardBrand.data.error.message);
       }
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async onboardBrand({ brandId, walletAddress, website }: OnboardBrandDto) {
+    try {
+      const brand = await this.brandService.getBrandById(brandId);
+
+      if (brand.isOnboarded && brand.walletAddress) {
+        throw new HttpException('Brand already onboarded', 400);
+      }
+
+      const onboardProtocol = await this.onboardBrandToProtocol({
+        brandId,
+        website,
+      });
+      await this.onboardBrandToRuntime({ brandId, walletAddress });
+
+      brand.walletAddress = walletAddress;
+      brand.isOnboarded = true;
 
       await this.brandService.save(brand);
 
-      return paymentRequest;
+      return onboardProtocol;
     } catch (error) {
       console.log(error);
       logger.error(error);

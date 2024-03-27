@@ -133,7 +133,7 @@ export class RewardManagementService {
       }
 
       // onboard
-      // await this.syncService.pushTransactionToRuntime(body.rsvParams);
+      await this.syncService.pushTransactionToRuntime(body.rsvParams);
 
       //  Create reward signers
       const createBountyKey = generateWalletRandom();
@@ -618,6 +618,11 @@ export class RewardManagementService {
 
     reward.totalDistributed = totalDistributed;
     await this.rewardService.save(reward);
+
+    await this.rewardService.reduceVaultAvailableSupply({
+      rewardId: reward.id,
+      amount: totalDistributed,
+    });
 
     // Update circulating supply
     const circulatingSupply = new RewardCirculation();

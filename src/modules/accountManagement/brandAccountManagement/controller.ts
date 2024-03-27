@@ -91,7 +91,10 @@ export class BrandManagementController {
     @Query(ValidationPipe) query: FilterBrandDto,
     @Req() req: any,
   ) {
-    return await this.brandAccountManagementService.getAllBrandsForAdmin(query, req.user.id);
+    return await this.brandAccountManagementService.getAllBrandsForAdmin(
+      query,
+      req.user.id,
+    );
   }
 
   @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
@@ -402,6 +405,34 @@ export class BrandManagementController {
     body.brandId = brandId;
 
     return await this.brandAccountManagementService.onboardBrand(body);
+  }
+
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
+  @UseGuards(BrandJwtStrategy)
+  @Post('onboard/runtime')
+  async onboardBrandToRuntime(
+    @Body(ValidationPipe) body: OnboardBrandDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    body.brandId = brandId;
+
+    return await this.brandAccountManagementService.onboardBrandToRuntime(body);
+  }
+
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
+  @UseGuards(BrandJwtStrategy)
+  @Post('onboard/protocol')
+  async onboardBrandToProtocol(
+    @Body(ValidationPipe) body: OnboardBrandDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    body.brandId = brandId;
+
+    return await this.brandAccountManagementService.onboardBrandToProtocol(
+      body,
+    );
   }
 
   @AdminRoles([AdminRole.ADMIN])

@@ -149,6 +149,11 @@ export class CustomerAccountManagementService {
             amount: point.undistributedBalance,
             description: `Reward distributed to ${user.customer.walletAddress}`,
           });
+
+          await this.rewardService.reduceVaultAvailableSupply({
+            rewardId: reward.id,
+            amount: point.undistributedBalance,
+          });
         }
       }
 
@@ -229,6 +234,11 @@ export class CustomerAccountManagementService {
         registryId: registry.id,
         amount: campaign.rewardPerUser,
         description: `Campaign reward distributed to ${user.customer.walletAddress}`,
+      });
+
+      await this.rewardService.reduceVaultAvailableSupply({
+        rewardId: reward.id,
+        amount: campaign.rewardPerUser,
       });
     }
   }
