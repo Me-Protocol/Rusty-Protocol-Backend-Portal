@@ -158,6 +158,7 @@ import { AutoTopupRequest } from './globalServices/biller/entity/auto-topup-requ
 import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
 import { Campaign } from './globalServices/campaign/entities/campaign.entity';
 import { CampaignService } from './globalServices/campaign/campaign.service';
+
 import {
   BullService,
   CampaignProcessor,
@@ -177,6 +178,7 @@ import {
   SET_CUSTOMER_WALLET_PROCESSOR_QUEUE,
   SET_CUSTOMER_WALLET_QUEUE,
 } from './utils/helpers/queue-names';
+import { SettingsModuleController } from './modules/settings/controller';
 
 @Module({
   imports: [
@@ -299,6 +301,7 @@ import {
     ReviewManagementController,
     TasksController,
     AnalyticsManagementController,
+    SettingsModuleController
   ],
   providers: [
     ElasticIndex,
