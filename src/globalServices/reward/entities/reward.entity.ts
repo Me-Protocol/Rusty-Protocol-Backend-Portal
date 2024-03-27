@@ -229,17 +229,17 @@ export class Reward extends BaseEntity {
     type: 'decimal',
     default: 0.0,
   })
-  vaultTotalSupply: number;
+  totalVaultSupply: number;
 
   @Column({
     type: 'decimal',
     default: 0.0,
   })
-  vaultAvailableSupply: number;
+  availableVaultSupply: number;
 
   @Column({
     type: 'decimal',
     default: 0.0,
   })
-  treasuryAvailableSupply: number;
+  availableTreasurySupply: number;
 }

@@ -97,12 +97,12 @@ export class RewardManagementService {
       if (body.contractAddress) reward.contractAddress = body.contractAddress;
       if (body.addedLiquidity) reward.addedLiquidity = body.addedLiquidity;
 
-      if (body.vaultTotalSupply)
-        reward.vaultTotalSupply = body.vaultTotalSupply;
-      if (body.vaultAvailableSupply)
-        reward.vaultAvailableSupply = body.vaultAvailableSupply;
-      if (body.treasuryAvailableSupply)
-        reward.treasuryAvailableSupply = body.treasuryAvailableSupply;
+      if (body.totalVaultSupply)
+        reward.totalVaultSupply = body.totalVaultSupply;
+      if (body.availableVaultSupply)
+        reward.availableVaultSupply = body.availableVaultSupply;
+      if (body.availableTreasurySupply)
+        reward.availableTreasurySupply = body.availableTreasurySupply;
 
       if (isDraft) {
         return await this.rewardService.save(reward);
@@ -206,12 +206,12 @@ export class RewardManagementService {
       if (body.totalSupply) reward.totalSupply = +body.totalSupply;
       if (reward.rewardValueInDollars)
         reward.rewardValueInDollars = body.rewardValueInDollars;
-      if (body.vaultTotalSupply)
-        reward.vaultTotalSupply = body.vaultTotalSupply;
-      if (body.vaultAvailableSupply)
-        reward.vaultAvailableSupply = body.vaultAvailableSupply;
-      if (body.treasuryAvailableSupply)
-        reward.treasuryAvailableSupply = body.treasuryAvailableSupply;
+      if (body.totalVaultSupply)
+        reward.totalVaultSupply = body.totalVaultSupply;
+      if (body.availableVaultSupply)
+        reward.availableVaultSupply = body.availableVaultSupply;
+      if (body.availableTreasurySupply)
+        reward.availableTreasurySupply = body.availableTreasurySupply;
 
       await this.rewardService.updateReward(reward);
 
