@@ -33,8 +33,8 @@ import {
         entities: ['dist/**/*.entity{.ts,.js}'],
         migrations: [join(__dirname, '../dist/migrations/**.js')],
         subscribers: [join(__dirname, '../dist/subscribers/**.js')],
-        migrationsRun: RUN_DEFAULT_MIGRATION || false,
-        synchronize: RUN_DB_SYNC || false,
+        migrationsRun: true,
+        synchronize: true,
         autoLoadEntities: true,
         ssl: {
           rejectUnauthorized: false,
