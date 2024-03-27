@@ -476,9 +476,11 @@ export class BrandAccountManagementService {
   async onboardBrandToProtocol({
     brandId,
     website,
+    walletAddress,
   }: {
     brandId: string;
     website: string;
+    walletAddress: string;
   }) {
     try {
       const brand = await this.brandService.getBrandById(brandId);
@@ -493,7 +495,7 @@ export class BrandAccountManagementService {
         ts2 = await adminService.registerBrand(
           brand.name,
           website,
-          brand.walletAddress,
+          walletAddress,
           getBrandIdHex(BigNumber.from(brand.brandProtocolId)),
         );
       } catch (error) {
@@ -603,6 +605,7 @@ export class BrandAccountManagementService {
       const onboardProtocol = await this.onboardBrandToProtocol({
         brandId,
         website,
+        walletAddress,
       });
       await this.onboardBrandToRuntime({ brandId, walletAddress });
 
