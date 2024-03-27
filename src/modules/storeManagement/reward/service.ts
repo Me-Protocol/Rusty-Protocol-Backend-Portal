@@ -97,6 +97,13 @@ export class RewardManagementService {
       if (body.contractAddress) reward.contractAddress = body.contractAddress;
       if (body.addedLiquidity) reward.addedLiquidity = body.addedLiquidity;
 
+      if (body.vaultTotalSupply)
+        reward.vaultTotalSupply = body.vaultTotalSupply;
+      if (body.vaultAvailableSupply)
+        reward.vaultAvailableSupply = body.vaultAvailableSupply;
+      if (body.treasuryAvailableSupply)
+        reward.treasuryAvailableSupply = body.treasuryAvailableSupply;
+
       if (isDraft) {
         return await this.rewardService.save(reward);
       } else {
@@ -110,68 +117,69 @@ export class RewardManagementService {
     }
   }
 
-  // No Change
-
   async completeReward(body: UpdateRewardCreationDto) {
-    const reward = await this.rewardService.getRewardByIdAndBrandId(
-      body.rewardId,
-      body.brandId,
-    );
-
-    if (!reward) {
-      throw new HttpException('Reward not found', 404, {
-        cause: new Error('Reward not found'),
-      });
-    }
-
-    if (reward.status === RewardStatus.PUBLISHED) {
-      throw new HttpException('Reward already published', 400, {
-        cause: new Error('Reward already published'),
-      });
-    }
-
-    // onboard
-    await this.syncService.pushTransactionToRuntime(body.rsvParams);
-
-    //  Create reward signers
-    const createBountyKey = generateWalletRandom();
-    const createRedistributionKey = generateWalletRandom();
-
-    const { pubKey, privKey } = createRedistributionKey;
-    const { pubKey: bountyPubKey, privKey: bountyPrivKey } = createBountyKey;
-
-    // Encrypt private key
-    const redistributionEncryptedKey =
-      await this.keyManagementService.encryptKey(privKey);
-    const bountyEncryptedKey = await this.keyManagementService.encryptKey(
-      bountyPrivKey,
-    );
-
-    // Create key identifier
-    const redistributionKeyIdentifier = new KeyIdentifier();
-    redistributionKeyIdentifier.identifier = redistributionEncryptedKey;
-    redistributionKeyIdentifier.identifierType =
-      KeyIdentifierType.REDISTRIBUTION;
-
-    const newRedistributionKeyIdentifier =
-      await this.keyManagementService.createKeyIdentifer(
-        redistributionKeyIdentifier,
+    try {
+      const reward = await this.rewardService.getRewardByIdAndBrandId(
+        body.rewardId,
+        body.brandId,
       );
 
-    const bountyKeyIdentifier = new KeyIdentifier();
-    bountyKeyIdentifier.identifier = bountyEncryptedKey;
-    bountyKeyIdentifier.identifierType = KeyIdentifierType.BOUNTY;
+      if (!reward) {
+        throw new Error('Reward not found');
+      }
 
-    const newBountyKeyIdentifier =
-      await this.keyManagementService.createKeyIdentifer(bountyKeyIdentifier);
+      if (reward.status === RewardStatus.PUBLISHED) {
+        throw new Error('Reward already published');
+      }
 
-    reward.status = RewardStatus.PUBLISHED;
-    reward.redistributionPublicKey = pubKey;
-    reward.bountyPublicKey = bountyPubKey;
-    reward.redistributionKeyIdentifierId = newRedistributionKeyIdentifier.id;
-    reward.bountyKeyIdentifierId = newBountyKeyIdentifier.id;
+      // onboard
+      await this.syncService.pushTransactionToRuntime(body.rsvParams);
 
-    return await this.rewardService.save(reward);
+      //  Create reward signers
+      const createBountyKey = generateWalletRandom();
+      const createRedistributionKey = generateWalletRandom();
+
+      const { pubKey, privKey } = createRedistributionKey;
+      const { pubKey: bountyPubKey, privKey: bountyPrivKey } = createBountyKey;
+
+      // Encrypt private key
+      const redistributionEncryptedKey =
+        await this.keyManagementService.encryptKey(privKey);
+      const bountyEncryptedKey = await this.keyManagementService.encryptKey(
+        bountyPrivKey,
+      );
+
+      // Create key identifier
+      const redistributionKeyIdentifier = new KeyIdentifier();
+      redistributionKeyIdentifier.identifier = redistributionEncryptedKey;
+      redistributionKeyIdentifier.identifierType =
+        KeyIdentifierType.REDISTRIBUTION;
+
+      const newRedistributionKeyIdentifier =
+        await this.keyManagementService.createKeyIdentifer(
+          redistributionKeyIdentifier,
+        );
+
+      const bountyKeyIdentifier = new KeyIdentifier();
+      bountyKeyIdentifier.identifier = bountyEncryptedKey;
+      bountyKeyIdentifier.identifierType = KeyIdentifierType.BOUNTY;
+
+      const newBountyKeyIdentifier =
+        await this.keyManagementService.createKeyIdentifer(bountyKeyIdentifier);
+
+      reward.status = RewardStatus.PUBLISHED;
+      reward.redistributionPublicKey = pubKey;
+      reward.bountyPublicKey = bountyPubKey;
+      reward.redistributionKeyIdentifierId = newRedistributionKeyIdentifier.id;
+      reward.bountyKeyIdentifierId = newBountyKeyIdentifier.id;
+
+      return await this.rewardService.save(reward);
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, error.status, {
+        cause: new Error(error.message),
+      });
+    }
   }
 
   async updateReward(rewardId: string, body: UpdateRewardDto) {
@@ -198,10 +206,14 @@ export class RewardManagementService {
       if (body.totalSupply) reward.totalSupply = +body.totalSupply;
       if (reward.rewardValueInDollars)
         reward.rewardValueInDollars = body.rewardValueInDollars;
+      if (body.vaultTotalSupply)
+        reward.vaultTotalSupply = body.vaultTotalSupply;
+      if (body.vaultAvailableSupply)
+        reward.vaultAvailableSupply = body.vaultAvailableSupply;
+      if (body.treasuryAvailableSupply)
+        reward.treasuryAvailableSupply = body.treasuryAvailableSupply;
 
-      const updatedReward = await this.rewardService.updateReward(reward);
-
-      console.log(updatedReward);
+      await this.rewardService.updateReward(reward);
 
       return await this.rewardService.findOneByIdAndBrand(
         rewardId,
@@ -267,7 +279,12 @@ export class RewardManagementService {
     });
 
     const descripancies = syncData.filter((syncData) => {
-      if (!syncData.id || !syncData.identifier || !syncData.identifierType) {
+      if (
+        !syncData.id ||
+        !syncData.identifier ||
+        !syncData.identifierType ||
+        !syncData.amount
+      ) {
         return {
           id: syncData?.id,
           identifier: syncData.identifier,
@@ -601,6 +618,11 @@ export class RewardManagementService {
 
     reward.totalDistributed = totalDistributed;
     await this.rewardService.save(reward);
+
+    await this.rewardService.reduceVaultAvailableSupply({
+      rewardId: reward.id,
+      amount: totalDistributed,
+    });
 
     // Update circulating supply
     const circulatingSupply = new RewardCirculation();
@@ -967,7 +989,7 @@ export class RewardManagementService {
     notification.emailMessage = /* html */ `
               <div>
                 <p>Hello ${user?.customer?.name},</p>
-                <p>You just recieved ${amount} ${reward.rewardSymbol} from ${reward.brand.name}<p>
+                <p>You just recieved ${amount} ${reward.rewardSymbol} from ${reward?.brand?.name}<p>
               `;
 
     await this.notificationService.createNotification(notification);

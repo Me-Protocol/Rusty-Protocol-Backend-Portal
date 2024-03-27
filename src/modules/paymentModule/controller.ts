@@ -189,13 +189,13 @@ export class PaymentModuleController {
   async getMeCredits(@Req() req: any) {
     const brand = req.user.brand as Brand;
 
-    return await this.paymentService.getMeCredits(brand.id);
+    return await this.paymentService.getMeCredits(brand.id, req.user.id);
   }
 
   @UseGuards(AdminJwtStrategy)
   @Get('/admin/me-credit-balance/:brandId')
-  async getMeCreditsAdmin(@Param('brandId', ValidationPipe) brandId: string) {
-    return await this.paymentService.getMeCredits(brandId);
+  async getMeCreditsAdmin(@Param('brandId', ValidationPipe) brandId: string, @Req() req: any) {
+    return await this.paymentService.getMeCredits(brandId, req.user.id);
   }
 
   @AdminRoles([AdminRole.SUPER_ADMIN])
@@ -205,6 +205,6 @@ export class PaymentModuleController {
     @Body(ValidationPipe) body: IssueMeCreditsDto,
     @Req() req: any,
   ) {
-    return await this.paymentService.issueMeCredits(body.brandId, body.amount);
+    return await this.paymentService.issueMeCredits(body.brandId, body.amount, req.user.id);
   }
 }

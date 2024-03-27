@@ -109,6 +109,7 @@ export class RewardService {
       where: {
         id: id,
       },
+      relations: ['brand'],
     });
   }
 
@@ -146,6 +147,8 @@ export class RewardService {
         bountyKeyIdentifierId: true,
         rewardValueInDollars: true,
         rewardValueIsManual: true,
+        campaignKeyIdentifierId: true,
+        campaignPublicKey: true,
         status: true,
         poolTotalSupply: true,
         rewardDollarPrice: true,
@@ -233,6 +236,34 @@ export class RewardService {
       rewardName: existingRewardWithName,
       rewardSymbol: existingRewardWithSymbol,
     };
+  }
+
+  async getRewardById(rewardId: string) {
+    return this.rewardsRepo.findOne({
+      where: {
+        id: rewardId,
+      },
+    });
+  }
+
+  async reduceVaultAvailableSupply({
+    rewardId,
+    amount,
+  }: {
+    rewardId: string;
+    amount: number;
+  }) {
+    const reward = await this.getRewardById(rewardId);
+    const diff = Number(reward.vaultAvailableSupply) - Number(amount);
+    // if diff is less than 0 or it is a negative number return false
+    if (diff < 0) {
+      reward.vaultAvailableSupply = 0;
+    } else {
+      reward.vaultAvailableSupply =
+        Number(reward.vaultAvailableSupply) - Number(amount);
+    }
+
+    return this.rewardsRepo.save(reward);
   }
 
   // @Cron(CronExpression.EVERY_5_MINUTES)
