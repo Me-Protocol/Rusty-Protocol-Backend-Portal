@@ -198,10 +198,15 @@ export class CustomerAccountManagementService {
     const campaign = await this.campaignService.getBrandSignUpCampaign(brandId);
 
     if (campaign) {
+      if (campaign.availableUsers <= 0 && campaign.availableRewards <= 0) {
+        return;
+      }
+
       const user = await this.userService.getUserById(userId);
       const reward = await this.rewardService.getRewardById(campaign.rewardId);
       campaign.availableRewards =
         campaign.availableRewards - campaign.rewardPerUser;
+      campaign.availableUsers = Number(campaign.availableUsers) - 1;
 
       await this.syncService.distributeRewardWithPrivateKey({
         rewardId: campaign.rewardId,
