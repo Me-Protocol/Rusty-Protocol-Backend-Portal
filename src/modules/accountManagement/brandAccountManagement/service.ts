@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import { BrandService } from '@src/globalServices/brand/brand.service';
 import { UpdateBrandDto } from './dto/UpdateBrandDto.dto';
 import { logger } from '@src/globalServices/logger/logger.service';
@@ -22,6 +22,7 @@ import {
   JSON_RPC_URL,
   OPEN_REWARD_DIAMOND,
   adminService,
+  generateWalletRandom,
   getBrandIdHex,
 } from '@developeruche/protocol-core';
 import { OnboardBrandDto } from './dto/OnboardBrandDto.dto';
@@ -37,17 +38,34 @@ import {
 import { ProcessBrandColorEvent } from '@src/globalServices/brand/events/process-brand-color.event';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BrandRole } from '@src/utils/enums/BrandRole';
-import { onboard_brand_with_url } from '@developeruche/runtime-sdk';
+import {
+  get_user_reward_balance_with_url,
+  onboard_brand_with_url,
+} from '@developeruche/runtime-sdk';
 import { RUNTIME_URL } from '@src/config/env.config';
 import { CreateCustomerDto } from './dto/CreateCustomerDto.dto';
 import { Role } from '@src/utils/enums/Role';
 import { BrandUploadGateway } from './socket/brand-upload.gateway';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
+import { AuditTrailService } from '@src/globalServices/auditTrail/auditTrail.service';
+import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
+import { CampaignService } from '@src/globalServices/campaign/campaign.service';
+import { Campaign } from '@src/globalServices/campaign/entities/campaign.entity';
+import { RewardService } from '@src/globalServices/reward/reward.service';
+import { CreateCampaignDto, UpdateCampaignDto } from './dto/CreateCampaignDto';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { CampaignStatus } from '@src/utils/enums/CampaignStatus';
+import { KeyManagementService } from '@src/globalServices/key-management/key-management.service';
+import { KeyIdentifier } from '@src/globalServices/key-management/entities/keyIdentifier.entity';
+import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
+import { SendTransactionData } from '@src/modules/storeManagement/reward/dto/distributeBatch.dto';
+import { BullService } from '@src/globalServices/task-queue/bull.service';
 
 @Injectable()
 export class BrandAccountManagementService {
   constructor(
     private readonly brandService: BrandService,
+    private readonly auditTrailService: AuditTrailService,
     private readonly userService: UserService,
     private readonly mailService: MailService,
     private readonly customerService: CustomerService,
@@ -56,6 +74,13 @@ export class BrandAccountManagementService {
     private readonly walletService: FiatWalletService,
     private eventEmitter: EventEmitter2,
     private BrandUploadGateway: BrandUploadGateway,
+    private readonly syncService: SyncRewardService,
+    private readonly campaignService: CampaignService,
+    private readonly rewardService: RewardService,
+    private readonly keyManagementService: KeyManagementService,
+
+    @Inject(forwardRef(() => BullService))
+    private readonly bullService: BullService,
   ) {}
 
   async updateBrand(body: UpdateBrandDto, brandId: string) {
@@ -448,28 +473,36 @@ export class BrandAccountManagementService {
     );
   }
 
-  async onboardBrand({ brandId, walletAddress, website }: OnboardBrandDto) {
+  async onboardBrandToProtocol({
+    brandId,
+    website,
+  }: {
+    brandId: string;
+    website: string;
+  }) {
     try {
       const brand = await this.brandService.getBrandById(brandId);
 
-      if (brand.isOnboarded && brand.walletAddress) {
-        throw new HttpException('Brand already onboarded', 400);
-      }
-
-      brand.walletAddress = walletAddress;
-      brand.isOnboarded = true;
-
       const { onboardWallet } = await this.settingsService.settingsInit();
-
       const provider = new ethers.providers.JsonRpcProvider(JSON_RPC_URL);
       const wallet = new ethers.Wallet(onboardWallet, provider);
 
-      const ts2 = await adminService.registerBrand(
-        brand.name,
-        website,
-        brand.walletAddress,
-        getBrandIdHex(BigNumber.from(brand.brandProtocolId)),
-      );
+      let ts2: any;
+
+      try {
+        ts2 = await adminService.registerBrand(
+          brand.name,
+          website,
+          brand.walletAddress,
+          getBrandIdHex(BigNumber.from(brand.brandProtocolId)),
+        );
+      } catch (error) {
+        throw Error(error.message ?? 'Error onboarding to protocol');
+      }
+
+      if (!ts2?.data) {
+        throw Error('Error onboarding to protocol');
+      }
 
       const relay = new GelatoRelay();
 
@@ -509,11 +542,33 @@ export class BrandAccountManagementService {
       };
 
       const paymentRequest =
-        this.costModuleManagementService.createPaymentRequest(
+        await this.costModuleManagementService.createPaymentRequest(
           data,
           PaymentOrigin.IN_APP,
           true,
         );
+
+      return paymentRequest;
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async onboardBrandToRuntime({
+    brandId,
+    walletAddress,
+  }: {
+    brandId: string;
+    walletAddress: string;
+  }) {
+    try {
+      const brand = await this.brandService.getBrandById(brandId);
+
+      const { onboardWallet } = await this.settingsService.settingsInit();
+      const provider = new ethers.providers.JsonRpcProvider(JSON_RPC_URL);
+      const wallet = new ethers.Wallet(onboardWallet, provider);
 
       const brandProtocolId = getBrandIdHex(
         BigNumber.from(brand.brandProtocolId),
@@ -530,10 +585,33 @@ export class BrandAccountManagementService {
       if (onboardBrand.data.error) {
         throw new Error(onboardBrand.data.error.message);
       }
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async onboardBrand({ brandId, walletAddress, website }: OnboardBrandDto) {
+    try {
+      const brand = await this.brandService.getBrandById(brandId);
+
+      if (brand.isOnboarded && brand.walletAddress) {
+        throw new HttpException('Brand already onboarded', 400);
+      }
+
+      const onboardProtocol = await this.onboardBrandToProtocol({
+        brandId,
+        website,
+      });
+      await this.onboardBrandToRuntime({ brandId, walletAddress });
+
+      brand.walletAddress = walletAddress;
+      brand.isOnboarded = true;
 
       await this.brandService.save(brand);
 
-      return paymentRequest;
+      return onboardProtocol;
     } catch (error) {
       console.log(error);
       logger.error(error);
@@ -598,9 +676,23 @@ export class BrandAccountManagementService {
     });
   }
 
-  async getAllBrandsForAdmin(query: FilterBrandDto) {
+  async getAllBrandsForAdmin(query: FilterBrandDto, userId: string) {
     try {
-      return await this.brandService.getAllBrandsForAdmin(query);
+      const brands = await this.brandService.getAllBrandsForAdmin(query);
+
+      // TODO No need
+      // const auditTrailEntry = {
+      //   userId: userId,
+      //   auditType: 'GET_ALL_BRANDS_FOR_ADMIN',
+      //   description: `User ${userId} retrieved all brands for admin with query parameters: ${JSON.stringify(
+      //     query,
+      //   )}.`,
+      //   reportableId: '',
+      // };
+
+      // await this.auditTrailService.createAuditTrail(auditTrailEntry);
+
+      return brands;
     } catch (error) {
       console.log(error);
       logger.error(error);
@@ -625,6 +717,296 @@ export class BrandAccountManagementService {
       console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400);
+    }
+  }
+
+  async createCampaign({
+    totalUsers,
+    rewardPerUser,
+    type,
+    brandId,
+    rewardId,
+    name,
+    description,
+    end_date,
+  }: CreateCampaignDto) {
+    try {
+      const activeCampaign = await this.campaignService.getActiveCampaign(
+        brandId,
+      );
+
+      if (activeCampaign) {
+        throw new Error('Brand already has an active campaign');
+      }
+
+      const pendingCampaign = await this.campaignService.getPendingCampaign(
+        brandId,
+      );
+
+      if (pendingCampaign) {
+        throw new Error('Brand already has a pending campaign');
+      }
+
+      const reward = await this.rewardService.getRewardByIdAndBrandId(
+        rewardId,
+        brandId,
+      );
+
+      if (!reward) {
+        throw new Error('Reward not found');
+      }
+
+      // Create campaign wallet if it doesn't exist
+      if (!reward.campaignKeyIdentifierId) {
+        const { pubKey, privKey } = generateWalletRandom();
+
+        // Encrypt private key
+        const campaignEncryptedKey = await this.keyManagementService.encryptKey(
+          privKey,
+        );
+
+        // Create key identifier
+        const campaignKeyIdentifier = new KeyIdentifier();
+        campaignKeyIdentifier.identifier = campaignEncryptedKey;
+        campaignKeyIdentifier.identifierType = KeyIdentifierType.REDISTRIBUTION;
+
+        const newCampaignKeyIdentifier =
+          await this.keyManagementService.createKeyIdentifer(
+            campaignKeyIdentifier,
+          );
+
+        reward.campaignPublicKey = pubKey;
+        reward.campaignKeyIdentifierId = newCampaignKeyIdentifier.id;
+
+        await this.rewardService.save(reward);
+      }
+
+      const totalRewardToDistribute = totalUsers * rewardPerUser;
+
+      const campaign = new Campaign();
+      campaign.type = type;
+      campaign.totalUsers = totalUsers;
+      campaign.rewardPerUser = rewardPerUser;
+      campaign.brandId = brandId;
+      campaign.availableUsers = totalUsers;
+      campaign.status = CampaignStatus.PENDING;
+      campaign.availableRewards = totalRewardToDistribute;
+      campaign.rewardId = reward.id;
+      campaign.name = name;
+      campaign.description = description;
+      campaign.end_date = end_date;
+
+      await this.campaignService.save(campaign);
+
+      return {
+        amount: totalRewardToDistribute,
+        walletAddress: reward.campaignPublicKey,
+      };
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async fundAndActivateCampaign({
+    brandId,
+    campaignId,
+    params,
+  }: {
+    brandId: string;
+    campaignId: string;
+    params: SendTransactionData;
+  }) {
+    try {
+      const campaign = await this.campaignService.findByIdAndBrandId(
+        campaignId,
+        brandId,
+      );
+
+      if (!campaign) {
+        throw new Error('Campaign is not found');
+      }
+
+      const reward = await this.rewardService.getRewardByIdAndBrandId(
+        campaign.rewardId,
+        brandId,
+      );
+
+      if (!reward) {
+        throw new Error('Reward is not found');
+      }
+
+      await this.syncService.pushTransactionToRuntime(params);
+
+      const amountToFund = campaign.totalUsers * campaign.rewardPerUser;
+
+      const campaignWalletBalance = await get_user_reward_balance_with_url(
+        {
+          address: reward.campaignPublicKey,
+          reward_address: reward.contractAddress,
+        },
+        RUNTIME_URL,
+      );
+
+      if (!campaignWalletBalance.data?.result) {
+        throw new Error('Error fetching campaign wallet balance');
+      }
+
+      const formattedBalance = ethers.utils.formatEther(
+        campaignWalletBalance.data.result,
+      );
+      const balance = Number(formattedBalance);
+
+      if (balance < amountToFund) {
+        throw new Error('Insufficient funds in campaign wallet');
+      }
+
+      campaign.status = CampaignStatus.ACTIVE;
+
+      return await this.campaignService.save(campaign);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async updateCampaign({
+    totalUsers,
+    rewardPerUser,
+    brandId,
+    id,
+    name,
+    description,
+    end_date,
+  }: UpdateCampaignDto) {
+    try {
+      const campaign = await this.campaignService.findByIdAndBrandId(
+        id,
+        brandId,
+      );
+
+      if (!campaign) {
+        throw new Error('Campaign is not found');
+      }
+
+      const reward = await this.rewardService.getRewardByIdAndBrandId(
+        campaign.rewardId,
+        brandId,
+      );
+
+      if (!reward) {
+        throw new Error('Reward is not found');
+      }
+
+      campaign.isUpdating = true;
+      await this.campaignService.save(campaign);
+
+      const newTotaUser = totalUsers ? totalUsers : campaign.totalUsers;
+      const newRewardPeruser = rewardPerUser
+        ? rewardPerUser
+        : campaign.rewardPerUser;
+      const oldTotalRewardToDistribute =
+        campaign.totalUsers * campaign.rewardPerUser;
+      let newTotalRewardToDistribute = 0;
+
+      if (
+        newTotaUser !== campaign.totalUsers ||
+        newRewardPeruser !== campaign.rewardPerUser
+      ) {
+        newTotalRewardToDistribute = newTotaUser * newRewardPeruser;
+      }
+
+      if (newTotalRewardToDistribute > oldTotalRewardToDistribute) {
+        const checkBalanceDifference =
+          newTotalRewardToDistribute - oldTotalRewardToDistribute;
+
+        const campaignWalletBalance = await get_user_reward_balance_with_url(
+          {
+            address: reward.campaignPublicKey,
+            reward_address: reward.contractAddress,
+          },
+          RUNTIME_URL,
+        );
+
+        if (!campaignWalletBalance.data?.result) {
+          throw new Error('Error fetching campaign wallet balance');
+        }
+
+        const formattedBalance = ethers.utils.formatEther(
+          campaignWalletBalance.data.result,
+        );
+        const balance = Number(formattedBalance);
+
+        if (balance < checkBalanceDifference + campaign.availableRewards) {
+          return {
+            amount:
+              checkBalanceDifference + campaign.availableRewards - balance,
+            walletAddress: reward.campaignPublicKey,
+          };
+        }
+
+        campaign.availableRewards =
+          checkBalanceDifference + campaign.availableRewards;
+      }
+
+      if (name) campaign.name = name;
+      if (description) campaign.description = description;
+      if (end_date) campaign.end_date = end_date;
+      if (totalUsers) campaign.totalUsers = totalUsers;
+      if (rewardPerUser) campaign.rewardPerUser = rewardPerUser;
+
+      await this.bullService.retryCampaignFailedJobs();
+
+      return await this.campaignService.save(campaign);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async endCampaign(brandId: string, id: string) {
+    try {
+      const campaign = await this.campaignService.findByIdAndBrandId(
+        id,
+        brandId,
+      );
+
+      if (!campaign) {
+        throw new Error('Campaign is not found');
+      }
+
+      // TODO Refund logic
+      campaign.status = CampaignStatus.ENDED;
+
+      return await this.campaignService.save(campaign);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async getCampaigns(brandId: string) {
+    try {
+      return await this.campaignService.findByBrandId(brandId);
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async checkCampaigns() {
+    const campaigns = await this.campaignService.getAllActiveCampaigns();
+    for (const campaign of campaigns) {
+      if (campaign.end_date < new Date()) {
+        campaign.status = CampaignStatus.ENDED;
+        await this.campaignService.save(campaign);
+      }
     }
   }
 }

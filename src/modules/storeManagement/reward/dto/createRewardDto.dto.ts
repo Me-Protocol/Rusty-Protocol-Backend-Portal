@@ -91,6 +91,21 @@ export class CreateRewardDto {
   @IsOptional()
   @IsBoolean()
   addedLiquidity: boolean;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumberString()
+  vaultTotalSupply: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumberString()
+  vaultAvailableSupply: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumberString()
+  treasuryAvailableSupply: number;
 }
 
 export class UpdateRewardCreationDto {

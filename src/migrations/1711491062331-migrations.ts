@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class Migrations1710759965038 implements MigrationInterface {
-    name = 'Migrations1710759965038'
+export class Migrations1711491062331 implements MigrationInterface {
+    name = 'Migrations1711491062331'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE "order" ALTER COLUMN "orderCode" SET DEFAULT substr(uuid_generate_v4()::text, 1, 6)`);

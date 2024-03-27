@@ -53,4 +53,19 @@ export class UpdateRewardDto {
   @IsOptional()
   @IsNumberString()
   rewardValueInDollars: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumberString()
+  vaultTotalSupply: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumberString()
+  vaultAvailableSupply: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumberString()
+  treasuryAvailableSupply: number;
 }
