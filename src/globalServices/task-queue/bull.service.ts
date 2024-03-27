@@ -76,6 +76,7 @@ export class BullService {
     userId: string;
     brandId: string;
   }) {
+    console.log('Adding campaign reward to queue');
     return await this.campaignQueue.add(
       CAMPAIGN_REWARD_PROCESSOR_QUEUE,
       { userId, brandId },
@@ -172,9 +173,10 @@ export class CampaignProcessor extends WorkerHost {
   }
 
   async process(job: Job) {
+    console.log('Processing campaign');
     const { userId, brandId } = job.data;
 
-    const campaign = await this.campaignService.getActiveCampaign(brandId);
+    const campaign = await this.campaignService.getBrandSignUpCampaign(brandId);
 
     if (campaign) {
       if (campaign.isUpdating) {

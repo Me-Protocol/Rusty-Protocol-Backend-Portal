@@ -191,6 +191,7 @@ export class CustomerAccountManagementService {
     brandId: string;
   }) {
     const campaign = await this.campaignService.getBrandSignUpCampaign(brandId);
+    console.log('There is campaign', campaign.name);
 
     if (campaign) {
       if (campaign.availableUsers <= 0 && campaign.availableRewards <= 0) {
