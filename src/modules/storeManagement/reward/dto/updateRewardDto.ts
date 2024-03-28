@@ -57,15 +57,15 @@ export class UpdateRewardDto {
   @ApiProperty()
   @IsOptional()
   @IsNumberString()
-  vaultTotalSupply: number;
+  totalVaultSupply: number;
 
   @ApiProperty()
   @IsOptional()
   @IsNumberString()
-  vaultAvailableSupply: number;
+  availableVaultSupply: number;
 
   @ApiProperty()
   @IsOptional()
   @IsNumberString()
-  treasuryAvailableSupply: number;
+  availableTreasurySupply: number;
 }

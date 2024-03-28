@@ -316,6 +316,7 @@ export class BrandAccountManagementService {
       await this.customerService.create({
         name,
         userId: saveUser.id,
+        walletAddress: '',
       });
 
       const brandMember = new BrandMember();
@@ -799,12 +800,36 @@ export class BrandAccountManagementService {
       campaign.description = description;
       campaign.end_date = end_date;
 
-      await this.campaignService.save(campaign);
+      const newCampaign = await this.campaignService.save(campaign);
 
-      return {
-        amount: totalRewardToDistribute,
-        walletAddress: reward.campaignPublicKey,
-      };
+      const campaignWalletBalance = await get_user_reward_balance_with_url(
+        {
+          address: reward.campaignPublicKey,
+          reward_address: reward.contractAddress,
+        },
+        RUNTIME_URL,
+      );
+
+      if (!campaignWalletBalance.data?.result) {
+        throw new Error('Error fetching campaign wallet balance');
+      }
+
+      const formattedBalance = ethers.utils.formatEther(
+        campaignWalletBalance.data.result,
+      );
+      const balance = Number(formattedBalance);
+
+      if (balance < totalRewardToDistribute) {
+        return {
+          amount: totalRewardToDistribute - balance,
+          walletAddress: reward.campaignPublicKey,
+          balance,
+          id: newCampaign.id,
+        };
+      }
+
+      newCampaign.status = CampaignStatus.ACTIVE;
+      return await this.campaignService.save(campaign);
     } catch (error) {
       console.log(error);
       logger.error(error);
@@ -921,32 +946,33 @@ export class BrandAccountManagementService {
         newTotalRewardToDistribute = newTotaUser * newRewardPeruser;
       }
 
+      const campaignWalletBalance = await get_user_reward_balance_with_url(
+        {
+          address: reward.campaignPublicKey,
+          reward_address: reward.contractAddress,
+        },
+        RUNTIME_URL,
+      );
+
+      if (!campaignWalletBalance.data?.result) {
+        throw new Error('Error fetching campaign wallet balance');
+      }
+
+      const formattedBalance = ethers.utils.formatEther(
+        campaignWalletBalance.data.result,
+      );
+      const balance = Number(formattedBalance);
+
       if (newTotalRewardToDistribute > oldTotalRewardToDistribute) {
         const checkBalanceDifference =
           newTotalRewardToDistribute - oldTotalRewardToDistribute;
-
-        const campaignWalletBalance = await get_user_reward_balance_with_url(
-          {
-            address: reward.campaignPublicKey,
-            reward_address: reward.contractAddress,
-          },
-          RUNTIME_URL,
-        );
-
-        if (!campaignWalletBalance.data?.result) {
-          throw new Error('Error fetching campaign wallet balance');
-        }
-
-        const formattedBalance = ethers.utils.formatEther(
-          campaignWalletBalance.data.result,
-        );
-        const balance = Number(formattedBalance);
 
         if (balance < checkBalanceDifference + campaign.availableRewards) {
           return {
             amount:
               checkBalanceDifference + campaign.availableRewards - balance,
             walletAddress: reward.campaignPublicKey,
+            balance,
           };
         }
 
@@ -954,15 +980,36 @@ export class BrandAccountManagementService {
           checkBalanceDifference + campaign.availableRewards;
       }
 
+      if (newTotaUser !== campaign.totalUsers) {
+        const userDifference = newTotaUser - campaign.totalUsers;
+
+        if (userDifference > 0) {
+          campaign.availableUsers = campaign.availableUsers + userDifference;
+        } else if (userDifference < 0) {
+          if (campaign.availableUsers < Math.abs(userDifference)) {
+            throw new Error('Cannot reduce total users below available users');
+          } else {
+            campaign.availableUsers =
+              campaign.availableUsers - Math.abs(userDifference);
+          }
+        }
+      }
+
       if (name) campaign.name = name;
       if (description) campaign.description = description;
       if (end_date) campaign.end_date = end_date;
       if (totalUsers) campaign.totalUsers = totalUsers;
       if (rewardPerUser) campaign.rewardPerUser = rewardPerUser;
+      campaign.isUpdating = false;
 
       await this.bullService.retryCampaignFailedJobs();
 
-      return await this.campaignService.save(campaign);
+      const savedCampaign = await this.campaignService.save(campaign);
+
+      return {
+        campaign: savedCampaign,
+        balance,
+      };
     } catch (error) {
       console.log(error);
       logger.error(error);
@@ -992,9 +1039,9 @@ export class BrandAccountManagementService {
     }
   }
 
-  async getCampaigns(brandId: string) {
+  async getCampaigns(brandId: string, status: CampaignStatus) {
     try {
-      return await this.campaignService.findByBrandId(brandId);
+      return await this.campaignService.findByBrandId(brandId, status);
     } catch (error) {
       console.log(error);
       logger.error(error);

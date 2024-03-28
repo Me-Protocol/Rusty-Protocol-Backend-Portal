@@ -37,6 +37,7 @@ import { Notification } from '@src/globalServices/notification/entities/notifica
 import { NotificationType } from '@src/utils/enums/notification.enum';
 import { API_KEY_SALT } from '@src/config/env.config';
 import { Role } from '@src/utils/enums/Role';
+import { getBalance } from '@src/globalServices/reward/get-balance';
 
 @Injectable()
 export class RewardManagementService {
@@ -97,12 +98,12 @@ export class RewardManagementService {
       if (body.contractAddress) reward.contractAddress = body.contractAddress;
       if (body.addedLiquidity) reward.addedLiquidity = body.addedLiquidity;
 
-      if (body.vaultTotalSupply)
-        reward.vaultTotalSupply = body.vaultTotalSupply;
-      if (body.vaultAvailableSupply)
-        reward.vaultAvailableSupply = body.vaultAvailableSupply;
-      if (body.treasuryAvailableSupply)
-        reward.treasuryAvailableSupply = body.treasuryAvailableSupply;
+      if (body.totalVaultSupply)
+        reward.totalVaultSupply = body.totalVaultSupply;
+      if (body.availableVaultSupply)
+        reward.availableVaultSupply = body.availableVaultSupply;
+      if (body.availableTreasurySupply)
+        reward.availableTreasurySupply = body.availableTreasurySupply;
 
       if (isDraft) {
         return await this.rewardService.save(reward);
@@ -206,12 +207,12 @@ export class RewardManagementService {
       if (body.totalSupply) reward.totalSupply = +body.totalSupply;
       if (reward.rewardValueInDollars)
         reward.rewardValueInDollars = body.rewardValueInDollars;
-      if (body.vaultTotalSupply)
-        reward.vaultTotalSupply = body.vaultTotalSupply;
-      if (body.vaultAvailableSupply)
-        reward.vaultAvailableSupply = body.vaultAvailableSupply;
-      if (body.treasuryAvailableSupply)
-        reward.treasuryAvailableSupply = body.treasuryAvailableSupply;
+      if (body.totalVaultSupply)
+        reward.totalVaultSupply = body.totalVaultSupply;
+      if (body.availableVaultSupply)
+        reward.availableVaultSupply = body.availableVaultSupply;
+      if (body.availableTreasurySupply)
+        reward.availableTreasurySupply = body.availableTreasurySupply;
 
       await this.rewardService.updateReward(reward);
 
@@ -654,7 +655,7 @@ export class RewardManagementService {
         throw new Error('Batch already distributed');
       }
 
-      const reward = this.rewardService.findOneByIdAndBrand(
+      const reward = await this.rewardService.findOneByIdAndBrand(
         body.rewardId,
         brandId,
       );
@@ -663,12 +664,27 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
-      await this.syncService.pushTransactionToRuntime(body.params);
-
       const { users } = await this.getDistributionUsersAndAmount({
         rewardId: batch.rewardId,
         syncData: batch.syncData,
       });
+
+      const firstUser = users?.[0];
+      const initialBalance = await getBalance({
+        walletAddress: firstUser,
+        contractAddress: reward.contractAddress,
+      });
+
+      await this.syncService.pushTransactionToRuntime(body.params);
+
+      const laterBalance = await getBalance({
+        walletAddress: firstUser,
+        contractAddress: reward.contractAddress,
+      });
+
+      if (laterBalance <= initialBalance) {
+        throw new Error('Error distributing reward. Balance unchanged.');
+      }
 
       await this.updateUsersRewardRegistryAfterDistribution({
         batch,
@@ -681,7 +697,7 @@ export class RewardManagementService {
 
       await this.completeDistribution({
         users,
-        rewardId: body.rewardId,
+        rewardId: reward.id,
       });
 
       return {
@@ -829,12 +845,27 @@ export class RewardManagementService {
         ethers.utils.parseEther(aggregateSumOfNonExistingUsers.toString()),
       ];
 
+      const firstUser = users?.[0];
+      const initialBalance = await getBalance({
+        walletAddress: firstUser,
+        contractAddress: reward.contractAddress,
+      });
+
       await this.syncService.distributeRewardWithKey({
         contractAddress: reward.contractAddress,
         recipients,
         amounts: reward_amounts,
         signer: wallet,
       });
+
+      const laterBalance = await getBalance({
+        walletAddress: firstUser,
+        contractAddress: reward.contractAddress,
+      });
+
+      if (laterBalance <= initialBalance) {
+        throw new Error('Error distributing reward. Balance unchanged.');
+      }
 
       await this.updateUsersRewardRegistryAfterDistribution({
         batch,
