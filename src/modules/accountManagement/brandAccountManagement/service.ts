@@ -603,19 +603,19 @@ export class BrandAccountManagementService {
         throw new HttpException('Brand already onboarded', 400);
       }
 
-      const onboardProtocol = await this.onboardBrandToProtocol({
-        brandId,
-        website,
-        walletAddress,
-      });
-      await this.onboardBrandToRuntime({ brandId, walletAddress });
+      // const onboardProtocol = await this.onboardBrandToProtocol({
+      //   brandId,
+      //   website,
+      //   walletAddress,
+      // });
+      // await this.onboardBrandToRuntime({ brandId, walletAddress });
 
       brand.walletAddress = walletAddress;
       brand.isOnboarded = true;
 
       await this.brandService.save(brand);
 
-      return onboardProtocol;
+      return true;
     } catch (error) {
       console.log(error);
       logger.error(error);
