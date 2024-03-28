@@ -202,7 +202,7 @@ export class CustomerAccountManagementService {
       console.log('There is campaign', campaign.name);
 
       if (campaign) {
-        if (campaign.availableUsers <= 0 && campaign.availableRewards <= 0) {
+        if (campaign.availableUsers <= 0 || campaign.availableRewards <= 0) {
           return;
         }
 
