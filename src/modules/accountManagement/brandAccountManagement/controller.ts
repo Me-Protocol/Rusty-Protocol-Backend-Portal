@@ -40,6 +40,7 @@ import {
   CreateCampaignDto,
   FundCampaignDto,
   UpdateCampaignDto,
+  getCampaignsDto,
 } from './dto/CreateCampaignDto';
 
 @ApiTags('Brand')
@@ -150,9 +151,15 @@ export class BrandManagementController {
   @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
   @UseGuards(BrandJwtStrategy)
   @Get('campaign')
-  async getCampaigns(@Req() req: any) {
+  async getCampaigns(
+    @Req() req: any,
+    @Query(ValidationPipe) query: getCampaignsDto,
+  ) {
     const brandId = req.user.brand.id;
-    return await this.brandAccountManagementService.getCampaigns(brandId);
+    return await this.brandAccountManagementService.getCampaigns(
+      brandId,
+      query.status,
+    );
   }
 
   @UseGuards(AuthGuard())

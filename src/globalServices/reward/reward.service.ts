@@ -254,13 +254,13 @@ export class RewardService {
     amount: number;
   }) {
     const reward = await this.getRewardById(rewardId);
-    const diff = Number(reward.vaultAvailableSupply) - Number(amount);
+    const diff = Number(reward.availableVaultSupply) - Number(amount);
     // if diff is less than 0 or it is a negative number return false
     if (diff < 0) {
-      reward.vaultAvailableSupply = 0;
+      reward.availableVaultSupply = 0;
     } else {
-      reward.vaultAvailableSupply =
-        Number(reward.vaultAvailableSupply) - Number(amount);
+      reward.availableVaultSupply =
+        Number(reward.availableVaultSupply) - Number(amount);
     }
 
     return this.rewardsRepo.save(reward);

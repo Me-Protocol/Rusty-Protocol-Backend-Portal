@@ -28,9 +28,9 @@ export class CampaignService {
     });
   }
 
-  async findByBrandId(brandId: string) {
+  async findByBrandId(brandId: string, status: CampaignStatus) {
     return this.campaignRepo.find({
-      where: { brandId },
+      where: { brandId, status },
     });
   }
 

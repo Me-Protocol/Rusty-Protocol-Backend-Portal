@@ -43,7 +43,9 @@ export class BullService {
           type: 'exponential', // Exponential backoff
           delay: 30000, // Initial delay before first retry in milliseconds
         },
-        removeOnComplete: 1000,
+        removeOnComplete: {
+          age: /* 1 day */ 86400,
+        },
       },
     );
   }
@@ -55,7 +57,7 @@ export class BullService {
     userId: string;
     walletAddress: string;
   }) {
-    console.log('Set customer wallet');
+    console.log('Adding customer wallet address to queue');
     return await this.customerQueue.add(
       SET_CUSTOMER_WALLET_PROCESSOR_QUEUE,
       { userId, walletAddress },
@@ -65,7 +67,9 @@ export class BullService {
           type: 'exponential', // Exponential backoff
           delay: 30000, // Initial delay before first retry in milliseconds
         },
-        removeOnComplete: 1000,
+        removeOnComplete: {
+          age: /* 1 day */ 86400,
+        },
       },
     );
   }
@@ -77,6 +81,7 @@ export class BullService {
     userId: string;
     brandId: string;
   }) {
+    console.log('Adding campaign reward to queue');
     return await this.campaignQueue.add(
       CAMPAIGN_REWARD_PROCESSOR_QUEUE,
       { userId, brandId },
@@ -86,7 +91,9 @@ export class BullService {
           type: 'exponential', // Exponential backoff
           delay: 30000, // Initial delay before first retry in milliseconds
         },
-        removeOnComplete: 1000,
+        removeOnComplete: {
+          age: /* 1 day */ 86400,
+        },
       },
     );
   }
@@ -173,9 +180,10 @@ export class CampaignProcessor extends WorkerHost {
   }
 
   async process(job: Job) {
+    console.log('Processing campaign');
     const { userId, brandId } = job.data;
 
-    const campaign = await this.campaignService.getActiveCampaign(brandId);
+    const campaign = await this.campaignService.getBrandSignUpCampaign(brandId);
 
     if (campaign) {
       if (campaign.isUpdating) {
