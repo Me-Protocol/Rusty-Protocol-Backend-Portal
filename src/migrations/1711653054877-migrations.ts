@@ -13,6 +13,17 @@ export class Migrations1711653054877 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "reward" DROP COLUMN IF EXISTS "treasuryAvailableSupply"`,
     );
+
+    await queryRunner.query(
+      `ALTER TABLE "reward" DROP COLUMN IF EXISTS "totalVaultSupply"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "reward" DROP COLUMN IF EXISTS "availableVaultSupply"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "reward" DROP COLUMN IF EXISTS "availableTreasurySupply"`,
+    );
+
     await queryRunner.query(
       `ALTER TABLE "reward" ADD "totalVaultSupply" numeric NOT NULL DEFAULT '0'`,
     );
