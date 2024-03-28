@@ -850,8 +850,8 @@ export class RewardManagementService {
 
       const recipients = [...users];
       const reward_amounts = [
-        ...amounts,
         ethers.utils.parseEther(aggregateSumOfNonExistingUsers.toString()),
+        ...amounts,
       ];
 
       const firstUser = users?.[0];
@@ -944,8 +944,8 @@ export class RewardManagementService {
 
       const recipients = [...users];
       const reward_amounts = [
-        ...amounts,
         ethers.utils.parseEther(aggregateSumOfNonExistingUsers.toString()),
+        ...amounts,
       ];
 
       return {
