@@ -37,6 +37,7 @@ import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { BillerService } from '@src/globalServices/biller/biller.service';
 import { BillType } from '@src/utils/enums/BillType';
+import { getBalance } from '../get-balance';
 
 @Injectable()
 export class SyncRewardService {
@@ -709,6 +710,11 @@ export class SyncRewardService {
     // 2. We then use the rewardId to get the reward and check if the brand has enough balance to distribute rewards.
     const reward = await this.rewardService.findOneById(rewardId);
 
+    const initialBalance = await getBalance({
+      walletAddress: walletAddress,
+      contractAddress: reward.contractAddress,
+    });
+
     // TODO: Check
     // const canPayCost = await this.fiatWalletService.checkCanPayCost(
     //   reward.brandId,
@@ -759,6 +765,22 @@ export class SyncRewardService {
         data: distributionData.data,
       };
     } else {
+      const laterBalance = await getBalance({
+        walletAddress: walletAddress,
+        contractAddress: reward.contractAddress,
+      });
+
+      if (laterBalance <= initialBalance) {
+        return {
+          error: true,
+          data: {
+            error: {
+              message: 'Error distributing reward',
+            },
+          },
+        };
+      }
+
       if (email) {
         const registry = await this.getRegistryRecordByIdentifer(
           email,

@@ -114,12 +114,17 @@ export class CustomerAccountManagementService {
         for (const point of undistributedRewards) {
           const reward = await this.rewardService.getRewardById(point.rewardId);
 
-          await this.syncService.distributeRewardWithPrivateKey({
-            rewardId: point.rewardId,
-            walletAddress: walletAddress,
-            amount: point.undistributedBalance,
-            email: user.email,
-          });
+          const distribute =
+            await this.syncService.distributeRewardWithPrivateKey({
+              rewardId: point.rewardId,
+              walletAddress: walletAddress,
+              amount: point.undistributedBalance,
+              email: user.email,
+            });
+
+          if (distribute.error) {
+            throw new Error('Distribution failed');
+          }
 
           const brandCustomer =
             await this.brandService.getBrandCustomerByIdentifier({
@@ -190,57 +195,73 @@ export class CustomerAccountManagementService {
     userId: string;
     brandId: string;
   }) {
-    const campaign = await this.campaignService.getBrandSignUpCampaign(brandId);
-    console.log('There is campaign', campaign.name);
+    try {
+      const campaign = await this.campaignService.getBrandSignUpCampaign(
+        brandId,
+      );
+      console.log('There is campaign', campaign.name);
 
-    if (campaign) {
-      if (campaign.availableUsers <= 0 && campaign.availableRewards <= 0) {
-        return;
-      }
+      if (campaign) {
+        if (campaign.availableUsers <= 0 && campaign.availableRewards <= 0) {
+          return;
+        }
 
-      const user = await this.userService.getUserById(userId);
-      const reward = await this.rewardService.getRewardById(campaign.rewardId);
-      campaign.availableRewards =
-        campaign.availableRewards - campaign.rewardPerUser;
-      campaign.availableUsers = Number(campaign.availableUsers) - 1;
+        const user = await this.userService.getUserById(userId);
+        const reward = await this.rewardService.getRewardById(
+          campaign.rewardId,
+        );
+        campaign.availableRewards =
+          campaign.availableRewards - campaign.rewardPerUser;
+        campaign.availableUsers = Number(campaign.availableUsers) - 1;
 
-      await this.syncService.distributeRewardWithPrivateKey({
-        rewardId: campaign.rewardId,
-        walletAddress: user.customer.walletAddress,
-        amount: campaign.rewardPerUser,
-        email: user.email,
-        keySource: 'campaign',
-      });
+        const distribute =
+          await this.syncService.distributeRewardWithPrivateKey({
+            rewardId: campaign.rewardId,
+            walletAddress: user.customer.walletAddress,
+            amount: campaign.rewardPerUser,
+            email: user.email,
+            keySource: 'campaign',
+          });
 
-      await this.campaignService.save(campaign);
+        if (distribute.error) {
+          throw new Error('Distribution failed');
+        }
 
-      const brandCustomer =
-        await this.brandService.getBrandCustomerByIdentifier({
-          identifier: user.email,
-          brandId: reward.brandId,
-          identifierType: SyncIdentifierType.EMAIL,
+        await this.campaignService.save(campaign);
+
+        const brandCustomer =
+          await this.brandService.getBrandCustomerByIdentifier({
+            identifier: user.email,
+            brandId: reward.brandId,
+            identifierType: SyncIdentifierType.EMAIL,
+          });
+
+        brandCustomer.totalDistributed =
+          Number(brandCustomer.totalDistributed) +
+          Number(campaign.rewardPerUser);
+        await this.brandService.saveBrandCustomer(brandCustomer);
+
+        const registry = await this.syncService.getRegistryRecordByIdentifer(
+          user.email,
+          reward.id,
+          SyncIdentifierType.EMAIL,
+        );
+
+        await this.syncService.disbutributeRewardToExistingUsers({
+          registryId: registry.id,
+          amount: campaign.rewardPerUser,
+          description: `Campaign reward distributed to ${user.customer.walletAddress}`,
         });
 
-      brandCustomer.totalDistributed =
-        Number(brandCustomer.totalDistributed) + Number(campaign.rewardPerUser);
-      await this.brandService.saveBrandCustomer(brandCustomer);
-
-      const registry = await this.syncService.getRegistryRecordByIdentifer(
-        user.email,
-        reward.id,
-        SyncIdentifierType.EMAIL,
-      );
-
-      await this.syncService.disbutributeRewardToExistingUsers({
-        registryId: registry.id,
-        amount: campaign.rewardPerUser,
-        description: `Campaign reward distributed to ${user.customer.walletAddress}`,
-      });
-
-      await this.rewardService.reduceVaultAvailableSupply({
-        rewardId: reward.id,
-        amount: campaign.rewardPerUser,
-      });
+        await this.rewardService.reduceVaultAvailableSupply({
+          rewardId: reward.id,
+          amount: campaign.rewardPerUser,
+        });
+      }
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
     }
   }
 }

@@ -43,7 +43,9 @@ export class BullService {
           type: 'exponential', // Exponential backoff
           delay: 30000, // Initial delay before first retry in milliseconds
         },
-        removeOnComplete: 1000,
+        removeOnComplete: {
+          age: /* 1 day */ 86400,
+        },
       },
     );
   }
@@ -64,7 +66,9 @@ export class BullService {
           type: 'exponential', // Exponential backoff
           delay: 30000, // Initial delay before first retry in milliseconds
         },
-        removeOnComplete: 1000,
+        removeOnComplete: {
+          age: /* 1 day */ 86400,
+        },
       },
     );
   }
@@ -86,7 +90,9 @@ export class BullService {
           type: 'exponential', // Exponential backoff
           delay: 30000, // Initial delay before first retry in milliseconds
         },
-        removeOnComplete: 1000,
+        removeOnComplete: {
+          age: /* 1 day */ 86400,
+        },
       },
     );
   }

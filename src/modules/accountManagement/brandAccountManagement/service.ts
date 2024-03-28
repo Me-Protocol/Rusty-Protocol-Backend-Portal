@@ -824,6 +824,7 @@ export class BrandAccountManagementService {
           amount: totalRewardToDistribute - balance,
           walletAddress: reward.campaignPublicKey,
           balance,
+          id: newCampaign.id,
         };
       }
 
