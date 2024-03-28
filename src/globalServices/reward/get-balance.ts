@@ -18,7 +18,7 @@ export const getBalance = async ({
   );
 
   if (!balanceReq.data?.result) {
-    throw new Error('Error fetching campaign wallet balance');
+    throw new Error('Error fetching wallet balance');
   }
 
   const formattedBalance = ethers.utils.formatEther(balanceReq.data.result);
