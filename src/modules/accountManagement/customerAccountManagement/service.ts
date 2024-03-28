@@ -199,10 +199,13 @@ export class CustomerAccountManagementService {
       const campaign = await this.campaignService.getBrandSignUpCampaign(
         brandId,
       );
-      console.log('There is campaign', campaign.name);
+      console.log('There is campaign', campaign);
 
       if (campaign) {
-        if (campaign.availableUsers <= 0 || campaign.availableRewards <= 0) {
+        if (
+          Number(campaign.availableUsers) <= 0 ||
+          Number(campaign.availableRewards <= 0)
+        ) {
           return;
         }
 

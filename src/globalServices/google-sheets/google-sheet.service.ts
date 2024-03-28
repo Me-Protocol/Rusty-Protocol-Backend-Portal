@@ -107,7 +107,7 @@ export class GoogleSheetService {
       });
       existingData = response.data.values || [];
     } catch (err) {
-      console.error('Error reading existing data from the sheet:', err);
+      // console.error('Error reading existing data from the sheet:', err);
       return;
     }
 

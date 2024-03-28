@@ -57,6 +57,7 @@ export class BullService {
     userId: string;
     walletAddress: string;
   }) {
+    console.log('Adding customer wallet address to queue');
     return await this.customerQueue.add(
       SET_CUSTOMER_WALLET_PROCESSOR_QUEUE,
       { userId, walletAddress },
