@@ -1,20 +1,29 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Migrations1711572714617 implements MigrationInterface {
-  name = 'Migrations1711572714617';
+export class Migrations1711653054877 implements MigrationInterface {
+  name = 'Migrations1711653054877';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
       `ALTER TABLE "reward" DROP COLUMN IF EXISTS "vaultAvailableSupply"`,
     );
     await queryRunner.query(
-      `ALTER TABLE "reward" DROP COLUMN IF EXISTS "treasuryAvailableSupply"`,
-    );
-    await queryRunner.query(
       `ALTER TABLE "reward" DROP COLUMN IF EXISTS "vaultTotalSupply"`,
     );
+    await queryRunner.query(
+      `ALTER TABLE "reward" DROP COLUMN IF EXISTS "treasuryAvailableSupply"`,
+    );
 
-    // Add columns with default values
+    await queryRunner.query(
+      `ALTER TABLE "reward" DROP COLUMN IF EXISTS "totalVaultSupply"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "reward" DROP COLUMN IF EXISTS "availableVaultSupply"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "reward" DROP COLUMN IF EXISTS "availableTreasurySupply"`,
+    );
+
     await queryRunner.query(
       `ALTER TABLE "reward" ADD "totalVaultSupply" numeric NOT NULL DEFAULT '0'`,
     );
@@ -24,7 +33,6 @@ export class Migrations1711572714617 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "reward" ADD "availableTreasurySupply" numeric NOT NULL DEFAULT '0'`,
     );
-
     await queryRunner.query(
       `ALTER TABLE "order" ALTER COLUMN "orderCode" SET DEFAULT substr(uuid_generate_v4()::text, 1, 6)`,
     );
@@ -68,10 +76,10 @@ export class Migrations1711572714617 implements MigrationInterface {
       `ALTER TABLE "reward" DROP COLUMN "totalVaultSupply"`,
     );
     await queryRunner.query(
-      `ALTER TABLE "reward" ADD "vaultTotalSupply" numeric NOT NULL DEFAULT '0'`,
+      `ALTER TABLE "reward" ADD "treasuryAvailableSupply" numeric NOT NULL DEFAULT '0'`,
     );
     await queryRunner.query(
-      `ALTER TABLE "reward" ADD "treasuryAvailableSupply" numeric NOT NULL DEFAULT '0'`,
+      `ALTER TABLE "reward" ADD "vaultTotalSupply" numeric NOT NULL DEFAULT '0'`,
     );
     await queryRunner.query(
       `ALTER TABLE "reward" ADD "vaultAvailableSupply" numeric NOT NULL DEFAULT '0'`,
