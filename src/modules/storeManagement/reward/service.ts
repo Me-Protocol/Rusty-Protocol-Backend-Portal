@@ -1006,7 +1006,7 @@ export class RewardManagementService {
         user.wallet,
       );
 
-      if (userDetail.role === Role.CUSTOMER) {
+      if (userDetail && userDetail?.role === Role.CUSTOMER) {
         this.rewardDistrbutedEmail({
           user: userDetail,
           reward,
