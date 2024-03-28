@@ -664,7 +664,7 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
-      const { users } = await this.getDistributionUsersAndAmount({
+      const { users, amounts } = await this.getDistributionUsersAndAmount({
         rewardId: batch.rewardId,
         syncData: batch.syncData,
       });
@@ -695,8 +695,15 @@ export class RewardManagementService {
 
       await this.syncService.saveBatch(batch);
 
+      const recipientsAmount = users.map((user, index) => {
+        return {
+          wallet: user,
+          amount: amounts[index],
+        };
+      });
+
       await this.completeDistribution({
-        users,
+        users: recipientsAmount,
         rewardId: reward.id,
       });
 
@@ -751,7 +758,9 @@ export class RewardManagementService {
       amount: number;
     }[];
   }) {
-    const users = [];
+    const reward = await this.rewardService.findOneById(rewardId);
+
+    const users = [reward.redistributionPublicKey];
     const amounts = [];
     let aggregateSumOfNonExistingUsers = 0;
 
@@ -772,7 +781,7 @@ export class RewardManagementService {
         if (!user) {
           aggregateSumOfNonExistingUsers += syncData.amount;
         } else {
-          if (!user.customer.walletAddress) {
+          if (!user?.customer?.walletAddress) {
             aggregateSumOfNonExistingUsers += syncData.amount;
           } else {
             const registry =
@@ -839,7 +848,7 @@ export class RewardManagementService {
           syncData,
         });
 
-      const recipients = [...users, reward.redistributionPublicKey];
+      const recipients = [...users];
       const reward_amounts = [
         ...amounts,
         ethers.utils.parseEther(aggregateSumOfNonExistingUsers.toString()),
@@ -876,8 +885,15 @@ export class RewardManagementService {
 
       await this.syncService.saveBatch(batch);
 
+      const recipientsAmount = users.map((user, index) => {
+        return {
+          wallet: user,
+          amount: amounts[index],
+        };
+      });
+
       await this.completeDistribution({
-        users,
+        users: recipientsAmount,
         rewardId,
       });
 
@@ -926,7 +942,7 @@ export class RewardManagementService {
           syncData,
         });
 
-      const recipients = [...users, reward.redistributionPublicKey];
+      const recipients = [...users];
       const reward_amounts = [
         ...amounts,
         ethers.utils.parseEther(aggregateSumOfNonExistingUsers.toString()),
