@@ -5,13 +5,13 @@ export class Migrations1711560395911 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "reward" ADD "vaultTotalSupply" numeric NOT NULL DEFAULT '0'`,
+      `ALTER TABLE "reward" ADD COLUMN IF NOT EXISTS "vaultTotalSupply" numeric NOT NULL DEFAULT '0'`,
     );
     await queryRunner.query(
-      `ALTER TABLE "reward" ADD "vaultAvailableSupply" numeric NOT NULL DEFAULT '0'`,
+      `ALTER TABLE "reward" ADD COLUMN IF NOT EXISTS "vaultAvailableSupply" numeric NOT NULL DEFAULT '0'`,
     );
     await queryRunner.query(
-      `ALTER TABLE "reward" ADD "treasuryAvailableSupply" numeric NOT NULL DEFAULT '0'`,
+      `ALTER TABLE "reward" ADD COLUMN IF NOT EXISTS "treasuryAvailableSupply" numeric NOT NULL DEFAULT '0'`,
     );
     await queryRunner.query(
       `ALTER TABLE "order" ALTER COLUMN "orderCode" SET DEFAULT substr(uuid_generate_v4()::text, 1, 6)`,
