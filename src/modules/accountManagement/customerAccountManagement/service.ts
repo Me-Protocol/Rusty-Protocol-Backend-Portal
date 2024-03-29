@@ -230,8 +230,6 @@ export class CustomerAccountManagementService {
           throw new Error('Distribution failed');
         }
 
-        await this.campaignService.save(campaign);
-
         const brandCustomer =
           await this.brandService.getBrandCustomerByIdentifier({
             identifier: user.email,
@@ -260,6 +258,10 @@ export class CustomerAccountManagementService {
           rewardId: reward.id,
           amount: campaign.rewardPerUser,
         });
+
+        console.log('Update brand customer', brandCustomer);
+
+        await this.campaignService.save(campaign);
       }
     } catch (error) {
       console.log(error);
