@@ -664,12 +664,13 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
-      const { users, amounts } = await this.getDistributionUsersAndAmount({
+      const { users } = await this.getDistributionUsersAndAmount({
         rewardId: batch.rewardId,
         syncData: batch.syncData,
       });
 
-      const firstUser = users?.[0];
+      const recipients = [...users, reward.redistributionPublicKey];
+      const firstUser = recipients?.[0];
       const initialBalance = await getBalance({
         walletAddress: firstUser,
         contractAddress: reward.contractAddress,
@@ -695,15 +696,8 @@ export class RewardManagementService {
 
       await this.syncService.saveBatch(batch);
 
-      const recipientsAmount = users.map((user, index) => {
-        return {
-          wallet: user,
-          amount: amounts[index],
-        };
-      });
-
       await this.completeDistribution({
-        users: recipientsAmount,
+        users,
         rewardId: reward.id,
       });
 
@@ -758,9 +752,7 @@ export class RewardManagementService {
       amount: number;
     }[];
   }) {
-    const reward = await this.rewardService.findOneById(rewardId);
-
-    const users = [reward.redistributionPublicKey];
+    const users = [];
     const amounts = [];
     let aggregateSumOfNonExistingUsers = 0;
 
@@ -848,13 +840,13 @@ export class RewardManagementService {
           syncData,
         });
 
-      const recipients = [...users];
+      const recipients = [...users, reward.redistributionPublicKey];
       const reward_amounts = [
         ...amounts,
         ethers.utils.parseEther(aggregateSumOfNonExistingUsers.toString()),
       ];
 
-      const firstUser = users?.[0];
+      const firstUser = recipients?.[0];
       const initialBalance = await getBalance({
         walletAddress: firstUser,
         contractAddress: reward.contractAddress,
@@ -885,15 +877,8 @@ export class RewardManagementService {
 
       await this.syncService.saveBatch(batch);
 
-      const recipientsAmount = users.map((user, index) => {
-        return {
-          wallet: user,
-          amount: amounts[index],
-        };
-      });
-
       await this.completeDistribution({
-        users: recipientsAmount,
+        users,
         rewardId,
       });
 
@@ -942,7 +927,7 @@ export class RewardManagementService {
           syncData,
         });
 
-      const recipients = [...users];
+      const recipients = [...users, reward.redistributionPublicKey];
       const reward_amounts = [
         ...amounts,
         ethers.utils.parseEther(aggregateSumOfNonExistingUsers.toString()),

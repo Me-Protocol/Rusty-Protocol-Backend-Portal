@@ -155,6 +155,12 @@ export class RewardService {
         rOptimal: true,
         treasurySupply: true,
         totalSupply: true,
+        totalVaultSupply: true,
+        availableVaultSupply: true,
+        availableTreasurySupply: true,
+        addedLiquidity: true,
+        meAutoTopUpFactor: true,
+        rewardAutoTopUpFactor: true,
       },
     });
   }
