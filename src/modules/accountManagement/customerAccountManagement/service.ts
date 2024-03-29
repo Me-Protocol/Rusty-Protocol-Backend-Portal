@@ -112,8 +112,6 @@ export class CustomerAccountManagementService {
       if (undistributedRewards.length > 0) {
         // 9. We iterate through the undistributed points and distribute them to the new walletAddress.
         for (const point of undistributedRewards) {
-          const reward = await this.rewardService.getRewardById(point.rewardId);
-
           const distribute =
             await this.syncService.distributeRewardWithPrivateKey({
               rewardId: point.rewardId,
@@ -125,35 +123,6 @@ export class CustomerAccountManagementService {
           if (distribute.error) {
             throw new Error('Distribution failed');
           }
-
-          const brandCustomer =
-            await this.brandService.getBrandCustomerByIdentifier({
-              identifier: user.email,
-              brandId: reward.brandId,
-              identifierType: SyncIdentifierType.EMAIL,
-            });
-
-          brandCustomer.totalDistributed =
-            Number(brandCustomer.totalDistributed) +
-            Number(point.undistributedBalance);
-          await this.brandService.saveBrandCustomer(brandCustomer);
-
-          const registry = await this.syncService.getRegistryRecordByIdentifer(
-            user.email,
-            reward.id,
-            SyncIdentifierType.EMAIL,
-          );
-
-          await this.syncService.disbutributeRewardToExistingUsers({
-            registryId: registry.id,
-            amount: point.undistributedBalance,
-            description: `Reward distributed to ${user.customer.walletAddress}`,
-          });
-
-          await this.rewardService.reduceVaultAvailableSupply({
-            rewardId: reward.id,
-            amount: point.undistributedBalance,
-          });
         }
       }
 
@@ -230,8 +199,6 @@ export class CustomerAccountManagementService {
           throw new Error('Distribution failed');
         }
 
-        await this.campaignService.save(campaign);
-
         const brandCustomer =
           await this.brandService.getBrandCustomerByIdentifier({
             identifier: user.email,
@@ -260,6 +227,8 @@ export class CustomerAccountManagementService {
           rewardId: reward.id,
           amount: campaign.rewardPerUser,
         });
+
+        await this.campaignService.save(campaign);
       }
     } catch (error) {
       console.log(error);
