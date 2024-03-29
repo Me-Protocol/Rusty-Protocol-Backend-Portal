@@ -275,6 +275,7 @@ export class BrandService {
     });
   }
 
+
   async getAllFilteredBrands({
     categoryId,
     page,

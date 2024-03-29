@@ -6,6 +6,8 @@ import { KeyManagementService } from '../key-management/key-management.service';
 import { KeyIdentifier } from '../key-management/entities/keyIdentifier.entity';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { generateWalletRandom } from '@developeruche/protocol-core';
+import { UpdateSettingsDto } from '@src/modules/settings/dto/UpdateSettingsDto.dto';
+import {logger} from '@src/globalServices/logger/logger.service'
 
 @Injectable()
 export class SettingsService {
@@ -138,5 +140,23 @@ export class SettingsService {
     } = settings;
 
     return rest;
+  }
+
+  async updateSettings(updateDto: UpdateSettingsDto) {
+    const settings = await this.adminSettingsRepo.findOne({
+      where: { isDefault: true },
+    });
+
+    if (!settings) {
+      throw new Error('Settings not found');
+    }
+
+    Object.assign(settings, updateDto);
+
+    await this.adminSettingsRepo.save(settings);
+
+    logger.log('Settings have been updated successfully');
+
+    return settings;
   }
 }

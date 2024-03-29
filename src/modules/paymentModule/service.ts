@@ -215,6 +215,33 @@ export class PaymentModuleService {
     }
   }
 
+
+  async getDueInvoices({
+    brandId, 
+    page, 
+    limit,
+  }: {
+      brandId?: string;
+      page: number;
+      limit: number;
+    }) {
+      
+    try {
+      const result = await this.billerService.getBrandInvoices({ brandId, page, limit });
+
+      return {
+        dueInvoices: result.invoices,
+        total: result.total,
+        nextPage: result.nextPage,
+        prevPage: result.prevPage,
+      };
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+
+    }
+  }
+
   async createSubscription(body: CreatePlanDto) {
     return await this.brandService.createBrandSubscriptionPlan(body);
   }
@@ -579,6 +606,27 @@ export class PaymentModuleService {
 
       return {
         message: 'Me credits issued successfully',
+      };
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async RemoveMeCredits(brandId: string, amount: number) {
+    try{
+      const brand = await this.brandService.getBrandById(brandId);
+      if (!brand) throw new HttpException('Brand not found', 404);
+
+      const brandWallet = await this.walletService.getWalletByBrandId(brandId);
+
+      brandWallet.meCredits = Number(brandWallet.meCredits) - Number(amount);
+
+      await this.walletService.save(brandWallet);
+
+      return {
+        message: 'Me Credits removed successfully',
       };
     } catch (error) {
       console.log(error);
