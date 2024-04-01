@@ -311,7 +311,7 @@ export class RewardManagementController {
   }
 
   @UseGuards(AuthGuard())
-  @Get(':rewardId')
+  @Get('get-reward/:rewardId')
   async getReward(@Param('rewardId') rewardId: string) {
     return await this.rewardManagementService.getReward(rewardId);
   }
