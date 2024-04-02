@@ -446,6 +446,7 @@ export class BrandManagementController {
   @UseGuards(AdminJwtStrategy)
   @Post('disable/:id')
   async disableBrand(@Param('id') id: string, @Req() req: any) {
-    return await this.brandAccountManagementService.disableBrand(id);
+    const userId = req.user.id;
+    return await this.brandAccountManagementService.disableBrand(id, userId);
   }
 }

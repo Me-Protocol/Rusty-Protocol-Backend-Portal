@@ -1148,8 +1148,35 @@
       },
       "get": {
         "operationId": "BrandManagementController_getCampaigns",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": ["pending", "active", "ended"],
+              "type": "string"
+            }
+          }
+        ],
         "responses": { "200": { "description": "" } },
+        "tags": ["Brand"],
+        "security": [{ "bearer": [] }]
+      }
+    },
+    "/brand/campaign/fund": {
+      "post": {
+        "operationId": "BrandManagementController_fundAndActivateCampaign",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FundCampaignDto" }
+            }
+          }
+        },
+        "responses": { "201": { "description": "" } },
         "tags": ["Brand"],
         "security": [{ "bearer": [] }]
       }
@@ -1512,6 +1539,40 @@
     "/brand/onboard": {
       "post": {
         "operationId": "BrandManagementController_onboardBrand",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OnboardBrandDto" }
+            }
+          }
+        },
+        "responses": { "201": { "description": "" } },
+        "tags": ["Brand"],
+        "security": [{ "bearer": [] }]
+      }
+    },
+    "/brand/onboard/runtime": {
+      "post": {
+        "operationId": "BrandManagementController_onboardBrandToRuntime",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OnboardBrandDto" }
+            }
+          }
+        },
+        "responses": { "201": { "description": "" } },
+        "tags": ["Brand"],
+        "security": [{ "bearer": [] }]
+      }
+    },
+    "/brand/onboard/protocol": {
+      "post": {
+        "operationId": "BrandManagementController_onboardBrandToProtocol",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -2474,20 +2535,6 @@
         "responses": { "200": { "description": "" } },
         "tags": ["Reward"],
         "security": [{ "bearer": [] }]
-      },
-      "get": {
-        "operationId": "RewardManagementController_getReward",
-        "parameters": [
-          {
-            "name": "rewardId",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": { "200": { "description": "" } },
-        "tags": ["Reward"],
-        "security": [{ "bearer": [] }]
       }
     },
     "/reward/api_key": {
@@ -2790,6 +2837,22 @@
       "get": {
         "operationId": "RewardManagementController_getDraftReward",
         "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "tags": ["Reward"],
+        "security": [{ "bearer": [] }]
+      }
+    },
+    "/reward/get-reward/{rewardId}": {
+      "get": {
+        "operationId": "RewardManagementController_getReward",
+        "parameters": [
+          {
+            "name": "rewardId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
         "responses": { "200": { "description": "" } },
         "tags": ["Reward"],
         "security": [{ "bearer": [] }]
@@ -4288,6 +4351,28 @@
         "tags": ["settings"],
         "security": [{ "bearer": [] }]
       }
+    },
+    "/audit-trail": {
+      "get": {
+        "operationId": "AuditTrailController_findAll",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": { "200": { "description": "" } },
+        "tags": ["Audit Trail"],
+        "security": [{ "bearer": [] }]
+      }
     }
   },
   "info": {
@@ -4796,6 +4881,25 @@
           "end_date"
         ]
       },
+      "FundCampaignDto": {
+        "type": "object",
+        "properties": {
+          "params": {
+            "type": "object",
+            "example": {
+              "from": "0x000000",
+              "nonce": 0,
+              "data": "0x000000",
+              "r": "0x000000",
+              "s": "0x000000",
+              "v": "0x000000",
+              "hash": "0x000000"
+            }
+          },
+          "campaignId": { "type": "string" }
+        },
+        "required": ["params", "campaignId"]
+      },
       "UpdateCampaignDto": {
         "type": "object",
         "properties": {
@@ -5020,7 +5124,10 @@
           "rewardValueInDollars": { "type": "number" },
           "treasurySupply": { "type": "string" },
           "contractAddress": { "type": "string" },
-          "addedLiquidity": { "type": "boolean" }
+          "addedLiquidity": { "type": "boolean" },
+          "totalVaultSupply": { "type": "number" },
+          "availableVaultSupply": { "type": "number" },
+          "availableTreasurySupply": { "type": "number" }
         },
         "required": [
           "description",
@@ -5038,7 +5145,10 @@
           "rewardValueInDollars",
           "treasurySupply",
           "contractAddress",
-          "addedLiquidity"
+          "addedLiquidity",
+          "totalVaultSupply",
+          "availableVaultSupply",
+          "availableTreasurySupply"
         ]
       },
       "UpdateRewardCreationDto": {
@@ -5073,7 +5183,10 @@
           },
           "poolTotalSupply": { "type": "string" },
           "totalSupply": { "type": "string" },
-          "rewardValueInDollars": { "type": "number" }
+          "rewardValueInDollars": { "type": "number" },
+          "totalVaultSupply": { "type": "number" },
+          "availableVaultSupply": { "type": "number" },
+          "availableTreasurySupply": { "type": "number" }
         },
         "required": [
           "description",
@@ -5083,7 +5196,10 @@
           "acceptedCustomerIdentitytypes",
           "poolTotalSupply",
           "totalSupply",
-          "rewardValueInDollars"
+          "rewardValueInDollars",
+          "totalVaultSupply",
+          "availableVaultSupply",
+          "availableTreasurySupply"
         ]
       },
       "UpdateBatchDto": {

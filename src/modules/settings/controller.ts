@@ -1,4 +1,4 @@
-import { Controller, UseGuards, Get, Put, Body } from '@nestjs/common';
+import { Controller, UseGuards, Get, Put, Body, Req } from '@nestjs/common';
 import { AdminJwtStrategy } from '@src/middlewares/admin-jwt-strategy.middleware';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
@@ -18,7 +18,8 @@ export class SettingsModuleController {
 
   @UseGuards(AdminJwtStrategy)
   @Put('admin-settings')
-  async updateSettings(@Body() updateDto: UpdateSettingsDto) {
-    return await this.settingsService.updateSettings(updateDto);
+  async updateSettings(@Body() updateDto: UpdateSettingsDto, @Req() req: any) {
+    const userId = req.user.id
+    return await this.settingsService.updateSettings(updateDto, userId);
   }
 }
