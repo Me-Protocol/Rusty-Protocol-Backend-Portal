@@ -295,11 +295,20 @@ export class OrderManagementService {
       }
 
       // Validate online store setup
-      await checkBrandOnlineStore({ brand });
-      await checkProductOnBrandStore({
-        brand,
-        productId: offer.product.productIdOnBrandSite,
-      });
+      try {
+        await checkBrandOnlineStore({ brand });
+      } catch (error) {
+        throw new Error('Error validing brand store.');
+      }
+
+      try {
+        await checkProductOnBrandStore({
+          brand,
+          productId: offer.product.productIdOnBrandSite,
+        });
+      } catch (error) {
+        throw new Error('Error validating product on brand site.');
+      }
 
       // TODO: uncomment this
       // const canPayCost = await this.fiatWalletService.checkCanPayCost(
@@ -455,7 +464,7 @@ export class OrderManagementService {
               email: order.user.email,
             });
           } catch (error) {
-            // console.log(error);
+            console.log(error);
             // const msg = error?.message;
             // if (msg === 'Product is not synchronized or not found.') {
 
@@ -722,7 +731,6 @@ export class OrderManagementService {
   @Cron(CronExpression.EVERY_MINUTE)
   async retryPendingOrders() {
     const pendingOrders = await this.orderService.getPendingOrders();
-    console.log(pendingOrders.length, 'Pending orders');
 
     for (const order of pendingOrders) {
       const job = await this.orderQueue.getJob(order.jobId);
@@ -783,7 +791,12 @@ export class OrderManagementService {
     order.failedReason = failReason;
     await this.orderService.saveOrder(order);
 
-    await redistributed_failed_tx_with_url(order.spendData, RUNTIME_URL);
+    const spendData = order.spendData as any;
+
+    const refund = await redistributed_failed_tx_with_url(
+      spendData?.data,
+      RUNTIME_URL,
+    );
 
     order.isRefunded = true;
     await this.orderService.saveOrder(order);

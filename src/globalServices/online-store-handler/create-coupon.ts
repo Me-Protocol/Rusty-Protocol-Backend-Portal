@@ -9,8 +9,6 @@ import { APP_NAME } from '@src/config/env.config';
 export const createCoupon = async ({
   data,
   brand,
-  productId,
-  email,
   productIdOnBrandSite,
 }: {
   data: {
@@ -102,12 +100,12 @@ export const createCoupon = async ({
               return response.data;
             })
             .catch((error) => {
-              console.log(error.response.data);
+              console.log(error.response?.data);
               throw new Error(error);
             });
         })
         .catch((error) => {
-          console.log(error.response.data);
+          console.log(error.response?.data);
           throw new Error(error);
         });
 
