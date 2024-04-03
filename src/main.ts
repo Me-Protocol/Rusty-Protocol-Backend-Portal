@@ -9,6 +9,7 @@ import {
   CLOUDINARY_CLOUD_NAME,
   CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRET,
+  AMPLITUDE_API_KEY,
 } from './config/env.config';
 import { TracingInterceptor } from './interceptors/tracing.interceptor';
 import { NestExpressApplication } from '@node_modules/@nestjs/platform-express';
@@ -22,7 +23,7 @@ async function bootstrap() {
 
   ampli.load({
     client: {
-      apiKey: process.env.AMPLITUDE_API_KEY,
+      apiKey: AMPLITUDE_API_KEY,
     },
   });
 
