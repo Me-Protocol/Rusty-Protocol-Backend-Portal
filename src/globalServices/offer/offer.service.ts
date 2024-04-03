@@ -750,7 +750,7 @@ export class OfferService {
 
       const totalRedemptionAmount = userSuccessfulOrders.reduce(
         (acc, order) => {
-          return Number(acc) + Number(order?.offer?.product?.price ?? 0);
+          return Number(acc) + Number(order?.points ?? 0);
         },
         0,
       );
@@ -759,19 +759,7 @@ export class OfferService {
       customer.totalRedeemed = userSuccessfulOrders.length;
       customer.totalRedemptionAmount = +totalRedemptionAmountParse;
 
-      const brandCustomer = await this.brandCustomerRepo.findOne({
-        where: { userId: userId, brandId: offer.brandId },
-      });
-
-      if (brandCustomer) {
-        brandCustomer.totalRedeemed = userSuccessfulOrders.length;
-        brandCustomer.totalRedemptionAmount = +totalRedemptionAmountParse;
-
-        await this.brandCustomerRepo.save(brandCustomer);
-      }
-
       await this.offerRepo.save(offer);
-
       await this.customerService.save(customer);
 
       return 'done';
@@ -787,7 +775,6 @@ export class OfferService {
 
   async increaseInventory(offer: Offer, order: Order) {
     offer.inventory = Number(offer.inventory) + Number(order.quantity);
-
     await this.offerRepo.save(offer);
   }
 

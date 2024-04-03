@@ -48,9 +48,10 @@ export class OrderService {
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.coupon', 'coupon')
       .leftJoinAndSelect('order.offer', 'offer')
+      .leftJoinAndSelect('order.brand', 'brand')
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.reward', 'reward')
-      .leftJoinAndSelect('reward.brand', 'brand')
+      .leftJoinAndSelect('reward.brand', 'reward_brand')
       .leftJoinAndSelect('order.user', 'user')
       .leftJoinAndSelect('user.customer', 'customer')
       .orderBy('order.createdAt', 'DESC')
@@ -60,6 +61,7 @@ export class OrderService {
         'offer',
         'offerImages',
         'reward',
+        'reward_brand',
         'brand',
         'customer',
       ]);
@@ -189,6 +191,7 @@ export class OrderService {
       where: { id: id, userId: userId },
       relations: [
         'coupon',
+        'brand',
         'offer',
         'offer.reward',
         'offer.offerImages',

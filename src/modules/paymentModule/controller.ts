@@ -32,6 +32,9 @@ import { AdminJwtStrategy } from '@src/middlewares/admin-jwt-strategy.middleware
 import { IssueMeCreditsDto } from './dto/IssueMeCreditDto.dto';
 import { CreateRegionDto } from './dto/CreateRegionDto.dto';
 import { UpdateRegionDto } from './dto/UpdateRegionDto.dto';
+import { CreateCurrencyDto } from './dto/CreateCurrencyDto.dto';
+import { Currency } from '@src/globalServices/currency/entities/currency.entity';
+import { RemoveMeCreditsDto } from './dto/RemoveMeCreditDto.dto';
 
 @ApiTags('Payment')
 @Controller('payment')
@@ -131,11 +134,50 @@ export class PaymentModuleController {
     );
   }
 
+  //To track due invoices
+  @UseGuards(AdminJwtStrategy)
+  @Get('/admin/invoice/due')
+  async getDueInvoices(
+    @Query('brandId') brandId: string,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string ='10',
+  ) {
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    return await this.paymentService.getDueInvoices({
+      brandId,
+      page: pageNumber,
+      limit: limitNumber,
+  });
+  }
+
   @Get('currencies')
   async getCurrency() {
     return await this.currencyService.getCurrency();
   }
 
+  @UseGuards(AdminJwtStrategy)
+  @Post('create-currencies')
+  async createCurrency(
+    @Body(ValidationPipe) createCurrencyDto: CreateCurrencyDto,
+  ) {
+    try {
+      const currency = new Currency();
+      currency.value = createCurrencyDto.value;
+      currency.symbol = createCurrencyDto.symbol;
+      currency.name = createCurrencyDto.name;
+      currency.code = createCurrencyDto.code;
+
+      return await this.currencyService.createCurrency(currency);
+    } catch (error) {
+      throw new HttpException(error.message, 400, {
+        cause: new Error('createCurrencies'),
+      });
+    }
+  }
+
+  @UseGuards(AdminJwtStrategy)
   @Post('region')
   async createRegion(@Body(ValidationPipe) body: CreateRegionDto) {
     try {
@@ -152,6 +194,7 @@ export class PaymentModuleController {
     return await this.currencyService.getRegions();
   }
 
+  @UseGuards(AdminJwtStrategy)
   @Put('region/:id')
   async updateRegion(
     @Param('id', ParseUUIDPipe) id: string,
@@ -189,13 +232,13 @@ export class PaymentModuleController {
   async getMeCredits(@Req() req: any) {
     const brand = req.user.brand as Brand;
 
-    return await this.paymentService.getMeCredits(brand.id);
+    return await this.paymentService.getMeCredits(brand.id, req.user.id);
   }
 
   @UseGuards(AdminJwtStrategy)
   @Get('/admin/me-credit-balance/:brandId')
-  async getMeCreditsAdmin(@Param('brandId', ValidationPipe) brandId: string) {
-    return await this.paymentService.getMeCredits(brandId);
+  async getMeCreditsAdmin(@Param('brandId', ValidationPipe) brandId: string, @Req() req: any) {
+    return await this.paymentService.getMeCredits(brandId, req.user.id);
   }
 
   @AdminRoles([AdminRole.SUPER_ADMIN])
@@ -205,6 +248,18 @@ export class PaymentModuleController {
     @Body(ValidationPipe) body: IssueMeCreditsDto,
     @Req() req: any,
   ) {
-    return await this.paymentService.issueMeCredits(body.brandId, body.amount);
+    return await this.paymentService.issueMeCredits(body.brandId, body.amount, req.user.id);
   }
+
+  //Remove unused credits
+  @UseGuards(AdminJwtStrategy)
+  @Post('/admin/remove-unused-credit')
+  async RemoveMeCredits(
+    @Body(ValidationPipe) body: RemoveMeCreditsDto,
+    @Req() req: any,
+  ) {
+    return await this.paymentService.RemoveMeCredits(body.brandId, body.amount);
+  }
+
+  
 }

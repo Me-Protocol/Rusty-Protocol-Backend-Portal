@@ -152,19 +152,20 @@ export class BillerService {
     page,
     limit,
   }: {
-    brandId: string;
+    brandId?: string;
     page: number;
     limit: number;
   }) {
     const invoiceQuery = this.invoiceRepo
       .createQueryBuilder('invoice')
       .leftJoinAndSelect('invoice.bills', 'bills')
-      .where('invoice.brandId = :brandId', {
-        brandId: brandId,
-      })
       .andWhere('invoice.isDue = :isDue', {
-        isDue: true,
-      });
+        isDue: true
+      })
+
+      if(brandId) {
+        invoiceQuery.andWhere('invoice.brandId = :brandId', { brandId });
+      }
 
     const invoices = await invoiceQuery
       .skip((page - 1) * limit)
@@ -180,7 +181,7 @@ export class BillerService {
       prevPage: page > 1 ? Number(page) - 1 : null,
     };
   }
-
+  
   async saveInvoice(invoice: Invoice) {
     return await this.invoiceRepo.save(invoice);
   }

@@ -36,6 +36,12 @@ import { AdminJwtStrategy } from '@src/middlewares/admin-jwt-strategy.middleware
 import { ApiKeyJwtStrategy } from '@src/middlewares/api-jwt-strategy.middleware';
 import { BrandRoles } from '@src/decorators/brand_roles.decorator';
 import { BrandRole } from '@src/utils/enums/BrandRole';
+import {
+  CreateCampaignDto,
+  FundCampaignDto,
+  UpdateCampaignDto,
+  getCampaignsDto,
+} from './dto/CreateCampaignDto';
 
 @ApiTags('Brand')
 @Controller('brand')
@@ -86,7 +92,74 @@ export class BrandManagementController {
     @Query(ValidationPipe) query: FilterBrandDto,
     @Req() req: any,
   ) {
-    return await this.brandAccountManagementService.getAllBrandsForAdmin(query);
+    return await this.brandAccountManagementService.getAllBrandsForAdmin(
+      query,
+      req.user.id,
+    );
+  }
+
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
+  @UseGuards(BrandJwtStrategy)
+  @Post('campaign')
+  async createCampaign(
+    @Body(ValidationPipe) body: CreateCampaignDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    body.brandId = brandId;
+    return await this.brandAccountManagementService.createCampaign(body);
+  }
+
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
+  @UseGuards(BrandJwtStrategy)
+  @Post('campaign/fund')
+  async fundAndActivateCampaign(
+    @Body(ValidationPipe) body: FundCampaignDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    body.brandId = brandId;
+    return await this.brandAccountManagementService.fundAndActivateCampaign(
+      body,
+    );
+  }
+
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
+  @UseGuards(BrandJwtStrategy)
+  @Put('campaign/:id')
+  async updateCampaign(
+    @Body(ValidationPipe) body: UpdateCampaignDto,
+    @Req() req: any,
+    @Param('id') id: string,
+  ) {
+    const brandId = req.user.brand.id;
+    body.brandId = brandId;
+    body.id = id;
+
+    return await this.brandAccountManagementService.updateCampaign(body);
+  }
+
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
+  @UseGuards(BrandJwtStrategy)
+  @Put('campaign/:id/end')
+  async endCampaign(@Req() req: any, @Param('id') id: string) {
+    const brandId = req.user.brand.id;
+
+    return await this.brandAccountManagementService.endCampaign(brandId, id);
+  }
+
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
+  @UseGuards(BrandJwtStrategy)
+  @Get('campaign')
+  async getCampaigns(
+    @Req() req: any,
+    @Query(ValidationPipe) query: getCampaignsDto,
+  ) {
+    const brandId = req.user.brand.id;
+    return await this.brandAccountManagementService.getCampaigns(
+      brandId,
+      query.status,
+    );
   }
 
   @UseGuards(AuthGuard())
@@ -339,6 +412,34 @@ export class BrandManagementController {
     body.brandId = brandId;
 
     return await this.brandAccountManagementService.onboardBrand(body);
+  }
+
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
+  @UseGuards(BrandJwtStrategy)
+  @Post('onboard/runtime')
+  async onboardBrandToRuntime(
+    @Body(ValidationPipe) body: OnboardBrandDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    body.brandId = brandId;
+
+    return await this.brandAccountManagementService.onboardBrandToRuntime(body);
+  }
+
+  @BrandRoles([BrandRole.OWNER, BrandRole.MANAGER])
+  @UseGuards(BrandJwtStrategy)
+  @Post('onboard/protocol')
+  async onboardBrandToProtocol(
+    @Body(ValidationPipe) body: OnboardBrandDto,
+    @Req() req: any,
+  ) {
+    const brandId = req.user.brand.id;
+    body.brandId = brandId;
+
+    return await this.brandAccountManagementService.onboardBrandToProtocol(
+      body,
+    );
   }
 
   @AdminRoles([AdminRole.ADMIN])

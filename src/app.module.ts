@@ -118,7 +118,7 @@ import { DebugController } from './debug/debug.controller';
 import { ReviewManagementController } from './modules/storeManagement/review/controller';
 import { ReviewService } from './globalServices/review/review.service';
 import { ReviewManagementService } from './modules/storeManagement/review/service';
-import { TASK_QUEUE, TasksService } from './globalServices/task/task.service';
+import { TasksService } from './globalServices/task/task.service';
 import { TasksController } from './modules/taskModule/tasks.controller';
 import { Task } from './globalServices/task/entities/task.entity';
 import { TaskResponder } from './globalServices/task/entities/taskResponder.entity';
@@ -130,7 +130,6 @@ import { JobResponse } from './globalServices/task/entities/jobResponse.entity';
 import { HttpModule } from '@nestjs/axios';
 import { InAppTaskVerifier } from './globalServices/task/common/verifier/inapp.service';
 import { TwitterTaskVerifier } from './globalServices/task/common/verifier/outapp/twitter.verifier';
-import { BullModule } from '@nestjs/bull';
 import { SocialAuthenticationService } from './modules/authentication/socialAuth';
 import { BountyService } from './globalServices/oracles/bounty/bounty.service';
 import { Block } from './globalServices/oracles/bounty/entities/block.entity';
@@ -156,13 +155,27 @@ import { VariantOption } from '@src/globalServices/product/entities/variantvalue
 import { BrandUploadGateway } from './modules/accountManagement/brandAccountManagement/socket/brand-upload.gateway';
 import { Region } from './globalServices/currency/entities/region.entity';
 import { AutoTopupRequest } from './globalServices/biller/entity/auto-topup-request.entity';
+import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
+import { Campaign } from './globalServices/campaign/entities/campaign.entity';
+import { CampaignService } from './globalServices/campaign/campaign.service';
+
 import {
   BullService,
-  ORDER_PROCESSOR_QUEUE,
-  ORDER_TASK_QUEUE,
+  CampaignProcessor,
   OrderProcessor,
+  SetCustomerWalletProcessor,
 } from './globalServices/task-queue/bull.service';
-import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
+import { AuditTrailService } from './globalServices/auditTrail/auditTrail.service';
+import { AuditTrail } from './globalServices/auditTrail/entities/auditTrail.entity';
+import { BullModule } from '@nestjs/bullmq';
+import {
+  CAMPAIGN_REWARD_PROCESSOR_QUEUE,
+  CAMPAIGN_REWARD_QUEUE,
+  ORDER_TASK_QUEUE,
+  SET_CUSTOMER_WALLET_PROCESSOR_QUEUE,
+  SET_CUSTOMER_WALLET_QUEUE,
+} from './utils/helpers/queue-names';
+import { SettingsModuleController } from './modules/settings/controller';
 
 @Module({
   imports: [
@@ -220,6 +233,8 @@ import { GoogleSheetService } from '@src/globalServices/google-sheets/google-she
       VariantOption,
       Region,
       AutoTopupRequest,
+      AuditTrail,
+      Campaign,
     ]),
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
@@ -234,10 +249,11 @@ import { GoogleSheetService } from '@src/globalServices/google-sheets/google-she
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     ClientModuleConfig, // microservice
+    HttpModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        redis: {
+        connection: {
           host: configService.get('REDIS_HOSTNAME'),
           port: configService.get('REDIS_PORT'),
           password: configService.get('REDIS_PASSWORD'),
@@ -245,33 +261,24 @@ import { GoogleSheetService } from '@src/globalServices/google-sheets/google-she
       }),
       inject: [ConfigService],
     }),
-
     BullModule.registerQueueAsync({
       name: 'task-queue',
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        name: 'task-queue',
-      }),
-      inject: [ConfigService],
     }),
     BullModule.registerQueueAsync({
       name: ORDER_TASK_QUEUE,
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        name: ORDER_TASK_QUEUE,
-      }),
-      inject: [ConfigService],
     }),
     BullModule.registerQueueAsync({
-      name: ORDER_PROCESSOR_QUEUE,
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        name: ORDER_TASK_QUEUE,
-      }),
-      inject: [ConfigService],
+      name: SET_CUSTOMER_WALLET_QUEUE,
     }),
-
-    HttpModule,
+    BullModule.registerQueueAsync({
+      name: CAMPAIGN_REWARD_QUEUE,
+    }),
+    BullModule.registerQueueAsync({
+      name: SET_CUSTOMER_WALLET_PROCESSOR_QUEUE,
+    }),
+    BullModule.registerQueueAsync({
+      name: CAMPAIGN_REWARD_PROCESSOR_QUEUE,
+    }),
   ],
   controllers: [
     AppController,
@@ -296,6 +303,7 @@ import { GoogleSheetService } from '@src/globalServices/google-sheets/google-she
     ReviewManagementController,
     TasksController,
     AnalyticsManagementController,
+    SettingsModuleController
   ],
   providers: [
     ElasticIndex,
@@ -370,9 +378,13 @@ import { GoogleSheetService } from '@src/globalServices/google-sheets/google-she
     CreateSendgridContactHandler,
     CurrencyService,
     BrandUploadGateway,
+    CampaignService,
     BullService,
     OrderProcessor,
+    AuditTrailService,
+    SetCustomerWalletProcessor,
+    CampaignProcessor,
   ],
-  exports: [JwtStrategy, PassportModule, AuthenticationModule, BullModule],
+  exports: [JwtStrategy, PassportModule, AuthenticationModule],
 })
 export class AppModule {}

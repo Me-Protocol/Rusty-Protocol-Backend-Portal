@@ -275,6 +275,7 @@ export class BrandService {
     });
   }
 
+
   async getAllFilteredBrands({
     categoryId,
     page,
@@ -496,6 +497,8 @@ export class BrandService {
     email: string;
     phone?: string;
   }) {
+    email = email ? email.toLowerCase() : email;
+
     const identifier = isEmail(email) ? email : phone;
     const identifierType = isEmail(email)
       ? SyncIdentifierType.EMAIL

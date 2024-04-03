@@ -34,7 +34,7 @@ async function bootstrap() {
   });
 
   /**
-   * Interceptors
+   * All Interceptors
    */
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalInterceptors(new TracingInterceptor());

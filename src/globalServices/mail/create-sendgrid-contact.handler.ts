@@ -21,10 +21,6 @@ export class CreateSendgridContactHandler {
     };
 
     console.log('event listener for create sendgrid contact');
-    console.log('event.email', event.email);
-    console.log('event.firstName', event.firstName);
-    console.log('event.lastName', event.lastName);
-    console.log('event.userType', event.userType);
 
     const data = {
       list_ids: [
@@ -44,7 +40,7 @@ export class CreateSendgridContactHandler {
       await axios.put(apiUrl, data, { headers });
       console.log('successfully created sendgrid contact');
     } catch (e) {
-      console.log(e.response.data.errors);
+      // console.log(e.response.data.errors);
       console.log('error creating sendgrid contact');
     }
     return;

@@ -46,10 +46,17 @@ import { createCoupon } from '@src/globalServices/online-store-handler/create-co
 import { checkBrandOnlineStore } from '@src/globalServices/online-store-handler/check-store';
 import { BillType } from '@src/utils/enums/BillType';
 import { checkOrderStatusGelatoOrRuntime } from '@src/globalServices/costManagement/taskId-verifier.service';
-import { BullService } from '@src/globalServices/task-queue/bull.service';
 import { Offer } from '@src/globalServices/offer/entities/offer.entity';
 import { Customer } from '@src/globalServices/customer/entities/customer.entity';
 import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
+import { checkProductOnBrandStore } from '@src/globalServices/online-store-handler/check-product';
+import { BullService } from '@src/globalServices/task-queue/bull.service';
+import {
+  ORDER_PROCESSOR_QUEUE,
+  ORDER_TASK_QUEUE,
+} from '@src/utils/helpers/queue-names';
+import { Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
 
 @Injectable()
 export class OrderManagementService {
@@ -68,10 +75,14 @@ export class OrderManagementService {
     private readonly analyticsRecorder: AnalyticsRecorderService,
     private eventEmitter: EventEmitter2,
     private readonly billerService: BillerService,
-    private readonly bullService: BullService,
 
     @InjectRepository(Transaction)
     private readonly transactionRepo: Repository<Transaction>,
+
+    // private readonly bullService: BullService,
+
+    @InjectQueue(ORDER_TASK_QUEUE)
+    private readonly orderQueue: Queue,
   ) {}
 
   randomCode() {
@@ -285,6 +296,10 @@ export class OrderManagementService {
 
       // Validate online store setup
       await checkBrandOnlineStore({ brand });
+      await checkProductOnBrandStore({
+        brand,
+        productId: offer.product.productIdOnBrandSite,
+      });
 
       // TODO: uncomment this
       // const canPayCost = await this.fiatWalletService.checkCanPayCost(
@@ -365,9 +380,21 @@ export class OrderManagementService {
         brandId: offer.brandId,
       });
 
-      const saveOrder = await this.orderService.saveOrder(order);
+      const job = await this.orderQueue.add(
+        ORDER_PROCESSOR_QUEUE,
+        { orderId },
+        {
+          attempts: 6, // Number of retry attempts
+          backoff: {
+            type: 'exponential', // Exponential backoff
+            delay: 30000, // Initial delay before first retry in milliseconds
+          },
+          removeOnComplete: 1000,
+        },
+      );
+      order.jobId = job.id.toString();
 
-      await this.bullService.addOrderToQueue(orderId);
+      const saveOrder = await this.orderService.saveOrder(order);
 
       return saveOrder;
     } catch (error) {
@@ -582,27 +609,24 @@ export class OrderManagementService {
 
           const brandCustomer = await this.brandService.getBrandCustomer(
             reward.brandId,
-            customer.userId,
+            order.userId,
           );
 
           // update customer total redeem
-
           const isExternalOffer = offer.rewardId !== order.redeemRewardId;
 
           if (isExternalOffer) {
             const externalRedemptions =
               await this.orderService.getCustomerExternalRedemptions({
                 userId: order.userId,
-                rewardId: order.redeemRewardId,
+                rewardId: reward.id,
               });
 
-            console.log(externalRedemptions.length, 'External Redemptions');
-
-            customer.totalExternalRedeemed = externalRedemptions.length;
-            customer.totalExternalRedemptionAmount = externalRedemptions.reduce(
-              (acc, curr) => acc + Number(curr.points),
-              0,
-            );
+            customer.totalExternalRedeemed =
+              Number(customer.totalExternalRedeemed) + 1;
+            customer.totalExternalRedemptionAmount =
+              Number(customer.totalExternalRedemptionAmount) +
+              Number(order.points);
 
             brandCustomer.totalExternalRedeemed = externalRedemptions.length;
             brandCustomer.totalExternalRedemptionAmount =
@@ -614,16 +638,8 @@ export class OrderManagementService {
             const internalRedemptions =
               await this.orderService.getCustomerInternalRedemptions({
                 userId: order.userId,
-                rewardId: order.redeemRewardId,
+                rewardId: reward.id,
               });
-
-            console.log(internalRedemptions.length, 'Internal Redemptions');
-
-            customer.totalRedeemed = internalRedemptions.length;
-            customer.totalRedemptionAmount = internalRedemptions.reduce(
-              (acc, curr) => acc + Number(curr.points),
-              0,
-            );
 
             brandCustomer.totalRedeemed = internalRedemptions.length;
             brandCustomer.totalRedemptionAmount = internalRedemptions.reduce(
@@ -706,35 +722,44 @@ export class OrderManagementService {
   @Cron(CronExpression.EVERY_MINUTE)
   async retryPendingOrders() {
     const pendingOrders = await this.orderService.getPendingOrders();
-
     console.log(pendingOrders.length, 'Pending orders');
+
     for (const order of pendingOrders) {
-      const status = await checkOrderStatusGelatoOrRuntime(
-        order.taskId,
-        order.verifier,
-      );
+      const job = await this.orderQueue.getJob(order.jobId);
+      if (job) {
+        const isActive = await job.isActive();
+        console.log('JOB', isActive);
 
-      console.log(status);
+        if (!isActive) {
+          const status = await checkOrderStatusGelatoOrRuntime(
+            order.taskId,
+            order.verifier,
+          );
 
-      if (status === 'success') {
-        await this.completeOrder({
-          orderId: order.id,
-          taskId: order.taskId,
-          verifier: order.verifier,
-          spendData: order.spendData,
-        });
-      } else if (status === 'failed') {
-        order.status = StatusType.FAILED;
-        order.failedReason = `${order.verifier} task verifier failed`;
-        await this.orderService.saveOrder(order);
+          if (status === 'success') {
+            await this.completeOrder({
+              orderId: order.id,
+              taskId: order.taskId,
+              verifier: order.verifier,
+              spendData: order.spendData,
+            });
+          } else if (status === 'failed') {
+            order.status = StatusType.FAILED;
+            order.failedReason = `${order.verifier} task verifier failed`;
+            await this.orderService.saveOrder(order);
 
-        await redistributed_failed_tx_with_url(order.spendData, RUNTIME_URL);
+            await redistributed_failed_tx_with_url(
+              order.spendData,
+              RUNTIME_URL,
+            );
 
-        order.isRefunded = true;
-        await this.orderService.saveOrder(order);
-      } else {
-        console.log('Pending');
-        return;
+            order.isRefunded = true;
+            await this.orderService.saveOrder(order);
+          } else {
+            console.log('Pending');
+            return;
+          }
+        }
       }
     }
   }

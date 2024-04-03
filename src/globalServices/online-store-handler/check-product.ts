@@ -45,7 +45,7 @@ export const checkProductOnBrandStore = async ({
         })
         .catch((error) => {
           console.log('error', error.response.data);
-          throw new Error('Store not found on shopify');
+          throw new Error('Product not found on brand store.');
         });
     case OnlineStoreType.BIG_COMMERCE:
       // const bigCommerceHandler = new BigCommerceHandler();

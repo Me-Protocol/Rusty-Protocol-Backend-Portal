@@ -27,6 +27,7 @@ import {
 import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
 import { Transaction } from '@src/globalServices/fiatWallet/entities/transaction.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { AuditTrailService } from '@src/globalServices/auditTrail/auditTrail.service';
 import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
 import { BillType } from '@src/utils/enums/BillType';
 import { BigNumber, ethers } from 'ethers';
@@ -43,6 +44,7 @@ import { AutoTopupStatus } from '@src/utils/enums/AutoTopStatus';
 export class PaymentModuleService {
   constructor(
     private readonly walletService: FiatWalletService,
+    private readonly auditTrailService: AuditTrailService,
     private readonly paymentService: PaymentService,
     private readonly billerService: BillerService,
     private readonly brandService: BrandService,
@@ -65,14 +67,20 @@ export class PaymentModuleService {
     }
   }
 
-  async getMeCredits(brandId: string) {
-    try {
-      const wallet = await this.walletService.getWalletByBrandId(brandId);
-      const settings = await this.settingsService.getPublicSettings();
+  async getMeCredits(brandId: string, userId: string) {
+    const wallet = await this.walletService.getWalletByBrandId(brandId);
+    const settings = await this.settingsService.getPublicSettings();
 
-      console.log(wallet);
+    const meCreditsInDollars = wallet.meCredits * settings.meTokenValue;
 
-      const meCreditsInDollars = wallet.meCredits * settings.meTokenValue;
+    const auditTrailEntry = {
+      userId : userId,
+      auditType: 'RETRIEVE_ME_CREDITS',
+      description: `User ${userId} retrieved ME credits for brand ${brandId}.`,
+      reportableId: brandId,
+
+    };
+    await this.auditTrailService.createAuditTrail(auditTrailEntry);
 
       return {
         meCredits: wallet.meCredits,
@@ -83,7 +91,7 @@ export class PaymentModuleService {
       logger.error(error);
       throw new HttpException(error.message, 400);
     }
-  }
+  
 
   async getPaymentMethods(brandId: string) {
     const wallet = await this.walletService.getWalletByBrandId(brandId);
@@ -204,6 +212,33 @@ export class PaymentModuleService {
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400);
+    }
+  }
+
+
+  async getDueInvoices({
+    brandId, 
+    page, 
+    limit,
+  }: {
+      brandId?: string;
+      page: number;
+      limit: number;
+    }) {
+      
+    try {
+      const result = await this.billerService.getBrandInvoices({ brandId, page, limit });
+
+      return {
+        dueInvoices: result.invoices,
+        total: result.total,
+        nextPage: result.nextPage,
+        prevPage: result.prevPage,
+      };
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+
     }
   }
 
@@ -549,7 +584,7 @@ export class PaymentModuleService {
     }
   }
 
-  async issueMeCredits(brandId: string, amount: number) {
+  async issueMeCredits(brandId: string, amount: number, userId: string) {
     try {
       const brand = await this.brandService.getBrandById(brandId);
       if (!brand) throw new HttpException('Brand not found', 404);
@@ -560,8 +595,38 @@ export class PaymentModuleService {
 
       await this.walletService.save(brandWallet);
 
+      //Audit Trail Entry
+      const auditTrailEntry = {
+        userId: userId,
+        auditType: 'ISSUE_ME_CREDITS',
+        description: `User ${userId} issued ${amount} ME credits to brand ${brandId} successfully.`,
+        reportableId: brandId,  
+      };
+      await this.auditTrailService.createAuditTrail(auditTrailEntry);
+
       return {
         message: 'Me credits issued successfully',
+      };
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async RemoveMeCredits(brandId: string, amount: number) {
+    try{
+      const brand = await this.brandService.getBrandById(brandId);
+      if (!brand) throw new HttpException('Brand not found', 404);
+
+      const brandWallet = await this.walletService.getWalletByBrandId(brandId);
+
+      brandWallet.meCredits = Number(brandWallet.meCredits) - Number(amount);
+
+      await this.walletService.save(brandWallet);
+
+      return {
+        message: 'Me Credits removed successfully',
       };
     } catch (error) {
       console.log(error);

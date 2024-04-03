@@ -32,7 +32,6 @@ import { Enable2FADto } from './dto/Enable2FADto.dto';
 import { UpdatePreferenceDto } from './dto/UpdatePreferenceDto.dto';
 import fetch from 'node-fetch';
 import { emailCode } from '@src/utils/helpers/email';
-import { CustomerAccountManagementService } from '../accountManagement/customerAccountManagement/service';
 import { CollectionService } from '@src/globalServices/collections/collections.service';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
 import { EventEmitter2 } from '@node_modules/@nestjs/event-emitter';
@@ -41,8 +40,8 @@ import {
   CreateSendgridContactEvent,
 } from '@src/globalServices/mail/create-sendgrid-contact.event';
 import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
-import { SettingsService } from '@src/globalServices/settings/settings.service';
 import { ampli } from '@src/ampli';
+import { BullService } from '@src/globalServices/task-queue/bull.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -50,6 +49,10 @@ const geoip = require('geoip-lite');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const DeviceDetector = require('node-device-detector');
 const deviceDetector = new DeviceDetector();
+
+function capitalizeFirstLetter(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
 @Injectable()
 export class AuthenticationService {
@@ -62,11 +65,10 @@ export class AuthenticationService {
     private brandService: BrandService,
     private walletService: FiatWalletService,
     private syncService: SyncRewardService,
-    private customerAccountManagementService: CustomerAccountManagementService,
     private collectionService: CollectionService,
     private readonly eventEmitter: EventEmitter2,
     private readonly googleService: GoogleSheetService,
-    private readonly settingService: SettingsService,
+    private readonly bullService: BullService,
   ) {}
 
   async writeDataToGoogleSheet(userId: string): Promise<any> {
@@ -75,11 +77,16 @@ export class AuthenticationService {
     if (!user) {
       return false;
     }
+
+    const [firstName, lastName] = user.customer.name.split(' ');
+
+    const capitalizedFirstName = capitalizeFirstLetter(firstName);
+    const capitalizedLastName = capitalizeFirstLetter(lastName);
     await this.googleService.writeToSpreadsheet(
       user.id,
       user.email,
-      user.username,
-      user.username,
+      capitalizedFirstName,
+      capitalizedLastName,
     );
     return true;
   }
@@ -336,10 +343,12 @@ export class AuthenticationService {
     newUser: User,
     name: string,
     brandId?: string,
+    walletAddress?: string,
   ): Promise<void> {
     await this.customerService.create({
       name,
       userId: newUser.id,
+      walletAddress,
     });
 
     if (userType === UserAppType.USER) {
@@ -388,11 +397,10 @@ export class AuthenticationService {
     brandId?: string;
   }): Promise<string> {
     try {
+      // Double check that wallet address is required for user
       if (userType === UserAppType.USER && !walletAddress) {
         throw new Error('Wallet address is required');
       }
-
-      const settings = await this.settingService.getPublicSettings();
 
       const lowerCasedEmail = email.toLowerCase();
       await this.checkIfUserExists(lowerCasedEmail);
@@ -403,7 +411,13 @@ export class AuthenticationService {
         confirmPassword,
         userType,
       );
-      await this.handleUserTypeRoles(userType, newUser, name, brandId);
+      await this.handleUserTypeRoles(
+        userType,
+        newUser,
+        name,
+        brandId,
+        walletAddress,
+      );
       if (userType === UserAppType.BRAND) {
         await this.sendEmailVerificationCode(newUser.email, newUser.username);
       } else {
@@ -414,11 +428,21 @@ export class AuthenticationService {
           userAgent,
           ip,
         );
-        await this.customerAccountManagementService.setWalletAddress(
+        // Queue to set wallet address
+        await this.bullService.setCustomerWalletAddressQueue({
+          userId: newUser.id,
           walletAddress,
-          settings.walletVersion,
-          newUser.id,
-        );
+        });
+
+        // Queue campaign reward
+
+        if (brandId) {
+          await this.bullService.addCampainRewardToQueue({
+            userId: newUser.id,
+            brandId,
+          });
+        }
+
         await this.collectionService.create({
           name: 'Favorites',
           description: 'Favorites collection',
