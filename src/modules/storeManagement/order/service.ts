@@ -402,6 +402,31 @@ export class OrderManagementService {
         throw new Error('Order does not have a coupon.');
       }
 
+      if (
+        taskId ===
+        '0x0000000000000000000000000000000000000000000000000000000000000000'
+      ) {
+        const transaction = await this.transactionRepo.findOne({
+          where: {
+            orderId: order.id,
+          },
+        });
+
+        const offer = await this.offerService.getOfferById(order.offerId);
+        const customer = await this.customerService.getByUserId(order.userId);
+
+        await this.failOrderAndRefund({
+          order,
+          transaction,
+          offer,
+          customer,
+          failReason: 'Internal server error. Please try again',
+          status: StatusType.FAILED,
+        });
+
+        throw new Error('Task id not found');
+      }
+
       order.spendData = spendData;
       order.taskId = taskId;
       order.verifier = verifier;
@@ -797,16 +822,17 @@ export class OrderManagementService {
 
     if (!order.isRefunded) {
       const spendData = order.spendData as any;
+      if (spendData) {
+        const refund = await redistributed_failed_tx_with_url(
+          spendData?.data,
+          RUNTIME_URL,
+        );
 
-      const refund = await redistributed_failed_tx_with_url(
-        spendData?.data,
-        RUNTIME_URL,
-      );
+        console.log(refund.data);
 
-      console.log(refund.data);
-
-      order.isRefunded = true;
-      await this.orderService.saveOrder(order);
+        order.isRefunded = true;
+        await this.orderService.saveOrder(order);
+      }
     }
 
     await this.offerService.increaseInventory(offer, order);
