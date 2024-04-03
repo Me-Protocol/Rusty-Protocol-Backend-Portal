@@ -29,46 +29,61 @@ export type NodeOptions = amplitude.Types.NodeOptions;
 export type Environment = 'consumerappdevelopment';
 
 export const ApiKey: Record<Environment, string> = {
-  consumerappdevelopment: '6a46088de95ef5ba923f50ce771dc3ac',
+  consumerappdevelopment: '6a46088de95ef5ba923f50ce771dc3ac'
 };
 
 /**
- * Default Amplitude configuration options. Contains tracking plan information.
- */
+* Default Amplitude configuration options. Contains tracking plan information.
+*/
 export const DefaultConfiguration: NodeOptions = {
   plan: {
     version: '1',
     branch: 'main',
     source: 'server-side',
-    versionId: '26288ca4-12d0-49f2-8c2d-03691873d462',
+    versionId: '26288ca4-12d0-49f2-8c2d-03691873d462'
   },
   ...{
     ingestionMetadata: {
       sourceName: 'node.js-typescript-ampli',
-      sourceVersion: '2.0.0',
-    },
-  },
+      sourceVersion: '2.0.0'
+    }
+  }
 };
 
-export interface LoadOptionsBase {
-  disabled?: boolean;
+export interface LoadOptionsBase { disabled?: boolean }
+
+export type LoadOptionsWithEnvironment = LoadOptionsBase & { environment: Environment; client?: { configuration?: NodeOptions; }; };
+export type LoadOptionsWithApiKey = LoadOptionsBase & { client: { apiKey: string; configuration?: NodeOptions; } };
+export type LoadOptionsWithClientInstance = LoadOptionsBase & { client: { instance: NodeClient; } };
+
+export type LoadOptions = LoadOptionsWithEnvironment | LoadOptionsWithApiKey | LoadOptionsWithClientInstance;
+
+export interface IdentifyProperties {
+  email?: string;
+  initial_dclid?: string;
+  initial_fbclid?: string;
+  initial_gbraid?: string;
+  initial_gclid?: string;
+  initial_ko_click_id?: string;
+  initial_li_fat_id?: string;
+  initial_msclkid?: string;
+  initial_referrer?: string;
+  initial_referring_domain?: string;
+  initial_rtd_cid?: string;
+  initial_ttclid?: string;
+  initial_twclid?: string;
+  initial_utm_campaign?: string;
+  initial_utm_content?: string;
+  initial_utm_id?: string;
+  initial_utm_medium?: string;
+  initial_utm_source?: string;
+  initial_utm_term?: string;
+  initial_wbraid?: string;
+  referrer?: string;
+  referring_domain?: string;
+  registration_method?: string;
+  user_name?: string;
 }
-
-export type LoadOptionsWithEnvironment = LoadOptionsBase & {
-  environment: Environment;
-  client?: { configuration?: NodeOptions };
-};
-export type LoadOptionsWithApiKey = LoadOptionsBase & {
-  client: { apiKey: string; configuration?: NodeOptions };
-};
-export type LoadOptionsWithClientInstance = LoadOptionsBase & {
-  client: { instance: NodeClient };
-};
-
-export type LoadOptions =
-  | LoadOptionsWithEnvironment
-  | LoadOptionsWithApiKey
-  | LoadOptionsWithClientInstance;
 
 export interface PointsReceivedProperties {
   brand: string;
@@ -98,10 +113,22 @@ export interface UserSignUpProperties {
   registration_method: string;
 }
 
+export class Identify implements BaseEvent {
+  event_type = amplitude.Types.SpecialEventType.IDENTIFY;
+
+  constructor(
+    public event_properties?: IdentifyProperties,
+  ) {
+    this.event_properties = event_properties;
+  }
+}
+
 export class PointsReceived implements BaseEvent {
   event_type = 'Points Received';
 
-  constructor(public event_properties: PointsReceivedProperties) {
+  constructor(
+    public event_properties: PointsReceivedProperties,
+  ) {
     this.event_properties = event_properties;
   }
 }
@@ -109,7 +136,9 @@ export class PointsReceived implements BaseEvent {
 export class UserLogin implements BaseEvent {
   event_type = 'User Login';
 
-  constructor(public event_properties: UserLoginProperties) {
+  constructor(
+    public event_properties: UserLoginProperties,
+  ) {
     this.event_properties = event_properties;
   }
 }
@@ -121,7 +150,9 @@ export class UserLogout implements BaseEvent {
 export class UserSignUp implements BaseEvent {
   event_type = 'User SignUp';
 
-  constructor(public event_properties: UserSignUpProperties) {
+  constructor(
+    public event_properties: UserSignUpProperties,
+  ) {
     this.event_properties = event_properties;
   }
 }
@@ -189,10 +220,12 @@ export class Ampli {
    * Identify a user and set user properties.
    *
    * @param userId The user's id.
+   * @param properties The user properties.
    * @param options Optional event options.
    */
   identify(
     userId: string | undefined,
+    properties?: IdentifyProperties,
     options?: EventOptions,
   ): PromiseResult<Result> {
     if (!this.isInitializedAndEnabled()) {
@@ -204,8 +237,9 @@ export class Ampli {
     }
 
     const amplitudeIdentify = new amplitude.Identify();
-    if (options && options.extra) {
-      for (const [key, value] of Object.entries(options.user_properties)) {
+    const eventProperties = properties;
+    if (eventProperties != null) {
+      for (const [key, value] of Object.entries(eventProperties)) {
         amplitudeIdentify.set(key, value);
       }
     }

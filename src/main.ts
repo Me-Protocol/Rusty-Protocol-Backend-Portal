@@ -1,4 +1,4 @@
-import { HttpAdapterHost, NestFactory } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { logger } from './globalServices/logger/logger.service';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
@@ -11,14 +11,19 @@ import {
   CLOUDINARY_API_SECRET,
 } from './config/env.config';
 import { TracingInterceptor } from './interceptors/tracing.interceptor';
-import helmet from 'helmet';
 import { NestExpressApplication } from '@node_modules/@nestjs/platform-express';
-
 import cloudinary from 'cloudinary';
+import { ampli } from './ampli';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
+  });
+
+  ampli.load({
+    client: {
+      apiKey: process.env.AMPLITUDE_API_KEY,
+    },
   });
 
   cloudinary.v2.config({

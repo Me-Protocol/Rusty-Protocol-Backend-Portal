@@ -745,11 +745,9 @@ export class AuthenticationService {
         };
       }
       await ampli.identify(user.id, {
-        extra: {
-          email: identifier,
-          user_name: identifier,
-          registration_method: 'email',
-        },
+        email: identifier,
+        user_name: identifier,
+        registration_method: 'email',
       });
       await ampli.userLogin(user.id, { login_method: 'email' });
       return await this.registerDevice(user, userAgent, clientIp);
@@ -1032,11 +1030,9 @@ export class AuthenticationService {
       const userNameFromEmail = email.split('@')[0].toLowerCase();
 
       await ampli.identify(user.id, {
-        extra: {
-          email,
-          user_name: userNameFromEmail,
-          registration_method: 'google',
-        },
+        email,
+        user_name: userNameFromEmail,
+        registration_method: 'google',
       });
 
       if (user) {
@@ -1192,11 +1188,9 @@ export class AuthenticationService {
     const token = await this.registerDevice(savedUser, userAgent, ip);
 
     await ampli.identify(newUser.id, {
-      extra: {
-        email,
-        user_name: newUser.username,
-        registration_method: 'google',
-      },
+      email,
+      user_name: newUser.username,
+      registration_method: 'google',
     });
 
     await ampli.userSignUp(newUser.id, { registration_method: 'google' });
