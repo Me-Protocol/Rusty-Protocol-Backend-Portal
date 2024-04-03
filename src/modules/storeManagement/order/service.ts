@@ -166,6 +166,7 @@ export class OrderManagementService {
         offer_id: offerId,
         isUsed: false,
         couponCode,
+        orderCode: '',
       });
 
       const orderRecord = new Order();
@@ -310,16 +311,6 @@ export class OrderManagementService {
         throw new Error('Error validating product on brand site.');
       }
 
-      // TODO: uncomment this
-      // const canPayCost = await this.fiatWalletService.checkCanPayCost(
-      //   offer.brandId,
-      // );
-
-      // if (!canPayCost) {
-      //   throw new Error('Brand cannot pay cost');
-      // }
-      // TODO: uncomment this
-
       const user = await this.userService.getUserById(userId);
 
       const orderRecord = new Order();
@@ -335,6 +326,45 @@ export class OrderManagementService {
       await this.offerService.reduceInventory(offer, order);
 
       return order;
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async createCoupon(orderId: string) {
+    try {
+      const order = await this.orderService.getOrderByOrderId(orderId);
+      const couponCode = await this.couponService.generateCouponCode();
+      const offer = await this.offerService.getOfferById(order.offerId);
+      const brand = await this.brandService.getBrandWithOnlineCreds(
+        order.brandId,
+      );
+
+      try {
+        await createCoupon({
+          brand,
+          data: {
+            code: couponCode,
+            amount: offer.discountPercentage,
+          },
+          productId: offer.product.id,
+          productIdOnBrandSite: offer.product.productIdOnBrandSite,
+          email: order.user.email,
+        });
+      } catch (error) {
+        throw new Error(
+          error?.message ?? 'Error creating coupon code on brand website',
+        );
+      }
+
+      await this.couponService.create({
+        user_id: order.userId,
+        offer_id: order.offerId,
+        couponCode,
+        orderCode: order.orderCode,
+      });
     } catch (error) {
       console.log(error);
       logger.error(error);
@@ -362,6 +392,14 @@ export class OrderManagementService {
 
       if (order.status === StatusType.INCOMPLETE) {
         throw new Error('Order has been marked as incomplete');
+      }
+
+      const coupon = await this.couponService.couponByOrderCode(
+        order.orderCode,
+      );
+
+      if (!coupon) {
+        throw new Error('Order does not have a coupon.');
       }
 
       order.spendData = spendData;
@@ -450,46 +488,14 @@ export class OrderManagementService {
 
       if (isSetupWoocommerce || isSetupShopify) {
         if (status === 'success') {
-          const couponCode = await this.couponService.generateCouponCode();
+          const coupon = await this.couponService.couponByOrderCode(
+            order.orderCode,
+          );
 
-          try {
-            await createCoupon({
-              brand,
-              data: {
-                code: couponCode,
-                amount: offer.discountPercentage,
-              },
-              productId: offer.product.id,
-              productIdOnBrandSite: offer.product.productIdOnBrandSite,
-              email: order.user.email,
-            });
-          } catch (error) {
-            console.log(error);
-            // const msg = error?.message;
-            // if (msg === 'Product is not synchronized or not found.') {
-
-            //   return;
-            // }
-
-            await this.failOrderAndRefund({
-              order,
-              transaction,
-              offer,
-              customer,
-              failReason: 'Failed to create coupon',
-              status: StatusType.FAILED,
-            });
-
+          if (!coupon) {
+            console.log('Coupon code not found');
             return;
           }
-
-          const coupon = await this.couponService.create({
-            user_id: order.userId,
-            offer_id: order.offerId,
-            couponCode,
-          });
-
-          console.log(coupon);
 
           order.couponId = coupon.id;
           order.status = StatusType.SUCCEDDED;
@@ -497,7 +503,6 @@ export class OrderManagementService {
           await this.orderService.saveOrder(order);
 
           // create online store coupon
-
           if (transaction) {
             transaction.status = StatusType.SUCCEDDED;
             await this.transactionRepo.save(transaction);
@@ -529,7 +534,6 @@ export class OrderManagementService {
           }
 
           //  Send notification to user
-
           const notification = new Notification();
           notification.userId = order.userId;
           notification.message = `Congratulations! You have successfully redeemed ${offer.name} from ${offer.brand.name}`;
@@ -791,15 +795,20 @@ export class OrderManagementService {
     order.failedReason = failReason;
     await this.orderService.saveOrder(order);
 
-    const spendData = order.spendData as any;
+    if (!order.isRefunded) {
+      const spendData = order.spendData as any;
 
-    const refund = await redistributed_failed_tx_with_url(
-      spendData?.data,
-      RUNTIME_URL,
-    );
+      const refund = await redistributed_failed_tx_with_url(
+        spendData?.data,
+        RUNTIME_URL,
+      );
 
-    order.isRefunded = true;
-    await this.orderService.saveOrder(order);
+      console.log(refund.data);
+
+      order.isRefunded = true;
+      await this.orderService.saveOrder(order);
+    }
+
     await this.offerService.increaseInventory(offer, order);
 
     if (transaction) {
@@ -835,6 +844,10 @@ export class OrderManagementService {
                 <p>Quantity: ${order.quantity}</p>
               `;
 
-    await this.notificationService.createNotification(notification);
+    try {
+      await this.notificationService.createNotification(notification);
+    } catch (error) {
+      console.log('Error sending email');
+    }
   }
 }

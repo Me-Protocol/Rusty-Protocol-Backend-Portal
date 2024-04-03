@@ -15,11 +15,13 @@ export class CouponService {
     offer_id,
     isUsed,
     couponCode,
+    orderCode,
   }: {
     user_id: string;
     offer_id: string;
     isUsed?: boolean;
     couponCode: string;
+    orderCode: string;
   }) {
     // 6 characters coupon code
 
@@ -29,6 +31,7 @@ export class CouponService {
     coupon.offerId = offer_id;
     coupon.userId = user_id;
     coupon.expiryDate = new Date();
+    coupon.orderCode = orderCode;
     coupon.expiryDate.setDate(coupon.expiryDate.getDate() + 7);
 
     return this.couponRepository.save(coupon);
@@ -40,6 +43,10 @@ export class CouponService {
 
   async findOneById(id: string) {
     return await this.couponRepository.findOneBy({ id });
+  }
+
+  async couponByOrderCode(orderCode: string): Promise<Coupon> {
+    return await this.couponRepository.findOneBy({ orderCode });
   }
 
   async update(id: string, coupon: Coupon): Promise<any> {
