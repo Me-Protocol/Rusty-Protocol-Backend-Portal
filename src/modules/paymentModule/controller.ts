@@ -140,16 +140,19 @@ export class PaymentModuleController {
   async getDueInvoices(
     @Query('brandId') brandId: string,
     @Query('page') page: string = '1',
-    @Query('limit') limit: string ='10',
+    @Query('limit') limit: string = '10',
+    @Req() req: any,
   ) {
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
+    const userId = req.user.id;
 
     return await this.paymentService.getDueInvoices({
+      userId,
       brandId,
       page: pageNumber,
       limit: limitNumber,
-  });
+    });
   }
 
   @Get('currencies')
@@ -179,9 +182,16 @@ export class PaymentModuleController {
 
   @UseGuards(AdminJwtStrategy)
   @Post('region')
-  async createRegion(@Body(ValidationPipe) body: CreateRegionDto) {
+  async createRegion(@Body(ValidationPipe) body: CreateRegionDto, @Req() req: any) {
     try {
-      return await this.currencyService.createRegion(body);
+      const userId = req.user.id;
+
+      const regionData = {
+        ...body,
+        userId,
+      };
+
+      return await this.currencyService.createRegion(regionData);
     } catch (error) {
       throw new HttpException(error.message, 400, {
         cause: new Error('createRegion'),
@@ -199,10 +209,16 @@ export class PaymentModuleController {
   async updateRegion(
     @Param('id', ParseUUIDPipe) id: string,
     @Body(ValidationPipe) body: UpdateRegionDto,
+    @Req() req:any
   ) {
-    body.id = id;
+    //body.id = id;
+    const userId = req.user.id;
 
-    return await this.currencyService.updateRegion(body);
+    return await this.currencyService.updateRegion({
+      ...body,
+      id,
+      userId,
+    });
   }
 
   @Post('voucher')
@@ -237,7 +253,10 @@ export class PaymentModuleController {
 
   @UseGuards(AdminJwtStrategy)
   @Get('/admin/me-credit-balance/:brandId')
-  async getMeCreditsAdmin(@Param('brandId', ValidationPipe) brandId: string, @Req() req: any) {
+  async getMeCreditsAdmin(
+    @Param('brandId', ValidationPipe) brandId: string,
+    @Req() req: any,
+  ) {
     return await this.paymentService.getMeCredits(brandId, req.user.id);
   }
 
@@ -248,7 +267,11 @@ export class PaymentModuleController {
     @Body(ValidationPipe) body: IssueMeCreditsDto,
     @Req() req: any,
   ) {
-    return await this.paymentService.issueMeCredits(body.brandId, body.amount, req.user.id);
+    return await this.paymentService.issueMeCredits(
+      body.brandId,
+      body.amount,
+      req.user.id,
+    );
   }
 
   //Remove unused credits
@@ -258,8 +281,7 @@ export class PaymentModuleController {
     @Body(ValidationPipe) body: RemoveMeCreditsDto,
     @Req() req: any,
   ) {
-    return await this.paymentService.RemoveMeCredits(body.brandId, body.amount);
+    const userId = req.user.id
+    return await this.paymentService.RemoveMeCredits(userId, body.brandId, body.amount);
   }
-
-  
 }
