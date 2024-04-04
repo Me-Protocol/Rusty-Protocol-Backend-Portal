@@ -145,3 +145,6 @@ export const RUNTIME_URL = env.get('RUNTIME_URL').asString();
 export const RUN_DEFAULT_MIGRATION = env.get('RUN_DEFAULT_MIGRATION').asBool();
 
 export const RUN_DB_SYNC = env.get('RUN_DB_SYNC').asBool();
+
+export const AMPLITUDE_API_KEY =
+  env.get('AMPLITUDE_API_KEY').asString() ?? '6a46088de95ef5ba923f50ce771dc3ac';

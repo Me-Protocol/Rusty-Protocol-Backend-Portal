@@ -158,6 +158,8 @@ import { AutoTopupRequest } from './globalServices/biller/entity/auto-topup-requ
 import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
 import { Campaign } from './globalServices/campaign/entities/campaign.entity';
 import { CampaignService } from './globalServices/campaign/campaign.service';
+import { AuditTrailController } from './modules/auditTrail/auditTrail.controller';
+
 import {
   BullService,
   CampaignProcessor,
@@ -165,6 +167,7 @@ import {
   SetCustomerWalletProcessor,
 } from './globalServices/task-queue/bull.service';
 import { AuditTrailService } from './globalServices/auditTrail/auditTrail.service';
+import { AuditTrailModule } from './globalServices/auditTrail/auditTrail.module';
 import { AuditTrail } from './globalServices/auditTrail/entities/auditTrail.entity';
 import { BullModule } from '@nestjs/bullmq';
 import {
@@ -174,6 +177,7 @@ import {
   SET_CUSTOMER_WALLET_PROCESSOR_QUEUE,
   SET_CUSTOMER_WALLET_QUEUE,
 } from './utils/helpers/queue-names';
+import { SettingsModuleController } from './modules/settings/controller';
 
 @Module({
   imports: [
@@ -234,6 +238,7 @@ import {
       AuditTrail,
       Campaign,
     ]),
+    AuditTrailModule,
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
     JwtModule.register(jwtConfigurations),
@@ -301,6 +306,8 @@ import {
     ReviewManagementController,
     TasksController,
     AnalyticsManagementController,
+    SettingsModuleController,
+    AuditTrailController,
   ],
   providers: [
     ElasticIndex,
