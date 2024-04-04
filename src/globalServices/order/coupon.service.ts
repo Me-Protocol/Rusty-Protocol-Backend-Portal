@@ -52,7 +52,14 @@ export class CouponService {
   }
 
   async couponByOrderCode(orderCode: string): Promise<Coupon> {
-    return await this.couponRepository.findOneBy({ orderCode });
+    return await this.couponRepository.findOne({
+      where: {
+        orderCode,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
   }
 
   async update(id: string, coupon: Coupon): Promise<any> {

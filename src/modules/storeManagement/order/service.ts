@@ -345,13 +345,8 @@ export class OrderManagementService {
         order.brandId,
       );
 
-      let coupon: {
-        price_rule_id: string;
-        discount_code_id: string;
-      };
-
       try {
-        coupon = await createCoupon({
+        const coupon = await createCoupon({
           brand,
           data: {
             code: couponCode,
@@ -361,20 +356,20 @@ export class OrderManagementService {
           productIdOnBrandSite: offer.product.productIdOnBrandSite,
           email: order.user.email,
         });
+
+        await this.couponService.create({
+          user_id: order.userId,
+          offer_id: order.offerId,
+          couponCode,
+          orderCode: order.orderCode,
+          brandDiscountId: coupon.discount_code_id,
+          brandPriceRuleId: coupon.price_rule_id,
+        });
       } catch (error) {
         throw new Error(
           error?.message ?? 'Error creating coupon code on brand website',
         );
       }
-
-      await this.couponService.create({
-        user_id: order.userId,
-        offer_id: order.offerId,
-        couponCode,
-        orderCode: order.orderCode,
-        brandDiscountId: coupon.discount_code_id,
-        brandPriceRuleId: coupon.price_rule_id,
-      });
     } catch (error) {
       console.log(error);
       logger.error(error);
@@ -833,7 +828,9 @@ export class OrderManagementService {
     await this.orderService.saveOrder(order);
 
     const coupon = await this.couponService.couponByOrderCode(order.orderCode);
-    const brand = await this.brandService.getBrandById(order.brandId);
+    const brand = await this.brandService.getBrandWithOnlineCreds(
+      order.brandId,
+    );
 
     if (!order.isRefunded) {
       const spendData = order.spendData as any;
@@ -891,6 +888,8 @@ export class OrderManagementService {
       console.log('Error sending email');
     }
 
+    console.log(coupon);
+
     if (coupon.brandDiscountId) {
       try {
         await deleteCouponCode({
@@ -899,7 +898,7 @@ export class OrderManagementService {
           priceRuleId: coupon.brandPriceRuleId,
         });
       } catch (error) {
-        console.log('Error deleting coupon');
+        console.log('Error deleting coupon', error);
       }
     }
   }

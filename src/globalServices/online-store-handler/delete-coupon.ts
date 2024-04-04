@@ -43,8 +43,16 @@ export const deleteCouponCode = async ({
 
       return await shopify
         .delete(`price_rules/${priceRuleId}/discount_codes/${couponId}.json`)
-        .then(() => {
-          console.log('Coupon code deleted successfully');
+        .then(async () => {
+          return await shopify
+            .delete(`price_rules/${priceRuleId}.json`)
+            .then(() => {
+              console.log('Coupon code deleted successfully');
+            })
+            .catch((error) => {
+              console.log('error', error.response.data);
+              throw new Error('Failed to delete coupon code.');
+            });
         })
         .catch((error) => {
           console.log('error', error.response.data);
