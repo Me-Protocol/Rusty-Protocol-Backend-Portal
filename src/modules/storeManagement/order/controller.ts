@@ -107,7 +107,7 @@ export class OrderManagementController {
   }
 
   @UseGuards(AuthGuard())
-  @Get('/shopify-token')
+  @Get('/shopify-token/retrieve')
   async getShopifyToken(
     @Req() req: any,
     @Query(ValidationPipe) query: GetShopifyTokenDto,
