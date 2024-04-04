@@ -58,6 +58,8 @@ import {
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
 import { deleteCouponCode } from '@src/globalServices/online-store-handler/delete-coupon';
+import { ShopifyHandler } from '@src/globalServices/online-store-handler/shopify';
+import { AxiosInstance } from 'axios';
 
 @Injectable()
 export class OrderManagementService {
@@ -233,6 +235,28 @@ export class OrderManagementService {
       order.isRedeemed = true;
 
       return await this.orderService.saveOrder(order);
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getShopifyToken({ brandId }: { brandId: string }) {
+    try {
+      const brand = await this.brandService.getBrandById(brandId);
+      
+    
+      const shopifyHandler = new ShopifyHandler();
+      const shopify: AxiosInstance = shopifyHandler.createInstance(brand);
+
+      
+      const {data} = await shopify.post('admin/api/2021-07/access_tokens.json', {
+        access_token: {
+          title: `token_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}`
+        }
+      });
+      return data?.access_token;
+
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
