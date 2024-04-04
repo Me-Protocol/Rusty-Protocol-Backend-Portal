@@ -8,9 +8,11 @@ import { AxiosInstance } from 'axios';
 export const deleteCouponCode = async ({
   brand,
   couponId,
+  priceRuleId,
 }: {
   brand: Brand;
   couponId: string;
+  priceRuleId: string;
 }) => {
   let woocommerceHandler: WooCommerceHandler;
   let woocommerce: WooCommerceRestApi;
@@ -24,7 +26,9 @@ export const deleteCouponCode = async ({
       woocommerce = woocommerceHandler.createInstance(brand);
 
       return await woocommerce
-        .delete(`coupons/${couponId}`)
+        .delete(`coupons/${couponId}`, {
+          force: true,
+        })
         .then(() => {
           console.log('Coupon code deleted successfully');
         })
@@ -38,7 +42,7 @@ export const deleteCouponCode = async ({
       shopify = shopifyHandler.createInstance(brand);
 
       return await shopify
-        .delete(`coupons/${couponId}.json`)
+        .delete(`price_rules/${priceRuleId}/discount_codes/${couponId}.json`)
         .then(() => {
           console.log('Coupon code deleted successfully');
         })

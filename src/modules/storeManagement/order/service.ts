@@ -57,6 +57,7 @@ import {
 } from '@src/utils/helpers/queue-names';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
+import { deleteCouponCode } from '@src/globalServices/online-store-handler/delete-coupon';
 
 @Injectable()
 export class OrderManagementService {
@@ -167,6 +168,8 @@ export class OrderManagementService {
         isUsed: false,
         couponCode,
         orderCode: '',
+        brandDiscountId: '',
+        brandPriceRuleId: '',
       });
 
       const orderRecord = new Order();
@@ -342,8 +345,13 @@ export class OrderManagementService {
         order.brandId,
       );
 
+      let coupon: {
+        price_rule_id: string;
+        discount_code_id: string;
+      };
+
       try {
-        await createCoupon({
+        coupon = await createCoupon({
           brand,
           data: {
             code: couponCode,
@@ -364,6 +372,8 @@ export class OrderManagementService {
         offer_id: order.offerId,
         couponCode,
         orderCode: order.orderCode,
+        brandDiscountId: coupon.discount_code_id,
+        brandPriceRuleId: coupon.price_rule_id,
       });
     } catch (error) {
       console.log(error);
@@ -822,6 +832,9 @@ export class OrderManagementService {
     order.failedReason = failReason;
     await this.orderService.saveOrder(order);
 
+    const coupon = await this.couponService.couponByOrderCode(order.orderCode);
+    const brand = await this.brandService.getBrandById(order.brandId);
+
     if (!order.isRefunded) {
       const spendData = order.spendData as any;
       if (spendData) {
@@ -876,6 +889,18 @@ export class OrderManagementService {
       await this.notificationService.createNotification(notification);
     } catch (error) {
       console.log('Error sending email');
+    }
+
+    if (coupon.brandDiscountId) {
+      try {
+        await deleteCouponCode({
+          brand,
+          couponId: coupon.brandDiscountId,
+          priceRuleId: coupon.brandPriceRuleId,
+        });
+      } catch (error) {
+        console.log('Error deleting coupon');
+      }
     }
   }
 }
