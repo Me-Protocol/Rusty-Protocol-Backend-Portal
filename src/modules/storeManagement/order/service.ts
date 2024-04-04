@@ -402,6 +402,12 @@ export class OrderManagementService {
         throw new Error('Order does not have a coupon.');
       }
 
+      order.spendData = spendData;
+      order.taskId = taskId;
+      order.verifier = verifier;
+
+      await this.orderService.saveOrder(order);
+
       if (
         taskId ===
         '0x0000000000000000000000000000000000000000000000000000000000000000'
@@ -426,10 +432,6 @@ export class OrderManagementService {
 
         throw new Error('Task id not found');
       }
-
-      order.spendData = spendData;
-      order.taskId = taskId;
-      order.verifier = verifier;
 
       const transaction = new Transaction();
       transaction.amount = order.points;
