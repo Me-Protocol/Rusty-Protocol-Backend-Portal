@@ -255,7 +255,7 @@ export class OrderManagementService {
           title: `token_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}`
         }
       });
-      return data?.access_token;
+      return data?.storefront_access_token?.access_token
 
     } catch (error) {
       logger.error(error);
