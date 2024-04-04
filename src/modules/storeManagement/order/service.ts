@@ -426,11 +426,11 @@ export class OrderManagementService {
           transaction,
           offer,
           customer,
-          failReason: 'Internal server error. Please try again',
+          failReason: 'Request failed. Try again.',
           status: StatusType.FAILED,
         });
 
-        throw new Error('Task id not found');
+        throw new Error('Request failed. Try again.');
       }
 
       const transaction = new Transaction();
