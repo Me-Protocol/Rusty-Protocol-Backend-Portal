@@ -5,15 +5,19 @@ import { Currency } from './entities/currency.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import axios from 'axios';
 import { Region } from './entities/region.entity';
+import { AuditTrailService } from '../auditTrail/auditTrail.service';
 
 @Injectable()
 export class CurrencyService {
   constructor(
+    private readonly auditTrailService: AuditTrailService,
     @InjectRepository(Currency)
     private readonly currencyRepo: Repository<Currency>,
 
     @InjectRepository(Region)
     private readonly regionRepo: Repository<Region>,
+
+    
   ) {}
 
   async getCurrency() {
@@ -65,11 +69,13 @@ export class CurrencyService {
   }
 
   async createRegion({
+    userId,
     name,
     code,
     currencyId,
     flag,
   }: {
+    userId: string;
     name: string;
     code: string;
     currencyId: string;
@@ -87,16 +93,29 @@ export class CurrencyService {
     region.currencyId = currencyId;
     region.flag = flag;
 
-    return await this.regionRepo.save(region);
+    const savedRegion = await this.regionRepo.save(region);
+
+    const auditTrailEntry = {
+      userId: userId,
+      auditType: 'CREATE_REGION',
+      description: `User ${userId} created a region ${name}, ${code} with currency ID ${currencyId}.`,
+      reportableId: savedRegion.id,
+    };
+
+    await this.auditTrailService.createAuditTrail(auditTrailEntry);
+
+    return savedRegion;
   }
 
   async updateRegion({
+    userId,
     name,
     code,
     currencyId,
     flag,
     id,
   }: {
+    userId: string;
     name: string;
     code: string;
     currencyId: string;
@@ -116,15 +135,31 @@ export class CurrencyService {
 
       if (!region) throw new Error('Region not found');
 
+      const originalRegion = { ...region};
+
       if (name) region.name = name;
       if (code) region.code = code;
       if (currencyId) region.currencyId = currencyId;
       if (flag) region.flag = flag;
 
-      return await this.regionRepo.save(region);
+      const updatedRegion = await this.regionRepo.save(region);
+
+      const auditTrailEntry = {
+        userId: userId,
+        auditType: 'UPDATE_REGION',
+        description: `User ${userId} updated region ${id}. Changes: ${JSON.stringify({
+          original: originalRegion,
+          updated: updatedRegion,
+        })}`,
+        reportableId: id,
+      };
+
+      await this.auditTrailService.createAuditTrail(auditTrailEntry);
+
+      return updatedRegion;
+
     } catch (error) {
       console.log(error);
-
       throw new HttpException(error.message, 400, {
         cause: new Error('updateRegion'),
       });

@@ -6,10 +6,15 @@ import { KeyManagementService } from '../key-management/key-management.service';
 import { KeyIdentifier } from '../key-management/entities/keyIdentifier.entity';
 import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { generateWalletRandom } from '@developeruche/protocol-core';
+import { UpdateSettingsDto } from '@src/modules/settings/dto/UpdateSettingsDto.dto';
+import {logger} from '@src/globalServices/logger/logger.service'
+import { AuditTrailService } from '../auditTrail/auditTrail.service';
 
 @Injectable()
 export class SettingsService {
   constructor(
+    private readonly auditTrailService: AuditTrailService,
+  
     @InjectRepository(AdminSettings)
     private readonly adminSettingsRepo: Repository<AdminSettings>,
 
@@ -138,5 +143,34 @@ export class SettingsService {
     } = settings;
 
     return rest;
+  }
+
+  async updateSettings(updateDto: UpdateSettingsDto, userId: string) {
+    const settings = await this.adminSettingsRepo.findOne({
+      where: { isDefault: true },
+    });
+
+    if (!settings) {
+      throw new Error('Settings not found');
+    }
+
+    const originalSettings = {...settings};
+
+    Object.assign(settings, updateDto);
+
+    await this.adminSettingsRepo.save(settings);
+
+    logger.log('Settings have been updated successfully');
+
+    const auditTrailEntry = {
+      userId: userId,
+      auditType: 'UPDATE_SETTINGS',
+      description: `User ${userId} updated settings from ${JSON.stringify(originalSettings)} to ${JSON.stringify(updateDto)}.`,
+      reportableId: settings.id ? settings.id.toString() : 'N/A',
+    };
+
+    await this.auditTrailService.createAuditTrail(auditTrailEntry);
+
+    return settings;
   }
 }

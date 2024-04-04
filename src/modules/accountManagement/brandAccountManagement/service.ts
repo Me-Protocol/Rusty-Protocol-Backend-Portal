@@ -706,7 +706,7 @@ export class BrandAccountManagementService {
     }
   }
 
-  async disableBrand(brandId: string) {
+  async disableBrand(brandId: string, userId: string) {
     try {
       const brand = await this.brandService.getBrandById(brandId);
 
@@ -715,8 +715,19 @@ export class BrandAccountManagementService {
       }
 
       brand.disabled = true;
+      await this.brandService.save(brand);
 
-      return await this.brandService.save(brand);
+      const createAuditTrailDto = {
+        userId: userId,
+        auditType: 'DISABLE_BRAND',
+        description: `User with ID ${userId} disabled the brand with ID ${brandId}.`,
+        reportableId: brandId,
+      };
+
+      await this.auditTrailService.createAuditTrail(createAuditTrailDto);
+
+      return brand;
+
     } catch (error) {
       console.log(error);
       logger.error(error);

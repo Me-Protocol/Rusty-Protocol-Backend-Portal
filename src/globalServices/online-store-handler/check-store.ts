@@ -33,9 +33,50 @@ export const checkBrandOnlineStore = async ({ brand }: { brand: Brand }) => {
 
       return await shopify
         .get('shop.json')
-        .then((response) => {
-          console.log('response', response.data);
-          return response.data;
+        .then(async (shopResponse) => {
+          return await axios
+            .get(
+              `${brand.shopify_online_store_url}/admin/oauth/access_scopes.json`,
+              {
+                headers: {
+                  'X-Shopify-Access-Token': brand.shopify_consumer_secret,
+                },
+              },
+            )
+            .then((response) => {
+              const scopes = response.data.access_scopes;
+
+              // Sample data
+              //             {
+              //   "access_scopes": [
+              //     {
+              //       "handle": "write_product_listings"
+              //     },
+              //     {
+              //       "handle": "read_shipping"
+              //     }
+              //   ]
+              // }
+
+              // check if write_price_rules is included in the scopes
+              const hasWritePriceRules = scopes.some(
+                (scope: any) => scope.handle === 'write_price_rules',
+              );
+              const hasReadPriceRules = scopes.some(
+                (scope: any) => scope.handle === 'read_price_rules',
+              );
+
+              if (!hasWritePriceRules || !hasReadPriceRules) {
+                throw new Error(
+                  'write_price_rules || read_price_rules scope is not enabled on the store. Please enable it to proceed.',
+                );
+              } else {
+                return shopResponse.data;
+              }
+            })
+            .catch((error) => {
+              console.error('Error fetching access scopes:', error);
+            });
         })
         .catch((error) => {
           console.log('error', error.response.data);

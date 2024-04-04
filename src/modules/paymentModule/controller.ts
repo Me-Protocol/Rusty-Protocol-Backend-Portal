@@ -32,6 +32,9 @@ import { AdminJwtStrategy } from '@src/middlewares/admin-jwt-strategy.middleware
 import { IssueMeCreditsDto } from './dto/IssueMeCreditDto.dto';
 import { CreateRegionDto } from './dto/CreateRegionDto.dto';
 import { UpdateRegionDto } from './dto/UpdateRegionDto.dto';
+import { CreateCurrencyDto } from './dto/CreateCurrencyDto.dto';
+import { Currency } from '@src/globalServices/currency/entities/currency.entity';
+import { RemoveMeCreditsDto } from './dto/RemoveMeCreditDto.dto';
 
 @ApiTags('Payment')
 @Controller('payment')
@@ -131,15 +134,64 @@ export class PaymentModuleController {
     );
   }
 
+  //To track due invoices
+  @UseGuards(AdminJwtStrategy)
+  @Get('/admin/invoice/due')
+  async getDueInvoices(
+    @Query('brandId') brandId: string,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
+    @Req() req: any,
+  ) {
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    const userId = req.user.id;
+
+    return await this.paymentService.getDueInvoices({
+      userId,
+      brandId,
+      page: pageNumber,
+      limit: limitNumber,
+    });
+  }
+
   @Get('currencies')
   async getCurrency() {
     return await this.currencyService.getCurrency();
   }
 
-  @Post('region')
-  async createRegion(@Body(ValidationPipe) body: CreateRegionDto) {
+  @UseGuards(AdminJwtStrategy)
+  @Post('create-currencies')
+  async createCurrency(
+    @Body(ValidationPipe) createCurrencyDto: CreateCurrencyDto,
+  ) {
     try {
-      return await this.currencyService.createRegion(body);
+      const currency = new Currency();
+      currency.value = createCurrencyDto.value;
+      currency.symbol = createCurrencyDto.symbol;
+      currency.name = createCurrencyDto.name;
+      currency.code = createCurrencyDto.code;
+
+      return await this.currencyService.createCurrency(currency);
+    } catch (error) {
+      throw new HttpException(error.message, 400, {
+        cause: new Error('createCurrencies'),
+      });
+    }
+  }
+
+  @UseGuards(AdminJwtStrategy)
+  @Post('region')
+  async createRegion(@Body(ValidationPipe) body: CreateRegionDto, @Req() req: any) {
+    try {
+      const userId = req.user.id;
+
+      const regionData = {
+        ...body,
+        userId,
+      };
+
+      return await this.currencyService.createRegion(regionData);
     } catch (error) {
       throw new HttpException(error.message, 400, {
         cause: new Error('createRegion'),
@@ -152,14 +204,21 @@ export class PaymentModuleController {
     return await this.currencyService.getRegions();
   }
 
+  @UseGuards(AdminJwtStrategy)
   @Put('region/:id')
   async updateRegion(
     @Param('id', ParseUUIDPipe) id: string,
     @Body(ValidationPipe) body: UpdateRegionDto,
+    @Req() req:any
   ) {
-    body.id = id;
+    //body.id = id;
+    const userId = req.user.id;
 
-    return await this.currencyService.updateRegion(body);
+    return await this.currencyService.updateRegion({
+      ...body,
+      id,
+      userId,
+    });
   }
 
   @Post('voucher')
@@ -194,7 +253,10 @@ export class PaymentModuleController {
 
   @UseGuards(AdminJwtStrategy)
   @Get('/admin/me-credit-balance/:brandId')
-  async getMeCreditsAdmin(@Param('brandId', ValidationPipe) brandId: string, @Req() req: any) {
+  async getMeCreditsAdmin(
+    @Param('brandId', ValidationPipe) brandId: string,
+    @Req() req: any,
+  ) {
     return await this.paymentService.getMeCredits(brandId, req.user.id);
   }
 
@@ -205,6 +267,21 @@ export class PaymentModuleController {
     @Body(ValidationPipe) body: IssueMeCreditsDto,
     @Req() req: any,
   ) {
-    return await this.paymentService.issueMeCredits(body.brandId, body.amount, req.user.id);
+    return await this.paymentService.issueMeCredits(
+      body.brandId,
+      body.amount,
+      req.user.id,
+    );
+  }
+
+  //Remove unused credits
+  @UseGuards(AdminJwtStrategy)
+  @Post('/admin/remove-unused-credit')
+  async RemoveMeCredits(
+    @Body(ValidationPipe) body: RemoveMeCreditsDto,
+    @Req() req: any,
+  ) {
+    const userId = req.user.id
+    return await this.paymentService.RemoveMeCredits(userId, body.brandId, body.amount);
   }
 }

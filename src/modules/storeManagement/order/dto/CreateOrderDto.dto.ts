@@ -37,3 +37,11 @@ export class CreateOrderDto {
   // })
   // params: SendTransactionData;
 }
+
+export class CreateCouponDto {
+  userId: string;
+
+  @ApiProperty()
+  @IsUUID()
+  orderId: string;
+}

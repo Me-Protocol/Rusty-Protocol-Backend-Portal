@@ -9,8 +9,6 @@ import { APP_NAME } from '@src/config/env.config';
 export const createCoupon = async ({
   data,
   brand,
-  productId,
-  email,
   productIdOnBrandSite,
 }: {
   data: {
@@ -54,6 +52,7 @@ export const createCoupon = async ({
     case OnlineStoreType.WOOCOMMERCE:
       woocommerceHandler = new WooCommerceHandler();
       woocommerce = woocommerceHandler.createInstance(brand);
+      console.log(brand.online_store_type);
 
       return await woocommerce
         .post('coupons', body)
@@ -69,6 +68,7 @@ export const createCoupon = async ({
     case OnlineStoreType.SHOPIFY:
       shopifyHandler = new ShopifyHandler();
       shopify = shopifyHandler.createInstance(brand);
+      console.log(brand.online_store_type);
 
       return await shopify
         .post('price_rules.json', {
@@ -88,26 +88,29 @@ export const createCoupon = async ({
             customer_selection: 'all',
           },
         })
-        .then((response) => {
-          const price_rule_id = response.data.price_rule.id;
+        .then(async (response) => {
+          const price_rule_id =
+            response?.data?.price_rule?.id ??
+            response?.data?.price_rules?.[0].id;
 
-          return shopify
+          if (!price_rule_id) throw new Error('Price Rule ID not found');
+
+          return await shopify
             .post(`price_rules/${price_rule_id}/discount_codes.json`, {
               discount_code: {
                 code: body.code,
               },
             })
-            .then((response) => {
-              console.log('Redeem', response.data);
-              return response.data;
+            .then((discountResponse) => {
+              return discountResponse?.data;
             })
             .catch((error) => {
-              console.log(error.response.data);
+              console.log(error.response);
               throw new Error(error);
             });
         })
         .catch((error) => {
-          console.log(error.response.data);
+          console.log(error.response);
           throw new Error(error);
         });
 

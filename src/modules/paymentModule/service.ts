@@ -74,24 +74,23 @@ export class PaymentModuleService {
     const meCreditsInDollars = wallet.meCredits * settings.meTokenValue;
 
     const auditTrailEntry = {
-      userId : userId,
+      userId: userId,
       auditType: 'RETRIEVE_ME_CREDITS',
       description: `User ${userId} retrieved ME credits for brand ${brandId}.`,
       reportableId: brandId,
-
     };
     await this.auditTrailService.createAuditTrail(auditTrailEntry);
 
-      return {
-        meCredits: wallet.meCredits,
-        meCreditsInDollars,
-      };
-    } catch (error) {
-      console.log(error, 'ERROR');
-      logger.error(error);
-      throw new HttpException(error.message, 400);
-    }
-  
+    return {
+      meCredits: wallet.meCredits,
+      meCreditsInDollars,
+    };
+  }
+  catch(error) {
+    console.log(error, 'ERROR');
+    logger.error(error);
+    throw new HttpException(error.message, 400);
+  }
 
   async getPaymentMethods(brandId: string) {
     const wallet = await this.walletService.getWalletByBrandId(brandId);
@@ -209,6 +208,45 @@ export class PaymentModuleService {
 
         return 'ok';
       }
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async getDueInvoices({
+    userId,
+    brandId,
+    page,
+    limit,
+  }: {
+    userId: string,
+    brandId?: string;
+    page: number;
+    limit: number;
+  }) {
+    try {
+      const result = await this.billerService.getBrandInvoices({
+        brandId,
+        page,
+        limit,
+      });
+
+      const auditTrailEntry = {
+        userId: userId,
+        auditType: "ACCESS_DUE_INVOICES",
+        description: `User ${userId} accessed due invoices for brand${brandId}, page ${page} with limit ${limit}.`,
+        reportableId: brandId || 'N/A',
+      };
+
+      await this.auditTrailService.createAuditTrail(auditTrailEntry);
+
+      return {
+        dueInvoices: result.invoices,
+        total: result.total,
+        nextPage: result.nextPage,
+        prevPage: result.prevPage,
+      };
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400);
@@ -564,6 +602,8 @@ export class PaymentModuleService {
 
       const brandWallet = await this.walletService.getWalletByBrandId(brandId);
 
+      const previousCredit = brandWallet.meCredits;
+
       brandWallet.meCredits = Number(brandWallet.meCredits) + Number(amount);
 
       await this.walletService.save(brandWallet);
@@ -572,13 +612,45 @@ export class PaymentModuleService {
       const auditTrailEntry = {
         userId: userId,
         auditType: 'ISSUE_ME_CREDITS',
-        description: `User ${userId} issued ${amount} ME credits to brand ${brandId} successfully.`,
-        reportableId: brandId,  
+        description: `User ${userId} issued ${amount} ME credits to brand ${brandId} successfully.  Previous credits: ${previousCredit}. New Credit: ${brandWallet.meCredits}`,
+        reportableId: brandId,
       };
       await this.auditTrailService.createAuditTrail(auditTrailEntry);
 
       return {
         message: 'Me credits issued successfully',
+      };
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async RemoveMeCredits(userId: string, brandId: string, amount: number) {
+    try {
+      const brand = await this.brandService.getBrandById(brandId);
+      if (!brand) throw new HttpException('Brand not found', 404);
+
+      const brandWallet = await this.walletService.getWalletByBrandId(brandId);
+
+      const previousCredit = brandWallet.meCredits;
+
+      brandWallet.meCredits = Number(brandWallet.meCredits) - Number(amount);
+
+      await this.walletService.save(brandWallet);
+
+      const auditTrailEntry = {
+        userId: userId,
+        auditType: 'REMOVE_ME_CREDITS',
+        description: `User ${userId} removed ${amount} ME credits from brand ${brandId} successfully. Previous credits: ${previousCredit}. New Credit: ${brandWallet.meCredits}`,
+        reportableId: brandId,
+      };
+
+      await this.auditTrailService.createAuditTrail(auditTrailEntry)
+
+      return {
+        message: 'Me Credits removed successfully',
       };
     } catch (error) {
       console.log(error);
