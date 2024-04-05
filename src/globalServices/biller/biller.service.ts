@@ -1,6 +1,6 @@
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { Bill } from './entity/bill.entity';
 import { Invoice } from './entity/invoice.entity';
 import { generateRandomCode } from '@src/utils/helpers/generateRandomCode';
@@ -14,6 +14,9 @@ import { MailService } from '../mail/mail.service';
 import { emailButton } from '@src/utils/helpers/email';
 import { CLIENT_APP_URI } from '@src/config/env.config';
 import { VoucherType } from '@src/utils/enums/VoucherType';
+import { AutoTopupRequest } from './entity/auto-topup-request.entity';
+import { BigNumber } from 'ethers';
+import { AutoTopupStatus } from '@src/utils/enums/AutoTopStatus';
 
 @Injectable()
 export class BillerService {
@@ -26,6 +29,9 @@ export class BillerService {
 
     @InjectRepository(Voucher)
     private readonly voucherRepo: Repository<Voucher>,
+
+    @InjectRepository(AutoTopupRequest)
+    private readonly autoTopupRequestRepo: Repository<AutoTopupRequest>,
 
     @Inject(forwardRef(() => BrandService))
     private readonly brandService: BrandService,
@@ -146,19 +152,20 @@ export class BillerService {
     page,
     limit,
   }: {
-    brandId: string;
+    brandId?: string;
     page: number;
     limit: number;
   }) {
     const invoiceQuery = this.invoiceRepo
       .createQueryBuilder('invoice')
       .leftJoinAndSelect('invoice.bills', 'bills')
-      .where('invoice.brandId = :brandId', {
-        brandId: brandId,
-      })
       .andWhere('invoice.isDue = :isDue', {
-        isDue: true,
-      });
+        isDue: true
+      })
+
+      if(brandId) {
+        invoiceQuery.andWhere('invoice.brandId = :brandId', { brandId });
+      }
 
     const invoices = await invoiceQuery
       .skip((page - 1) * limit)
@@ -174,7 +181,7 @@ export class BillerService {
       prevPage: page > 1 ? Number(page) - 1 : null,
     };
   }
-
+  
   async saveInvoice(invoice: Invoice) {
     return await this.invoiceRepo.save(invoice);
   }
@@ -351,5 +358,53 @@ export class BillerService {
 
   async saveVoucher(voucher: Voucher) {
     return await this.voucherRepo.save(voucher);
+  }
+
+  async createAutoTopupRequest({
+    amount,
+    brandId,
+    taskId,
+    nounce,
+  }: {
+    amount: number;
+    brandId: string;
+    taskId: string;
+    nounce: string;
+  }) {
+    const autoTopupRequest = new AutoTopupRequest();
+    autoTopupRequest.amount = amount;
+    autoTopupRequest.brandId = brandId;
+    autoTopupRequest.taskId = taskId;
+    autoTopupRequest.nounce = nounce;
+
+    return await this.autoTopupRequestRepo.save(autoTopupRequest);
+  }
+
+  async saveAutoTopupRequest(autoTopupRequest: AutoTopupRequest) {
+    return await this.autoTopupRequestRepo.save(autoTopupRequest);
+  }
+
+  async getAutoTopupRequestByTaskId(taskId: string) {
+    return await this.autoTopupRequestRepo.findOne({
+      where: {
+        taskId,
+      },
+    });
+  }
+
+  async getAutoTopupRequestByNounce(nounce: string) {
+    return await this.autoTopupRequestRepo.findOne({
+      where: {
+        nounce,
+      },
+    });
+  }
+
+  async getPendingAutoTopupRequests() {
+    return await this.autoTopupRequestRepo.find({
+      where: {
+        status: AutoTopupStatus.PENDING,
+      },
+    });
   }
 }

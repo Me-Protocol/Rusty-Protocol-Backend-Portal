@@ -6,10 +6,7 @@ import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { Reward } from './entities/reward.entity';
 import { rewardIndex } from '@src/modules/search/interface/search.interface';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
-import { KeyIdentifier } from './entities/keyIdentifier.entity';
-import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { RewardStatus } from '@src/utils/enums/ItemStatus';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
@@ -19,9 +16,6 @@ export class RewardService {
 
     @InjectRepository(Reward)
     private readonly rewardsRepo: Repository<Reward>,
-
-    @InjectRepository(KeyIdentifier)
-    private readonly keyIdentifierRepo: Repository<KeyIdentifier>,
 
     private readonly settingsService: SettingsService,
   ) {}
@@ -115,6 +109,7 @@ export class RewardService {
       where: {
         id: id,
       },
+      relations: ['brand'],
     });
   }
 
@@ -131,7 +126,8 @@ export class RewardService {
       select: {
         syncData: true,
         id: true,
-        totalDistributedSupply: true,
+        totalDistributed: true,
+        totalIssued: true,
         brandId: true,
         totalRedeemedSupply: true,
         acceptedCustomerIdentitytypes: true,
@@ -151,12 +147,20 @@ export class RewardService {
         bountyKeyIdentifierId: true,
         rewardValueInDollars: true,
         rewardValueIsManual: true,
+        campaignKeyIdentifierId: true,
+        campaignPublicKey: true,
         status: true,
         poolTotalSupply: true,
         rewardDollarPrice: true,
         rOptimal: true,
         treasurySupply: true,
         totalSupply: true,
+        totalVaultSupply: true,
+        availableVaultSupply: true,
+        availableTreasurySupply: true,
+        addedLiquidity: true,
+        meAutoTopUpFactor: true,
+        rewardAutoTopUpFactor: true,
       },
     });
   }
@@ -204,21 +208,6 @@ export class RewardService {
     });
   }
 
-  async createKeyIdentifer(
-    keyIdentifier: KeyIdentifier,
-  ): Promise<KeyIdentifier> {
-    return this.keyIdentifierRepo.save(keyIdentifier);
-  }
-
-  async getKeyIdentifier(id: string, type: KeyIdentifierType) {
-    return this.keyIdentifierRepo.findOne({
-      where: {
-        id,
-        identifierType: type,
-      },
-    });
-  }
-
   async activeDraftReward(brandId: string) {
     return this.rewardsRepo.findOne({
       where: {
@@ -255,11 +244,39 @@ export class RewardService {
     };
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
-  async syncElasticSearchIndex() {
-    const allRewards = await this.rewardsRepo.find({
-      relations: ['brand'],
+  async getRewardById(rewardId: string) {
+    return this.rewardsRepo.findOne({
+      where: {
+        id: rewardId,
+      },
     });
-    await this.elasticIndex.batchCreateIndex(allRewards, rewardIndex);
   }
+
+  async reduceVaultAvailableSupply({
+    rewardId,
+    amount,
+  }: {
+    rewardId: string;
+    amount: number;
+  }) {
+    const reward = await this.getRewardById(rewardId);
+    const diff = Number(reward.availableVaultSupply) - Number(amount);
+    // if diff is less than 0 or it is a negative number return false
+    if (diff < 0) {
+      reward.availableVaultSupply = 0;
+    } else {
+      reward.availableVaultSupply =
+        Number(reward.availableVaultSupply) - Number(amount);
+    }
+
+    return this.rewardsRepo.save(reward);
+  }
+
+  // @Cron(CronExpression.EVERY_5_MINUTES)
+  // async syncElasticSearchIndex() {
+  //   const allRewards = await this.rewardsRepo.find({
+  //     relations: ['brand'],
+  //   });
+  //   await this.elasticIndex.batchCreateIndex(allRewards, rewardIndex);
+  // }
 }

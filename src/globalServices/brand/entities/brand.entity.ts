@@ -6,6 +6,7 @@ import {
   Column,
   Entity,
   JoinColumn,
+  JoinTable,
   ManyToMany,
   ManyToOne,
   OneToMany,
@@ -18,7 +19,7 @@ import { Reward } from '@src/globalServices/reward/entities/reward.entity';
 import { Task } from '@src/globalServices/task/entities/task.entity';
 import { ApiKey } from '@src/globalServices/api_key/entities/api_key.entity';
 import { PaymentRequest } from '@src/globalServices/costManagement/entities/paymentRequest.entity';
-import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection';
+import { CostCollection } from '@src/globalServices/costManagement/entities/costCollection.entity';
 import { FiatWallet } from '@src/globalServices/fiatWallet/entities/fiatWallet.entity';
 import { BrandSubServices } from '@src/utils/enums/BrandSubServices';
 import { BrandMember } from './brand_member.entity';
@@ -28,6 +29,8 @@ import { Review } from '@src/globalServices/review/entities/review.entity';
 import { Bill } from '@src/globalServices/biller/entity/bill.entity';
 import { BrandSubscriptionPlan } from './brand_subscription_plan.entity';
 import { BrandStore } from '@src/globalServices/brand-store/brand-store.dto';
+import { Region } from '@src/globalServices/currency/entities/region.entity';
+import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 
 @Entity('brand')
 export class Brand extends BaseEntity {
@@ -184,7 +187,10 @@ export class Brand extends BaseEntity {
   @OneToMany(() => CostCollection, (costCollection) => costCollection.brand)
   costCollections: CostCollection[];
 
-  @OneToOne(() => FiatWallet, (wallet) => wallet.brand)
+  @OneToOne(() => FiatWallet, (wallet) => wallet.brand, {
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
   fiatWallet: FiatWallet;
 
   @Column({
@@ -230,6 +236,16 @@ export class Brand extends BaseEntity {
     default: false,
   })
   listOnStore: boolean;
+
+  @Column({
+    default: true,
+  })
+  isOnboarded: boolean;
+
+  @Column({
+    default: false,
+  })
+  disabled: boolean;
 
   @Column({
     nullable: true,
@@ -335,4 +351,59 @@ export class Brand extends BaseEntity {
     default: false,
   })
   isPlanExpiringEmailSent: boolean;
+
+  @ManyToMany(() => Region, (region) => region.brands)
+  @JoinTable({
+    name: 'brand_regions',
+    joinColumn: {
+      name: 'brandId',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'regionId',
+      referencedColumnName: 'id',
+    },
+  })
+  regions: Region[];
+
+  @Column({
+    nullable: true,
+    type: 'enum',
+    enum: OnlineStoreType,
+  })
+  online_store_type: OnlineStoreType;
+
+  @Column({
+    nullable: true,
+  })
+  woocommerce_online_store_url: string;
+
+  @Column({
+    nullable: true,
+  })
+  shopify_online_store_url: string;
+
+  @Column({
+    nullable: true,
+    select: false,
+  })
+  woocommerce_consumer_key: string;
+
+  @Column({
+    nullable: true,
+    select: false,
+  })
+  woocommerce_consumer_secret: string;
+
+  @Column({
+    nullable: true,
+    select: false,
+  })
+  shopify_consumer_key: string;
+
+  @Column({
+    nullable: true,
+    select: false,
+  })
+  shopify_consumer_secret: string;
 }

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { BrandStore } from '@src/globalServices/brand-store/brand-store.dto';
+import { OnlineStoreType } from '@src/utils/enums/OnlineStoreType';
 import { RevenueRange } from '@src/utils/enums/RevenueRange';
 import {
   IsArray,
@@ -195,4 +196,41 @@ export class UpdateBrandDto {
   @IsOptional()
   @IsObject()
   brandStore: BrandStore;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsArray()
+  regions: string[];
+
+  @ApiProperty()
+  @IsOptional()
+  @IsEnum(OnlineStoreType, {
+    message: 'Online store type is invalid',
+  })
+  onlineStoreType: OnlineStoreType;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  woocommerceConsumerKey: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  woocommerceConsumerSecret: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  online_store_url: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  shopify_consumer_key: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  shopify_consumer_secret: string;
 }

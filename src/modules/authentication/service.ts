@@ -32,7 +32,6 @@ import { Enable2FADto } from './dto/Enable2FADto.dto';
 import { UpdatePreferenceDto } from './dto/UpdatePreferenceDto.dto';
 import fetch from 'node-fetch';
 import { emailCode } from '@src/utils/helpers/email';
-import { CustomerAccountManagementService } from '../accountManagement/customerAccountManagement/service';
 import { CollectionService } from '@src/globalServices/collections/collections.service';
 import { ItemStatus } from '@src/utils/enums/ItemStatus';
 import { EventEmitter2 } from '@node_modules/@nestjs/event-emitter';
@@ -40,6 +39,9 @@ import {
   CREATE_SENDGRID_CONTACT,
   CreateSendgridContactEvent,
 } from '@src/globalServices/mail/create-sendgrid-contact.event';
+import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
+import { ampli } from '@src/ampli';
+import { BullService } from '@src/globalServices/task-queue/bull.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
@@ -47,6 +49,10 @@ const geoip = require('geoip-lite');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const DeviceDetector = require('node-device-detector');
 const deviceDetector = new DeviceDetector();
+
+function capitalizeFirstLetter(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
 @Injectable()
 export class AuthenticationService {
@@ -59,10 +65,35 @@ export class AuthenticationService {
     private brandService: BrandService,
     private walletService: FiatWalletService,
     private syncService: SyncRewardService,
-    private customerAccountManagementService: CustomerAccountManagementService,
     private collectionService: CollectionService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly googleService: GoogleSheetService,
+    private readonly bullService: BullService,
   ) {}
+
+  async writeDataToGoogleSheet(userId: string): Promise<any> {
+    const user = await this.userService.getUserById(userId);
+
+    if (!user) {
+      return false;
+    }
+
+    const [firstName, lastName] = user.customer.name.split(' ');
+
+    const capitalizedFirstName = capitalizeFirstLetter(firstName);
+    const capitalizedLastName = capitalizeFirstLetter(lastName);
+    await this.googleService.writeToSpreadsheet(
+      user.id,
+      user.email,
+      capitalizedFirstName,
+      capitalizedLastName,
+    );
+    return true;
+  }
+
+  async authorizeGoogle(): Promise<any> {
+    return await this.googleService.authorize();
+  }
 
   // Signs a token
   async signToken(payload: JwtPayload): Promise<string> {
@@ -267,7 +298,7 @@ export class AuthenticationService {
   async checkIfUserExists(email: string): Promise<void> {
     const user = await this.userService.getUserByEmail(email);
     if (user) {
-      throw new Error('Email already exists');
+      throw new Error('Email already exists. Please login.');
     }
   }
 
@@ -311,12 +342,24 @@ export class AuthenticationService {
     userType: UserAppType,
     newUser: User,
     name: string,
+    brandId?: string,
+    walletAddress?: string,
   ): Promise<void> {
+    await this.customerService.create({
+      name,
+      userId: newUser.id,
+      walletAddress,
+    });
+
     if (userType === UserAppType.USER) {
-      await this.customerService.create({
-        name,
-        userId: newUser.id,
-      });
+      if (brandId) {
+        await this.brandService.createBrandCustomer({
+          email: newUser.email,
+          brandId,
+          phone: newUser.phone,
+          name,
+        });
+      }
       newUser.role = Role.CUSTOMER;
     } else if (userType === UserAppType.BRAND) {
       await this.brandService.create({
@@ -347,11 +390,14 @@ export class AuthenticationService {
     userAgent,
     ip,
     walletAddress,
+    brandId,
   }: EmailSignupDto & {
     userAgent: string;
     ip: string;
+    brandId?: string;
   }): Promise<string> {
     try {
+      // Double check that wallet address is required for user
       if (userType === UserAppType.USER && !walletAddress) {
         throw new Error('Wallet address is required');
       }
@@ -365,7 +411,13 @@ export class AuthenticationService {
         confirmPassword,
         userType,
       );
-      await this.handleUserTypeRoles(userType, newUser, name);
+      await this.handleUserTypeRoles(
+        userType,
+        newUser,
+        name,
+        brandId,
+        walletAddress,
+      );
       if (userType === UserAppType.BRAND) {
         await this.sendEmailVerificationCode(newUser.email, newUser.username);
       } else {
@@ -376,10 +428,21 @@ export class AuthenticationService {
           userAgent,
           ip,
         );
-        await this.customerAccountManagementService.setWalletAddress(
+        // Queue to set wallet address
+        await this.bullService.setCustomerWalletAddressQueue({
+          userId: newUser.id,
           walletAddress,
-          newUser.id,
-        );
+        });
+
+        // Queue campaign reward
+
+        if (brandId) {
+          await this.bullService.addCampainRewardToQueue({
+            userId: newUser.id,
+            brandId,
+          });
+        }
+
         await this.collectionService.create({
           name: 'Favorites',
           description: 'Favorites collection',
@@ -405,6 +468,9 @@ export class AuthenticationService {
         ),
       );
 
+      await this.writeDataToGoogleSheet(newUser.id);
+
+      await ampli.userSignUp(newUser.id, { registration_method: 'email' });
       return token;
     } catch (error) {
       logger.error(error);
@@ -456,7 +522,7 @@ export class AuthenticationService {
   async handleBrandWalletCreation(user: User): Promise<void> {
     if (user.userType === UserAppType.BRAND) {
       const brand = await this.brandService.getBrandByUserId(user.id);
-      await this.walletService.createWallet({ brand });
+      await this.walletService.createWallet({ brand, user });
     }
   }
 
@@ -476,13 +542,14 @@ export class AuthenticationService {
   }
 
   async verifyEmail(
-    user: User,
+    userInfo: User,
     code: number,
     userAgent: string,
     clientIp: string,
     is2Fa?: boolean,
   ): Promise<string> {
     try {
+      const user = await this.userService.getUserByEmail(userInfo.email);
       this.validateUser(user, is2Fa);
       this.validateVerificationCode(user, code);
 
@@ -500,6 +567,7 @@ export class AuthenticationService {
 
       return token;
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error?.message, 400, {
         cause: new Error(error.message),
@@ -700,6 +768,12 @@ export class AuthenticationService {
           userId: user.id,
         };
       }
+      await ampli.identify(user.id, {
+        email: identifier,
+        user_name: identifier,
+        registration_method: 'email',
+      });
+      await ampli.userLogin(user.id, { login_method: 'email' });
       return await this.registerDevice(user, userAgent, clientIp);
     } catch (error) {
       console.log(error);
@@ -734,6 +808,8 @@ export class AuthenticationService {
         return 'Logged out! See you soon :)';
       }
       await this.userService.deleteDeviceById(userId, deviceId);
+      //await ampli.identify(userId);
+      await ampli.userLogout(userId);
       return 'Logged out! See you soon :)';
     } catch (error) {
       logger.error(error);
@@ -977,7 +1053,14 @@ export class AuthenticationService {
       const user = await this.userService.getUserByEmail(email);
       const userNameFromEmail = email.split('@')[0].toLowerCase();
 
+      await ampli.identify(user.id, {
+        email,
+        user_name: userNameFromEmail,
+        registration_method: 'google',
+      });
+
       if (user) {
+        ampli.userLogin(user.id, { login_method: 'google' }, {});
         return await this.handleExistingUser(
           user,
           provider,
@@ -1095,6 +1178,7 @@ export class AuthenticationService {
     username: string,
     userAgent: string,
     ip: string,
+    brandId?: string,
   ): Promise<{ token: string; provider: LoginType }> {
     const newUser = new User();
     newUser.email = email;
@@ -1126,6 +1210,15 @@ export class AuthenticationService {
     await this.handleWalletCreation(savedUser);
     await this.sendWelcomeEmailSocial(email);
     const token = await this.registerDevice(savedUser, userAgent, ip);
+
+    await ampli.identify(newUser.id, {
+      email,
+      user_name: newUser.username,
+      registration_method: 'google',
+    });
+
+    await ampli.userSignUp(newUser.id, { registration_method: 'google' });
+
     return {
       token,
       provider,

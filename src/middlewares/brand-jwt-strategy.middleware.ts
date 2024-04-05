@@ -23,6 +23,21 @@ export class BrandJwtStrategy implements CanActivate {
       const request = context.switchToHttp().getRequest();
       const headers = context.switchToHttp().getRequest().headers;
       const access_token = headers?.authorization?.split(' ')[1];
+      const queries = context.switchToHttp().getRequest().query;
+      const brandId =
+        queries?.brandId ||
+        queries?.brand_id ||
+        queries?.brandID ||
+        queries.currentBrandId;
+
+      console.log('brandId', brandId);
+
+      if (!brandId) {
+        console.log('No brand specified');
+        throw new UnauthorizedException(
+          'Unauthorized. Please no brand specified. Please login',
+        );
+      }
 
       if (!access_token)
         throw new UnauthorizedException('Unauthorized. Please login');
@@ -47,10 +62,6 @@ export class BrandJwtStrategy implements CanActivate {
         );
       }
 
-      if (user.userType !== UserAppType.BRAND) {
-        throw new UnauthorizedException('Unauthorized. Please login');
-      }
-
       if (user.banned) {
         throw new UnauthorizedException(
           'You account has been banned. Please contact support',
@@ -69,17 +80,45 @@ export class BrandJwtStrategy implements CanActivate {
         throw new UnauthorizedException('Unauthorized. Please login');
       }
 
+      const brand = await this.brandService.getBrandById(brandId);
+
+      if (!brand) {
+        throw new UnauthorizedException('Unauthorized. Brand not found');
+      }
+
+      if (brand.disabled) {
+        throw new UnauthorizedException(
+          'Unauthorized. Brand is disabled. Please contact support',
+        );
+      }
+
+      const brandMember =
+        await this.brandService.getBrandMemberByUserIdAndBrandId(
+          user.id,
+          brand.id,
+        );
+
+      if (!brandMember) {
+        throw new UnauthorizedException(
+          'Unauthorized. You are not a member of this brand.',
+        );
+      }
+
       delete deviceToken.token;
 
       request.user = {
         ...user,
-        brand: user?.brandMember?.brand ?? user.brand,
+        brand,
+        brandMember,
       };
 
       return true;
     } catch (error) {
+      console.log(error);
       logger.error(error);
-      throw new UnauthorizedException('Unauthorized. Please login');
+      throw new UnauthorizedException(
+        error.message || 'Unauthorized. Please login',
+      );
     }
   }
 }

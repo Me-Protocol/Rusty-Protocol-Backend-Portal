@@ -8,16 +8,17 @@ import { CreatePlanDto } from './dto/CreatePlanDto.dto';
 import { MailService } from '@src/globalServices/mail/mail.service';
 import { emailCode } from '@src/utils/helpers/email';
 import {
-  getCurrentPoolState,
+  DOLLAR_PRECISION,
+  JSON_RPC_URL,
+  OPEN_REWARD_DIAMOND,
   getLatestBlock,
   getPoolMeTokenDueForTopUp,
-  meTokenToDollar,
+  meTokenToDollarInPrecision,
+  brandService as protocolBrandService,
+  relay,
 } from '@developeruche/protocol-core';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
-import { BigNumber, ethers } from 'ethers';
 import { VoucherType } from '@src/utils/enums/VoucherType';
-import { calculateDiscount } from '@src/utils/helpers/calculateDiscount';
 import {
   StatusType,
   TransactionSource,
@@ -25,16 +26,33 @@ import {
 } from '@src/utils/enums/Transactions';
 import { PaymentMethodEnum } from '@src/utils/enums/PaymentMethodEnum';
 import { Transaction } from '@src/globalServices/fiatWallet/entities/transaction.entity';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { AuditTrailService } from '@src/globalServices/auditTrail/auditTrail.service';
+import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service';
+import { BillType } from '@src/utils/enums/BillType';
+import { BigNumber, ethers } from 'ethers';
+import {
+  GELATO_API_KEY,
+  IN_APP_API_KEY,
+  SERVER_URL,
+} from '@src/config/env.config';
+import { checkOrderStatusGelatoOrRuntime } from '@src/globalServices/costManagement/taskId-verifier.service';
+import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
+import { AutoTopupStatus } from '@src/utils/enums/AutoTopStatus';
+import { LockingService } from '@src/globalServices/task-queue/locking.service';
 
 @Injectable()
 export class PaymentModuleService {
   constructor(
     private readonly walletService: FiatWalletService,
+    private readonly auditTrailService: AuditTrailService,
     private readonly paymentService: PaymentService,
     private readonly billerService: BillerService,
     private readonly brandService: BrandService,
     private readonly mailService: MailService,
     private readonly settingsService: SettingsService,
+    private readonly syncRewardService: SyncRewardService,
+    private readonly lockingService: LockingService,
   ) {}
 
   async savePaymentMethodBrand(paymentMethodId: string, brandId: string) {
@@ -51,16 +69,29 @@ export class PaymentModuleService {
     }
   }
 
-  async getMeCredits(brandId: string) {
+  async getMeCredits(brandId: string, userId: string) {
     const wallet = await this.walletService.getWalletByBrandId(brandId);
     const settings = await this.settingsService.getPublicSettings();
 
     const meCreditsInDollars = wallet.meCredits * settings.meTokenValue;
 
+    const auditTrailEntry = {
+      userId: userId,
+      auditType: 'RETRIEVE_ME_CREDITS',
+      description: `User ${userId} retrieved ME credits for brand ${brandId}.`,
+      reportableId: brandId,
+    };
+    await this.auditTrailService.createAuditTrail(auditTrailEntry);
+
     return {
       meCredits: wallet.meCredits,
       meCreditsInDollars,
     };
+  }
+  catch(error) {
+    console.log(error, 'ERROR');
+    logger.error(error);
+    throw new HttpException(error.message, 400);
   }
 
   async getPaymentMethods(brandId: string) {
@@ -138,7 +169,7 @@ export class PaymentModuleService {
         }
 
         await this.paymentService.chargePaymentMethod({
-          amount: amount.amountToPay,
+          amount: amount.amountToPay * 100,
           paymentMethodId,
           wallet,
           narration: `Payment for invoice ${invoice.invoiceCode}`,
@@ -179,6 +210,45 @@ export class PaymentModuleService {
 
         return 'ok';
       }
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async getDueInvoices({
+    userId,
+    brandId,
+    page,
+    limit,
+  }: {
+    userId: string;
+    brandId?: string;
+    page: number;
+    limit: number;
+  }) {
+    try {
+      const result = await this.billerService.getBrandInvoices({
+        brandId,
+        page,
+        limit,
+      });
+
+      const auditTrailEntry = {
+        userId: userId,
+        auditType: 'ACCESS_DUE_INVOICES',
+        description: `User ${userId} accessed due invoices for brand${brandId}, page ${page} with limit ${limit}.`,
+        reportableId: brandId || 'N/A',
+      };
+
+      await this.auditTrailService.createAuditTrail(auditTrailEntry);
+
+      return {
+        dueInvoices: result.invoices,
+        total: result.total,
+        nextPage: result.nextPage,
+        prevPage: result.prevPage,
+      };
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400);
@@ -246,7 +316,10 @@ export class PaymentModuleService {
         totalPaymentAmount = newAmount;
       }
 
-      if (totalPaymentAmount.amountToPay > 0) {
+      console.log(totalPaymentAmount, 'TOTAL PAYMENT AMOUNT');
+
+      if (totalPaymentAmount.amountToPay > 0.5) {
+        console.log('PAYMENT METHOD ID', paymentMethodId);
         const paymentMethod =
           await this.paymentService.getPaymentMethodByStripePaymentMethodId(
             paymentMethodId,
@@ -257,7 +330,7 @@ export class PaymentModuleService {
         }
 
         await this.paymentService.chargePaymentMethod({
-          amount: totalPaymentAmount.amountToPay,
+          amount: totalPaymentAmount.amountToPay * 100,
           paymentMethodId,
           wallet,
           narration: `Payment for ${plan.name} subscription`,
@@ -297,6 +370,7 @@ export class PaymentModuleService {
         return 'ok';
       }
     } catch (error) {
+      console.log(error, 'ERROR');
       logger.error(error);
       throw new HttpException(error.message, 400, {});
     }
@@ -368,6 +442,13 @@ export class PaymentModuleService {
 
   // @Cron(CronExpression.EVERY_30_SECONDS)
   async checkBrandForTopup() {
+    const jobName = 'checkBrandForTopup';
+
+    if (!this.lockingService.lock(jobName)) {
+      console.log('Job is already running. Skipping...');
+      return;
+    }
+
     try {
       const lastBlock = await this.brandService.getLastTopupEventBlock();
       const fromBlock = lastBlock ? lastBlock.lastBlock : 45495364;
@@ -398,41 +479,203 @@ export class PaymentModuleService {
             return;
           }
 
-          const amount = item.meNotifyLimit.mul(settings?.meAutoTopUpFactor);
-          const amountInDollars = await meTokenToDollar(amount);
+          const nounce = item.currentDepositNonce;
 
-          console.log('Amount in dollars', amountInDollars.toString());
+          const checkNounce =
+            await this.billerService.getAutoTopupRequestByNounce(nounce);
 
-          // await this.billerService.createBill({
-          //   amount: amount,
-          //   brandId: brand.id,
-          //   type:"auto-topup"
+          if (!checkNounce || checkNounce.status === AutoTopupStatus.FAILED) {
+            const amount = item.meNotifyLimit.mul(settings?.meAutoTopUpFactor);
+            console.log(amount.toString(), 'INITIAL AMOUNT');
+            const valueToDollar = await meTokenToDollarInPrecision(
+              BigNumber.from(
+                Math.ceil(Number(ethers.utils.formatEther(amount))),
+              ),
+            );
+            const amountInDollar = Number(valueToDollar.toString());
 
-          // })
+            console.log(amount, 'amount');
+            console.log(valueToDollar.toString(), 'valueToDollar');
+            console.log(amountInDollar, 'amountInDollar');
+
+            const rsvPermit =
+              await this.syncRewardService.getTreasuryPermitAsync({
+                brandId: brand.id,
+                value: amount.toString(),
+                spender: OPEN_REWARD_DIAMOND,
+                createBill: false,
+              });
+
+            if (rsvPermit) {
+              const autoTopup =
+                await protocolBrandService.addLiquidityForOpenRewardsWithTreasuryAndMeDispenser_autoTopup(
+                  item.meTokenAddress,
+                  BigNumber.from(0),
+                  amount,
+                  rsvPermit.v,
+                  rsvPermit.r,
+                  rsvPermit.s,
+                );
+
+              const { meDispenser } = await this.settingsService.settingsInit();
+
+              const provider = new ethers.providers.JsonRpcProvider(
+                JSON_RPC_URL,
+              );
+              const wallet = new ethers.Wallet(meDispenser, provider);
+
+              const input = {
+                data: autoTopup?.data,
+                from: wallet.address,
+                to: OPEN_REWARD_DIAMOND,
+              };
+
+              try {
+                const relayResponse = await relay(
+                  input,
+                  wallet,
+                  IN_APP_API_KEY,
+                  SERVER_URL,
+                  GELATO_API_KEY,
+                  brand.id,
+                );
+                console.log(relayResponse, 'TASK ID');
+              } catch (error) {
+                console.log('Error', error);
+              }
+
+              // if (relayResponse.taskId) {
+              //   if (checkNounce) {
+              //     checkNounce.taskId = taskId.taskId;
+              //     checkNounce.status = AutoTopupStatus.PENDING;
+              //     checkNounce.retry = 0;
+              //     await this.billerService.saveAutoTopupRequest(checkNounce);
+              //   } else {
+              //     await this.billerService.createAutoTopupRequest({
+              //       amount: amountInDollar,
+              //       brandId: brand.id,
+              //       nounce,
+              //       taskId: taskId.taskId,
+              //     });
+              //   }
+              // }
+            }
+          }
         }),
       );
     } catch (error) {
       logger.error(error);
       console.log('Error', error);
+    } finally {
+      this.lockingService.unlock(jobName);
     }
   }
 
   // @Cron(CronExpression.EVERY_30_SECONDS)
-  // async handleAutoTop() {}
+  async handleCompleteAutoTop() {
+    const jobName = 'handleCompleteAutoTop';
 
-  async issueMeCredits(brandId: string, amount: number) {
+    if (!this.lockingService.lock(jobName)) {
+      console.log('Job is already running. Skipping...');
+      return;
+    }
+
+    try {
+      const requests = await this.billerService.getPendingAutoTopupRequests();
+
+      for (const request of requests) {
+        const { taskId, brandId, amount } = request;
+
+        const status = await checkOrderStatusGelatoOrRuntime(
+          taskId,
+          OrderVerifier.GELATO,
+        );
+
+        console.log(status);
+
+        if (status === 'success') {
+          await this.billerService.createBill({
+            amount,
+            brandId,
+            type: BillType.AUTO_TOPUP,
+          });
+        } else if (status === 'failed') {
+          request.status = AutoTopupStatus.FAILED;
+          await this.billerService.saveAutoTopupRequest(request);
+        } else {
+          if (request.retry > 30) {
+            request.status = AutoTopupStatus.FAILED;
+            await this.billerService.saveAutoTopupRequest(request);
+          } else {
+            request.retry += 1;
+            await this.billerService.saveAutoTopupRequest(request);
+          }
+        }
+      }
+    } catch (error) {
+      logger.log(error);
+      console.log('Error', error);
+    } finally {
+      this.lockingService.unlock(jobName);
+    }
+  }
+
+  async issueMeCredits(brandId: string, amount: number, userId: string) {
     try {
       const brand = await this.brandService.getBrandById(brandId);
       if (!brand) throw new HttpException('Brand not found', 404);
 
       const brandWallet = await this.walletService.getWalletByBrandId(brandId);
 
-      brandWallet.meCredits = brandWallet.meCredits + amount;
+      const previousCredit = brandWallet.meCredits;
+
+      brandWallet.meCredits = Number(brandWallet.meCredits) + Number(amount);
 
       await this.walletService.save(brandWallet);
 
+      //Audit Trail Entry
+      const auditTrailEntry = {
+        userId: userId,
+        auditType: 'ISSUE_ME_CREDITS',
+        description: `User ${userId} issued ${amount} ME credits to brand ${brandId} successfully.  Previous credits: ${previousCredit}. New Credit: ${brandWallet.meCredits}`,
+        reportableId: brandId,
+      };
+      await this.auditTrailService.createAuditTrail(auditTrailEntry);
+
       return {
         message: 'Me credits issued successfully',
+      };
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async RemoveMeCredits(userId: string, brandId: string, amount: number) {
+    try {
+      const brand = await this.brandService.getBrandById(brandId);
+      if (!brand) throw new HttpException('Brand not found', 404);
+
+      const brandWallet = await this.walletService.getWalletByBrandId(brandId);
+
+      const previousCredit = brandWallet.meCredits;
+
+      brandWallet.meCredits = Number(brandWallet.meCredits) - Number(amount);
+
+      await this.walletService.save(brandWallet);
+
+      const auditTrailEntry = {
+        userId: userId,
+        auditType: 'REMOVE_ME_CREDITS',
+        description: `User ${userId} removed ${amount} ME credits from brand ${brandId} successfully. Previous credits: ${previousCredit}. New Credit: ${brandWallet.meCredits}`,
+        reportableId: brandId,
+      };
+
+      await this.auditTrailService.createAuditTrail(auditTrailEntry);
+
+      return {
+        message: 'Me Credits removed successfully',
       };
     } catch (error) {
       console.log(error);

@@ -9,6 +9,7 @@ import {
   Param,
   Get,
   Query,
+  Delete,
 } from '@nestjs/common';
 import { ResponseInterceptor } from '@src/interceptors/response.interceptor';
 import { AuthGuard } from '@nestjs/passport';
@@ -18,6 +19,7 @@ import { UpdateCategoryDto } from './dto/UpdateCategoryDto';
 import { FilterCategoryDto } from './dto/FilterCategoryDto';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
+import { AdminJwtStrategy } from '@src/middlewares/admin-jwt-strategy.middleware';
 
 @ApiTags('Category')
 @Controller('category')
@@ -28,6 +30,7 @@ export class CategoryManagementController {
   ) {}
 
   // @UseGuards(AuthGuard())
+  @UseGuards(AdminJwtStrategy)
   @Post()
   async createCategory(
     @Body(ValidationPipe) createCategoryDto: CreateCategoryDto,
@@ -38,6 +41,7 @@ export class CategoryManagementController {
   }
 
   // @UseGuards(AuthGuard())
+  @UseGuards(AdminJwtStrategy)
   @Put(':categoryId')
   async updateCategory(
     @Body(ValidationPipe) updateCategoryDto: UpdateCategoryDto,
@@ -52,5 +56,12 @@ export class CategoryManagementController {
   @Get('')
   async getAllCategories(@Query(ValidationPipe) query: FilterCategoryDto) {
     return await this.categoryManagementService.findAllCategory(query);
+  }
+
+  //@UseGuards(AuthGuard())
+  @UseGuards(AdminJwtStrategy)
+  @Delete(':categoryId')
+  async deleteCategory(@Param('categoryId') categoryId: string) {
+    return await this.categoryManagementService.deleteCategory(categoryId);
   }
 }

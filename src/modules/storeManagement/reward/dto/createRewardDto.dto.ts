@@ -6,10 +6,12 @@ import {
   IsBoolean,
   IsEnum,
   IsNumberString,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
 } from 'class-validator';
+import { SendTransactionData } from './distributeBatch.dto';
 
 export class CreateRewardDto {
   brandId: string;
@@ -79,16 +81,54 @@ export class CreateRewardDto {
   @IsOptional()
   @IsString()
   treasurySupply: string;
-}
 
-export class UpdateRewardCreationDto {
   @ApiProperty()
+  @IsOptional()
   @IsString()
   contractAddress: string;
 
   @ApiProperty()
+  @IsOptional()
+  @IsBoolean()
+  addedLiquidity: boolean;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumberString()
+  totalVaultSupply: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumberString()
+  availableVaultSupply: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsNumberString()
+  availableTreasurySupply: number;
+}
+
+export class UpdateRewardCreationDto {
+  @ApiProperty()
   @IsUUID()
   rewardId: string;
+
+  @ApiProperty({
+    type: 'object',
+    example: {
+      from: '0x000000',
+      nonce: 0,
+      data: '0x000000',
+      r: '0x000000',
+      s: '0x000000',
+      v: '0x000000',
+      hash: '0x000000',
+    },
+  })
+  @IsObject({
+    each: true,
+  })
+  rsvParams: SendTransactionData;
 
   brandId: string;
 }

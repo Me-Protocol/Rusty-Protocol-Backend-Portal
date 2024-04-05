@@ -59,10 +59,6 @@ export class CreateOfferDto {
   endDate: Date;
 
   @ApiProperty()
-  @IsString()
-  idOnBrandsite: string;
-
-  @ApiProperty()
   @IsOptional()
   @IsUUID()
   rewardId: string;

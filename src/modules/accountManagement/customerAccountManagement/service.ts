@@ -7,6 +7,8 @@ import { SyncRewardService } from '@src/globalServices/reward/sync/sync.service'
 import { UserService } from '@src/globalServices/user/user.service';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { User } from '@src/globalServices/user/entities/user.entity';
+import { CampaignService } from '@src/globalServices/campaign/campaign.service';
+import { BrandService } from '@src/globalServices/brand/brand.service';
 
 @Injectable()
 export class CustomerAccountManagementService {
@@ -15,6 +17,8 @@ export class CustomerAccountManagementService {
     private readonly rewardService: RewardService,
     private readonly syncService: SyncRewardService,
     private readonly userService: UserService,
+    private readonly campaignService: CampaignService,
+    private readonly brandService: BrandService,
   ) {}
 
   async updateCustomer(body: UpdateCustomerDto, userId: string) {
@@ -59,11 +63,26 @@ export class CustomerAccountManagementService {
     }
   }
 
-  async setWalletAddress(walletAddress: string, userId: string) {
+  async setWalletAddress(
+    walletAddress: string,
+    walletVersion: number,
+    userId: string,
+  ) {
     try {
+      if (!walletAddress) {
+        return 'Wallet address is required';
+      }
+
       // 1. We retrieve the customer based on the userId and the user based on the userId.
       const customer = await this.customerService.getByUserId(userId);
       const user = await this.userService.getUserById(userId);
+
+      // 4. We check if the customer exists.
+      if (!customer) {
+        throw new HttpException('Customer not found', 404, {
+          cause: new Error('Customer not found'),
+        });
+      }
 
       // 2. We get all the rewards registered with the user's email that do not have a userId field. This is because the rewards were registered before the user account was created.
       const rewardRegistry =
@@ -79,39 +98,31 @@ export class CustomerAccountManagementService {
         }
       }
 
-      // 4. We check if the customer exists.
-      if (!customer) {
-        throw new HttpException('Customer not found', 404, {
-          cause: new Error('Customer not found'),
-        });
-      }
-
-      // 5. We check if the walletAddress is already set.
-      if (customer.walletAddress) {
-        throw new HttpException('Wallet address already set', 400, {
-          cause: new Error('Wallet address already set'),
-        });
-      }
-
       // 6. We assign the walletAddress to the customer.
-      customer.walletAddress = walletAddress;
+      customer.walletAddress = walletAddress
+        ? walletAddress
+        : customer.walletAddress;
+      customer.walletVersion = walletVersion;
       await this.customerService.save(customer);
 
       // 8. We check if the user has undistributed points.
       const undistributedRewards =
         await this.syncService.getUndistributedReward(userId);
 
-      console.log('undistributedRewards', undistributedRewards);
-
       if (undistributedRewards.length > 0) {
         // 9. We iterate through the undistributed points and distribute them to the new walletAddress.
         for (const point of undistributedRewards) {
-          await this.syncService.distributeRewardWithPrivateKey({
-            rewardId: point.rewardId,
-            walletAddress: walletAddress,
-            amount: point.undistributedBalance,
-            email: user.email,
-          });
+          const distribute =
+            await this.syncService.distributeRewardWithPrivateKey({
+              rewardId: point.rewardId,
+              walletAddress: walletAddress,
+              amount: point.undistributedBalance,
+              email: user.email,
+            });
+
+          if (distribute.error) {
+            throw new Error('Distribution failed');
+          }
         }
       }
 
@@ -143,6 +154,86 @@ export class CustomerAccountManagementService {
       return true;
     } else {
       return false;
+    }
+  }
+
+  async rewardForCampaign({
+    userId,
+    brandId,
+  }: {
+    userId: string;
+    brandId: string;
+  }) {
+    try {
+      const campaign = await this.campaignService.getBrandSignUpCampaign(
+        brandId,
+      );
+      console.log('There is campaign', campaign);
+
+      if (campaign) {
+        if (
+          Number(campaign.availableUsers) <= 0 ||
+          Number(campaign.availableRewards <= 0)
+        ) {
+          return;
+        }
+
+        const user = await this.userService.getUserById(userId);
+        const reward = await this.rewardService.getRewardById(
+          campaign.rewardId,
+        );
+        campaign.availableRewards =
+          campaign.availableRewards - campaign.rewardPerUser;
+        campaign.availableUsers = Number(campaign.availableUsers) - 1;
+
+        const distribute =
+          await this.syncService.distributeRewardWithPrivateKey({
+            rewardId: campaign.rewardId,
+            walletAddress: user.customer.walletAddress,
+            amount: campaign.rewardPerUser,
+            email: user.email,
+            keySource: 'campaign',
+          });
+
+        if (distribute.error) {
+          throw new Error('Distribution failed');
+        }
+
+        const brandCustomer =
+          await this.brandService.getBrandCustomerByIdentifier({
+            identifier: user.email,
+            brandId: reward.brandId,
+            identifierType: SyncIdentifierType.EMAIL,
+          });
+
+        brandCustomer.totalDistributed =
+          Number(brandCustomer.totalDistributed) +
+          Number(campaign.rewardPerUser);
+        await this.brandService.saveBrandCustomer(brandCustomer);
+
+        const registry = await this.syncService.getRegistryRecordByIdentifer(
+          user.email,
+          reward.id,
+          SyncIdentifierType.EMAIL,
+        );
+
+        await this.syncService.disbutributeRewardToExistingUsers({
+          registryId: registry.id,
+          amount: campaign.rewardPerUser,
+          description: `Campaign reward distributed to ${user.customer.walletAddress}`,
+        });
+
+        await this.rewardService.reduceVaultAvailableSupply({
+          rewardId: reward.id,
+          amount: campaign.rewardPerUser,
+        });
+
+        await this.campaignService.save(campaign);
+      }
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
     }
   }
 }

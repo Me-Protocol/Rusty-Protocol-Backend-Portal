@@ -71,6 +71,11 @@ export class Customer extends BaseEntity {
   @Column({ nullable: true })
   walletAddress: string;
 
+  @Column({
+    default: 0,
+  })
+  walletVersion: number;
+
   @Column({ default: 0, nullable: true })
   totalRedeemed: number;
 

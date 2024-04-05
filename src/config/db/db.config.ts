@@ -8,6 +8,8 @@ import {
   POSTGRES_USER,
   POSTGRES_PASSWORD,
   POSTGRES_DATABASE,
+  RUN_DEFAULT_MIGRATION,
+  RUN_DB_SYNC,
 } from '../env.config';
 
 /**
@@ -31,9 +33,9 @@ import {
         entities: ['dist/**/*.entity{.ts,.js}'],
         migrations: [join(__dirname, '../dist/migrations/**.js')],
         subscribers: [join(__dirname, '../dist/subscribers/**.js')],
-        migrationsRun: true,
-        synchronize: true,
-        autoLoadEntities: true,
+        migrationsRun: RUN_DEFAULT_MIGRATION,
+        synchronize: RUN_DB_SYNC,
+        // autoLoadEntities: true,
         ssl: {
           rejectUnauthorized: false,
         },

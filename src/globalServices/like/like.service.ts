@@ -156,7 +156,7 @@ export class LikeService {
         deletedAt: null,
       },
       relations: ['offer', 'offer.brand', 'offer.reward', 'offer.offerImages'],
-      take: 4,
+      // take: 4,
     });
   }
 

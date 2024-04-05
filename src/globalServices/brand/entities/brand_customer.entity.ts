@@ -2,11 +2,14 @@
 
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { BaseEntity } from '@src/common/entities/base.entity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { Brand } from './brand.entity';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 
 @Entity('brand_customer')
+// @Index(['name'])
+// @Index(['email'])
+// @Index(['phone'])
 export class BrandCustomer extends BaseEntity {
   @Column()
   brandId: string;
@@ -41,6 +44,12 @@ export class BrandCustomer extends BaseEntity {
     default: 0,
   })
   totalIssued: number;
+
+  @Column({
+    type: 'decimal',
+    default: 0,
+  })
+  totalDistributed: number;
 
   @Column({
     nullable: true,

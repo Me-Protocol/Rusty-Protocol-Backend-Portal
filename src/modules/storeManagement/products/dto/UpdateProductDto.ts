@@ -95,4 +95,19 @@ export class UpdateProductDto {
   @IsOptional()
   @IsString()
   coverImage: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  productIdOnBrandSite: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsArray()
+  regions: string[];
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  currencyCode: string;
 }

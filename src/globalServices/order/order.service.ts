@@ -48,9 +48,10 @@ export class OrderService {
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.coupon', 'coupon')
       .leftJoinAndSelect('order.offer', 'offer')
+      .leftJoinAndSelect('order.brand', 'brand')
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.reward', 'reward')
-      .leftJoinAndSelect('reward.brand', 'brand')
+      .leftJoinAndSelect('reward.brand', 'reward_brand')
       .leftJoinAndSelect('order.user', 'user')
       .leftJoinAndSelect('user.customer', 'customer')
       .orderBy('order.createdAt', 'DESC')
@@ -60,6 +61,7 @@ export class OrderService {
         'offer',
         'offerImages',
         'reward',
+        'reward_brand',
         'brand',
         'customer',
       ]);
@@ -68,6 +70,7 @@ export class OrderService {
       orderQuery
         .leftJoinAndSelect('offer.product', 'product')
         .leftJoinAndSelect('product.productImages', 'productImages')
+        .leftJoinAndSelect('product.currency', 'currency')
         .leftJoinAndSelect('product.variants', 'variants')
         .leftJoinAndSelect('product.collections', 'collections')
         .andWhere('order.brandId = :brandId', {
@@ -159,7 +162,7 @@ export class OrderService {
       });
 
       totalRedeemedAmount = redeemedAmount.reduce((acc, curr) => {
-        return acc + curr.points;
+        return acc + Number(curr.points);
       }, 0);
 
       orders.forEach((follower) => {
@@ -188,6 +191,7 @@ export class OrderService {
       where: { id: id, userId: userId },
       relations: [
         'coupon',
+        'brand',
         'offer',
         'offer.reward',
         'offer.offerImages',
@@ -205,6 +209,9 @@ export class OrderService {
         'offer',
         'offer.offerImages',
         'offer.brand',
+        'offer.product',
+        'user',
+        'user.customer',
       ],
     });
   }
@@ -213,9 +220,9 @@ export class OrderService {
     return await this.orderRepo.find({
       where: {
         status: StatusType.PROCESSING,
-        // taskId: Not(IsNull()),
+        taskId: Not(IsNull()),
       },
-      relations: ['coupon', 'user'],
+      relations: ['coupon', 'user', 'brand'],
     });
   }
 
@@ -257,6 +264,59 @@ export class OrderService {
         userId: userId,
       },
       relations: ['coupon'],
+    });
+  }
+
+  async getSuccessfulOrdersByOfferId(offerId: string) {
+    return await this.orderRepo.find({
+      where: {
+        offerId: offerId,
+        status: StatusType.SUCCEDDED,
+      },
+      relations: ['coupon', 'offer', 'reward', 'offer.product'],
+    });
+  }
+
+  async getSuccessfulOrdersByUserId(userId: string) {
+    return await this.orderRepo.find({
+      where: { userId: userId },
+      relations: ['coupon', 'offer', 'reward', 'offer.product'],
+    });
+  }
+
+  async getCustomerExternalRedemptions({
+    userId,
+    rewardId,
+  }: {
+    userId: string;
+    rewardId: string;
+  }) {
+    return await this.orderRepo.find({
+      where: {
+        redeemRewardId: rewardId,
+        offer: {
+          rewardId: Not(rewardId),
+        },
+        userId,
+      },
+    });
+  }
+
+  async getCustomerInternalRedemptions({
+    userId,
+    rewardId,
+  }: {
+    userId: string;
+    rewardId: string;
+  }) {
+    return await this.orderRepo.find({
+      where: {
+        redeemRewardId: rewardId,
+        offer: {
+          rewardId: rewardId,
+        },
+        userId,
+      },
     });
   }
 }

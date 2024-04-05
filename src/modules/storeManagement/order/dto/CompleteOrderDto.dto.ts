@@ -3,6 +3,7 @@ import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
 import { SpendData } from '@src/utils/types/spendData';
 import {
   IsEnum,
+  IsNotEmpty,
   IsObject,
   IsOptional,
   IsString,
@@ -15,6 +16,7 @@ export class CompleteOrderDto {
   orderId: string;
 
   @ApiProperty()
+  @IsNotEmpty()
   @IsString()
   taskId: string;
 

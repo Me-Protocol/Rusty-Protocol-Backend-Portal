@@ -86,7 +86,7 @@ import { CouponService } from './globalServices/order/coupon.service';
 import { OrderManagementController } from './modules/storeManagement/order/controller';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CostBatch } from './globalServices/costManagement/entities/costBatch.entity';
-import { CostCollection } from './globalServices/costManagement/entities/costCollection';
+import { CostCollection } from './globalServices/costManagement/entities/costCollection.entity';
 import { PaymentRequest } from './globalServices/costManagement/entities/paymentRequest.entity';
 import { CostManagementController } from './modules/costModule/controller';
 import { CostModuleService } from './globalServices/costManagement/costModule.service';
@@ -96,14 +96,14 @@ import { Transaction } from './globalServices/fiatWallet/entities/transaction.en
 import { PaymentService } from './globalServices/fiatWallet/payment.service';
 import { FiatWalletService } from './globalServices/fiatWallet/fiatWallet.service';
 import { PaymentModuleService } from './modules/paymentModule/service';
-import { PaymentMethod } from './globalServices/fiatWallet/entities/paymentMethod';
+import { PaymentMethod } from './globalServices/fiatWallet/entities/paymentMethod.entity';
 import { PaymentModuleController } from './modules/paymentModule/controller';
 import { InAppApiKeyJwtStrategy } from './middlewares/inapp-api-jwt-strategy.middleware';
 import { SettingsService } from './globalServices/settings/settings.service';
 import { BrandSubscriptionService } from './globalServices/brand/brandSeviceSubscription.service';
 import { BrandMember } from './globalServices/brand/entities/brand_member.entity';
 import { KeyManagementService } from './globalServices/key-management/key-management.service';
-import { KeyIdentifier } from './globalServices/reward/entities/keyIdentifier.entity';
+import { KeyIdentifier } from './globalServices/key-management/entities/keyIdentifier.entity';
 import { BrandCustomer } from './globalServices/brand/entities/brand_customer.entity';
 import { Notification } from './globalServices/notification/entities/notification.entity';
 import { NotificationController } from './modules/notification/controller';
@@ -130,7 +130,6 @@ import { JobResponse } from './globalServices/task/entities/jobResponse.entity';
 import { HttpModule } from '@nestjs/axios';
 import { InAppTaskVerifier } from './globalServices/task/common/verifier/inapp.service';
 import { TwitterTaskVerifier } from './globalServices/task/common/verifier/outapp/twitter.verifier';
-import { BullModule } from '@nestjs/bull';
 import { SocialAuthenticationService } from './modules/authentication/socialAuth';
 import { BountyService } from './globalServices/oracles/bounty/bounty.service';
 import { Block } from './globalServices/oracles/bounty/entities/block.entity';
@@ -144,7 +143,7 @@ import { AnalyticsManagementService } from './modules/storeManagement/analytics/
 import { AnalyticsManagementController } from './modules/storeManagement/analytics/controller';
 import { RewarderService } from './globalServices/task/common/rewarder/rewarder.service';
 import { AnalyticsRecorderService } from './globalServices/analytics/analytic_recorder.service';
-import { RewardCirculation } from './globalServices/analytics/entities/reward_circulation';
+import { RewardCirculation } from './globalServices/analytics/entities/reward_circulation.entity';
 import { BrandSubscriptionPlan } from './globalServices/brand/entities/brand_subscription_plan.entity';
 import { NotificationHandler } from '@src/globalServices/notification/notification.handler';
 import { CurrencyService } from './globalServices/currency/currency.service';
@@ -154,6 +153,32 @@ import { CreateSendgridContactHandler } from '@src/globalServices/mail/create-se
 import { TopupEventBlock } from './globalServices/brand/entities/topup_event_block.entity';
 import { VariantOption } from '@src/globalServices/product/entities/variantvalue.entity';
 import { BrandUploadGateway } from './modules/accountManagement/brandAccountManagement/socket/brand-upload.gateway';
+import { Region } from './globalServices/currency/entities/region.entity';
+import { AutoTopupRequest } from './globalServices/biller/entity/auto-topup-request.entity';
+import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
+import { Campaign } from './globalServices/campaign/entities/campaign.entity';
+import { CampaignService } from './globalServices/campaign/campaign.service';
+import { AuditTrailController } from './modules/auditTrail/auditTrail.controller';
+
+import {
+  BullService,
+  CampaignProcessor,
+  OrderProcessor,
+  SetCustomerWalletProcessor,
+} from './globalServices/task-queue/bull.service';
+import { AuditTrailService } from './globalServices/auditTrail/auditTrail.service';
+import { AuditTrailModule } from './globalServices/auditTrail/auditTrail.module';
+import { AuditTrail } from './globalServices/auditTrail/entities/auditTrail.entity';
+import { BullModule } from '@nestjs/bullmq';
+import {
+  CAMPAIGN_REWARD_PROCESSOR_QUEUE,
+  CAMPAIGN_REWARD_QUEUE,
+  ORDER_TASK_QUEUE,
+  SET_CUSTOMER_WALLET_PROCESSOR_QUEUE,
+  SET_CUSTOMER_WALLET_QUEUE,
+} from './utils/helpers/queue-names';
+import { SettingsModuleController } from './modules/settings/controller';
+import { LockingService } from './globalServices/task-queue/locking.service';
 
 @Module({
   imports: [
@@ -209,7 +234,12 @@ import { BrandUploadGateway } from './modules/accountManagement/brandAccountMana
       Voucher,
       TopupEventBlock,
       VariantOption,
+      Region,
+      AutoTopupRequest,
+      AuditTrail,
+      Campaign,
     ]),
+    AuditTrailModule,
     SettingsModule,
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
     JwtModule.register(jwtConfigurations),
@@ -223,26 +253,36 @@ import { BrandUploadGateway } from './modules/accountManagement/brandAccountMana
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     ClientModuleConfig, // microservice
+    HttpModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        redis: {
+        connection: {
           host: configService.get('REDIS_HOSTNAME'),
           port: configService.get('REDIS_PORT'),
+          password: configService.get('REDIS_PASSWORD'),
         },
       }),
       inject: [ConfigService],
     }),
-
     BullModule.registerQueueAsync({
       name: 'task-queue',
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        name: configService.get('TASK_QUEUE'),
-      }),
-      inject: [ConfigService],
     }),
-    HttpModule,
+    BullModule.registerQueueAsync({
+      name: ORDER_TASK_QUEUE,
+    }),
+    BullModule.registerQueueAsync({
+      name: SET_CUSTOMER_WALLET_QUEUE,
+    }),
+    BullModule.registerQueueAsync({
+      name: CAMPAIGN_REWARD_QUEUE,
+    }),
+    BullModule.registerQueueAsync({
+      name: SET_CUSTOMER_WALLET_PROCESSOR_QUEUE,
+    }),
+    BullModule.registerQueueAsync({
+      name: CAMPAIGN_REWARD_PROCESSOR_QUEUE,
+    }),
   ],
   controllers: [
     AppController,
@@ -267,6 +307,8 @@ import { BrandUploadGateway } from './modules/accountManagement/brandAccountMana
     ReviewManagementController,
     TasksController,
     AnalyticsManagementController,
+    SettingsModuleController,
+    AuditTrailController,
   ],
   providers: [
     ElasticIndex,
@@ -297,6 +339,7 @@ import { BrandUploadGateway } from './modules/accountManagement/brandAccountMana
     FollowManagementService,
     CollectionService,
     FollowService,
+    GoogleSheetService,
     LikeService,
     LikeManagementService,
     OfferService,
@@ -340,6 +383,13 @@ import { BrandUploadGateway } from './modules/accountManagement/brandAccountMana
     CreateSendgridContactHandler,
     CurrencyService,
     BrandUploadGateway,
+    CampaignService,
+    BullService,
+    OrderProcessor,
+    AuditTrailService,
+    SetCustomerWalletProcessor,
+    CampaignProcessor,
+    LockingService,
   ],
   exports: [JwtStrategy, PassportModule, AuthenticationModule],
 })

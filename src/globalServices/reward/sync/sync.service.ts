@@ -17,7 +17,10 @@ import { KeyIdentifierType } from '@src/utils/enums/KeyIdentifierType';
 import { FiatWalletService } from '@src/globalServices/fiatWallet/fiatWallet.service';
 import { SettingsService } from '@src/globalServices/settings/settings.service';
 import {
+  DOLLAR_PRECISION,
+  JSON_RPC_URL,
   getTreasuryPermitSignature,
+  meTokenToDollarInPrecision,
   treasuryContract,
 } from '@developeruche/protocol-core';
 import { GetTreasuryPermitDto } from '@src/modules/storeManagement/reward/dto/PushTransactionDto.dto';
@@ -32,6 +35,9 @@ import {
 import { RUNTIME_URL } from '@src/config/env.config';
 import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { User } from '@src/globalServices/user/entities/user.entity';
+import { BillerService } from '@src/globalServices/biller/biller.service';
+import { BillType } from '@src/utils/enums/BillType';
+import { getBalance } from '../get-balance';
 
 @Injectable()
 export class SyncRewardService {
@@ -51,6 +57,7 @@ export class SyncRewardService {
     private readonly fiatWalletService: FiatWalletService,
     private readonly settingsService: SettingsService,
     private readonly brandService: BrandService,
+    private readonly billerService: BillerService,
   ) {}
 
   async createBatch(batch: SyncBatch) {
@@ -560,7 +567,7 @@ export class SyncRewardService {
     registry.customerIdentiyOnBrandSite = identifier; // TODO Using email for now
     registry.customerIdentityType = identifierType;
     registry.balance = 0;
-    registry.userId = user.id;
+    registry.userId = user?.id;
 
     const rewardRegistry = await this.addRegistry(registry);
 
@@ -590,8 +597,15 @@ export class SyncRewardService {
         spend = await mutate_with_url(params, RUNTIME_URL);
       }
 
+      console.log(spend.data);
+
+      if (spend?.data?.error) {
+        throw new Error(spend?.data?.error?.message ?? 'Error pushing rsv');
+      }
+
       return spend?.data ?? spend;
     } catch (error) {
+      console.log(error);
       logger.error(error);
       throw new HttpException(error.message, 400, {
         cause: new Error(error.message),
@@ -601,12 +615,10 @@ export class SyncRewardService {
 
   async getTreasuryPermitAsync(body: GetTreasuryPermitDto) {
     try {
-      const { onboardWallet } = await this.settingsService.settingsInit();
+      const { meDispenser } = await this.settingsService.settingsInit();
 
-      const provider = new ethers.providers.JsonRpcProvider(
-        process.env.JSON_RPC_URL,
-      );
-      const wallet = new ethers.Wallet(onboardWallet, provider);
+      const provider = new ethers.providers.JsonRpcProvider(JSON_RPC_URL);
+      const wallet = new ethers.Wallet(meDispenser, provider);
 
       const result = await getTreasuryPermitSignature(
         wallet,
@@ -617,6 +629,20 @@ export class SyncRewardService {
       );
 
       if (result) {
+        if (body.createBill) {
+          const valueToDollar = await meTokenToDollarInPrecision(
+            BigNumber.from(body.value),
+          );
+          const amountInDollar =
+            Number(valueToDollar.toString()) / DOLLAR_PRECISION;
+
+          await this.billerService.createBill({
+            amount: amountInDollar,
+            brandId: body.brandId,
+            type: BillType.INITIAL_REWARD_PURCHASE,
+          });
+        }
+
         return {
           v: result.v,
           r: result.r,
@@ -669,15 +695,25 @@ export class SyncRewardService {
     walletAddress,
     amount,
     email,
+    keySource = 'redistribution',
   }: {
     rewardId: string;
     walletAddress: string;
     amount: number;
-    email: string;
-  }) {
+    email?: string;
+    keySource?: 'redistribution' | 'campaign';
+  }): Promise<{
+    data: any;
+    error: boolean;
+  }> {
     // 1. The function distributeRewardWithPrivateKey takes in the rewardId, walletAddress, amount, and email as parameters. The amount parameter is the amount of rewards you want to send to the wallet address.
     // 2. We then use the rewardId to get the reward and check if the brand has enough balance to distribute rewards.
     const reward = await this.rewardService.findOneById(rewardId);
+
+    const initialBalance = await getBalance({
+      walletAddress: walletAddress,
+      contractAddress: reward.contractAddress,
+    });
 
     // TODO: Check
     // const canPayCost = await this.fiatWalletService.checkCanPayCost(
@@ -689,12 +725,12 @@ export class SyncRewardService {
     // }
 
     //3. If the brand has enough balance, we use the redistributionKeyIdentifierId to get the private key identifier and decrypt the private key.
-    const keyIdentifier = await this.rewardService.getKeyIdentifier(
-      reward.redistributionKeyIdentifierId,
+
+    const decryptedPrivateKey = await this.keyManagementService.getEncryptedKey(
+      keySource === 'campaign'
+        ? reward.campaignKeyIdentifierId
+        : reward.redistributionKeyIdentifierId,
       KeyIdentifierType.REDISTRIBUTION,
-    );
-    const decryptedPrivateKey = await this.keyManagementService.decryptKey(
-      keyIdentifier.identifier,
     );
     // 4. We then use the private key to sign the transaction and distribute the rewards to the wallet address.
     const signer = new Wallet(decryptedPrivateKey);
@@ -724,20 +760,45 @@ export class SyncRewardService {
     if (distributionData?.data?.error) {
       console.log(distributionData.data);
       // throw new Error("We couldn't distribute reward");
-      return distributionData.data;
+      return {
+        error: true,
+        data: distributionData.data,
+      };
     } else {
-      const registry = await this.findOneRegistryByEmailIdentifier(
-        email,
-        rewardId,
-      );
-
-      await this.clearUndistributedBalance({
-        registryId: registry.id,
-        amount: amount,
-        description: `Reward distributed to ${walletAddress}`,
+      const laterBalance = await getBalance({
+        walletAddress: walletAddress,
+        contractAddress: reward.contractAddress,
       });
 
-      return distributionData;
+      if (laterBalance <= initialBalance) {
+        return {
+          error: true,
+          data: {
+            error: {
+              message: 'Error distributing reward',
+            },
+          },
+        };
+      }
+
+      if (email) {
+        const registry = await this.getRegistryRecordByIdentifer(
+          email,
+          rewardId,
+          SyncIdentifierType.EMAIL,
+        );
+
+        await this.clearUndistributedBalance({
+          registryId: registry.id,
+          amount: amount,
+          description: `Reward distributed to ${walletAddress}`,
+        });
+      }
+
+      return {
+        data: distributionData,
+        error: false,
+      };
     }
   }
 
@@ -762,12 +823,9 @@ export class SyncRewardService {
     //   return 'Brand cannot pay cost';
     // }
 
-    const keyIdentifier = await this.rewardService.getKeyIdentifier(
+    const decryptedPrivateKey = await this.keyManagementService.getEncryptedKey(
       reward.redistributionKeyIdentifierId,
       KeyIdentifierType.REDISTRIBUTION,
-    );
-    const decryptedPrivateKey = await this.keyManagementService.decryptKey(
-      keyIdentifier.identifier,
     );
     const signer = new Wallet(decryptedPrivateKey);
 
@@ -857,6 +915,8 @@ export class SyncRewardService {
         { startDate, endDate },
       );
     }
+
+    registryHistoryQuery.orderBy('rewardRegistry.createdAt', 'DESC');
 
     registryHistoryQuery.skip((page - 1) * limit).take(limit);
 

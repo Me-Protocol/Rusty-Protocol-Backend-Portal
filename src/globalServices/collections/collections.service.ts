@@ -192,7 +192,7 @@ export class CollectionService {
     }
 
     if (search) {
-      collectionQuery.andWhere('collection.name LIKE :search', {
+      collectionQuery.andWhere('collection.name ILIKE :search', {
         search: `%${search}%`,
       });
     }
@@ -230,6 +230,7 @@ export class CollectionService {
       collections.push({
         ...collection,
         likes: likes,
+        totalLikes: likes.length,
       });
     }
 

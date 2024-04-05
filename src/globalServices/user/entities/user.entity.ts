@@ -181,11 +181,11 @@ export class User extends BaseEntity {
   })
   customer: Customer;
 
-  @OneToOne(() => BrandMember, (brandMember) => brandMember.user, {
+  @OneToMany(() => BrandMember, (brandMember) => brandMember.user, {
     onDelete: 'CASCADE',
     nullable: true,
   })
-  brandMember: BrandMember;
+  brandMembers: BrandMember[];
 
   @OneToOne(() => AdminMember, (adminMember) => adminMember.user, {
     onDelete: 'CASCADE',

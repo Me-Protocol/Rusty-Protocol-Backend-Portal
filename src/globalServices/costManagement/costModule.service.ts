@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CostBatch } from './entities/costBatch.entity';
-import { CostCollection } from './entities/costCollection';
+import { CostCollection } from './entities/costCollection.entity';
 import axios from 'axios';
 import { logger } from '../logger/logger.service';
 

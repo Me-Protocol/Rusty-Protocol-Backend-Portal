@@ -59,10 +59,19 @@ export class OfferManagementService {
     offer.description = body.description;
     offer.startDate = body.startDate;
     offer.endDate = body.endDate;
-    offer.idOnBrandsite = body.idOnBrandsite;
     offer.rewardId = body.rewardId;
     offer.inventory = body.inventory;
     offer.coverImage = body.coverImage;
+
+    if (product.availableInventory < body.inventory) {
+      throw new HttpException(
+        'Inventory cannot be more than available inventory',
+        400,
+      );
+    }
+
+    product.availableInventory = product.availableInventory - body.inventory;
+    await this.productService.saveProduct(product);
 
     const saveOffer = await this.offerService.saveOffer(offer);
 
@@ -133,7 +142,6 @@ export class OfferManagementService {
       if (body.description) offer.description = body.description;
       if (body.startDate) offer.startDate = body.startDate;
       if (body.endDate) offer.endDate = body.endDate;
-      if (body.idOnBrandsite) offer.idOnBrandsite = body.idOnBrandsite;
       if (body.inventory) offer.inventory = body.inventory;
       if (body.coverImage) offer.coverImage = body.coverImage;
 
@@ -154,6 +162,30 @@ export class OfferManagementService {
         this.elasticIndex.updateDocument(findOne, offerIndex);
       } else if (offer.status === ProductStatus.ARCHIVED) {
         this.elasticIndex.deleteDocument(offerIndex, offer.id);
+      }
+
+      if (body.inventory) {
+        const product = await this.productService.getOneProduct(
+          offer.productId,
+          body.brandId,
+        );
+
+        if (!product) {
+          throw new HttpException('Product not found', 404, {
+            cause: new Error('Product not found'),
+          });
+        }
+
+        if (body.inventory > product.availableInventory) {
+          throw new HttpException(
+            'Inventory cannot be more than available inventory',
+            400,
+          );
+        }
+
+        product.availableInventory =
+          product.availableInventory - body.inventory;
+        await this.productService.saveProduct(product);
       }
 
       return findOne;
@@ -192,6 +224,7 @@ export class OfferManagementService {
       query.page,
       query.limit,
       query.userId,
+      query.regionId,
     );
   }
 

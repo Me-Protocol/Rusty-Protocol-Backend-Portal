@@ -160,6 +160,7 @@ export class AdminAccountManagementService {
       await this.customerService.create({
         name,
         userId: saveUser.id,
+        walletAddress: '',
       });
 
       const adminMember = new AdminMember();

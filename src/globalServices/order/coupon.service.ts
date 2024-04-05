@@ -14,22 +14,30 @@ export class CouponService {
     user_id,
     offer_id,
     isUsed,
+    couponCode,
+    orderCode,
+    brandDiscountId,
+    brandPriceRuleId,
   }: {
     user_id: string;
     offer_id: string;
     isUsed?: boolean;
+    couponCode: string;
+    orderCode: string;
+    brandDiscountId: string;
+    brandPriceRuleId: string;
   }) {
     // 6 characters coupon code
-    const couponCode = `${process.env.COUPON_CODE_PREFIX}_${Math.random()
-      .toString(36)
-      .substring(2, 8)
-      .toUpperCase()}`;
+
     const coupon = new Coupon();
     coupon.code = couponCode;
     coupon.isUsed = isUsed ?? false;
     coupon.offerId = offer_id;
     coupon.userId = user_id;
     coupon.expiryDate = new Date();
+    coupon.orderCode = orderCode;
+    coupon.brandDiscountId = brandDiscountId;
+    coupon.brandPriceRuleId = brandPriceRuleId;
     coupon.expiryDate.setDate(coupon.expiryDate.getDate() + 7);
 
     return this.couponRepository.save(coupon);
@@ -41,6 +49,17 @@ export class CouponService {
 
   async findOneById(id: string) {
     return await this.couponRepository.findOneBy({ id });
+  }
+
+  async couponByOrderCode(orderCode: string): Promise<Coupon> {
+    return await this.couponRepository.findOne({
+      where: {
+        orderCode,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
   }
 
   async update(id: string, coupon: Coupon): Promise<any> {
@@ -107,10 +126,6 @@ export class CouponService {
       throw new HttpException('Coupon code expired', 400);
     }
 
-    if (coupon.offer.idOnBrandsite !== idOnBrandSite) {
-      throw new HttpException('Invalid coupon code', 400);
-    }
-
     coupon.isUsed = true;
 
     await this.couponRepository.save(coupon);
@@ -119,5 +134,22 @@ export class CouponService {
       success: true,
       message: 'Coupon code used',
     };
+  }
+
+  async generateCouponCode(): Promise<string> {
+    const code = `${process.env.COUPON_CODE_PREFIX}_${Math.random()
+      .toString(36)
+      .substring(2, 8)
+      .toUpperCase()}`;
+
+    const checkCode = await this.couponRepository.findOne({
+      where: { code },
+    });
+
+    if (checkCode) {
+      return await this.generateCouponCode();
+    }
+
+    return code;
   }
 }

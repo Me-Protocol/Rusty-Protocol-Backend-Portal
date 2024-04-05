@@ -19,27 +19,27 @@ export class ElasticSearchCronService {
 
   // @Cron(CronExpression.EVERY_10_SECONDS)
   async handleCron() {
-    console.log('CRON Running');
-    const syncBrandsIndex = await this.brandsService.syncElasticSearchIndex;
-    const syncOffersIndex = await this.offersService.syncElasticSearchIndex;
-    const syncCategoriesIndex = await this.categoryService
-      .syncElasticSearchIndex;
-    const syncRewardsIndex = await this.rewardsService.syncElasticSearchIndex;
-
-    await Promise.all([
-      syncBrandsIndex,
-      syncOffersIndex,
-      syncCategoriesIndex,
-      syncRewardsIndex,
-    ])
-      .then((_results) => {
-        console.timeLog('[ELASTIC_SEARCH', 'Elastic search indexing completed');
-      })
-      .catch((err) => {
-        console.warn(
-          '[ELASTIC_SEARCH',
-          `Failed to sync indexes: ${JSON.stringify(err)}`,
-        );
-      });
+    //   console.log('CRON Running');
+    //   const syncBrandsIndex = await this.brandsService.syncElasticSearchIndex;
+    //   const syncOffersIndex = await this.offersService.syncElasticSearchIndex;
+    //   const syncCategoriesIndex = await this.categoryService
+    //     .syncElasticSearchIndex;
+    //   const syncRewardsIndex = await this.rewardsService.syncElasticSearchIndex;
+    //   await Promise.all([
+    //     syncBrandsIndex,
+    //     syncOffersIndex,
+    //     syncCategoriesIndex,
+    //     syncRewardsIndex,
+    //   ])
+    //     .then((_results) => {
+    //       console.timeLog('[ELASTIC_SEARCH', 'Elastic search indexing completed');
+    //     })
+    //     .catch((err) => {
+    //       console.warn(
+    //         '[ELASTIC_SEARCH',
+    //         `Failed to sync indexes: ${JSON.stringify(err)}`,
+    //       );
+    //     });
+    // }
   }
 }

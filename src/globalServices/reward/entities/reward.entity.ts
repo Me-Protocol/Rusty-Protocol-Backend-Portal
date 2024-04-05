@@ -114,12 +114,22 @@ export class Reward extends BaseEntity {
   @Column({
     nullable: true,
   })
+  campaignPublicKey: string;
+
+  @Column({
+    nullable: true,
+  })
   bountyPublicKey: string;
 
   @Column({
     nullable: true,
   })
   redistributionKeyIdentifierId: string;
+
+  @Column({
+    nullable: true,
+  })
+  campaignKeyIdentifierId: string;
 
   @Column({
     nullable: true,
@@ -148,23 +158,31 @@ export class Reward extends BaseEntity {
   })
   status: RewardStatus;
 
-  @Column('bigint', {
+  @Column({
     nullable: true,
+    type: 'decimal',
+    default: 0.0,
   })
   poolTotalSupply: string;
 
-  @Column('bigint', {
+  @Column({
     nullable: true,
+    type: 'decimal',
+    default: 0.0,
   })
   rewardDollarPrice: string;
 
-  @Column('bigint', {
+  @Column({
     nullable: true,
+    type: 'decimal',
+    default: 0.0,
   })
   rOptimal: string;
 
-  @Column('bigint', {
+  @Column({
     nullable: true,
+    type: 'decimal',
+    default: 0.0,
   })
   treasurySupply: string;
 
@@ -178,7 +196,13 @@ export class Reward extends BaseEntity {
     type: 'decimal',
     default: 0.0,
   })
-  totalDistributedSupply: number;
+  totalIssued: number;
+
+  @Column({
+    type: 'decimal',
+    default: 0.0,
+  })
+  totalDistributed: number;
 
   @Column({
     type: 'decimal',
@@ -195,4 +219,27 @@ export class Reward extends BaseEntity {
     default: 2,
   })
   meAutoTopUpFactor: number;
+
+  @Column({
+    default: false,
+  })
+  addedLiquidity: boolean;
+
+  @Column({
+    type: 'decimal',
+    default: 0.0,
+  })
+  totalVaultSupply: number;
+
+  @Column({
+    type: 'decimal',
+    default: 0.0,
+  })
+  availableVaultSupply: number;
+
+  @Column({
+    type: 'decimal',
+    default: 0.0,
+  })
+  availableTreasurySupply: number;
 }

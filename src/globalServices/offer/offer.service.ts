@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, LessThan, Repository } from 'typeorm';
 import { Offer } from './entities/offer.entity';
@@ -15,24 +15,27 @@ import { offerIndex } from '@src/modules/search/interface/search.interface';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { BrandCustomer } from '../brand/entities/brand_customer.entity';
 import { User } from '../user/entities/user.entity';
+import { CurrencyService } from '../currency/currency.service';
+import { OrderService } from '../order/order.service';
 
 @Injectable()
 export class OfferService {
   constructor(
     @InjectRepository(Offer)
     private readonly offerRepo: Repository<Offer>,
-
     @InjectRepository(ProductImage)
     private readonly productImageRepo: Repository<ProductImage>,
-
     @InjectRepository(BrandCustomer)
     private readonly brandCustomerRepo: Repository<BrandCustomer>,
-
     private readonly userService: UserService,
     private readonly viewService: ViewsService,
     private readonly customerService: CustomerService,
     private readonly productService: ProductService,
     private readonly elasticIndex: ElasticIndex,
+    private readonly currencyService: CurrencyService,
+
+    @Inject(forwardRef(() => OrderService))
+    private readonly orderService: OrderService,
   ) {}
 
   async saveOffer(offer: Offer) {
@@ -92,6 +95,7 @@ export class OfferService {
         'product',
         'product.category',
         'product.subCategory',
+        'product.variants',
         'offerImages',
         'reward',
       ],
@@ -108,6 +112,8 @@ export class OfferService {
         'brand',
         'product',
         'product.category',
+        'product.variants',
+        'product.variants.options',
         'product.subCategory',
         'offerImages',
         'reward',
@@ -144,9 +150,14 @@ export class OfferService {
         'brand',
         'product',
         'product.category',
+        'product.variants',
+        'product.variants.options',
         'product.subCategory',
+        'product.variants',
         'offerImages',
         'reward',
+        'product.currency',
+        'product.regions'
       ],
     });
 
@@ -194,9 +205,12 @@ export class OfferService {
       .createQueryBuilder('offer')
       .leftJoinAndSelect('offer.product', 'product')
       .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.variants', 'variants')
+      .leftJoinAndSelect('variants.options', 'options')
       .leftJoinAndSelect('product.subCategory', 'subCategory')
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
+      .leftJoinAndSelect('product.currency', 'currency')
       .leftJoinAndSelect('offer.reward', 'reward')
       .where('offer.status = :status', { status: ItemStatus.PUBLISHED })
       .andWhere('offer.rewardId = :rewardId', { rewardId });
@@ -222,6 +236,7 @@ export class OfferService {
     subCategory,
     brandId,
     sort,
+    regionId,
   }: {
     page: number;
     limit: number;
@@ -229,39 +244,55 @@ export class OfferService {
     subCategory?: string;
     brandId?: string;
     sort: OfferSort;
+    regionId: string;
   }) {
     const offersQuery = this.offerRepo
       .createQueryBuilder('offer')
       .leftJoinAndSelect('offer.product', 'product')
       .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.variants', 'variants')
+      .leftJoinAndSelect('variants.options', 'options')
+      .leftJoinAndSelect('product.regions', 'regions')
       .leftJoinAndSelect('product.subCategory', 'subCategory')
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
       .leftJoinAndSelect('offer.reward', 'reward')
+      .leftJoinAndSelect('product.currency', 'currency')
       .where('offer.status = :status', { status: ItemStatus.PUBLISHED })
       // brand.listOnStore is used to check if brand is active
-      .andWhere('brand.listOnStore = :listOnStore', { listOnStore: true });
+      .andWhere('brand.listOnStore = :listOnStore', { listOnStore: true })
+      .andWhere('brand.disabled = :disabled', {
+        disabled: false,
+      });
 
     if (category) {
-      offersQuery.andWhere('product.categoryId = :categoryId', {
-        categoryId: category,
-      });
+      offersQuery
+        .andWhere('product.categoryId = :categoryId', {
+          categoryId: category,
+        })
+        .andWhere('offer.status = :status', { status: ItemStatus.PUBLISHED });
     }
 
     if (subCategory) {
-      offersQuery.andWhere('product.subCategoryId = :subCategoryId', {
-        subCategoryId: subCategory,
-      });
+      offersQuery
+        .andWhere('product.subCategoryId = :subCategoryId', {
+          subCategoryId: subCategory,
+        })
+        .andWhere('offer.status = :status', { status: ItemStatus.PUBLISHED });
     }
 
     if (brandId) {
-      offersQuery.andWhere('offer.brandId = :brandId', { brandId });
+      offersQuery
+        .andWhere('offer.brandId = :brandId', { brandId })
+        .andWhere('offer.status = :status', { status: ItemStatus.PUBLISHED });
     }
 
     if (sort === OfferSort.TRENDING) {
-      offersQuery.andWhere('offer.viewCount > :viewCount', {
-        viewCount: 3, // TODO: Change this to 100,
-      });
+      offersQuery
+        .andWhere('offer.viewCount > :viewCount', {
+          viewCount: 3, // TODO: Change this to 100,
+        })
+        .andWhere('offer.status = :status', { status: ItemStatus.PUBLISHED });
       // offersQuery.andWhere('offer.likeCount > :likeCount', {
       //   likeCount: 2, // TODO: Change this to 100,
       // });
@@ -286,11 +317,38 @@ export class OfferService {
     }
 
     if (sort === OfferSort.EXPIRING) {
-      offersQuery.andWhere('offer.endDate > :endDate', {
-        endDate: new Date(),
-      });
+      offersQuery
+        .andWhere('offer.endDate > :endDate', {
+          endDate: new Date(),
+        })
+        .andWhere('offer.status = :status', { status: ItemStatus.PUBLISHED });
       offersQuery.orderBy('offer.endDate', 'ASC');
     }
+
+    if (regionId) {
+      const checkRegion = await this.currencyService.getRegionById(regionId);
+
+      if (!checkRegion) {
+        throw new Error('Region not found');
+      }
+
+      // where offer product regions contains regionId or offer product regions is empty
+      offersQuery
+        .andWhere('regions.id = :regionId', { regionId })
+        .andWhere('offer.status = :status', { status: ItemStatus.PUBLISHED });
+    } else {
+      offersQuery
+        .orWhere('regions.id IS NULL')
+        .andWhere('offer.status = :status', { status: ItemStatus.PUBLISHED });
+    }
+
+    const defaultRegion = await this.currencyService.getDefaultRegion();
+
+    offersQuery
+      .andWhere('regions.id = :regionId', {
+        regionId: defaultRegion.id,
+      })
+      .andWhere('offer.status = :status', { status: ItemStatus.PUBLISHED });
 
     offersQuery.skip((page - 1) * limit);
     offersQuery.take(limit);
@@ -306,7 +364,12 @@ export class OfferService {
     };
   }
 
-  async getTopOffersForUser(page: number, limit: number, userId: string) {
+  async getTopOffersForUser(
+    page: number,
+    limit: number,
+    userId: string,
+    regionId: string,
+  ) {
     // Get user interests
     const interests = await this.userService.getUserCategoryInterests(userId);
 
@@ -320,7 +383,21 @@ export class OfferService {
           updatedAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
           brand: {
             listOnStore: true,
+            disabled: false,
           },
+          //  if regionId is present, get offers for that region
+          //  else get offers for default region
+          product: regionId
+            ? {
+                regions: {
+                  id: regionId,
+                },
+              }
+            : {
+                regions: {
+                  isDefault: true,
+                },
+              },
         },
         take: 10,
         order: {
@@ -343,10 +420,21 @@ export class OfferService {
       const offers = await this.offerRepo.find({
         where: {
           status: ProductStatus.PUBLISHED,
-          product: {
-            categoryId: In(categories),
-            subCategoryId: In(subCategories),
-          },
+          product: regionId
+            ? {
+                regions: {
+                  id: regionId,
+                },
+                categoryId: In(categories),
+                subCategoryId: In(subCategories),
+              }
+            : {
+                regions: {
+                  isDefault: true,
+                },
+                categoryId: In(categories),
+                subCategoryId: In(subCategories),
+              },
         },
         skip: (page - 1) * limit,
         take: limit,
@@ -354,7 +442,11 @@ export class OfferService {
           'brand',
           'product',
           'product.category',
+          'product.variants',
+          'product.variants.options',
           'product.subCategory',
+          'product.variants',
+          'product.currency',
           'offerImages',
           'reward',
         ],
@@ -382,13 +474,26 @@ export class OfferService {
       const offers = await this.offerRepo.find({
         where: {
           status: ProductStatus.PUBLISHED,
-          product: {
-            category: {
-              id: In(interests),
-            },
-          },
+          product: regionId
+            ? {
+                regions: {
+                  id: regionId,
+                },
+                category: {
+                  id: In(interests),
+                },
+              }
+            : {
+                regions: {
+                  isDefault: true,
+                },
+                category: {
+                  id: In(interests),
+                },
+              },
           brand: {
             listOnStore: true,
+            disabled: false,
           },
         },
         skip: (page - 1) * limit,
@@ -397,7 +502,11 @@ export class OfferService {
           'brand',
           'product',
           'product.category',
+          'product.variants',
+          'product.variants.options',
           'product.subCategory',
+          'product.variants',
+          'product.currency',
           'offerImages',
           'reward',
         ],
@@ -444,9 +553,12 @@ export class OfferService {
       .leftJoinAndSelect('offer.product', 'product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.subCategory', 'subCategory')
+      .leftJoinAndSelect('product.variants', 'variants')
+      .leftJoinAndSelect('variants.options', 'options')
       .leftJoinAndSelect('offer.offerImages', 'offerImages')
       .leftJoinAndSelect('offer.brand', 'brand')
       .leftJoinAndSelect('offer.reward', 'reward')
+      .leftJoinAndSelect('product.currency', 'currency')
       .where('offer.brandId = :brandId', { brandId });
 
     if (status) {
@@ -484,7 +596,7 @@ export class OfferService {
     }
 
     if (search) {
-      offersQuery.andWhere('offer.name LIKE :search', {
+      offersQuery.andWhere('offer.name ILIKE :search', {
         search: `%${search}%`,
       });
     }
@@ -614,43 +726,41 @@ export class OfferService {
 
   async increaseOfferSales({
     offer,
-    amount,
     userId,
   }: {
     offer: Offer;
-    amount: number;
     userId: string;
   }) {
     try {
-      const totalSales = Number(offer.totalSales) + Number(amount);
+      const successOrders =
+        await this.orderService.getSuccessfulOrdersByOfferId(offer.id);
+
+      const totalSales = successOrders.reduce((acc, order) => {
+        return Number(acc) + Number(order?.offer?.product?.price ?? 0);
+      }, 0);
       const totalSalesParse = totalSales.toFixed(2);
 
-      offer.totalOrders = offer.totalOrders + 1;
+      offer.totalOrders = successOrders.length;
       offer.totalSales = +totalSalesParse;
 
       // update customer total redeem
       const customer = await this.customerService.getByUserId(userId);
 
-      const totalRedemptionAmount =
-        Number(customer.totalRedemptionAmount) + Number(amount);
+      const userSuccessfulOrders =
+        await this.orderService.getSuccessfulOrdersByUserId(userId);
+
+      const totalRedemptionAmount = userSuccessfulOrders.reduce(
+        (acc, order) => {
+          return Number(acc) + Number(order?.points ?? 0);
+        },
+        0,
+      );
       const totalRedemptionAmountParse = totalRedemptionAmount.toFixed(3);
 
-      customer.totalRedeemed += 1;
+      customer.totalRedeemed = userSuccessfulOrders.length;
       customer.totalRedemptionAmount = +totalRedemptionAmountParse;
 
-      const brandCustomer = await this.brandCustomerRepo.findOne({
-        where: { userId: userId, brandId: offer.brandId },
-      });
-
-      if (brandCustomer) {
-        brandCustomer.totalRedeemed += 1;
-        brandCustomer.totalRedemptionAmount = +totalRedemptionAmountParse;
-
-        await this.brandCustomerRepo.save(brandCustomer);
-      }
-
       await this.offerRepo.save(offer);
-
       await this.customerService.save(customer);
 
       return 'done';
@@ -660,45 +770,33 @@ export class OfferService {
   }
 
   async reduceInventory(offer: Offer, order: Order) {
-    // offer.inventory = -order.quantity; TODO: check if this is needed
-
-    const product = await this.productService.findOneProduct(offer.productId);
-    product.inventory = product.inventory - order.quantity;
-
-    await this.productService.saveProduct(product);
-
-    // await this.offerRepo.save(offer);
+    offer.inventory = Number(offer.inventory) - Number(order.quantity);
+    await this.offerRepo.save(offer);
   }
 
   async increaseInventory(offer: Offer, order: Order) {
-    // offer.inventory = +order.quantity; TODO: check if this is needed
-
-    const product = await this.productService.findOneProduct(offer.productId);
-    product.inventory = product.inventory + order.quantity;
-
-    await this.productService.saveProduct(product);
-
-    // await this.offerRepo.save(offer);
+    offer.inventory = Number(offer.inventory) + Number(order.quantity);
+    await this.offerRepo.save(offer);
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
-  async syncElasticSearchIndex() {
-    //const currentDate = new Date();
+  // @Cron(CronExpression.EVERY_5_MINUTES)
+  // async syncElasticSearchIndex() {
+  //   //const currentDate = new Date();
 
-    const offersQuery = this.offerRepo
-      .createQueryBuilder('offer')
-      //.where('offer.endDate < :currentDate', { currentDate })
-      .where('offer.status = :status', { status: ProductStatus.PUBLISHED })
-      .leftJoinAndSelect('offer.product', 'product')
-      .leftJoinAndSelect('product.category', 'category')
-      .leftJoinAndSelect('product.subCategory', 'subCategory')
-      .leftJoinAndSelect('offer.offerImages', 'offerImages')
-      .leftJoinAndSelect('offer.brand', 'brand')
-      .leftJoinAndSelect('offer.reward', 'reward');
+  //   const offersQuery = this.offerRepo
+  //     .createQueryBuilder('offer')
+  //     //.where('offer.endDate < :currentDate', { currentDate })
+  //     .where('offer.status = :status', { status: ProductStatus.PUBLISHED })
+  //     .leftJoinAndSelect('offer.product', 'product')
+  //     .leftJoinAndSelect('product.category', 'category')
+  //     .leftJoinAndSelect('product.subCategory', 'subCategory')
+  //     .leftJoinAndSelect('offer.offerImages', 'offerImages')
+  //     .leftJoinAndSelect('offer.brand', 'brand')
+  //     .leftJoinAndSelect('offer.reward', 'reward');
 
-    const allOffers = await offersQuery.getMany();
-    this.elasticIndex.batchCreateIndex(allOffers, offerIndex);
-  }
+  //   const allOffers = await offersQuery.getMany();
+  //   this.elasticIndex.batchCreateIndex(allOffers, offerIndex);
+  // }
 
   // get offers where the end date has passed and the status is expired
   // TODO: We might need to change the cron expression to run every 5 minutes
@@ -716,5 +814,26 @@ export class OfferService {
       offer.status = ProductStatus.EXPIRED;
       await this.offerRepo.save(offer);
     }
+  }
+
+  async deleteOffersByProductId(productId: string) {
+    return await this.offerRepo.softDelete({
+      productId,
+    });
+  }
+
+  async achieveOffersByProductId(productId: string) {
+    const offers = await this.offerRepo.find({
+      where: {
+        productId,
+      },
+    });
+
+    for (const offer of offers) {
+      offer.status = ProductStatus.ARCHIVED;
+      await this.offerRepo.save(offer);
+    }
+
+    return 'done';
   }
 }
