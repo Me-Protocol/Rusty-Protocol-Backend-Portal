@@ -311,13 +311,13 @@ export class RewardManagementController {
   }
 
   @UseGuards(AuthGuard())
-  @Get('get-reward/:rewardId')
+  @Get(':rewardId')
   async getReward(@Param('rewardId') rewardId: string) {
     return await this.rewardManagementService.getReward(rewardId);
   }
 
   @UseGuards(AuthGuard())
-  @Get('registry')
+  @Get('registry/all')
   async getRegistry(
     @Query(ValidationPipe) query: FilterRegistryHistoryDto,
     @Req() req: any,
