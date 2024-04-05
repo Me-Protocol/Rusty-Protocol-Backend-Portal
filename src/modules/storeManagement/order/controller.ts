@@ -23,6 +23,7 @@ import { ServerGuard } from '@src/middlewares/server-guard';
 import { InAppApiKeyJwtStrategy } from '@src/middlewares/inapp-api-jwt-strategy.middleware';
 import { CompleteOrderDto } from './dto/CompleteOrderDto.dto';
 import { ApiBearerAuth } from '@node_modules/@nestjs/swagger';
+import { GetShopifyTokenDto } from './dto/GetShopifyToken.dto';
 
 @ApiTags('Order')
 @Controller('order')
@@ -92,6 +93,7 @@ export class OrderManagementController {
     body.brandId = brandId;
 
     return await this.orderManagementService.useCoupon(body);
+    
   }
 
   @UseGuards(InAppApiKeyJwtStrategy)
@@ -102,6 +104,15 @@ export class OrderManagementController {
     @Body(ValidationPipe) body: CreateCouponDto,
   ) {
     return await this.orderManagementService.createCoupon(body.orderId);
+  }
+
+  @UseGuards(AuthGuard())
+  @Get('/shopify-token/retrieve')
+  async getShopifyToken(
+    @Req() req: any,
+    @Query(ValidationPipe) query: GetShopifyTokenDto,
+  ) {
+    return await this.orderManagementService.getShopifyToken(query);
   }
 
   @UseGuards(InAppApiKeyJwtStrategy)
