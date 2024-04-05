@@ -254,7 +254,13 @@ export class OrderManagementService {
         }
       })
       
-      return data?.storefront_access_token?.access_token
+      if( data?.storefront_access_token) {
+        return data.storefront_access_token.access_token;
+      }
+
+      else  {
+        return data?.storefront_access_tokens[0]?.access_token;
+      }
 
     } catch (error) {
       logger.error(error);
