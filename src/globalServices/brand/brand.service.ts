@@ -117,6 +117,14 @@ export class BrandService {
     return this.brandRepo.save(brand);
   }
 
+  /**
+   * Updates a brand with the provided data.
+   * @param dto - The data to update the brand.
+   * @param brandId - The ID of the brand to update.
+   * @returns The updated brand.
+   * @throws {NotFoundException} If the brand with the specified ID is not found.
+   * @throws {HttpException} If there is an error during the update process.
+   */
   async update(dto: UpdateBrandDto, brandId: string) {
     try {
       // if (dto.name) {
@@ -205,8 +213,9 @@ export class BrandService {
 
       if (
         dto.onlineStoreType === OnlineStoreType.WOOCOMMERCE &&
-        dto.woocommerceConsumerKey &&
-        dto.woocommerceConsumerSecret
+        (dto.woocommerceConsumerKey ||
+          dto.woocommerceConsumerSecret ||
+          dto.online_store_url)
       ) {
         await checkBrandOnlineStore({
           // @ts-ignore
@@ -221,8 +230,14 @@ export class BrandService {
 
       if (
         dto.onlineStoreType === OnlineStoreType.SHOPIFY &&
-        dto.shopify_consumer_secret
+        (dto.shopify_consumer_secret || dto.online_store_url)
       ) {
+        if (!dto.online_store_url.includes('myshopify.com')) {
+          throw new HttpException(
+            'Invalid shopify store url',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
         await checkBrandOnlineStore({
           // @ts-ignore
           brand: {
@@ -274,7 +289,6 @@ export class BrandService {
       },
     });
   }
-
 
   async getAllFilteredBrands({
     categoryId,

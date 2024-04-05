@@ -8,7 +8,7 @@ export class ShopifyHandler {
       secret: brand.shopify_consumer_secret,
     });
     const shopify = axios.create({
-      baseURL: `https://c30bd3.myshopify.com/admin/api/2024-01/`,
+      baseURL: `${brand.shopify_online_store_url}/admin/api/2024-01/`,
       headers: {
         'X-Shopify-Access-Token': brand.shopify_consumer_secret,
       },
