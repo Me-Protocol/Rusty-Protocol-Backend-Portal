@@ -243,7 +243,7 @@ export class OrderManagementService {
 
   async getShopifyToken({ brandId }: { brandId: string }) {
     try {
-      const brand = await this.brandService.getBrandById(brandId);
+      const brand = await this.brandService.getBrandWithOnlineCreds(brandId);
     
       const shopifyHandler = new ShopifyHandler();
       const shopify: AxiosInstance = shopifyHandler.createInstance(brand);
