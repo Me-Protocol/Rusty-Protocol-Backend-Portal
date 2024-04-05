@@ -244,24 +244,21 @@ export class OrderManagementService {
   async getShopifyToken({ brandId }: { brandId: string }) {
     try {
       const brand = await this.brandService.getBrandWithOnlineCreds(brandId);
-    
+
       const shopifyHandler = new ShopifyHandler();
       const shopify: AxiosInstance = shopifyHandler.createInstance(brand);
-      
-      const {data} = await shopify.post('/storefront_access_tokens.json', {
-        storefront_access_token: {
-          title: `token_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}`
-        }
-      })
-      
-      if( data?.storefront_access_token) {
-        return data.storefront_access_token.access_token;
-      }
 
-      else  {
+      const { data } = await shopify.post('/storefront_access_tokens.json', {
+        storefront_access_token: {
+          title: `token_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}`,
+        },
+      });
+
+      if (data?.storefront_access_token) {
+        return data.storefront_access_token.access_token;
+      } else {
         return data?.storefront_access_tokens[0]?.access_token;
       }
-
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
@@ -384,7 +381,10 @@ export class OrderManagementService {
           productId: offer.product.id,
           productIdOnBrandSite: offer.product.productIdOnBrandSite,
           email: order.user.email,
+          quantity: order.quantity,
         });
+
+        console.log(coupon);
 
         await this.couponService.create({
           user_id: order.userId,
