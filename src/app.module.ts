@@ -178,6 +178,7 @@ import {
   SET_CUSTOMER_WALLET_QUEUE,
 } from './utils/helpers/queue-names';
 import { SettingsModuleController } from './modules/settings/controller';
+import { LockingService } from './globalServices/task-queue/locking.service';
 
 @Module({
   imports: [
@@ -388,6 +389,7 @@ import { SettingsModuleController } from './modules/settings/controller';
     AuditTrailService,
     SetCustomerWalletProcessor,
     CampaignProcessor,
+    LockingService,
   ],
   exports: [JwtStrategy, PassportModule, AuthenticationModule],
 })
