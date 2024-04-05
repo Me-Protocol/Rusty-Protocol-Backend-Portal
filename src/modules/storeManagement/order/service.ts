@@ -244,18 +244,16 @@ export class OrderManagementService {
   async getShopifyToken({ brandId }: { brandId: string }) {
     try {
       const brand = await this.brandService.getBrandById(brandId);
-      
     
       const shopifyHandler = new ShopifyHandler();
       const shopify: AxiosInstance = shopifyHandler.createInstance(brand);
-
       
       const {data} = await shopify.post('/storefront_access_tokens.json', {
         storefront_access_token: {
           title: `token_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}`
         }
-      });
-      console.log(data);
+      })
+      
       return data?.storefront_access_token?.access_token
 
     } catch (error) {
