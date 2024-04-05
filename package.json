@@ -28,8 +28,8 @@
   },
   "dependencies": {
     "@amplitude/analytics-node": "^1.3.5",
-    "@developeruche/protocol-core": "0.10.1-updated",
-    "@developeruche/runtime-sdk": "1.0.0-updated",
+    "@developeruche/protocol-core": "0.10.0-staging",
+    "@developeruche/runtime-sdk": "0.10.0-staging",
     "@elastic/elasticsearch": "^8.6.0",
     "@gelatonetwork/relay-sdk": "^4.0.0",
     "@google-cloud/local-auth": "^2.1.0",
