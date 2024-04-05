@@ -255,6 +255,7 @@ export class OrderManagementService {
           title: `token_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}`
         }
       });
+      console.log(data);
       return data?.storefront_access_token?.access_token
 
     } catch (error) {
