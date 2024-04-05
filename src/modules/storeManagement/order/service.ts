@@ -250,8 +250,8 @@ export class OrderManagementService {
       const shopify: AxiosInstance = shopifyHandler.createInstance(brand);
 
       
-      const {data} = await shopify.post('admin/api/2021-07/access_tokens.json', {
-        access_token: {
+      const {data} = await shopify.post('/admin/api/2024-04/storefront_access_tokens.json', {
+        storefront_access_token: {
           title: `token_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}`
         }
       });
