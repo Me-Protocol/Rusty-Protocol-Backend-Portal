@@ -43,4 +43,14 @@ export class Coupon extends BaseEntity {
     nullable: true,
   })
   orderCode: string;
+
+  @Column({
+    nullable: true,
+  })
+  brandDiscountId: string;
+
+  @Column({
+    nullable: true,
+  })
+  brandPriceRuleId: string;
 }

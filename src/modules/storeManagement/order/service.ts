@@ -57,6 +57,9 @@ import {
 } from '@src/utils/helpers/queue-names';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
+import { deleteCouponCode } from '@src/globalServices/online-store-handler/delete-coupon';
+import { ShopifyHandler } from '@src/globalServices/online-store-handler/shopify';
+import { AxiosInstance } from 'axios';
 
 @Injectable()
 export class OrderManagementService {
@@ -167,6 +170,8 @@ export class OrderManagementService {
         isUsed: false,
         couponCode,
         orderCode: '',
+        brandDiscountId: '',
+        brandPriceRuleId: '',
       });
 
       const orderRecord = new Order();
@@ -230,6 +235,27 @@ export class OrderManagementService {
       order.isRedeemed = true;
 
       return await this.orderService.saveOrder(order);
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getShopifyToken({ brandId }: { brandId: string }) {
+    try {
+      const brand = await this.brandService.getBrandWithOnlineCreds(brandId);
+    
+      const shopifyHandler = new ShopifyHandler();
+      const shopify: AxiosInstance = shopifyHandler.createInstance(brand);
+      
+      const {data} = await shopify.post('/storefront_access_tokens.json', {
+        storefront_access_token: {
+          title: `token_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}`
+        }
+      })
+      
+      return data?.storefront_access_token?.access_token
+
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
@@ -343,7 +369,7 @@ export class OrderManagementService {
       );
 
       try {
-        await createCoupon({
+        const coupon = await createCoupon({
           brand,
           data: {
             code: couponCode,
@@ -353,18 +379,20 @@ export class OrderManagementService {
           productIdOnBrandSite: offer.product.productIdOnBrandSite,
           email: order.user.email,
         });
+
+        await this.couponService.create({
+          user_id: order.userId,
+          offer_id: order.offerId,
+          couponCode,
+          orderCode: order.orderCode,
+          brandDiscountId: coupon.discount_code_id,
+          brandPriceRuleId: coupon.price_rule_id,
+        });
       } catch (error) {
         throw new Error(
           error?.message ?? 'Error creating coupon code on brand website',
         );
       }
-
-      await this.couponService.create({
-        user_id: order.userId,
-        offer_id: order.offerId,
-        couponCode,
-        orderCode: order.orderCode,
-      });
     } catch (error) {
       console.log(error);
       logger.error(error);
@@ -822,6 +850,11 @@ export class OrderManagementService {
     order.failedReason = failReason;
     await this.orderService.saveOrder(order);
 
+    const coupon = await this.couponService.couponByOrderCode(order.orderCode);
+    const brand = await this.brandService.getBrandWithOnlineCreds(
+      order.brandId,
+    );
+
     if (!order.isRefunded) {
       const spendData = order.spendData as any;
       if (spendData) {
@@ -876,6 +909,20 @@ export class OrderManagementService {
       await this.notificationService.createNotification(notification);
     } catch (error) {
       console.log('Error sending email');
+    }
+
+    console.log(coupon);
+
+    if (coupon.brandDiscountId) {
+      try {
+        await deleteCouponCode({
+          brand,
+          couponId: coupon.brandDiscountId,
+          priceRuleId: coupon.brandPriceRuleId,
+        });
+      } catch (error) {
+        console.log('Error deleting coupon', error);
+      }
     }
   }
 }
