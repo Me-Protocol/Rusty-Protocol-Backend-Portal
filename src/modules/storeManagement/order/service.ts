@@ -365,6 +365,11 @@ export class OrderManagementService {
   async createCoupon(orderId: string) {
     try {
       const order = await this.orderService.getOrderByOrderId(orderId);
+
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
       const couponCode = await this.couponService.generateCouponCode();
       const offer = await this.offerService.getOfferById(order.offerId);
       const brand = await this.brandService.getBrandWithOnlineCreds(
