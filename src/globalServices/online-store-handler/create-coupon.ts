@@ -58,7 +58,10 @@ export const createCoupon = async ({
         .post('coupons', body)
         .then((response) => {
           console.log('Redeem', response.data);
-          return response.data;
+          return {
+            price_rule_id: null,
+            discount_code_id: response.data.id,
+          };
         })
         .catch((error) => {
           console.log(error.response.data);
@@ -102,7 +105,10 @@ export const createCoupon = async ({
               },
             })
             .then((discountResponse) => {
-              return discountResponse?.data;
+              return {
+                price_rule_id,
+                discount_code_id: discountResponse?.data?.discount_code?.id,
+              };
             })
             .catch((error) => {
               console.log(error.response);
