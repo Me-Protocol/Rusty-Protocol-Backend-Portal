@@ -387,7 +387,7 @@ export class BrandService {
         disabled: false,
       });
 
-      brandQuery.orWhere('regions.id = :regionId', {
+      brandQuery.andWhere('regions.id = :regionId', {
         regionId: defaultRegion.id,
       });
     }
