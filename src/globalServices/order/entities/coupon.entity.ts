@@ -42,7 +42,7 @@ export class Coupon extends BaseEntity {
   @Column({
     nullable: true,
   })
-  orderCode: string;
+  order_code: string;
 
   @Column({
     nullable: true,
