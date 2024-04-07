@@ -35,7 +35,7 @@ export class CouponService {
     coupon.offerId = offer_id;
     coupon.userId = user_id;
     coupon.expiryDate = new Date();
-    coupon.orderCode = orderCode;
+    coupon.order_code = orderCode;
     coupon.brandDiscountId = brandDiscountId;
     coupon.brandPriceRuleId = brandPriceRuleId;
     coupon.expiryDate.setDate(coupon.expiryDate.getDate() + 7);
@@ -54,7 +54,7 @@ export class CouponService {
   async couponByOrderCode(orderCode: string): Promise<Coupon> {
     return await this.couponRepository.findOne({
       where: {
-        orderCode,
+        order_code: orderCode,
       },
       order: {
         createdAt: 'DESC',
