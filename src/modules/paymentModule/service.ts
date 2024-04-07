@@ -683,4 +683,22 @@ export class PaymentModuleService {
       throw new HttpException(error.message, 400);
     }
   }
+
+  async createAutoTopupRequest({ brandId }: { brandId: string }) {
+    try {
+      const brand = await this.brandService.getBrandById(brandId);
+      // const signature = await this.walletService.getBrandSignature(brandId);
+
+      // await this.billerService.createAutoTopupRequest({
+      //   amount: amountInDollar,
+      //   brandId: brand.id,
+      //   nounce,
+      //   taskId: taskId.taskId,
+      // });
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
 }
