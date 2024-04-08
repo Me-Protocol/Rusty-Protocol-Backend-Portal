@@ -108,6 +108,11 @@ export const createCoupon = async ({
             })
             .then(async (response) => {
               const price_rule_id = response?.data?.price_rule?.id;
+              console.log('response', response.data);
+
+              if (!price_rule_id) throw new Error('Price rule id not found');
+
+              console.log('price_rule_id', price_rule_id);
 
               return await shopify
                 .post(`price_rules/${price_rule_id}/discount_codes.json`, {
