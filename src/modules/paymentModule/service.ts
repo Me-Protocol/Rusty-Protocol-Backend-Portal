@@ -39,6 +39,7 @@ import {
 import { checkOrderStatusGelatoOrRuntime } from '@src/globalServices/costManagement/taskId-verifier.service';
 import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
 import { AutoTopupStatus } from '@src/utils/enums/AutoTopStatus';
+import { UserService } from '@src/globalServices/user/user.service';
 
 @Injectable()
 export class PaymentModuleService {
@@ -51,6 +52,7 @@ export class PaymentModuleService {
     private readonly mailService: MailService,
     private readonly settingsService: SettingsService,
     private readonly syncRewardService: SyncRewardService,
+    private readonly userService: UserService,
   ) {}
 
   async savePaymentMethodBrand(paymentMethodId: string, brandId: string) {
@@ -72,6 +74,9 @@ export class PaymentModuleService {
     const settings = await this.settingsService.getPublicSettings();
 
     const meCreditsInDollars = wallet.meCredits * settings.meTokenValue;
+
+    const user = await this.userService.getUserById(userId);
+    if(!user) throw new HttpException('User not found', 404);
 
     const auditTrailEntry = {
       userId: userId,
@@ -231,6 +236,9 @@ export class PaymentModuleService {
         page,
         limit,
       });
+
+      const user = await this.userService.getUserById(userId);
+      if(!user) throw new HttpException('User not found', 404);
 
       const auditTrailEntry = {
         userId: userId,
@@ -608,6 +616,9 @@ export class PaymentModuleService {
 
       await this.walletService.save(brandWallet);
 
+      const user = await this.userService.getUserById(userId);
+      if(!user) throw new HttpException('User not found', 404);
+
       //Audit Trail Entry
       const auditTrailEntry = {
         userId: userId,
@@ -640,10 +651,13 @@ export class PaymentModuleService {
 
       await this.walletService.save(brandWallet);
 
+      const user = await this.userService.getUserById(userId);
+      if(!user) throw new HttpException('User not found', 404);
+
       const auditTrailEntry = {
         userId: userId,
         auditType: 'REMOVE_ME_CREDITS',
-        description: `User ${userId} removed ${amount} ME credits from brand ${brandId} successfully. Previous credits: ${previousCredit}. New Credit: ${brandWallet.meCredits}`,
+        description: `${user.username} removed ${amount} ME credits from ${brand.name} successfully. Previous credits: ${previousCredit}. New Credit: ${brandWallet.meCredits}`,
         reportableId: brandId,
       };
 

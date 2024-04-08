@@ -40,6 +40,7 @@ audit.json
 /secrets
 /public/uploads
 ethereum/.env
+postman.json
 
 dump.rdb
 

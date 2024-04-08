@@ -34,7 +34,8 @@ export class AuditTrailService {
       take: limit,
       order: {
         createdAt: 'DESC'
-      }
+      },
+      relations: ["user"]
     });
 
     const totalPages = Math.ceil(total / limit);

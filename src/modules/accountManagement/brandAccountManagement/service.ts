@@ -717,8 +717,13 @@ export class BrandAccountManagementService {
       brand.disabled = true;
       await this.brandService.save(brand);
 
+      const user = await this.userService.getUserById(userId);
+      if(!user) throw new HttpException('User not found', 404);
+
       const createAuditTrailDto = {
         userId: userId,
+        userEmail: user.email,
+        userName: user.username,
         auditType: 'DISABLE_BRAND',
         description: `User with ID ${userId} disabled the brand with ID ${brandId}.`,
         reportableId: brandId,
