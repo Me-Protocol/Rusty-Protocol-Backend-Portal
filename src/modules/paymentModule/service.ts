@@ -40,6 +40,7 @@ import { checkOrderStatusGelatoOrRuntime } from '@src/globalServices/costManagem
 import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
 import { AutoTopupStatus } from '@src/utils/enums/AutoTopStatus';
 import { UserService } from '@src/globalServices/user/user.service';
+import { LockingService } from '@src/globalServices/task-queue/locking.service';
 
 @Injectable()
 export class PaymentModuleService {
@@ -53,6 +54,7 @@ export class PaymentModuleService {
     private readonly settingsService: SettingsService,
     private readonly syncRewardService: SyncRewardService,
     private readonly userService: UserService,
+    private readonly lockingService: LockingService,
   ) {}
 
   async savePaymentMethodBrand(paymentMethodId: string, brandId: string) {
@@ -76,7 +78,7 @@ export class PaymentModuleService {
     const meCreditsInDollars = wallet.meCredits * settings.meTokenValue;
 
     const user = await this.userService.getUserById(userId);
-    if(!user) throw new HttpException('User not found', 404);
+    if (!user) throw new HttpException('User not found', 404);
 
     const auditTrailEntry = {
       userId: userId,
@@ -225,7 +227,7 @@ export class PaymentModuleService {
     page,
     limit,
   }: {
-    userId: string,
+    userId: string;
     brandId?: string;
     page: number;
     limit: number;
@@ -238,11 +240,11 @@ export class PaymentModuleService {
       });
 
       const user = await this.userService.getUserById(userId);
-      if(!user) throw new HttpException('User not found', 404);
+      if (!user) throw new HttpException('User not found', 404);
 
       const auditTrailEntry = {
         userId: userId,
-        auditType: "ACCESS_DUE_INVOICES",
+        auditType: 'ACCESS_DUE_INVOICES',
         description: `User ${userId} accessed due invoices for brand${brandId}, page ${page} with limit ${limit}.`,
         reportableId: brandId || 'N/A',
       };
@@ -448,6 +450,13 @@ export class PaymentModuleService {
 
   // @Cron(CronExpression.EVERY_30_SECONDS)
   async checkBrandForTopup() {
+    const jobName = 'checkBrandForTopup';
+
+    if (!this.lockingService.lock(jobName)) {
+      console.log('Job is already running. Skipping...');
+      return;
+    }
+
     try {
       const lastBlock = await this.brandService.getLastTopupEventBlock();
       const fromBlock = lastBlock ? lastBlock.lastBlock : 45495364;
@@ -565,41 +574,57 @@ export class PaymentModuleService {
     } catch (error) {
       logger.error(error);
       console.log('Error', error);
+    } finally {
+      this.lockingService.unlock(jobName);
     }
   }
 
   // @Cron(CronExpression.EVERY_30_SECONDS)
   async handleCompleteAutoTop() {
-    const requests = await this.billerService.getPendingAutoTopupRequests();
+    const jobName = 'handleCompleteAutoTop';
 
-    for (const request of requests) {
-      const { taskId, brandId, amount } = request;
+    if (!this.lockingService.lock(jobName)) {
+      console.log('Job is already running. Skipping...');
+      return;
+    }
 
-      const status = await checkOrderStatusGelatoOrRuntime(
-        taskId,
-        OrderVerifier.GELATO,
-      );
+    try {
+      const requests = await this.billerService.getPendingAutoTopupRequests();
 
-      console.log(status);
+      for (const request of requests) {
+        const { taskId, brandId, amount } = request;
 
-      if (status === 'success') {
-        await this.billerService.createBill({
-          amount,
-          brandId,
-          type: BillType.AUTO_TOPUP,
-        });
-      } else if (status === 'failed') {
-        request.status = AutoTopupStatus.FAILED;
-        await this.billerService.saveAutoTopupRequest(request);
-      } else {
-        if (request.retry > 30) {
+        const status = await checkOrderStatusGelatoOrRuntime(
+          taskId,
+          OrderVerifier.GELATO,
+        );
+
+        console.log(status);
+
+        if (status === 'success') {
+          await this.billerService.createBill({
+            amount,
+            brandId,
+            type: BillType.AUTO_TOPUP,
+          });
+        } else if (status === 'failed') {
           request.status = AutoTopupStatus.FAILED;
           await this.billerService.saveAutoTopupRequest(request);
         } else {
-          request.retry += 1;
-          await this.billerService.saveAutoTopupRequest(request);
+          if (request.retry > 30) {
+            request.status = AutoTopupStatus.FAILED;
+            await this.billerService.saveAutoTopupRequest(request);
+          } else {
+            request.retry += 1;
+            await this.billerService.saveAutoTopupRequest(request);
+          }
         }
       }
+    } catch (error) {
+      logger.log(error);
+      console.log('Error', error);
+    } finally {
+      this.lockingService.unlock(jobName);
     }
   }
 
@@ -617,7 +642,7 @@ export class PaymentModuleService {
       await this.walletService.save(brandWallet);
 
       const user = await this.userService.getUserById(userId);
-      if(!user) throw new HttpException('User not found', 404);
+      if (!user) throw new HttpException('User not found', 404);
 
       //Audit Trail Entry
       const auditTrailEntry = {
@@ -652,7 +677,7 @@ export class PaymentModuleService {
       await this.walletService.save(brandWallet);
 
       const user = await this.userService.getUserById(userId);
-      if(!user) throw new HttpException('User not found', 404);
+      if (!user) throw new HttpException('User not found', 404);
 
       const auditTrailEntry = {
         userId: userId,
@@ -661,11 +686,29 @@ export class PaymentModuleService {
         reportableId: brandId,
       };
 
-      await this.auditTrailService.createAuditTrail(auditTrailEntry)
+      await this.auditTrailService.createAuditTrail(auditTrailEntry);
 
       return {
         message: 'Me Credits removed successfully',
       };
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async createAutoTopupRequest({ brandId }: { brandId: string }) {
+    try {
+      const brand = await this.brandService.getBrandById(brandId);
+      // const signature = await this.walletService.getBrandSignature(brandId);
+
+      // await this.billerService.createAutoTopupRequest({
+      //   amount: amountInDollar,
+      //   brandId: brand.id,
+      //   nounce,
+      //   taskId: taskId.taskId,
+      // });
     } catch (error) {
       console.log(error);
       logger.error(error);

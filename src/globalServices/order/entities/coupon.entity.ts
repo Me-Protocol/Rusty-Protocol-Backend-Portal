@@ -38,4 +38,19 @@ export class Coupon extends BaseEntity {
 
   @OneToOne(() => Order, (order) => order.coupon)
   order?: Order;
+
+  @Column({
+    nullable: true,
+  })
+  order_code: string;
+
+  @Column({
+    nullable: true,
+  })
+  brandDiscountId: string;
+
+  @Column({
+    nullable: true,
+  })
+  brandPriceRuleId: string;
 }

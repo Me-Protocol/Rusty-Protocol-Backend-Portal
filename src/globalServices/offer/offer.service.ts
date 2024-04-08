@@ -157,6 +157,7 @@ export class OfferService {
         'offerImages',
         'reward',
         'product.currency',
+        'product.regions'
       ],
     });
 

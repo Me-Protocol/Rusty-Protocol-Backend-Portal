@@ -57,6 +57,9 @@ import {
 } from '@src/utils/helpers/queue-names';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
+import { deleteCouponCode } from '@src/globalServices/online-store-handler/delete-coupon';
+import { ShopifyHandler } from '@src/globalServices/online-store-handler/shopify';
+import { AxiosInstance } from 'axios';
 
 @Injectable()
 export class OrderManagementService {
@@ -166,6 +169,9 @@ export class OrderManagementService {
         offer_id: offerId,
         isUsed: false,
         couponCode,
+        orderCode: '',
+        brandDiscountId: '',
+        brandPriceRuleId: '',
       });
 
       const orderRecord = new Order();
@@ -235,6 +241,30 @@ export class OrderManagementService {
     }
   }
 
+  async getShopifyToken({ brandId }: { brandId: string }) {
+    try {
+      const brand = await this.brandService.getBrandWithOnlineCreds(brandId);
+
+      const shopifyHandler = new ShopifyHandler();
+      const shopify: AxiosInstance = shopifyHandler.createInstance(brand);
+
+      const { data } = await shopify.post('/storefront_access_tokens.json', {
+        storefront_access_token: {
+          title: `token_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}`,
+        },
+      });
+
+      if (data?.storefront_access_token) {
+        return data.storefront_access_token.access_token;
+      } else {
+        return data?.storefront_access_tokens[0]?.access_token;
+      }
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
   async useCoupon(body: UseCouponDto) {
     try {
       return this.couponService.useCoupon(body);
@@ -295,21 +325,20 @@ export class OrderManagementService {
       }
 
       // Validate online store setup
-      await checkBrandOnlineStore({ brand });
-      await checkProductOnBrandStore({
-        brand,
-        productId: offer.product.productIdOnBrandSite,
-      });
+      try {
+        await checkBrandOnlineStore({ brand });
+      } catch (error) {
+        throw new Error('Error validing brand store.');
+      }
 
-      // TODO: uncomment this
-      // const canPayCost = await this.fiatWalletService.checkCanPayCost(
-      //   offer.brandId,
-      // );
-
-      // if (!canPayCost) {
-      //   throw new Error('Brand cannot pay cost');
-      // }
-      // TODO: uncomment this
+      try {
+        await checkProductOnBrandStore({
+          brand,
+          productId: offer.product.productIdOnBrandSite,
+        });
+      } catch (error) {
+        throw new Error('Error validating product on brand site.');
+      }
 
       const user = await this.userService.getUserById(userId);
 
@@ -326,6 +355,55 @@ export class OrderManagementService {
       await this.offerService.reduceInventory(offer, order);
 
       return order;
+    } catch (error) {
+      console.log(error);
+      logger.error(error);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async createCoupon(orderId: string) {
+    try {
+      const order = await this.orderService.getOrderByOrderId(orderId);
+
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      const couponCode = await this.couponService.generateCouponCode();
+      const offer = await this.offerService.getOfferById(order.offerId);
+      const brand = await this.brandService.getBrandWithOnlineCreds(
+        order.brandId,
+      );
+
+      try {
+        const coupon = await createCoupon({
+          brand,
+          data: {
+            code: couponCode,
+            amount: offer.discountPercentage,
+          },
+          productId: offer.product.id,
+          productIdOnBrandSite: offer.product.productIdOnBrandSite,
+          email: order.user.email,
+          quantity: order.quantity,
+        });
+
+        console.log(coupon);
+
+        await this.couponService.create({
+          user_id: order.userId,
+          offer_id: order.offerId,
+          couponCode,
+          orderCode: order.orderCode,
+          brandDiscountId: coupon.discount_code_id,
+          brandPriceRuleId: coupon.price_rule_id,
+        });
+      } catch (error) {
+        throw new Error(
+          error?.message ?? 'Error creating coupon code on brand website',
+        );
+      }
     } catch (error) {
       console.log(error);
       logger.error(error);
@@ -355,9 +433,44 @@ export class OrderManagementService {
         throw new Error('Order has been marked as incomplete');
       }
 
+      const coupon = await this.couponService.couponByOrderCode(
+        order.orderCode,
+      );
+
+      if (!coupon) {
+        throw new Error('Order does not have a coupon.');
+      }
+
       order.spendData = spendData;
       order.taskId = taskId;
       order.verifier = verifier;
+
+      await this.orderService.saveOrder(order);
+
+      if (
+        taskId ===
+        '0x0000000000000000000000000000000000000000000000000000000000000000'
+      ) {
+        const transaction = await this.transactionRepo.findOne({
+          where: {
+            orderId: order.id,
+          },
+        });
+
+        const offer = await this.offerService.getOfferById(order.offerId);
+        const customer = await this.customerService.getByUserId(order.userId);
+
+        await this.failOrderAndRefund({
+          order,
+          transaction,
+          offer,
+          customer,
+          failReason: 'Request failed. Try again.',
+          status: StatusType.FAILED,
+        });
+
+        throw new Error('Request failed. Try again.');
+      }
 
       const transaction = new Transaction();
       transaction.amount = order.points;
@@ -441,46 +554,14 @@ export class OrderManagementService {
 
       if (isSetupWoocommerce || isSetupShopify) {
         if (status === 'success') {
-          const couponCode = await this.couponService.generateCouponCode();
+          const coupon = await this.couponService.couponByOrderCode(
+            order.orderCode,
+          );
 
-          try {
-            await createCoupon({
-              brand,
-              data: {
-                code: couponCode,
-                amount: offer.discountPercentage,
-              },
-              productId: offer.product.id,
-              productIdOnBrandSite: offer.product.productIdOnBrandSite,
-              email: order.user.email,
-            });
-          } catch (error) {
-            // console.log(error);
-            // const msg = error?.message;
-            // if (msg === 'Product is not synchronized or not found.') {
-
-            //   return;
-            // }
-
-            await this.failOrderAndRefund({
-              order,
-              transaction,
-              offer,
-              customer,
-              failReason: 'Failed to create coupon',
-              status: StatusType.FAILED,
-            });
-
+          if (!coupon) {
+            console.log('Coupon code not found');
             return;
           }
-
-          const coupon = await this.couponService.create({
-            user_id: order.userId,
-            offer_id: order.offerId,
-            couponCode,
-          });
-
-          console.log(coupon);
 
           order.couponId = coupon.id;
           order.status = StatusType.SUCCEDDED;
@@ -488,7 +569,6 @@ export class OrderManagementService {
           await this.orderService.saveOrder(order);
 
           // create online store coupon
-
           if (transaction) {
             transaction.status = StatusType.SUCCEDDED;
             await this.transactionRepo.save(transaction);
@@ -520,7 +600,6 @@ export class OrderManagementService {
           }
 
           //  Send notification to user
-
           const notification = new Notification();
           notification.userId = order.userId;
           notification.message = `Congratulations! You have successfully redeemed ${offer.name} from ${offer.brand.name}`;
@@ -722,7 +801,6 @@ export class OrderManagementService {
   @Cron(CronExpression.EVERY_MINUTE)
   async retryPendingOrders() {
     const pendingOrders = await this.orderService.getPendingOrders();
-    console.log(pendingOrders.length, 'Pending orders');
 
     for (const order of pendingOrders) {
       const job = await this.orderQueue.getJob(order.jobId);
@@ -783,10 +861,26 @@ export class OrderManagementService {
     order.failedReason = failReason;
     await this.orderService.saveOrder(order);
 
-    await redistributed_failed_tx_with_url(order.spendData, RUNTIME_URL);
+    const coupon = await this.couponService.couponByOrderCode(order.orderCode);
+    const brand = await this.brandService.getBrandWithOnlineCreds(
+      order.brandId,
+    );
 
-    order.isRefunded = true;
-    await this.orderService.saveOrder(order);
+    if (!order.isRefunded) {
+      const spendData = order.spendData as any;
+      if (spendData) {
+        const refund = await redistributed_failed_tx_with_url(
+          spendData?.data,
+          RUNTIME_URL,
+        );
+
+        console.log(refund.data);
+
+        order.isRefunded = true;
+        await this.orderService.saveOrder(order);
+      }
+    }
+
     await this.offerService.increaseInventory(offer, order);
 
     if (transaction) {
@@ -822,6 +916,24 @@ export class OrderManagementService {
                 <p>Quantity: ${order.quantity}</p>
               `;
 
-    await this.notificationService.createNotification(notification);
+    try {
+      await this.notificationService.createNotification(notification);
+    } catch (error) {
+      console.log('Error sending email');
+    }
+
+    console.log(coupon);
+
+    if (coupon.brandDiscountId) {
+      try {
+        await deleteCouponCode({
+          brand,
+          couponId: coupon.brandDiscountId,
+          priceRuleId: coupon.brandPriceRuleId,
+        });
+      } catch (error) {
+        console.log('Error deleting coupon', error);
+      }
+    }
   }
 }

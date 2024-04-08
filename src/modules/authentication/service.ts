@@ -40,6 +40,7 @@ import {
   CreateSendgridContactEvent,
 } from '@src/globalServices/mail/create-sendgrid-contact.event';
 import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
+import { ampli } from '@src/ampli';
 import { BullService } from '@src/globalServices/task-queue/bull.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -49,7 +50,10 @@ const geoip = require('geoip-lite');
 const DeviceDetector = require('node-device-detector');
 const deviceDetector = new DeviceDetector();
 
-function capitalizeFirstLetter(str: string): string {
+function capitalizeFirstLetter(str) {
+  if (!str) {
+    return '';
+  }
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
@@ -467,10 +471,9 @@ export class AuthenticationService {
         ),
       );
 
-      if (userType === UserAppType.USER) {
-        await this.writeDataToGoogleSheet(newUser.id);
-      }
+      await this.writeDataToGoogleSheet(newUser.id);
 
+      await ampli.userSignUp(newUser.id, { registration_method: 'email' });
       return token;
     } catch (error) {
       logger.error(error);
@@ -768,6 +771,12 @@ export class AuthenticationService {
           userId: user.id,
         };
       }
+      await ampli.identify(user.id, {
+        email: identifier,
+        user_name: identifier,
+        registration_method: 'email',
+      });
+      await ampli.userLogin(user.id, { login_method: 'email' });
       return await this.registerDevice(user, userAgent, clientIp);
     } catch (error) {
       console.log(error);
@@ -802,6 +811,8 @@ export class AuthenticationService {
         return 'Logged out! See you soon :)';
       }
       await this.userService.deleteDeviceById(userId, deviceId);
+      //await ampli.identify(userId);
+      await ampli.userLogout(userId);
       return 'Logged out! See you soon :)';
     } catch (error) {
       logger.error(error);
@@ -1045,7 +1056,14 @@ export class AuthenticationService {
       const user = await this.userService.getUserByEmail(email);
       const userNameFromEmail = email.split('@')[0].toLowerCase();
 
+      await ampli.identify(user.id, {
+        email,
+        user_name: userNameFromEmail,
+        registration_method: 'google',
+      });
+
       if (user) {
+        ampli.userLogin(user.id, { login_method: 'google' }, {});
         return await this.handleExistingUser(
           user,
           provider,
@@ -1195,6 +1213,15 @@ export class AuthenticationService {
     await this.handleWalletCreation(savedUser);
     await this.sendWelcomeEmailSocial(email);
     const token = await this.registerDevice(savedUser, userAgent, ip);
+
+    await ampli.identify(newUser.id, {
+      email,
+      user_name: newUser.username,
+      registration_method: 'google',
+    });
+
+    await ampli.userSignUp(newUser.id, { registration_method: 'google' });
+
     return {
       token,
       provider,
