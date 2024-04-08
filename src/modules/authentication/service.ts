@@ -50,7 +50,10 @@ const geoip = require('geoip-lite');
 const DeviceDetector = require('node-device-detector');
 const deviceDetector = new DeviceDetector();
 
-function capitalizeFirstLetter(str: string): string {
+function capitalizeFirstLetter(str) {
+  if (!str) {
+    return '';
+  }
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
