@@ -4,9 +4,12 @@ export class Migrations1712533901906 implements MigrationInterface {
   name = 'Migrations1712533901906';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `ALTER TABLE "coupon" RENAME COLUMN IF EXISTS "orderCode" TO "order_code"`,
-    );
+    const orderCodeColumn = await queryRunner.hasColumn('coupon', 'orderCode');
+    if (orderCodeColumn) {
+      await queryRunner.query(
+        `ALTER TABLE "coupon" RENAME COLUMN "orderCode" TO "order_code"`,
+      );
+    }
     await queryRunner.query(
       `ALTER TABLE "order" ALTER COLUMN "orderCode" SET DEFAULT substr(uuid_generate_v4()::text, 1, 6)`,
     );
