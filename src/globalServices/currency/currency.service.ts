@@ -16,8 +16,6 @@ export class CurrencyService {
 
     @InjectRepository(Region)
     private readonly regionRepo: Repository<Region>,
-
-    
   ) {}
 
   async getCurrency() {
@@ -135,7 +133,7 @@ export class CurrencyService {
 
       if (!region) throw new Error('Region not found');
 
-      const originalRegion = { ...region};
+      const originalRegion = { ...region };
 
       if (name) region.name = name;
       if (code) region.code = code;
@@ -147,17 +145,18 @@ export class CurrencyService {
       const auditTrailEntry = {
         userId: userId,
         auditType: 'UPDATE_REGION',
-        description: `User ${userId} updated region ${id}. Changes: ${JSON.stringify({
-          original: originalRegion,
-          updated: updatedRegion,
-        })}`,
+        description: `User ${userId} updated region ${id}. Changes: ${JSON.stringify(
+          {
+            original: originalRegion,
+            updated: updatedRegion,
+          },
+        )}`,
         reportableId: id,
       };
 
       await this.auditTrailService.createAuditTrail(auditTrailEntry);
 
       return updatedRegion;
-
     } catch (error) {
       console.log(error);
       throw new HttpException(error.message, 400, {
@@ -185,7 +184,7 @@ export class CurrencyService {
     return region;
   }
 
-  async getDefaultRegion() {
+  async getDefaultRegion(): Promise<Region> {
     const region = await this.regionRepo.findOne({
       where: {
         isDefault: true,
