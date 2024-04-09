@@ -3,11 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './entities/category.entity';
 import { Repository } from 'typeorm';
 import { FilterCategoryDto } from '@src/modules/storeManagement/category/dto/FilterCategoryDto';
-import { UpdateCategoryDto } from '@src/modules/storeManagement/category/dto/UpdateCategoryDto';
 import { CreateCategoryDto } from '@src/modules/storeManagement/category/dto/CreateCategoryDto';
 import { ElasticIndex } from '@src/modules/search/index/search.index';
 import { categoryIndex } from '@src/modules/search/interface/search.interface';
-import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class CategoryService {
@@ -41,6 +39,7 @@ export class CategoryService {
 
     const categoryQuery = this.categoryRepo
       .createQueryBuilder('category')
+      .orderBy('category.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
 

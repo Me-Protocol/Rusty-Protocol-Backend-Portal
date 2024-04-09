@@ -347,11 +347,11 @@ export class BrandService {
       brandQuery.andWhere('brand.listOnStore = :listOnStore', {
         listOnStore: true,
       });
+
       brandQuery.andWhere('brand.disabled = :disabled', {
         disabled: false,
       });
     } else {
-      console.log('here');
       // regions is empty
       // brandQuery.where('regions.id IS NULL');
 
@@ -387,9 +387,8 @@ export class BrandService {
         disabled: false,
       });
 
-      brandQuery.andWhere('regions.id = :regionId', {
-        regionId: defaultRegion.id,
-      });
+      // where brand regions is not empty
+      brandQuery.andWhere('regions.id IS NOT NULL');
     }
 
     brandQuery.skip((page - 1) * limit).take(limit);
