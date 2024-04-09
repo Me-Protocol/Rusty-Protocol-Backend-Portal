@@ -376,20 +376,29 @@ export class OrderManagementService {
         order.brandId,
       );
 
-      try {
-        const coupon = await createCoupon({
-          brand,
-          data: {
-            code: couponCode,
-            amount: offer.discountPercentage,
-          },
-          productId: offer.product.id,
-          productIdOnBrandSite: offer.product.productIdOnBrandSite,
-          email: order.user.email,
-          quantity: order.quantity,
-        });
+      let coupon: any;
 
-        console.log(coupon);
+      try {
+        try {
+          coupon = await createCoupon({
+            brand,
+            data: {
+              code: couponCode,
+              amount: offer.discountPercentage,
+            },
+            productId: offer.product.id,
+            productIdOnBrandSite: offer.product.productIdOnBrandSite,
+            email: order.user.email,
+            quantity: order.quantity,
+          });
+        } catch (error) {
+          throw new Error(
+            error?.message ?? 'Error creating coupon code on brand website',
+          );
+        }
+
+        if (!coupon)
+          throw new Error('Error creating coupon code on brand website');
 
         await this.couponService.create({
           user_id: order.userId,
@@ -399,6 +408,8 @@ export class OrderManagementService {
           brandDiscountId: coupon.discount_code_id,
           brandPriceRuleId: coupon.price_rule_id,
         });
+
+        return 'ok';
       } catch (error) {
         throw new Error(
           error?.message ?? 'Error creating coupon code on brand website',
