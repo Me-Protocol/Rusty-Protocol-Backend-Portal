@@ -69,6 +69,14 @@ export class SyncRewardService {
     return this.syncBatchRepo.save(batch);
   }
 
+  async getRegistriesByReward(rewardId: string) {
+    return await this.rewardRegistryRepo.find({
+      where: {
+        rewardId,
+      },
+    });
+  }
+
   async findAllBatch({
     brandId,
     page,
