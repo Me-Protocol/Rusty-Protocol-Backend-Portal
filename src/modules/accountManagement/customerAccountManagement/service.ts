@@ -9,7 +9,10 @@ import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { CampaignService } from '@src/globalServices/campaign/campaign.service';
 import { BrandService } from '@src/globalServices/brand/brand.service';
+import sgMail from '@node_modules/@sendgrid/mail';
+import { SENDGRID_API_KEY, SENDGRID_EMAIL } from '@src/config/env.config';
 
+sgMail.setApiKey(SENDGRID_API_KEY);
 @Injectable()
 export class CustomerAccountManagementService {
   constructor(
@@ -20,6 +23,35 @@ export class CustomerAccountManagementService {
     private readonly campaignService: CampaignService,
     private readonly brandService: BrandService,
   ) {}
+
+  private async sendEmailToUserWithRewards(
+    email: string,
+    first_name: string,
+    amount_of_rewards: number,
+    amount_of_reward: number,
+    name_of_reward: string,
+  ) {
+    const payload = {
+      to: email,
+      from: `"Me Marketplace" <${SENDGRID_EMAIL}>`,
+      templateId: 'd-530024c9419f4c4ab6512ce3df29c566',
+      dynamic_template_data: {
+        name: first_name,
+        NameOfReward: name_of_reward,
+        AmountOfReward: amount_of_reward,
+        AmountOfRewards: amount_of_rewards,
+      },
+    };
+    sgMail.send(payload).then(
+      () => {},
+      (error) => {
+        console.error(error);
+        if (error.response) {
+          console.error(error.response.body);
+        }
+      },
+    );
+  }
 
   async updateCustomer(body: UpdateCustomerDto, userId: string) {
     try {
@@ -123,6 +155,14 @@ export class CustomerAccountManagementService {
           if (distribute.error) {
             throw new Error('Distribution failed');
           }
+
+          await this.sendEmailToUserWithRewards(
+            user.email,
+            customer.name,
+            point.undistributedBalance,
+            point.undistributedBalance,
+            point.reward.rewardName,
+          );
         }
       }
 
