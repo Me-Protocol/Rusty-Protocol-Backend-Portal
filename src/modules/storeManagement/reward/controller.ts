@@ -327,4 +327,9 @@ export class RewardManagementController {
 
     return await this.rewardManagementService.getRegistryHistory(query);
   }
+
+  @Get('registries/all')
+  async getRegistries(@Query('rewardId') rewardId: string) {
+    return await this.syncService.getRegistriesByReward(rewardId);
+  }
 }
