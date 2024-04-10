@@ -103,7 +103,7 @@ export class CurrencyService {
     const auditTrailEntry = {
       userId: userId,
       auditType: 'CREATE_REGION',
-      description: `User ${userId} created a region ${name}, ${code} with currency ID ${currencyId}.`,
+      description: `${user.username} created a region ${name}, ${code} with currency ID ${currencyId}.`,
       reportableId: savedRegion.id,
     };
 
@@ -155,7 +155,7 @@ export class CurrencyService {
       const auditTrailEntry = {
         userId: userId,
         auditType: 'UPDATE_REGION',
-        description: `User ${userId} updated region ${id}. Changes: ${JSON.stringify({
+        description: `${user.username} updated region ${id}. Changes: ${JSON.stringify({
           original: originalRegion,
           updated: updatedRegion,
         })}`,

@@ -35,6 +35,7 @@ import { UpdateRegionDto } from './dto/UpdateRegionDto.dto';
 import { CreateCurrencyDto } from './dto/CreateCurrencyDto.dto';
 import { Currency } from '@src/globalServices/currency/entities/currency.entity';
 import { RemoveMeCreditsDto } from './dto/RemoveMeCreditDto.dto';
+import { AdminFilterInvoiceDto } from './dto/AdminFilterInvoiceDto.dto';
 
 @ApiTags('Payment')
 @Controller('payment')
@@ -135,25 +136,34 @@ export class PaymentModuleController {
   }
 
   //To track due invoices
-  @UseGuards(AdminJwtStrategy)
-  @Get('/admin/invoice/due')
-  async getDueInvoices(
-    @Query('brandId') brandId: string,
-    @Query('page') page: string = '1',
-    @Query('limit') limit: string = '10',
-    @Req() req: any,
-  ) {
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
-    const userId = req.user.id;
+  // @UseGuards(AdminJwtStrategy)
+  // @Get('/admin/invoice/due')
+  // async getDueInvoices(
+  //   @Query('brandId') brandId: string,
+  //   @Query('page') page: string = '1',
+  //   @Query('limit') limit: string = '10',
+  //   @Req() req: any,
+  // ) {
+  //   const pageNumber = parseInt(page, 10);
+  //   const limitNumber = parseInt(limit, 10);
+  //   const userId = req.user.id;
 
-    return await this.paymentService.getDueInvoices({
-      userId,
-      brandId,
-      page: pageNumber,
-      limit: limitNumber,
-    });
+  //   return await this.paymentService.getDueInvoices({
+  //     userId,
+  //     brandId,
+  //     page: pageNumber,
+  //     limit: limitNumber,
+  //   });
+  // }
+
+  //To get All invoices
+  @UseGuards(AdminJwtStrategy)
+  @Get('/admin/getAllInvoices')
+  async getAllInvoices(@Query(ValidationPipe) query: AdminFilterInvoiceDto) {
+    return this.paymentService.getAllInvoices(query);
   }
+
+  
 
   @Get('currencies')
   async getCurrency() {
@@ -248,16 +258,15 @@ export class PaymentModuleController {
   async getMeCredits(@Req() req: any) {
     const brand = req.user.brand as Brand;
 
-    return await this.paymentService.getMeCredits(brand.id, req.user.id);
+    return await this.paymentService.getMeCredits(brand.id);
   }
 
   @UseGuards(AdminJwtStrategy)
   @Get('/admin/me-credit-balance/:brandId')
   async getMeCreditsAdmin(
-    @Param('brandId', ValidationPipe) brandId: string,
-    @Req() req: any,
+    @Param('brandId', ValidationPipe) brandId: string
   ) {
-    return await this.paymentService.getMeCredits(brandId, req.user.id);
+    return await this.paymentService.getMeCredits(brandId);
   }
 
   @AdminRoles([AdminRole.SUPER_ADMIN])

@@ -170,7 +170,7 @@ export class SettingsService {
     const auditTrailEntry = {
       userId: userId,
       auditType: 'UPDATE_SETTINGS',
-      description: `User ${userId} updated settings from ${JSON.stringify(originalSettings)} to ${JSON.stringify(updateDto)}.`,
+      description: `${user.username} updated settings from ${JSON.stringify(originalSettings, null, 2)} to ${JSON.stringify(updateDto, null, 2)}.`,
       reportableId: settings.id ? settings.id.toString() : 'N/A',
     };
 

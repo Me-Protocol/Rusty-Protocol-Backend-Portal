@@ -684,18 +684,6 @@ export class BrandAccountManagementService {
     try {
       const brands = await this.brandService.getAllBrandsForAdmin(query);
 
-      // TODO No need
-      // const auditTrailEntry = {
-      //   userId: userId,
-      //   auditType: 'GET_ALL_BRANDS_FOR_ADMIN',
-      //   description: `User ${userId} retrieved all brands for admin with query parameters: ${JSON.stringify(
-      //     query,
-      //   )}.`,
-      //   reportableId: '',
-      // };
-
-      // await this.auditTrailService.createAuditTrail(auditTrailEntry);
-
       return brands;
     } catch (error) {
       console.log(error);
