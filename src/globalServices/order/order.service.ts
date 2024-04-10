@@ -64,7 +64,8 @@ export class OrderService {
         'reward_brand',
         'brand',
         'customer',
-      ]);
+      ])
+      .addSelect('user.email');
 
     if (brandId) {
       orderQuery
