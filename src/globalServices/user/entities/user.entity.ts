@@ -22,6 +22,7 @@ import { BrandMember } from '@src/globalServices/brand/entities/brand_member.ent
 import { BrandCustomer } from '@src/globalServices/brand/entities/brand_customer.entity';
 import { Notification } from '@src/globalServices/notification/entities/notification.entity';
 import { AdminMember } from '@src/globalServices/admin/entities/admin_member.entity';
+import { AuditTrail } from '@src/globalServices/auditTrail/entities/auditTrail.entity';
 // import { TaskResponseEntity } from '@src/models/taskResponse.entity';
 
 @Entity('user')
@@ -263,4 +264,7 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Notification, (notification) => notification.user)
   notifications: Notification[];
+
+  @OneToMany(() => AuditTrail, (auditTrail) => auditTrail.user)
+  auditTrails: AuditTrail[];
 }

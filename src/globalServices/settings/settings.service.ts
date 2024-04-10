@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { AdminSettings } from './entities/admin_settings.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,11 +9,13 @@ import { generateWalletRandom } from '@developeruche/protocol-core';
 import { UpdateSettingsDto } from '@src/modules/settings/dto/UpdateSettingsDto.dto';
 import {logger} from '@src/globalServices/logger/logger.service'
 import { AuditTrailService } from '../auditTrail/auditTrail.service';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class SettingsService {
   constructor(
     private readonly auditTrailService: AuditTrailService,
+    private readonly userService: UserService,
   
     @InjectRepository(AdminSettings)
     private readonly adminSettingsRepo: Repository<AdminSettings>,
@@ -162,10 +164,13 @@ export class SettingsService {
 
     logger.log('Settings have been updated successfully');
 
+    const user = await this.userService.getUserById(userId);
+    if(!user) throw new HttpException('User not found', 404);
+
     const auditTrailEntry = {
       userId: userId,
       auditType: 'UPDATE_SETTINGS',
-      description: `User ${userId} updated settings from ${JSON.stringify(originalSettings)} to ${JSON.stringify(updateDto)}.`,
+      description: `${user.username} updated settings from ${JSON.stringify(originalSettings, null, 2)} to ${JSON.stringify(updateDto, null, 2)}.`,
       reportableId: settings.id ? settings.id.toString() : 'N/A',
     };
 

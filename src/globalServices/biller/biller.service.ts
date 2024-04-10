@@ -181,6 +181,66 @@ export class BillerService {
       prevPage: page > 1 ? Number(page) - 1 : null,
     };
   }
+
+  async getAllBrandInvoices({
+    brandId,
+    page = 1,
+    limit = 10,
+    isPaid,
+    isDue,
+    startDate,
+    endDate,
+  }: {
+    brandId?: string;
+    page?: number;
+    limit?: number;
+    isPaid?: boolean;
+    isDue?: boolean;
+    startDate?: Date;
+    endDate?: Date;
+    }) {
+      const invoiceQuery = this.invoiceRepo
+      .createQueryBuilder('invoice')
+      .leftJoinAndSelect('invoice.bills', 'bills');
+
+      if (brandId) {
+        invoiceQuery.andWhere('invoice.brandId = :brandId', { brandId });
+      }
+
+      if (isPaid !== undefined){
+        invoiceQuery.andWhere('invoice.isPaid = :isPaid', { isPaid });
+      }
+
+      if (isDue !== undefined) {
+        invoiceQuery.andWhere('invoice.isDue = :isDue', { isDue });
+      }
+
+      if (startDate) {
+        invoiceQuery.andWhere('invoice.createdAt >= :startDate', { startDate });
+      }
+
+      if (endDate) {
+        invoiceQuery.andWhere('invoice.createdAt <= :endDate', { endDate });
+      }
+
+      //To calculate the number of pages to skip for pagination
+      const offset = (page - 1) * limit;
+
+      //to execute the query with pagination added
+      const invoices  = await invoiceQuery
+          .skip(offset)
+          .take(limit)
+          .getMany();
+
+      const total = await invoiceQuery.getCount();
+
+      return {
+        invoices,
+        total,
+        nextPage: total > page * limit ? page + 1 : null,
+        prevPage: page > 1 ? page - 1 : null,
+      };
+    }
   
   async saveInvoice(invoice: Invoice) {
     return await this.invoiceRepo.save(invoice);
