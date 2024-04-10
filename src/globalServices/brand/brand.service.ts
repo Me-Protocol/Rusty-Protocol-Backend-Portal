@@ -313,8 +313,13 @@ export class BrandService {
     const defaultRegion = await this.currencyService.getDefaultRegion();
 
     if (regionId) {
-      // where offer product regions contains regionId or offer product regions is empty
-      brandQuery.where('regions.id = :regionId', { regionId });
+      console.log(regionId);
+      // where brand regions contains regionId or contains the default region
+      brandQuery
+        .where('regions.id = :regionId', { regionId })
+        .orWhere('regions.id = :defaultRegion', {
+          defaultRegion: defaultRegion.id,
+        });
 
       if (order) {
         const formatedOrder = order.split(':')[0];
@@ -336,10 +341,6 @@ export class BrandService {
         });
       }
 
-      brandQuery.andWhere('regions.id = :regionId', {
-        regionId: defaultRegion.id,
-      });
-
       if (categoryId) {
         brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
       }
@@ -347,11 +348,11 @@ export class BrandService {
       brandQuery.andWhere('brand.listOnStore = :listOnStore', {
         listOnStore: true,
       });
+
       brandQuery.andWhere('brand.disabled = :disabled', {
         disabled: false,
       });
     } else {
-      console.log('here');
       // regions is empty
       // brandQuery.where('regions.id IS NULL');
 
@@ -387,9 +388,8 @@ export class BrandService {
         disabled: false,
       });
 
-      brandQuery.andWhere('regions.id = :regionId', {
-        regionId: defaultRegion.id,
-      });
+      // where brand regions is not empty
+      brandQuery.andWhere('regions.id IS NOT NULL');
     }
 
     brandQuery.skip((page - 1) * limit).take(limit);
@@ -1131,6 +1131,8 @@ export class BrandService {
         currency: true,
         location: true,
         regions: true,
+        shopify_access_token: true,
+        shopify_access_token_updated_date: true,
       },
       relations: ['regions'],
     });

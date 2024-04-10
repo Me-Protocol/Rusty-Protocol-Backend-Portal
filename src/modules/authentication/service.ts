@@ -42,7 +42,10 @@ import {
 import { GoogleSheetService } from '@src/globalServices/google-sheets/google-sheet.service';
 import { ampli } from '@src/ampli';
 import { BullService } from '@src/globalServices/task-queue/bull.service';
+import { SENDGRID_API_KEY, SENDGRID_EMAIL } from '@src/config/env.config';
+import sgMail from '@sendgrid/mail';
 
+sgMail.setApiKey(SENDGRID_API_KEY);
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
 
@@ -74,24 +77,27 @@ export class AuthenticationService {
     private readonly bullService: BullService,
   ) {}
 
-  async writeDataToGoogleSheet(userId: string): Promise<any> {
-    const user = await this.userService.getUserById(userId);
-
-    if (!user) {
-      return false;
-    }
-
-    const [firstName, lastName] = user.customer.name.split(' ');
-
-    const capitalizedFirstName = capitalizeFirstLetter(firstName);
-    const capitalizedLastName = capitalizeFirstLetter(lastName);
-    await this.googleService.writeToSpreadsheet(
-      user.id,
-      user.email,
-      capitalizedFirstName,
-      capitalizedLastName,
+  private async sendEmailToUserWithoutRewards(
+    email: string,
+    first_name: string,
+  ) {
+    const payload = {
+      to: email,
+      from: `"Me Marketplace" <${SENDGRID_EMAIL}>`,
+      templateId: 'd-797d63ae277e455a8694de84e7673ed4',
+      dynamic_template_data: {
+        name: first_name,
+      },
+    };
+    sgMail.send(payload).then(
+      () => {},
+      (error) => {
+        console.error(error);
+        if (error.response) {
+          console.error(error.response.body);
+        }
+      },
     );
-    return true;
   }
 
   async authorizeGoogle(): Promise<any> {
@@ -471,7 +477,13 @@ export class AuthenticationService {
         ),
       );
 
-      await this.writeDataToGoogleSheet(newUser.id);
+      const rewardRegistry =
+        await this.syncService.getAllRegistryRecordsByIdentifer(newUser.email);
+
+      if (rewardRegistry.length <= 0) {
+        // send email without rewards
+        await this.sendEmailToUserWithoutRewards(newUser.email, firstName);
+      }
 
       await ampli.userSignUp(newUser.id, { registration_method: 'email' });
       return token;
@@ -566,7 +578,7 @@ export class AuthenticationService {
       }
 
       const token = await this.registerDevice(user, userAgent, clientIp);
-      await this.sendWelcomeEmail(user);
+      //  await this.sendWelcomeEmail(user);
 
       return token;
     } catch (error) {

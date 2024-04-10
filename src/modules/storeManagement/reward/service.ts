@@ -1022,6 +1022,7 @@ export class RewardManagementService {
               <div>
                 <p>Hello ${user?.customer?.name},</p>
                 <p>You just recieved ${amount} ${reward.rewardSymbol} from ${reward?.brand?.name}<p>
+                </div>
               `;
 
     await this.notificationService.createNotification(notification);

@@ -47,13 +47,15 @@ export const createCoupon = async ({
     target_selection: 'entitled',
     allocation_method: 'across',
     value_type: 'fixed_amount',
-    prerequisite_subtotal_range: {
-      greater_than_or_equal_to: body.amount,
-    },
+    // prerequisite_subtotal_range: {
+    //   greater_than_or_equal_to: body.amount,
+    // },
     starts_at: new Date().toISOString(),
     entitled_product_ids: [productIdOnBrandSite.toString()],
     allocation_limit: 1,
     customer_selection: 'all',
+    once_per_customer: true,
+    usage_limit: 1,
   };
 
   console.log('shopify_body_price_rule', shopify_body_price_rule);

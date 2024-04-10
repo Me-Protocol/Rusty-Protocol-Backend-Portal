@@ -85,6 +85,7 @@ async function bootstrap() {
   //         connectSrc: [
   //           `'self'`,
   //           '*.meappbounty.com',
+  //           '*.memarketplace.io',
   //           '*.usemeprotocol.com',
   //           '*.alchemy.com',
   //           '*.magic.link',

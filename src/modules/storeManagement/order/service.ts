@@ -245,6 +245,16 @@ export class OrderManagementService {
     try {
       const brand = await this.brandService.getBrandWithOnlineCreds(brandId);
 
+      if (!brand) {
+        throw new Error('Brand not found');
+      }
+
+      if (
+        brand.shopify_access_token
+      ) {
+          return brand.shopify_access_token;
+      }
+
       const shopifyHandler = new ShopifyHandler();
       const shopify: AxiosInstance = shopifyHandler.createInstance(brand);
 
@@ -252,11 +262,22 @@ export class OrderManagementService {
         storefront_access_token: {
           title: `token_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}`,
         },
+      }).then((res) => res.data)
+      .catch((err) => {
+        console.log(err.response.data);
+        throw new Error('Error creating shopify access token');
       });
+      
 
       if (data?.storefront_access_token) {
+        brand.shopify_access_token = data.storefront_access_token.access_token;
+        brand.shopify_access_token_updated_date = new Date();
+        await this.brandService.save(brand);
         return data.storefront_access_token.access_token;
       } else {
+        brand.shopify_access_token = data?.storefront_access_tokens[0]?.access_token;
+        brand.shopify_access_token_updated_date = new Date();
+        await this.brandService.save(brand);
         return data?.storefront_access_tokens[0]?.access_token;
       }
     } catch (error) {
@@ -376,20 +397,29 @@ export class OrderManagementService {
         order.brandId,
       );
 
-      try {
-        const coupon = await createCoupon({
-          brand,
-          data: {
-            code: couponCode,
-            amount: offer.discountPercentage,
-          },
-          productId: offer.product.id,
-          productIdOnBrandSite: offer.product.productIdOnBrandSite,
-          email: order.user.email,
-          quantity: order.quantity,
-        });
+      let coupon: any;
 
-        console.log(coupon);
+      try {
+        try {
+          coupon = await createCoupon({
+            brand,
+            data: {
+              code: couponCode,
+              amount: offer.discountPercentage,
+            },
+            productId: offer.product.id,
+            productIdOnBrandSite: offer.product.productIdOnBrandSite,
+            email: order.user.email,
+            quantity: order.quantity,
+          });
+        } catch (error) {
+          throw new Error(
+            error?.message ?? 'Error creating coupon code on brand website',
+          );
+        }
+
+        if (!coupon)
+          throw new Error('Error creating coupon code on brand website');
 
         await this.couponService.create({
           user_id: order.userId,
@@ -399,6 +429,8 @@ export class OrderManagementService {
           brandDiscountId: coupon.discount_code_id,
           brandPriceRuleId: coupon.price_rule_id,
         });
+
+        return 'ok';
       } catch (error) {
         throw new Error(
           error?.message ?? 'Error creating coupon code on brand website',
@@ -636,6 +668,7 @@ export class OrderManagementService {
                   text: 'Redeem now',
                   url: `${offer.product.productUrl}?coupon=${coupon.code}`,
                 })}
+                <p>For further enquiries, please contact Me Marketplace at <i>support@myai.life</i></p>
              `;
 
           await this.notificationService.createNotification(notification);
@@ -914,6 +947,7 @@ export class OrderManagementService {
                 <p>Redemption Details</p>
                 <p>Points: ${order.points}</p>
                 <p>Quantity: ${order.quantity}</p>
+                <p>For further enquiries, please contact Me Marketplace at <i>support@myai.life</i></p>
               `;
 
     try {

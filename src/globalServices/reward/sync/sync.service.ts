@@ -850,6 +850,7 @@ export class SyncRewardService {
       where: {
         userId,
       },
+      relations: ['reward', 'reward.brand'],
     });
 
     //return where rewardRegistry > 0;
