@@ -313,8 +313,13 @@ export class BrandService {
     const defaultRegion = await this.currencyService.getDefaultRegion();
 
     if (regionId) {
-      // where offer product regions contains regionId or offer product regions is empty
-      brandQuery.where('regions.id = :regionId', { regionId });
+      console.log(regionId);
+      // where brand regions contains regionId or contains the default region
+      brandQuery
+        .where('regions.id = :regionId', { regionId })
+        .orWhere('regions.id = :defaultRegion', {
+          defaultRegion: defaultRegion.id,
+        });
 
       if (order) {
         const formatedOrder = order.split(':')[0];
@@ -335,10 +340,6 @@ export class BrandService {
           search: `%${search}%`,
         });
       }
-
-      brandQuery.andWhere('regions.id = :regionId', {
-        regionId: defaultRegion.id,
-      });
 
       if (categoryId) {
         brandQuery.andWhere('brand.categoryId = :categoryId', { categoryId });
