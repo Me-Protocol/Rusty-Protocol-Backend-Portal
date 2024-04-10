@@ -1,19 +1,22 @@
-import { BaseEntity } from "@src/common/entities/base.entity";
-import {Entity, Column} from "typeorm";
+import { BaseEntity } from '@src/common/entities/base.entity';
+import { User } from '@src/globalServices/user/entities/user.entity';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 
-@Entity("auditTrail")
-export class AuditTrail extends BaseEntity{
-
-  @Column()
+@Entity('audit_trail')
+export class AuditTrail extends BaseEntity {
+  @Column({ nullable: true })
   userId: string;
 
-  @Column()
+  @ManyToOne(() => User, (user) => user.auditTrails)
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @Column({ nullable: true })
   auditType: string;
 
-  @Column()
+  @Column({ nullable: true })
   description: string;
 
-  @Column()
+  @Column({ nullable: true })
   reportableId: string;
-
-} 
+}

@@ -39,7 +39,10 @@ import {
 import { checkOrderStatusGelatoOrRuntime } from '@src/globalServices/costManagement/taskId-verifier.service';
 import { OrderVerifier } from '@src/utils/enums/OrderVerifier';
 import { AutoTopupStatus } from '@src/utils/enums/AutoTopStatus';
+import { UserService } from '@src/globalServices/user/user.service';
 import { LockingService } from '@src/globalServices/task-queue/locking.service';
+import { FilterInvoiceDto } from './dto/FilterInvoiceDto.dto';
+import { AdminFilterInvoiceDto } from './dto/AdminFilterInvoiceDto.dto';
 
 @Injectable()
 export class PaymentModuleService {
@@ -52,6 +55,7 @@ export class PaymentModuleService {
     private readonly mailService: MailService,
     private readonly settingsService: SettingsService,
     private readonly syncRewardService: SyncRewardService,
+    private readonly userService: UserService,
     private readonly lockingService: LockingService,
   ) {}
 
@@ -69,19 +73,11 @@ export class PaymentModuleService {
     }
   }
 
-  async getMeCredits(brandId: string, userId: string) {
+  async getMeCredits(brandId: string) {
     const wallet = await this.walletService.getWalletByBrandId(brandId);
     const settings = await this.settingsService.getPublicSettings();
 
     const meCreditsInDollars = wallet.meCredits * settings.meTokenValue;
-
-    const auditTrailEntry = {
-      userId: userId,
-      auditType: 'RETRIEVE_ME_CREDITS',
-      description: `User ${userId} retrieved ME credits for brand ${brandId}.`,
-      reportableId: brandId,
-    };
-    await this.auditTrailService.createAuditTrail(auditTrailEntry);
 
     return {
       meCredits: wallet.meCredits,
@@ -113,6 +109,17 @@ export class PaymentModuleService {
   async getInvoices(query: { brandId: string; page: number; limit: number }) {
     try {
       return await this.billerService.getBrandInvoices(query);
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(error.message, 400);
+    }
+  }
+
+  async getAllInvoices(query: AdminFilterInvoiceDto) {
+    try {
+      return await this.billerService.getAllBrandInvoices(query);
+
+
     } catch (error) {
       logger.error(error);
       throw new HttpException(error.message, 400);
@@ -216,44 +223,47 @@ export class PaymentModuleService {
     }
   }
 
-  async getDueInvoices({
-    userId,
-    brandId,
-    page,
-    limit,
-  }: {
-    userId: string;
-    brandId?: string;
-    page: number;
-    limit: number;
-  }) {
-    try {
-      const result = await this.billerService.getBrandInvoices({
-        brandId,
-        page,
-        limit,
-      });
+  // async getDueInvoices({
+  //   userId,
+  //   brandId,
+  //   page,
+  //   limit,
+  // }: {
+  //   userId: string;
+  //   brandId?: string;
+  //   page: number;
+  //   limit: number;
+  // }) {
+  //   try {
+  //     const result = await this.billerService.getBrandInvoices({
+  //       brandId,
+  //       page,
+  //       limit,
+  //     });
 
-      const auditTrailEntry = {
-        userId: userId,
-        auditType: 'ACCESS_DUE_INVOICES',
-        description: `User ${userId} accessed due invoices for brand${brandId}, page ${page} with limit ${limit}.`,
-        reportableId: brandId || 'N/A',
-      };
+  //     const user = await this.userService.getUserById(userId);
+  //     if (!user) throw new HttpException('User not found', 404);
 
-      await this.auditTrailService.createAuditTrail(auditTrailEntry);
+      // const auditTrailEntry = {
+      //   userId: userId,
+      //   auditType: 'ACCESS_DUE_INVOICES',
+      //   description: `${user.username} accessed due invoices for brand${brandId}, page ${page} with limit ${limit}.`,
+      //   reportableId: brandId || 'N/A',
+      // };
 
-      return {
-        dueInvoices: result.invoices,
-        total: result.total,
-        nextPage: result.nextPage,
-        prevPage: result.prevPage,
-      };
-    } catch (error) {
-      logger.error(error);
-      throw new HttpException(error.message, 400);
-    }
-  }
+      // await this.auditTrailService.createAuditTrail(auditTrailEntry);
+
+  //     return {
+  //       dueInvoices: result.invoices,
+  //       total: result.total,
+  //       nextPage: result.nextPage,
+  //       prevPage: result.prevPage,
+  //     };
+  //   } catch (error) {
+  //     logger.error(error);
+  //     throw new HttpException(error.message, 400);
+  //   }
+  // }
 
   async createSubscription(body: CreatePlanDto) {
     return await this.brandService.createBrandSubscriptionPlan(body);
@@ -633,11 +643,14 @@ export class PaymentModuleService {
 
       await this.walletService.save(brandWallet);
 
+      const user = await this.userService.getUserById(userId);
+      if (!user) throw new HttpException('User not found', 404);
+
       //Audit Trail Entry
       const auditTrailEntry = {
         userId: userId,
         auditType: 'ISSUE_ME_CREDITS',
-        description: `User ${userId} issued ${amount} ME credits to brand ${brandId} successfully.  Previous credits: ${previousCredit}. New Credit: ${brandWallet.meCredits}`,
+        description: `${user.username} issued ${amount} ME credits to brand ${brand.name} successfully.  Previous credits: ${previousCredit}. New Credit: ${brandWallet.meCredits}`,
         reportableId: brandId,
       };
       await this.auditTrailService.createAuditTrail(auditTrailEntry);
@@ -658,17 +671,25 @@ export class PaymentModuleService {
       if (!brand) throw new HttpException('Brand not found', 404);
 
       const brandWallet = await this.walletService.getWalletByBrandId(brandId);
+      if(!brandWallet) throw new HttpException('Brand Wallet not found', 404);
 
       const previousCredit = brandWallet.meCredits;
+
+      if (amount > previousCredit) {
+        throw new HttpException('Cannot remove more credits than the current balance', 400);
+      }
 
       brandWallet.meCredits = Number(brandWallet.meCredits) - Number(amount);
 
       await this.walletService.save(brandWallet);
 
+      const user = await this.userService.getUserById(userId);
+      if (!user) throw new HttpException('User not found', 404);
+
       const auditTrailEntry = {
         userId: userId,
         auditType: 'REMOVE_ME_CREDITS',
-        description: `User ${userId} removed ${amount} ME credits from brand ${brandId} successfully. Previous credits: ${previousCredit}. New Credit: ${brandWallet.meCredits}`,
+        description: `${user.username} removed ${amount} ME credits from ${brand.name} successfully. Previous credits: ${previousCredit}. New Credit: ${brandWallet.meCredits}`,
         reportableId: brandId,
       };
 

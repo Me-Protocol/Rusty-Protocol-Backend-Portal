@@ -6,11 +6,13 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import axios from 'axios';
 import { Region } from './entities/region.entity';
 import { AuditTrailService } from '../auditTrail/auditTrail.service';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class CurrencyService {
   constructor(
     private readonly auditTrailService: AuditTrailService,
+    private readonly userService: UserService,
     @InjectRepository(Currency)
     private readonly currencyRepo: Repository<Currency>,
 
@@ -93,10 +95,13 @@ export class CurrencyService {
 
     const savedRegion = await this.regionRepo.save(region);
 
+    const user = await this.userService.getUserById(userId);
+    if(!user) throw new HttpException('User not found', 404);
+
     const auditTrailEntry = {
       userId: userId,
       auditType: 'CREATE_REGION',
-      description: `User ${userId} created a region ${name}, ${code} with currency ID ${currencyId}.`,
+      description: `${user.username} created a region ${name}, ${code} with currency ID ${currencyId}.`,
       reportableId: savedRegion.id,
     };
 
@@ -142,15 +147,16 @@ export class CurrencyService {
 
       const updatedRegion = await this.regionRepo.save(region);
 
+      const user = await this.userService.getUserById(userId);
+      if(!user) throw new HttpException('User not found', 404);
+      
       const auditTrailEntry = {
         userId: userId,
         auditType: 'UPDATE_REGION',
-        description: `User ${userId} updated region ${id}. Changes: ${JSON.stringify(
-          {
-            original: originalRegion,
-            updated: updatedRegion,
-          },
-        )}`,
+        description: `${user.username} updated region ${id}. Changes: ${JSON.stringify({
+          original: originalRegion,
+          updated: updatedRegion,
+        })}`,
         reportableId: id,
       };
 

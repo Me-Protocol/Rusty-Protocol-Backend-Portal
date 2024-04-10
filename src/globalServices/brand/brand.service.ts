@@ -127,14 +127,14 @@ export class BrandService {
    */
   async update(dto: UpdateBrandDto, brandId: string) {
     try {
-      // if (dto.name) {
-      //   dto.slug = dto.name.toLowerCase().replace(/\s/g, '-');
+      if (dto.name) {
+        dto.slug = dto.name.toLowerCase().replace(/\s/g, '-');
 
-      //   const checkSlug = await this.brandRepo.findOneBy({ slug: dto.slug });
-      //   if (checkSlug) {
-      //     throw new Error('Name/Slug already exists');
-      //   }
-      // }
+        const checkSlug = await this.brandRepo.findOneBy({ slug: dto.slug });
+        if (checkSlug) {
+          throw new Error('Name/Slug already exists');
+        }
+      }
 
       const brand = await this.brandRepo.findOneBy({ id: brandId });
 
@@ -155,7 +155,7 @@ export class BrandService {
         brand.regions = regions;
       }
 
-      // if (dto.name) brand.name = dto.name;
+      if (dto.name) brand.name = dto.name;
       if (dto.website) brand.website = dto.website;
       if (dto.location) brand.location = dto.location;
       if (dto.categoryId) brand.categoryId = dto.categoryId;

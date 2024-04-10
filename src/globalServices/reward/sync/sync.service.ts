@@ -69,6 +69,14 @@ export class SyncRewardService {
     return this.syncBatchRepo.save(batch);
   }
 
+  async getRegistriesByReward(rewardId: string) {
+    return await this.rewardRegistryRepo.find({
+      where: {
+        rewardId,
+      },
+    });
+  }
+
   async findAllBatch({
     brandId,
     page,
@@ -850,6 +858,7 @@ export class SyncRewardService {
       where: {
         userId,
       },
+      relations: ['reward', 'reward.brand'],
     });
 
     //return where rewardRegistry > 0;

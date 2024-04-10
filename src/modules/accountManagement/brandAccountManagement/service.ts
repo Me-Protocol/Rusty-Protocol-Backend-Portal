@@ -684,18 +684,6 @@ export class BrandAccountManagementService {
     try {
       const brands = await this.brandService.getAllBrandsForAdmin(query);
 
-      // TODO No need
-      // const auditTrailEntry = {
-      //   userId: userId,
-      //   auditType: 'GET_ALL_BRANDS_FOR_ADMIN',
-      //   description: `User ${userId} retrieved all brands for admin with query parameters: ${JSON.stringify(
-      //     query,
-      //   )}.`,
-      //   reportableId: '',
-      // };
-
-      // await this.auditTrailService.createAuditTrail(auditTrailEntry);
-
       return brands;
     } catch (error) {
       console.log(error);
@@ -717,8 +705,13 @@ export class BrandAccountManagementService {
       brand.disabled = true;
       await this.brandService.save(brand);
 
+      const user = await this.userService.getUserById(userId);
+      if(!user) throw new HttpException('User not found', 404);
+
       const createAuditTrailDto = {
         userId: userId,
+        userEmail: user.email,
+        userName: user.username,
         auditType: 'DISABLE_BRAND',
         description: `User with ID ${userId} disabled the brand with ID ${brandId}.`,
         reportableId: brandId,

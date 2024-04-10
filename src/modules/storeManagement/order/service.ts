@@ -668,6 +668,7 @@ export class OrderManagementService {
                   text: 'Redeem now',
                   url: `${offer.product.productUrl}?coupon=${coupon.code}`,
                 })}
+                <p>For further enquiries, please contact Me Marketplace at <i>support@myai.life</i></p>
              `;
 
           await this.notificationService.createNotification(notification);
@@ -946,6 +947,7 @@ export class OrderManagementService {
                 <p>Redemption Details</p>
                 <p>Points: ${order.points}</p>
                 <p>Quantity: ${order.quantity}</p>
+                <p>For further enquiries, please contact Me Marketplace at <i>support@myai.life</i></p>
               `;
 
     try {
