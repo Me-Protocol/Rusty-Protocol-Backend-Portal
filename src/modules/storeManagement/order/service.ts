@@ -250,20 +250,10 @@ export class OrderManagementService {
       }
 
       if (
-        brand.shopify_access_token_updated_date &&
         brand.shopify_access_token
       ) {
-        const time = new Date(brand.shopify_access_token_updated_date).getTime();
-        const now = new Date().getTime();
-        const diff = now - time;
-        const hours = Math.floor(diff / 1000 / 60 / 60);
-
-        if (hours < 20) {
           return brand.shopify_access_token;
-        }
       }
-
-
 
       const shopifyHandler = new ShopifyHandler();
       const shopify: AxiosInstance = shopifyHandler.createInstance(brand);
