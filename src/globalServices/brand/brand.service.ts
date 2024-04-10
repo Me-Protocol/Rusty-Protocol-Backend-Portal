@@ -1131,6 +1131,8 @@ export class BrandService {
         currency: true,
         location: true,
         regions: true,
+        shopify_access_token: true,
+        shopify_access_token_updated_date: true,
       },
       relations: ['regions'],
     });

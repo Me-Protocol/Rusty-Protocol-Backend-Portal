@@ -245,6 +245,26 @@ export class OrderManagementService {
     try {
       const brand = await this.brandService.getBrandWithOnlineCreds(brandId);
 
+      if (!brand) {
+        throw new Error('Brand not found');
+      }
+
+      if (
+        brand.shopify_access_token_updated_date &&
+        brand.shopify_access_token
+      ) {
+        const time = new Date(brand.shopify_access_token_updated_date).getTime();
+        const now = new Date().getTime();
+        const diff = now - time;
+        const hours = Math.floor(diff / 1000 / 60 / 60);
+
+        if (hours < 20) {
+          return brand.shopify_access_token;
+        }
+      }
+
+
+
       const shopifyHandler = new ShopifyHandler();
       const shopify: AxiosInstance = shopifyHandler.createInstance(brand);
 
@@ -252,11 +272,22 @@ export class OrderManagementService {
         storefront_access_token: {
           title: `token_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}`,
         },
+      }).then((res) => res.data)
+      .catch((err) => {
+        console.log(err.response.data);
+        throw new Error('Error creating shopify access token');
       });
+      
 
       if (data?.storefront_access_token) {
+        brand.shopify_access_token = data.storefront_access_token.access_token;
+        brand.shopify_access_token_updated_date = new Date();
+        await this.brandService.save(brand);
         return data.storefront_access_token.access_token;
       } else {
+        brand.shopify_access_token = data?.storefront_access_tokens[0]?.access_token;
+        brand.shopify_access_token_updated_date = new Date();
+        await this.brandService.save(brand);
         return data?.storefront_access_tokens[0]?.access_token;
       }
     } catch (error) {

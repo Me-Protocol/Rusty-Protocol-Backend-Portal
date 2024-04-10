@@ -406,4 +406,16 @@ export class Brand extends BaseEntity {
     select: false,
   })
   shopify_consumer_secret: string;
+
+  @Column({
+    nullable: true,
+    select: false,
+  })
+  shopify_access_token: string;
+
+  @Column({
+    nullable: true,
+    select: false,
+  })
+  shopify_access_token_updated_date: Date;
 }
