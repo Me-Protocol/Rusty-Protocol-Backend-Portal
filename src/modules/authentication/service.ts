@@ -43,7 +43,7 @@ import { GoogleSheetService } from '@src/globalServices/google-sheets/google-she
 import { ampli } from '@src/ampli';
 import { BullService } from '@src/globalServices/task-queue/bull.service';
 import { SENDGRID_API_KEY, SENDGRID_EMAIL } from '@src/config/env.config';
-import sgMail from '@node_modules/@sendgrid/mail';
+import sgMail from '@sendgrid/mail';
 
 sgMail.setApiKey(SENDGRID_API_KEY);
 // eslint-disable-next-line @typescript-eslint/no-var-requires

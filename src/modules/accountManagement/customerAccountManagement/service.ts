@@ -9,7 +9,7 @@ import { SyncIdentifierType } from '@src/utils/enums/SyncIdentifierType';
 import { User } from '@src/globalServices/user/entities/user.entity';
 import { CampaignService } from '@src/globalServices/campaign/campaign.service';
 import { BrandService } from '@src/globalServices/brand/brand.service';
-import sgMail from '@node_modules/@sendgrid/mail';
+import sgMail from '@sendgrid/mail';
 import { SENDGRID_API_KEY, SENDGRID_EMAIL } from '@src/config/env.config';
 
 sgMail.setApiKey(SENDGRID_API_KEY);
