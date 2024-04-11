@@ -533,7 +533,7 @@ export class BrandService {
 
     const brandCustomer = new BrandCustomer();
     brandCustomer.brandId = brandId;
-    brandCustomer.identifier = identifier;
+    brandCustomer.identifier = identifier?.toLowerCase();
     brandCustomer.identifierType = identifierType;
     brandCustomer.phone = phone;
     brandCustomer.email = email.toLowerCase();
@@ -633,12 +633,21 @@ export class BrandService {
     brandId: string;
     identifierType: SyncIdentifierType;
   }) {
-    return await this.brandCustomerRepo.findOne({
+    const customer = await this.brandCustomerRepo.findOne({
       where: {
         brandId,
         identifier,
         identifierType,
       },
+    });
+
+    if (customer) {
+      return customer;
+    }
+
+    return await this.createBrandCustomer({
+      email: identifier,
+      brandId,
     });
   }
 
