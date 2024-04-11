@@ -633,12 +633,21 @@ export class BrandService {
     brandId: string;
     identifierType: SyncIdentifierType;
   }) {
-    return await this.brandCustomerRepo.findOne({
+    const customer = await this.brandCustomerRepo.findOne({
       where: {
         brandId,
         identifier,
         identifierType,
       },
+    });
+
+    if (customer) {
+      return customer;
+    }
+
+    return await this.createBrandCustomer({
+      email: identifier,
+      brandId,
     });
   }
 

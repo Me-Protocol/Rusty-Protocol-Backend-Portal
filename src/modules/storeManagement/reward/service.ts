@@ -571,9 +571,11 @@ export class RewardManagementService {
             identifierType: syncData.identifierType,
           });
 
-        brandCustomer.totalDistributed =
-          Number(brandCustomer.totalDistributed) + Number(syncData.amount);
-        await this.brandService.saveBrandCustomer(brandCustomer);
+        if (brandCustomer) {
+          brandCustomer.totalDistributed =
+            Number(brandCustomer.totalDistributed) + Number(syncData.amount);
+          await this.brandService.saveBrandCustomer(brandCustomer);
+        }
 
         let user: User;
 
@@ -613,29 +615,31 @@ export class RewardManagementService {
       return acc + Number(item.amount);
     }, 0);
 
-    const totalDistributed =
-      Number(isNaN(reward.totalDistributed) ? 0 : reward.totalDistributed) +
-      Number(total ?? 0);
+    if (reward) {
+      const totalDistributed =
+        Number(isNaN(reward.totalDistributed) ? 0 : reward.totalDistributed) +
+        Number(total ?? 0);
 
-    reward.totalDistributed = totalDistributed;
-    await this.rewardService.save(reward);
+      reward.totalDistributed = totalDistributed;
+      await this.rewardService.save(reward);
 
-    await this.rewardService.reduceVaultAvailableSupply({
-      rewardId: reward.id,
-      amount: totalDistributed,
-    });
+      await this.rewardService.reduceVaultAvailableSupply({
+        rewardId: reward.id,
+        amount: totalDistributed,
+      });
 
-    // Update circulating supply
-    const circulatingSupply = new RewardCirculation();
-    circulatingSupply.brandId = reward.brandId;
-    circulatingSupply.rewardId = reward.id;
-    circulatingSupply.circulatingSupply =
-      Number(reward.totalDistributed) - Number(reward.totalRedeemedSupply);
-    circulatingSupply.totalRedeemedAtCirculation = reward.totalRedeemedSupply;
-    circulatingSupply.totalDistributedSupplyAtCirculation =
-      reward.totalDistributed;
+      // Update circulating supply
+      const circulatingSupply = new RewardCirculation();
+      circulatingSupply.brandId = reward.brandId;
+      circulatingSupply.rewardId = reward.id;
+      circulatingSupply.circulatingSupply =
+        Number(reward.totalDistributed) - Number(reward.totalRedeemedSupply);
+      circulatingSupply.totalRedeemedAtCirculation = reward.totalRedeemedSupply;
+      circulatingSupply.totalDistributedSupplyAtCirculation =
+        reward.totalDistributed;
 
-    await this.analyticsRecorder.createRewardCirculation(circulatingSupply);
+      await this.analyticsRecorder.createRewardCirculation(circulatingSupply);
+    }
 
     return res;
   }
@@ -689,7 +693,7 @@ export class RewardManagementService {
 
       await this.updateUsersRewardRegistryAfterDistribution({
         batch,
-        rewardId: body.rewardId,
+        rewardId: batch.rewardId,
       });
 
       batch.isDistributed = true;
