@@ -11,6 +11,7 @@ import { CampaignService } from '@src/globalServices/campaign/campaign.service';
 import { BrandService } from '@src/globalServices/brand/brand.service';
 import sgMail from '@sendgrid/mail';
 import { SENDGRID_API_KEY, SENDGRID_EMAIL } from '@src/config/env.config';
+import { capitalizeFirstLetter } from '@src/utils/helpers/makeCapitalLetter';
 
 sgMail.setApiKey(SENDGRID_API_KEY);
 @Injectable()
@@ -36,7 +37,7 @@ export class CustomerAccountManagementService {
       from: `"Me Marketplace" <${SENDGRID_EMAIL}>`,
       templateId: 'd-530024c9419f4c4ab6512ce3df29c566',
       dynamic_template_data: {
-        name: first_name,
+        name: capitalizeFirstLetter(first_name),
         NameOfReward: name_of_reward,
         AmountOfReward: amount_of_reward,
         AmountOfRewards: amount_of_rewards,

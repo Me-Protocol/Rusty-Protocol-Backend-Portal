@@ -86,7 +86,7 @@ export class AuthenticationService {
       from: `"Me Marketplace" <${SENDGRID_EMAIL}>`,
       templateId: 'd-797d63ae277e455a8694de84e7673ed4',
       dynamic_template_data: {
-        name: first_name,
+        name: capitalizeFirstLetter(first_name),
       },
     };
     sgMail.send(payload).then(
