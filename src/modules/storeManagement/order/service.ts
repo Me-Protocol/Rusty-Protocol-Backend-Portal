@@ -262,7 +262,7 @@ export class OrderManagementService {
             title: `token_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}`,
           },
         })
-        .then((res) => res.data)
+        .then((res) => res)
         .catch((err) => {
           console.log(err.response.data);
           throw new Error('Error creating shopify access token');
