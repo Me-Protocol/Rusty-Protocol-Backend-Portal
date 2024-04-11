@@ -404,8 +404,18 @@ export class RewardManagementService {
         throw new Error('Reward not found');
       }
 
+      const syncData =
+        body?.syncData?.map((data) => {
+          return {
+            id: data?.id,
+            identifier: data?.identifier?.toLowerCase(),
+            identifierType: data?.identifierType,
+            amount: data?.amount,
+          };
+        }) ?? [];
+
       const { hasDescripancies, descripancies, addableSyncData } =
-        this.getAddableSyncData(body.syncData, checkReward);
+        this.getAddableSyncData(syncData, checkReward);
 
       if (hasDescripancies) {
         return {
@@ -433,7 +443,10 @@ export class RewardManagementService {
             (item) => item.identifier === syncData.identifier,
           );
           if (!found) {
-            return syncData;
+            return {
+              ...syncData,
+              identifier: syncData?.identifier?.toLowerCase(),
+            };
           }
         });
 
@@ -479,11 +492,14 @@ export class RewardManagementService {
           (item) => item.id === syncData.id,
         );
         if (!found) {
-          return syncData;
+          return {
+            ...syncData,
+            identifier: syncData?.identifier?.toLowerCase(),
+          };
         }
 
         if (found) {
-          found.identifier = syncData.identifier;
+          found.identifier = syncData?.identifier?.toLowerCase();
           found.identifierType = syncData.identifierType;
           found.amount = syncData.amount;
         }
