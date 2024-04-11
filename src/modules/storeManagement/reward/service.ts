@@ -271,7 +271,7 @@ export class RewardManagementService {
         ) {
           return {
             id: syncData?.id,
-            identifier: syncData.identifier,
+            identifier: syncData?.identifier?.toLowerCase(),
             identifierType: syncData.identifierType,
             amount: syncData.amount,
           };
