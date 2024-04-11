@@ -533,7 +533,7 @@ export class BrandService {
 
     const brandCustomer = new BrandCustomer();
     brandCustomer.brandId = brandId;
-    brandCustomer.identifier = identifier;
+    brandCustomer.identifier = identifier?.toLowerCase();
     brandCustomer.identifierType = identifierType;
     brandCustomer.phone = phone;
     brandCustomer.email = email.toLowerCase();
