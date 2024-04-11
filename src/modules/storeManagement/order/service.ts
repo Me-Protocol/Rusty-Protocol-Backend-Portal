@@ -38,7 +38,7 @@ import {
   get_user_reward_balance_with_url,
   redistributed_failed_tx_with_url,
 } from '@developeruche/runtime-sdk';
-import { RUNTIME_URL } from '@src/config/env.config';
+import { CLIENT_APP_URI, RUNTIME_URL } from '@src/config/env.config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BillerService } from '@src/globalServices/biller/biller.service';
 import { ethers } from 'ethers';
@@ -249,25 +249,24 @@ export class OrderManagementService {
         throw new Error('Brand not found');
       }
 
-      if (
-        brand.shopify_access_token
-      ) {
-          return brand.shopify_access_token;
+      if (brand.shopify_access_token) {
+        return brand.shopify_access_token;
       }
 
       const shopifyHandler = new ShopifyHandler();
       const shopify: AxiosInstance = shopifyHandler.createInstance(brand);
 
-      const { data } = await shopify.post('/storefront_access_tokens.json', {
-        storefront_access_token: {
-          title: `token_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}`,
-        },
-      }).then((res) => res.data)
-      .catch((err) => {
-        console.log(err.response.data);
-        throw new Error('Error creating shopify access token');
-      });
-      
+      const { data } = await shopify
+        .post('/storefront_access_tokens.json', {
+          storefront_access_token: {
+            title: `token_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}`,
+          },
+        })
+        .then((res) => res.data)
+        .catch((err) => {
+          console.log(err.response.data);
+          throw new Error('Error creating shopify access token');
+        });
 
       if (data?.storefront_access_token) {
         brand.shopify_access_token = data.storefront_access_token.access_token;
@@ -275,7 +274,8 @@ export class OrderManagementService {
         await this.brandService.save(brand);
         return data.storefront_access_token.access_token;
       } else {
-        brand.shopify_access_token = data?.storefront_access_tokens[0]?.access_token;
+        brand.shopify_access_token =
+          data?.storefront_access_tokens[0]?.access_token;
         brand.shopify_access_token_updated_date = new Date();
         await this.brandService.save(brand);
         return data?.storefront_access_tokens[0]?.access_token;
@@ -666,7 +666,7 @@ export class OrderManagementService {
                 <p>Quantity: <b>${order.quantity}</b></p>
                 ${emailButton({
                   text: 'Redeem now',
-                  url: `${offer.product.productUrl}?coupon=${coupon.code}`,
+                  url: `${CLIENT_APP_URI}/dashboard-my-deals-details?orderId=${order.id}`,
                 })}
                 <p>For further enquiries, please contact Me Marketplace at <i>support@myai.life</i></p>
              `;
