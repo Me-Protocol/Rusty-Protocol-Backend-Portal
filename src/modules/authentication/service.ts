@@ -1068,13 +1068,12 @@ export class AuthenticationService {
       const user = await this.userService.getUserByEmail(email);
       const userNameFromEmail = email.split('@')[0].toLowerCase();
 
-      await ampli.identify(user.id, {
-        email,
-        user_name: userNameFromEmail,
-        registration_method: 'google',
-      });
-
       if (user) {
+        await ampli.identify(user?.id, {
+          email,
+          user_name: userNameFromEmail,
+          registration_method: 'google',
+        });
         ampli.userLogin(user.id, { login_method: 'google' }, {});
         return await this.handleExistingUser(
           user,
