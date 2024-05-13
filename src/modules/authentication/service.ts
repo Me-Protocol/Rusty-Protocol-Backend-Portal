@@ -1225,13 +1225,13 @@ export class AuthenticationService {
     await this.sendWelcomeEmailSocial(email);
     const token = await this.registerDevice(savedUser, userAgent, ip);
 
-    await ampli.identify(newUser.id, {
+    await ampli.identify(savedUser?.id, {
       email,
       user_name: newUser.username,
       registration_method: 'google',
     });
 
-    await ampli.userSignUp(newUser.id, { registration_method: 'google' });
+    await ampli.userSignUp(savedUser?.id, { registration_method: 'google' });
 
     return {
       token,
