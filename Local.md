@@ -107,38 +107,12 @@ CLOUDINARY_CLOUD_NAME=dummy_cloud_name
 CLOUDINARY_API_KEY=dummy_cloudinary_api_key
 CLOUDINARY_API_SECRET=dummy_cloudinary_api_secret
 
-# Stripe
-STRIPE_SECRET_KEY=dummy_stripe_secret_key
-STRIPE_PUBLISHABLE_KEY=dummy_stripe_publishable_key
-STRIPE_API_VERSION=2022-11-15
-STRIPE_REFRESH_URL=http://localhost:1350
 
-# DFNS
-DFNS_ACCESS_TOKEN=dummy_access_token
-DFNS_PRIVATE_ACCESS_TOKEN="-----BEGIN EC PRIVATE KEY-----
-MHcCAQEEIDummyPrivateKey
------END EC PRIVATE KEY-----"
 
 # General
 COUPON_CODE_PREFIX=MEPRO
 TNX_PREFIX=MEPRO
-MEPRO_WALLET_ADDRESS=0x1234567890abcdef1234567890abcdef12345678
-JSON_RPC_URL=https://dummy-json-rpc-url.com
-MUMBAI_INDEXER_URL=https://dummy-indexer-url.com
-MUMBAI_INDEXER_API_KEY=dummy_indexer_api_key
-GELATO_RELAYER_STATUS_URL=https://dummy-gelato-relayer-status-url.com
-GELATO_API_KEY=dummy_gelato_api_key
-PREMIUM=11
-PRICE_ORACLE_URL=https://dummy-price-oracle-url.com
-PRICE_ORACLE_API_KEY=dummy_price_oracle_api_key
 
-# Keys
-MAGIC_KEY=dummy_magic_key
-RPC_POLYGON_KEY=dummy_rpc_polygon_key
-IN_APP_API_KEY=dummy_in_app_api_key
-API_KEY_SALT=dummy_api_key_salt
-ME_DISPENSER=dummy_me_dispenser
-ONBOARD_WALLET=dummy_onboard_wallet
 TASK_QUEUE=task-queue
 
 # Redis
@@ -149,26 +123,7 @@ REDIS_TTL=86400
 EXPIRING_NOTIFICATION_ICON=https://dummy-icon-url.com
 BOOKMARK_IMAGE_URL=https://dummy-bookmark-url.com
 
-# HMT
-HMT_SITE_KEY=dummy_site_key
-HMT_JOB_API_KEY=dummy_job_api_key
 
-# Business app settings env
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
-NEXT_PUBLIC_RUNTIME_URL=http://localhost:3000
-NEXT_PUBLIC_ME_API_KEY=dummy_me_api_key
-NEXT_PUBLIC_AMPLITUDE_API_KEY=dummy_amplitude_api_key
-NEXT_PUBLIC_GELATO_API_KEY=dummy_gelato_api_key
-NEXT_PUBLIC_STRIPE_API_KEY=dummy_stripe_api_key
-NEXT_PUBLIC_GOOGLE_API_KEY=dummy_google_api_key
-
-# Customer app settings env
-VITE_API_BASE_URL=http://localhost:3000
-VITE_RUNTIME_URL=http://localhost:3000
-VITE_ME_API_KEY=dummy_me_api_key
-VITE_AMPLITUDE_API_KEY=dummy_amplitude_api_key
-VITE_APP_ENVIRONMENT=development
-VITE_GELATO_API_KEY=dummy_gelato_api_key
 ```
 
 ### 3. Build and Start the Services
