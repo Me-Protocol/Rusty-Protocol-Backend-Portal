@@ -1,107 +1,77 @@
-version: '3.9'
+version: '3.8'
+
 services:
-  elasticsearch:
-    container_name: me_protocol_elastic_search
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.0
-    restart: always
-    environment:
-      # - xpack.security.http.ssl=false
-      - xpack.security.enabled=false
-      - xpack.security.enrollment.enabled=true
-      - 'discovery.type=single-node'
-    # ulimits:
-    #   memlock:
-    #     soft: -1
-    #     hard: -1
-    #   nofile:
-    #     soft: 65536
-    #     hard: 65536
-    # cap_add:
-    #   - IPC_LOCK
+  api:
+    build:
+      dockerfile: Dockerfile
+      context: .
+      target: development
     volumes:
-      - elasticsearch-data-volume:/usr/share/elasticsearch/data
-
-    ports:
-      - 9200:9200
-    networks:
-      - protocol_backend
-
-  kibana:
-    container_name: me_protocol_kibana
-    image: docker.elastic.co/kibana/kibana:8.10.3
-    restart: always
+      - .:/app
+      - /app/node_modules
+    command: npm run start
     depends_on:
+      - postgres
+      - redis
       - elasticsearch
-    environment:
-      - ELASTICSEARCH_HOSTS=http://localhost:9200
+    env_file: .env
     ports:
-      - 5601:5601
-    networks:
-      - protocol_backend
+      - "1450:1450"
+      - 8080:3000
+      - 9229:9229
 
-  # app:
-  #   container_name: me_backend_app
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - 3333:3333
-  #   depends_on:
-  #     - db
-  #   restart: always
-  #   volumes:
-  #     - C:/Users/farouq.komolafe/Production/fullstack/business-portal-backend:/usr/src/app
-  #     - /usr/src/app/node_modules
-  #   networks:
-  #     - protocol_backend
+  postgres:
+    image: postgres:12
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=mydatabase
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  postgres_admin:
+    image: dpage/pgadmin4:4.28
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@docker.ai
+      PGADMIN_DEFAULT_PASSWORD: password
 
   redis:
-    container_name: me_protocol_redis
-    image: redis
-    ports:
-      - 6379:6379
-    volumes:
-      - redis:/data
-    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
-    networks:
-      - protocol_backend
-
-  db:
-    container_name: me_protocol_db
-    image: postgres:latest
-    env_file: .env
+    image: redis:6-alpine
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DATABASE}
-    ports:
-      - ${POSTGRES_PORT}:5432
+      - REDIS_PASSWORD=password
+    command: redis-server --requirepass password
     volumes:
-      - pg-data:/var/lib/postgresql/data
-    networks:
-      - protocol_backend
-    restart: always
+      - redis_data:/data
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.3
     environment:
-      - PGADMIN_DEFAULT_EMAIL=${PG_ADMIN_EMAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${PG_ADMIN_PASSWORD}
+      - discovery.type=single-node
+      - ELASTIC_USERNAME=elastic
+      - ELASTIC_PASSWORD=password
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
     ports:
-      - '8080:80'
-    networks:
-      - protocol_backend
+      - "9200:9200"
+
+  localstack:
+    image: localstack/localstack
+    environment:
+      - SERVICES=kms,s3,lambda,cloudwatch
+      - DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=dummy
+      - AWS_SECRET_ACCESS_KEY=dummy
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - HOST_TMP_FOLDER=/tmp/localstack
+      - PORT_WEB_UI=8089
+      - USE_SSL=false
+    ports:
+      - "4566:4566"
 
 volumes:
-  elasticsearch-data-volume:
-    driver: local
-
-  pg-data:
-    driver: local
-
-  redis:
-    driver: local
-
-networks:
-  protocol_backend:
-    driver: bridge
+  postgres_data:
+  redis_data:
+  es_data:

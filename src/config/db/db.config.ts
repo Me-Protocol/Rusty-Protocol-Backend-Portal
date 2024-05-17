@@ -36,9 +36,7 @@ import {
         migrationsRun: RUN_DEFAULT_MIGRATION,
         synchronize: RUN_DB_SYNC,
         // autoLoadEntities: true,
-        ssl: {
-          rejectUnauthorized: false,
-        },
+        ssl: false, // Disable SSL
       }),
     }),
   ],

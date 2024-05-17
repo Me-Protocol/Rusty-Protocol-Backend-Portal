@@ -25,9 +25,7 @@ export const typeormConfig: DataSourceOptions = {
   subscribers: [join(__dirname, '../dist/subscribers/**.js')],
   migrationsRun: RUN_DEFAULT_MIGRATION,
   synchronize: RUN_DB_SYNC,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  ssl: false, // Disable SSL
 };
 
 export const AppDataSource = new DataSource(typeormConfig);

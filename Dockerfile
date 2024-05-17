@@ -1,11 +1,13 @@
-# syntax=docker/dockerfile:1
 
-FROM node:16.14.2-alpine
+FROM node:18 AS development
 
 WORKDIR /app
 
-# Install Sentry CLI
-RUN npm install -g @sentry/cli
+# Install AWS CLI
+RUN apt-get update && \
+    apt-get install -y awscli
+
+
 
 COPY package*.json ./
 
@@ -13,10 +15,22 @@ RUN npm install --force
 
 COPY . .
 
-# Configure Sentry authentication using the build argument
-#RUN sentry-cli --auth-token $SENTRY_AUTH_TOKEN  docker build --build-arg SENTRY_AUTH_TOKEN=YOUR_ACTUAL_TOKEN -t your-image-name .
+RUN npm run build
 
-RUN npm run build:start
+################
+## PRODUCTION ##
+################
+FROM node:18 AS production
 
-CMD ["npm", "run", "start:prod"]
+ARG NODE_ENV=production
+ENV NODE_ENV=${NODE_ENV}
+
+WORKDIR /app
+
+COPY --from=development /app/ .
+
+EXPOSE 8080
+
+# Run app
+CMD [ "node", "dist/main" ]
 
