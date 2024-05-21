@@ -37,11 +37,6 @@ ELASTIC_NODE=http://elasticsearch:9200
 ELASTIC_USERNAME=elastic
 ELASTIC_PASSWORD=password
 
-# AWS settings simulated by LocalStack
-AWS_ACCESS_KEY_ID=dummy
-AWS_SECRET_ACCESS_KEY=dummy
-AWS_REGION=us-east-1
-
 # Redis settings
 REDIS_HOSTNAME=redis
 REDIS_PORT=6379
