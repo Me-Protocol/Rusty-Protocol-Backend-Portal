@@ -37,7 +37,6 @@ ELASTIC_NODE=http://elasticsearch:9200
 ELASTIC_USERNAME=elastic
 ELASTIC_PASSWORD=password
 
-
 # Redis settings
 REDIS_HOSTNAME=redis
 REDIS_PORT=6379
